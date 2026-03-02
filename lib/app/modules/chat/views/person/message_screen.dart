@@ -15,7 +15,7 @@ class ChatScreen extends StatefulWidget {
   final String? receiverId;
   final String? receiverName;
   final String? receiverImage;
-  final String? chatId;
+  final String? chatId; 
   final bool? isPerson;
   final bool? isOnline; 
 

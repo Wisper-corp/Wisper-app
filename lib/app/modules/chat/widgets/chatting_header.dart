@@ -15,6 +15,7 @@ import 'package:wisper/app/modules/chat/controller/block_user_controller.dart';
 import 'package:wisper/app/modules/chat/controller/group/delete_group_chat_controller.dart';
 import 'package:wisper/app/modules/chat/controller/mute_chat_controller.dart';
 import 'package:wisper/app/modules/chat/controller/mute_info_controller.dart';
+import 'package:wisper/app/modules/chat/views/video_call.dart';
 import 'package:wisper/app/modules/dashboard/views/dashboard_screen.dart';
 import 'package:wisper/app/modules/post/views/my_post_section.dart';
 import 'package:wisper/app/modules/profile/views/business/others_business_screen.dart';
@@ -69,6 +70,7 @@ class _ChatHeaderState extends State<ChatHeader> {
       cameras = availableCamerasList;
     });
   }
+
   Future<void> executeWithLoading({
     required Future<bool> Function() action,
     required String loadingMessage,
@@ -126,9 +128,8 @@ class _ChatHeaderState extends State<ChatHeader> {
   void deleteChat() {
     executeWithLoading(
       loadingMessage: 'Please wait...',
-      action: () => deleteGroupController.deleteGroup(
-        groupId: widget.chatId ?? '',
-      ),
+      action: () =>
+          deleteGroupController.deleteGroup(groupId: widget.chatId ?? ''),
       onSuccess: () async {
         Get.to(() => MainButtonNavbarScreen());
       },
@@ -147,10 +148,8 @@ class _ChatHeaderState extends State<ChatHeader> {
 
     executeWithLoading(
       loadingMessage: 'Please wait...',
-      action: () => muteChatController.muteChat(
-        chatId: widget.chatId,
-        muteFor: muteFor,
-      ),
+      action: () =>
+          muteChatController.muteChat(chatId: widget.chatId, muteFor: muteFor),
       onSuccess: () async {
         await getMuteInfoController.getMuteInfo(widget.chatId ?? '');
         if (context.mounted) {
@@ -348,6 +347,26 @@ class _ChatHeaderState extends State<ChatHeader> {
                 ),
                 Row(
                   children: [
+                    CircleIconWidget(
+                      imagePath: Assets.images.call.keyName,
+                      onTap: () {},
+                      radius: 15,
+                    ),
+                    widthBox4,
+                    CircleIconWidget(
+                      imagePath: Assets.images.video.keyName,
+                      onTap: () {
+                        Get.to(
+                          () => VideoCallPage(
+                            name: widget.name ?? '',
+                            photoUrl: widget.image ?? '',
+                            chatId: widget.chatId ?? '',
+                          ),
+                        );
+                      },
+                      radius: 15,
+                    ),
+                    widthBox4,
                     CircleIconWidget(
                       key: suffixButtonKey,
                       imagePath: Assets.images.moreHor.keyName,

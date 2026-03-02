@@ -80,6 +80,7 @@ dependencies:
   geolocator: ^14.0.2
   geocoding: ^3.0.0
   cached_network_image: ^3.4.1
+  agora_rtc_engine: ^6.5.3
 
   
 
