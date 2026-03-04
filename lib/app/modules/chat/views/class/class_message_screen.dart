@@ -34,16 +34,17 @@ class ClassChatScreen extends StatefulWidget {
 }
 
 class _ClassChatScreenState extends State<ClassChatScreen> {
+  // ✅ Use Get.find — controller was already created & loaded in ChatListScreen
   final MessageController ctrl = Get.put(MessageController());
   final SeenMessageController seenMessageController = SeenMessageController();
 
   @override
   void initState() {
+    super.initState();
+    // ✅ Only mark as seen — setupChat already ran before navigation
     WidgetsBinding.instance.addPostFrameCallback((_) {
       seenMessageController.seenMessage(widget.chatId!);
-      ctrl.setupChat(chatId: widget.chatId);
     });
-    super.initState();
   }
 
   @override
@@ -84,21 +85,12 @@ class _ClassChatScreenState extends State<ClassChatScreen> {
                   final isMe =
                       msg[SocketMessageKeys.senderId] == ctrl.userAuthId;
 
-                  final String senderName =
-                      msg[SocketMessageKeys.senderName] ?? 'Unknown';
-                  final String? senderImage =
-                      msg[SocketMessageKeys.senderImage];
-
                   final imageUrl = msg[SocketMessageKeys.imageUrl] ?? "";
-                  final time = DateFormatter(
-                    msg[SocketMessageKeys.createdAt],
-                  ).getRelativeTimeFormat();
 
                   return MessageBubble(
                     message: msg,
                     isMe: isMe,
-                    fileUrl:
-                        imageUrl, // পুরানো নাম রেখেছি, কিন্তু এটা এখন সব file-এর URL
+                    fileUrl: imageUrl,
                     fileType: msg[SocketMessageKeys.fileType] ?? '',
                     senderImage: msg[SocketMessageKeys.senderImage],
                     senderName: msg[SocketMessageKeys.senderName],

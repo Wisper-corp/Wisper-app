@@ -12,7 +12,7 @@ import 'package:wisper/app/urls.dart';
 class MessageController extends GetxController {
   final SocketService socketService = Get.find<SocketService>();
   final FileDecodeController imageDecodeController =
-      Get.find<FileDecodeController>(); // Added
+  Get.find<FileDecodeController>();
 
   var isLoading = false.obs;
   var messages = <Map<String, dynamic>>[].obs; // newest first
@@ -27,17 +27,24 @@ class MessageController extends GetxController {
     userAuthId = StorageUtil.getData(StorageUtil.userId) ?? "";
   }
 
-  void setupChat({required String? chatId}) {
+  // ✅ Now async — ChatListScreen can await this before navigating
+  Future<void> setupChat({required String? chatId}) async {
     messages.clear();
     isLoading.value = true;
 
-    getMessages(chatId: chatId ?? '').then((_) => scrollToBottom());
-
-    // Socket listener (একবারই on করা)
+    // Register socket listeners first
     socketService.socket.off('newMessage');
+    socketService.socket.off('chatList');
+    socketService.socket.off('typingStatus');
+
     socketService.socket.on('chatList', _handleIncomingChat);
     socketService.socket.on('newMessage', _handleIncomingMessage);
     socketService.socket.on('typingStatus', _handleTypingStatus);
+
+    // ✅ Await the actual message fetch — so caller knows when data is ready
+    await getMessages(chatId: chatId ?? '');
+
+    scrollToBottom();
   }
 
   void _handleIncomingChat(dynamic rawData) {
@@ -52,10 +59,10 @@ class MessageController extends GetxController {
           DateTime.tryParse(a['latestMessageAt'] ?? '') ?? DateTime(1970);
       final DateTime bTime =
           DateTime.tryParse(b['latestMessageAt'] ?? '') ?? DateTime(1970);
-      return bTime.compareTo(aTime); // Latest first
+      return bTime.compareTo(aTime);
     });
 
-    socketService.socketFriendList.refresh(); // GetX UI update
+    socketService.socketFriendList.refresh();
   }
 
   void _handleTypingStatus(dynamic data) {
@@ -69,7 +76,6 @@ class MessageController extends GetxController {
       final String msgId = data['id'] ?? '';
       if (messages.any((e) => e[SocketMessageKeys.id] == msgId)) return;
 
-      // Sender name & image (Group + Personal দুটোতেই কাজ করবে)
       String senderName = 'Unknown';
       String? senderImage;
 
@@ -89,7 +95,7 @@ class MessageController extends GetxController {
         SocketMessageKeys.text: (data['text'] ?? "").toString(),
         SocketMessageKeys.imageUrl: _safeImageUrl(data['file']),
         SocketMessageKeys.senderId:
-            data['sender']['id'] ?? data['senderId'] ?? '',
+        data['sender']['id'] ?? data['senderId'] ?? '',
         SocketMessageKeys.senderName: senderName,
         SocketMessageKeys.senderImage: senderImage,
         SocketMessageKeys.chat: data['chatId'] ?? '',
@@ -100,8 +106,6 @@ class MessageController extends GetxController {
       };
 
       messages.insert(0, msg);
-      print('Senders Name: $senderName id : ${SocketMessageKeys.senderId}');
-
       scrollToBottom();
     } catch (e) {
       print("Socket parse error: $e");
@@ -127,7 +131,7 @@ class MessageController extends GetxController {
   void sendMessage(String chatId) {
     final text = textController.text.trim();
     final fileUrl = imageDecodeController.imageUrl.trim();
-    final fileType = imageDecodeController.currentFileType; // নতুন
+    final fileType = imageDecodeController.currentFileType;
     final userId = StorageUtil.getData(StorageUtil.userId) ?? '';
 
     if (text.isEmpty && fileUrl.isEmpty) {
@@ -139,7 +143,7 @@ class MessageController extends GetxController {
       "chatId": chatId,
       if (text.isNotEmpty) "text": text,
       if (fileUrl.isNotEmpty) "file": fileUrl,
-      if (fileUrl.isNotEmpty) "fileType": fileType, // সঠিক টাইপ যাবে
+      if (fileUrl.isNotEmpty) "fileType": fileType,
     };
 
     socketService.socket.emit('sendMessage', messageData);
@@ -147,7 +151,6 @@ class MessageController extends GetxController {
     print('User Id : $userId');
     print('Message Done sending message');
 
-    // Clear everything
     textController.clear();
     imageDecodeController.clearAll();
   }
@@ -158,7 +161,7 @@ class MessageController extends GetxController {
       final token = await StorageUtil.getData(StorageUtil.userAccessToken);
       final response = await Get.find<NetworkCaller>().getRequest(
         Urls.messagesById(chatId),
-        accessToken: token, 
+        accessToken: token,
         queryParams: {"sort": "createdAt", "limit": "9999"},
       );
 
@@ -192,12 +195,12 @@ class MessageController extends GetxController {
               SocketMessageKeys.senderImage: senderImage,
               SocketMessageKeys.chat: msg.chatId ?? "",
               SocketMessageKeys.createdAt:
-                  msg.createdAt?.toIso8601String() ??
+              msg.createdAt?.toIso8601String() ??
                   DateTime.now().toIso8601String(),
             };
 
             if (!messages.any(
-              (e) => e[SocketMessageKeys.id] == mapMsg[SocketMessageKeys.id],
+                  (e) => e[SocketMessageKeys.id] == mapMsg[SocketMessageKeys.id],
             )) {
               messages.add(mapMsg);
             }
@@ -215,6 +218,8 @@ class MessageController extends GetxController {
   @override
   void onClose() {
     socketService.socket.off('newMessage');
+    socketService.socket.off('chatList');
+    socketService.socket.off('typingStatus');
     scrollController.dispose();
     textController.dispose();
     super.onClose();

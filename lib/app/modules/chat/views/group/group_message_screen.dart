@@ -14,7 +14,7 @@ import 'package:wisper/app/modules/chat/widgets/group_chatting_header.dart';
 import 'package:wisper/app/modules/chat/widgets/message_bubble.dart';
 
 class GroupChatScreen extends StatefulWidget {
-  final String? groupName; 
+  final String? groupName;
   final String? groupImage;
   final String? chatId;
   final String? groupId;
@@ -32,17 +32,17 @@ class GroupChatScreen extends StatefulWidget {
 }
 
 class _GroupChatScreenState extends State<GroupChatScreen> {
+  // ✅ Use Get.find — controller was already created & loaded in ChatListScreen
   final MessageController ctrl = Get.put(MessageController());
   final SeenMessageController seenMessageController = SeenMessageController();
-  
 
   @override
   void initState() {
+    super.initState();
+    // ✅ Only mark as seen — setupChat already ran before navigation
     WidgetsBinding.instance.addPostFrameCallback((_) {
       seenMessageController.seenMessage(widget.chatId!);
-      ctrl.setupChat(chatId: widget.chatId);
-    }); 
-    super.initState();
+    });
   }
 
   @override
@@ -51,7 +51,6 @@ class _GroupChatScreenState extends State<GroupChatScreen> {
       body: Column(
         children: [
           GroupChatHeader(
-           
             chatId: widget.chatId ?? '',
             groupName: widget.groupName ?? '',
             groupImage: widget.groupImage ?? '',
@@ -84,28 +83,19 @@ class _GroupChatScreenState extends State<GroupChatScreen> {
                   final isMe =
                       msg[SocketMessageKeys.senderId] == ctrl.userAuthId;
 
-                  final String senderName =
-                      msg[SocketMessageKeys.senderName] ?? 'Unknown';
-                  final String? senderImage =
-                      msg[SocketMessageKeys.senderImage];
-
                   final imageUrl = msg[SocketMessageKeys.imageUrl] ?? "";
-                  final time = DateFormatter(
-                    msg[SocketMessageKeys.createdAt],
-                  ).getRelativeTimeFormat();
 
                   return MessageBubble(
                     message: msg,
                     isMe: isMe,
-                    fileUrl:
-                        imageUrl, // পুরানো নাম রেখেছি, কিন্তু এটা এখন সব file-এর URL
+                    fileUrl: imageUrl,
                     fileType: msg[SocketMessageKeys.fileType] ?? '',
                     senderImage: msg[SocketMessageKeys.senderImage],
                     senderName: msg[SocketMessageKeys.senderName],
                     time: DateFormatter(
                       msg[SocketMessageKeys.createdAt],
                     ).getRelativeTimeFormat(),
-                    isGroupChat: false,
+                    isGroupChat: true,
                   );
                 },
               );
