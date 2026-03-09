@@ -40,7 +40,7 @@ class ChangePasswordController extends GetxController {
         _inProgress.value = false;
         return false;
       }
-    } catch (e) {
+    } catch (e) { 
       _errorMessage.value = 'Failed to fetch district data: ${e.toString()}';
       print('Error fetching district data: $e');
       _inProgress.value = false;

@@ -4,6 +4,7 @@ import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:get/get.dart';
 import 'package:wisper/app/core/others/custom_size.dart';
 import 'package:wisper/app/core/others/get_storage.dart';
+import 'package:wisper/app/core/services/socket/socket_service.dart';
 import 'package:wisper/app/modules/calls/views/call_screen.dart';
 import 'package:wisper/app/modules/chat/views/chat_list_screen.dart';
 import 'package:wisper/app/modules/homepage/controller/all_role_controller.dart';
@@ -31,6 +32,9 @@ class _MainButtonNavbarScreenState extends State<MainButtonNavbarScreen> {
   // কন্ট্রোলারগুলো এখানে lazy load করছি → Get.reset() করলেও সমস্যা নেই
   final ProfileController profileController = Get.put(ProfileController());
   final BusinessController businessController = Get.put(BusinessController());
+  final SocketService socketService = Get.find<SocketService>();
+
+  
 
   final AllFeedPostController allFeedPostController = Get.put(
     AllFeedPostController(),
@@ -50,7 +54,7 @@ class _MainButtonNavbarScreenState extends State<MainButtonNavbarScreen> {
   final List<Widget> screens = const [
     HomeScreen(),
     CallScreen(),
-    CreatePostScreen(), 
+    CreatePostScreen(),  
     ChatListScreen(),
     ProfileScreen(),
   ];

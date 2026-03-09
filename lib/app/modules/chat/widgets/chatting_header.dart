@@ -6,16 +6,18 @@ import 'package:get/get.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:wisper/app/core/config/theme/light_theme_colors.dart';
 import 'package:wisper/app/core/others/custom_size.dart';
+import 'package:wisper/app/core/services/socket/socket_service.dart';
 import 'package:wisper/app/core/utils/show_over_loading.dart';
 import 'package:wisper/app/core/utils/snack_bar.dart';
 import 'package:wisper/app/core/widgets/common/circle_icon.dart';
 import 'package:wisper/app/core/widgets/common/custom_popup.dart';
 import 'package:wisper/app/core/widgets/common/details_card.dart';
+import 'package:wisper/app/modules/calls/controller/call_controller.dart';
 import 'package:wisper/app/modules/chat/controller/block_user_controller.dart';
 import 'package:wisper/app/modules/chat/controller/group/delete_group_chat_controller.dart';
 import 'package:wisper/app/modules/chat/controller/mute_chat_controller.dart';
 import 'package:wisper/app/modules/chat/controller/mute_info_controller.dart';
-import 'package:wisper/app/modules/chat/views/video_call.dart';
+import 'package:wisper/app/modules/calls/views/video_call.dart';
 import 'package:wisper/app/modules/dashboard/views/dashboard_screen.dart';
 import 'package:wisper/app/modules/post/views/my_post_section.dart';
 import 'package:wisper/app/modules/profile/views/business/others_business_screen.dart';
@@ -54,6 +56,69 @@ class _ChatHeaderState extends State<ChatHeader> {
   );
   final DeleteGroupController deleteGroupController = DeleteGroupController();
   final MuteChatController muteChatController = MuteChatController();
+  final CallController callController = CallController();
+  final SocketService socketService = Get.find<SocketService>();
+
+  void getRoomId() {
+    showLoadingOverLay(
+      asyncFunction: () async => await performRoomId(context),
+      msg: 'Please wait...',
+    );
+  }
+
+  Future<void> performRoomId(BuildContext context) async {
+    final bool isSuccess = await callController.getRoom(
+      callType: 'VIDEO',
+      mode: 'ONE_TO_ONE',
+      receiverUserId: widget.memberId,
+    );
+
+    if (isSuccess) {
+      getCallToken(callController.roomId, callController.callId);
+    } else {
+      showSnackBarMessage(context, callController.errorMessage, true);
+    }
+  }
+
+  void getCallToken(String? roomId, String? callId) {
+    showLoadingOverLay(
+      asyncFunction: () async =>
+          await performCallToken(context, roomId, callId),
+      msg: 'Please wait...',
+    );
+  }
+
+  Future<void> performCallToken(
+    BuildContext context,
+    String? roomId,
+    String? callId,
+  ) async {
+    final bool isSuccess = await callController.getToken(
+      callId: callId,
+      roomId: roomId,
+    );
+
+    if (isSuccess) {
+      // Get.snackbar('Success', callController.token);
+      socketService.socket.emit('callInvite', {
+        "callId": callId,
+        "token": callController.token,
+      });
+      Get.to(
+        VideoCallPage(
+          name: widget.name ?? '',
+          photoUrl: widget.image ?? '',
+          chatId: widget.chatId ?? '',
+          channelName: callController.roomId,
+          token: callController.token,
+          uuid: callController.uuid,
+          callId: callController.callId,
+        ),
+      );
+    } else {
+      showSnackBarMessage(context, callController.errorMessage, true);
+    }
+  }
 
   @override
   void initState() {
@@ -349,20 +414,22 @@ class _ChatHeaderState extends State<ChatHeader> {
                   children: [
                     CircleIconWidget(
                       imagePath: Assets.images.call.keyName,
-                      onTap: () {},
+                      onTap: () {
+                        getRoomId();
+                      },
                       radius: 15,
                     ),
                     widthBox4,
                     CircleIconWidget(
                       imagePath: Assets.images.video.keyName,
                       onTap: () {
-                        Get.to(
-                          () => VideoCallPage(
-                            name: widget.name ?? '',
-                            photoUrl: widget.image ?? '',
-                            chatId: widget.chatId ?? '',
-                          ),
-                        );
+                        // Get.to(
+                        //   () => VideoCallPage(
+                        //     name: widget.name ?? '',
+                        //     photoUrl: widget.image ?? '',
+                        //     chatId: widget.chatId ?? '',
+                        //   ),
+                        // );
                       },
                       radius: 15,
                     ),

@@ -142,7 +142,7 @@ class MessageController extends GetxController {
     final messageData = {
       "chatId": chatId,
       if (text.isNotEmpty) "text": text,
-      if (fileUrl.isNotEmpty) "file": fileUrl,
+      if (fileUrl.isNotEmpty) "file": fileUrl, 
       if (fileUrl.isNotEmpty) "fileType": fileType,
     };
 

@@ -1,155 +1,157 @@
-import 'dart:async';
-import 'package:camera/camera.dart';
-import 'package:flutter/material.dart';
-import 'package:wisper/app/core/others/custom_size.dart';
-import 'package:wisper/app/core/widgets/common/circle_icon.dart';
-import 'package:wisper/app/modules/calls/widget/call_feature.dart';
-import 'package:wisper/gen/assets.gen.dart';
 
-class VideoCallScreen extends StatefulWidget {
-  final List<CameraDescription> cameras;
 
-  const VideoCallScreen({super.key, required this.cameras});
+// import 'dart:async';
+// import 'package:camera/camera.dart';
+// import 'package:flutter/material.dart';
+// import 'package:wisper/app/core/others/custom_size.dart';
+// import 'package:wisper/app/core/widgets/common/circle_icon.dart';
+// import 'package:wisper/app/modules/calls/widget/call_feature.dart';
+// import 'package:wisper/gen/assets.gen.dart';
 
-  @override
-  State<VideoCallScreen> createState() => _VideoCallScreenState();
-}
+// class VideoCallScreen extends StatefulWidget {
+//   final List<CameraDescription> cameras;
 
-class _VideoCallScreenState extends State<VideoCallScreen> {
-  CameraController? controller;
-  bool isRearCamera = true;
-  double _currentScale = 1.0;
-  double _baseScale = 1.0;
-  double _minZoom = 1.0;
-  double _maxZoom = 1.0;
-  int _pointers = 0;
+//   const VideoCallScreen({super.key, required this.cameras});
 
-  @override
-  void initState() {
-    super.initState();
-    _initializeCamera(isRearCamera ? 0 : 1);
-  }
+//   @override
+//   State<VideoCallScreen> createState() => _VideoCallScreenState();
+// }
 
-  @override
-  void dispose() {
-    controller?.dispose();
-    super.dispose();
-  }
+// class _VideoCallScreenState extends State<VideoCallScreen> {
+//   CameraController? controller;
+//   bool isRearCamera = true;
+//   double _currentScale = 1.0;
+//   double _baseScale = 1.0;
+//   double _minZoom = 1.0;
+//   double _maxZoom = 1.0;
+//   int _pointers = 0;
 
-  Future<void> _initializeCamera(int cameraIndex) async {
-    final cameras = widget.cameras;
+//   @override
+//   void initState() {
+//     super.initState();
+//     _initializeCamera(isRearCamera ? 0 : 1);
+//   }
 
-    if (cameras.isEmpty) {
-      debugPrint("No cameras available");
-      return;
-    }
+//   @override
+//   void dispose() {
+//     controller?.dispose();
+//     super.dispose();
+//   }
 
-    controller = CameraController(
-      cameras[cameraIndex],
-      ResolutionPreset.high,
-      enableAudio: false,
-    );
+//   Future<void> _initializeCamera(int cameraIndex) async {
+//     final cameras = widget.cameras;
 
-    await controller!.initialize();
-    _minZoom = await controller!.getMinZoomLevel();
-    _maxZoom = await controller!.getMaxZoomLevel();
+//     if (cameras.isEmpty) {
+//       debugPrint("No cameras available");
+//       return;
+//     }
 
-    if (!mounted) return;
-    setState(() {});
-  }
+//     controller = CameraController(
+//       cameras[cameraIndex],
+//       ResolutionPreset.high,
+//       enableAudio: false,
+//     );
 
-  void toggleCamera() {
-    setState(() {
-      isRearCamera = !isRearCamera;
-    });
-    _initializeCamera(isRearCamera ? 0 : 1);
-  }
+//     await controller!.initialize();
+//     _minZoom = await controller!.getMinZoomLevel();
+//     _maxZoom = await controller!.getMaxZoomLevel();
 
-  void takePicture() async {
-    if (controller == null || !controller!.value.isInitialized) return;
+//     if (!mounted) return;
+//     setState(() {});
+//   }
 
-    try {
-      final image = await controller!.takePicture();
-      debugPrint("Image saved at: ${image.path}");
-    } catch (e) {
-      debugPrint("Error capturing image: $e");
-    }
-  }
+//   void toggleCamera() {
+//     setState(() {
+//       isRearCamera = !isRearCamera;
+//     });
+//     _initializeCamera(isRearCamera ? 0 : 1);
+//   }
 
-  void _handleScaleStart(ScaleStartDetails details) {
-    _baseScale = _currentScale;
-  }
+//   void takePicture() async {
+//     if (controller == null || !controller!.value.isInitialized) return;
 
-  Future<void> _handleScaleUpdate(ScaleUpdateDetails details) async {
-    if (controller == null || _pointers != 2) return;
-    _currentScale = (_baseScale * details.scale).clamp(_minZoom, _maxZoom);
-    await controller!.setZoomLevel(_currentScale);
-  }
+//     try {
+//       final image = await controller!.takePicture();
+//       debugPrint("Image saved at: ${image.path}");
+//     } catch (e) {
+//       debugPrint("Error capturing image: $e");
+//     }
+//   }
 
-  @override
-  Widget build(BuildContext context) {
-    double height = MediaQuery.of(context).size.height;
-    double width = MediaQuery.of(context).size.width;
-    if (controller == null || !controller!.value.isInitialized) {
-      return const Scaffold(
-        backgroundColor: Colors.black,
-        body: Center(child: CircularProgressIndicator()),
-      );
-    }
+//   void _handleScaleStart(ScaleStartDetails details) {
+//     _baseScale = _currentScale;
+//   }
 
-    return SafeArea(
-      child: Scaffold(
-        body: Stack(
-          fit: StackFit.expand,
-          children: [
-            GestureDetector(
-              onScaleStart: _handleScaleStart,
-              onScaleUpdate: _handleScaleUpdate,
-              child: CameraPreview(controller!),
-            ),
+//   Future<void> _handleScaleUpdate(ScaleUpdateDetails details) async {
+//     if (controller == null || _pointers != 2) return;
+//     _currentScale = (_baseScale * details.scale).clamp(_minZoom, _maxZoom);
+//     await controller!.setZoomLevel(_currentScale);
+//   }
 
-            /// 📌 Floating Capture Button
-            Positioned(
-              bottom: height / 20,
-              left: 00,
-              right: 0,
+//   @override
+//   Widget build(BuildContext context) {
+//     double height = MediaQuery.of(context).size.height;
+//     double width = MediaQuery.of(context).size.width;
+//     if (controller == null || !controller!.value.isInitialized) {
+//       return const Scaffold(
+//         backgroundColor: Colors.black,
+//         body: Center(child: CircularProgressIndicator()),
+//       );
+//     }
 
-              child: Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 40),
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceAround,
-                  children: [
-                    CallFeature(
-                      onTap: () {},
-                      imagePath: Assets.images.userAdd.keyName,
-                      title: 'Add Call',
-                    ),
-                    widthBox15,
-                    CallFeature(
-                      onTap: () {},
-                      imagePath: Assets.images.mic.keyName,
-                      title: 'Speaker',
-                    ),
-                    widthBox15,
-                    CallFeature(
-                      onTap: () {},
-                      imagePath: Assets.images.mic.keyName,
-                      title: 'Mute',
-                    ),
-                    widthBox15,
-                    CallFeature(
-                      color: Colors.red,
-                      onTap: () {},
-                      imagePath: Assets.images.callOff.keyName,
-                      title: 'End Call',
-                    ),
-                  ],
-                ),
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-}
+//     return SafeArea(
+//       child: Scaffold(
+//         body: Stack(
+//           fit: StackFit.expand,
+//           children: [
+//             GestureDetector(
+//               onScaleStart: _handleScaleStart,
+//               onScaleUpdate: _handleScaleUpdate,
+//               child: CameraPreview(controller!),
+//             ),
+
+//             /// 📌 Floating Capture Button
+//             Positioned(
+//               bottom: height / 20,
+//               left: 00,
+//               right: 0,
+
+//               child: Padding(
+//                 padding: const EdgeInsets.symmetric(horizontal: 40),
+//                 child: Row(
+//                   mainAxisAlignment: MainAxisAlignment.spaceAround,
+//                   children: [
+//                     CallFeature(
+//                       onTap: () {},
+//                       imagePath: Assets.images.userAdd.keyName,
+//                       title: 'Add Call',
+//                     ),
+//                     widthBox15,
+//                     CallFeature(
+//                       onTap: () {},
+//                       imagePath: Assets.images.mic.keyName,
+//                       title: 'Speaker',
+//                     ),
+//                     widthBox15,
+//                     CallFeature(
+//                       onTap: () {},
+//                       imagePath: Assets.images.mic.keyName,
+//                       title: 'Mute',
+//                     ),
+//                     widthBox15,
+//                     CallFeature(
+//                       color: Colors.red,
+//                       onTap: () {},
+//                       imagePath: Assets.images.callOff.keyName,
+//                       title: 'End Call',
+//                     ),
+//                   ],
+//                 ),
+//               ),
+//             ),
+//           ],
+//         ),
+//       ),
+//     );
+//   }
+// }

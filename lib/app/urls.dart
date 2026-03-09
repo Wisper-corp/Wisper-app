@@ -116,6 +116,11 @@ class Urls {
     return '$_baseUrl/notifications/$id';
   }
 
+  // =========================================== Call Block =========================================== //
+  static const String roomUrl = '$_baseUrl/calls';
+  static const String callTokenUrl = '$_baseUrl/calls/token';
+
+
   // =========================================== Chat Block =========================================== //
   static const String createGroupUrl = '$_baseUrl/groups';
   static const String createClassUrl = '$_baseUrl/classes';
