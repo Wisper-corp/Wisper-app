@@ -13,6 +13,7 @@ import 'package:wisper/app/core/widgets/common/circle_icon.dart';
 import 'package:wisper/app/core/widgets/common/custom_popup.dart';
 import 'package:wisper/app/core/widgets/common/details_card.dart';
 import 'package:wisper/app/modules/calls/controller/call_controller.dart';
+import 'package:wisper/app/modules/calls/views/audio_call.dart';
 import 'package:wisper/app/modules/chat/controller/block_user_controller.dart';
 import 'package:wisper/app/modules/chat/controller/group/delete_group_chat_controller.dart';
 import 'package:wisper/app/modules/chat/controller/mute_chat_controller.dart';
@@ -59,31 +60,40 @@ class _ChatHeaderState extends State<ChatHeader> {
   final CallController callController = CallController();
   final SocketService socketService = Get.find<SocketService>();
 
-  void getRoomId() {
+  void getRoomId(String? type, String? medium) {
     showLoadingOverLay(
-      asyncFunction: () async => await performRoomId(context),
+      asyncFunction: () async => await performRoomId(context, type, medium),
       msg: 'Please wait...',
     );
   }
 
-  Future<void> performRoomId(BuildContext context) async {
+  Future<void> performRoomId(
+    BuildContext context,
+    String? type,
+    String? medium,
+  ) async {
     final bool isSuccess = await callController.getRoom(
-      callType: 'VIDEO',
-      mode: 'ONE_TO_ONE',
+      callType: type,
+      mode: medium,
       receiverUserId: widget.memberId,
     );
 
     if (isSuccess) {
-      getCallToken(callController.roomId, callController.callId);
+      getCallToken(callController.roomId, callController.callId, type, medium);
     } else {
       showSnackBarMessage(context, callController.errorMessage, true);
     }
   }
 
-  void getCallToken(String? roomId, String? callId) {
+  void getCallToken(
+    String? roomId,
+    String? callId,
+    String? type,
+    String? medium,
+  ) {
     showLoadingOverLay(
       asyncFunction: () async =>
-          await performCallToken(context, roomId, callId),
+          await performCallToken(context, roomId, callId, type, medium),
       msg: 'Please wait...',
     );
   }
@@ -92,6 +102,8 @@ class _ChatHeaderState extends State<ChatHeader> {
     BuildContext context,
     String? roomId,
     String? callId,
+    String? type,
+    String? medium,
   ) async {
     final bool isSuccess = await callController.getToken(
       callId: callId,
@@ -103,18 +115,34 @@ class _ChatHeaderState extends State<ChatHeader> {
       socketService.socket.emit('callInvite', {
         "callId": callId,
         "token": callController.token,
+        "groupName": null,
       });
-      Get.to(
-        VideoCallPage(
-          name: widget.name ?? '',
-          photoUrl: widget.image ?? '',
-          chatId: widget.chatId ?? '',
-          channelName: callController.roomId,
-          token: callController.token,
-          uuid: callController.uuid,
-          callId: callController.callId,
-        ),
-      );
+
+      if (type == 'VIDEO') {
+        Get.to(
+          VideoCallPage(
+            name: widget.name ?? '',
+            photoUrl: widget.image ?? '',
+            chatId: widget.chatId ?? '',
+            channelName: callController.roomId,
+            token: callController.token,
+            uuid: callController.uuid,
+            callId: callController.callId,
+          ),
+        );
+      } else {
+        Get.to(
+          AudioCallPage(
+            name: widget.name ?? '',
+            photoUrl: widget.image ?? '',
+            chatId: widget.chatId ?? '',
+            channelName: callController.roomId,
+            token: callController.token,
+            uuid: callController.uuid,
+            callId: callController.callId,
+          ),
+        );
+      }
     } else {
       showSnackBarMessage(context, callController.errorMessage, true);
     }
@@ -415,7 +443,7 @@ class _ChatHeaderState extends State<ChatHeader> {
                     CircleIconWidget(
                       imagePath: Assets.images.call.keyName,
                       onTap: () {
-                        getRoomId();
+                        getRoomId('AUDIO', 'ONE_TO_ONE');
                       },
                       radius: 15,
                     ),
@@ -423,13 +451,7 @@ class _ChatHeaderState extends State<ChatHeader> {
                     CircleIconWidget(
                       imagePath: Assets.images.video.keyName,
                       onTap: () {
-                        // Get.to(
-                        //   () => VideoCallPage(
-                        //     name: widget.name ?? '',
-                        //     photoUrl: widget.image ?? '',
-                        //     chatId: widget.chatId ?? '',
-                        //   ),
-                        // );
+                        getRoomId('VIDEO', 'ONE_TO_ONE');
                       },
                       radius: 15,
                     ),

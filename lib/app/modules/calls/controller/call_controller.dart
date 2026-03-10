@@ -23,6 +23,7 @@ class CallController extends GetxController {
   final RxInt _uuid = 0.obs;
   int get uuid => _uuid.value;
 
+  // ✅ ONE_TO_ONE — single receiverUserId দিয়ে room তৈরি
   Future<bool> getRoom({
     String? callType,
     String? mode,
@@ -48,7 +49,6 @@ class CallController extends GetxController {
 
       if (response.isSuccess && response.responseData != null) {
         _errorMessage.value = '';
-
         _roomId.value = response.responseData['data']['roomId'];
         _callId.value = response.responseData['data']['id'];
         _inProgress.value = false;
@@ -61,6 +61,50 @@ class CallController extends GetxController {
     } catch (e) {
       _errorMessage.value = 'Failed to fetch district data: ${e.toString()}';
       print('Error fetching district data: $e');
+      _inProgress.value = false;
+      return false;
+    }
+  }
+
+  // ✅ GROUP — multiple participants list দিয়ে room তৈরি
+  // participants format: [{"id": "authId", "status": "INCOMING"}, ...]
+  Future<bool> getRoomWithParticipants({
+    String? callType,
+    String? mode,
+    required List<Map<String, dynamic>> participants,
+  }) async {
+    _inProgress.value = true;
+
+    try {
+      Map<String, dynamic> body = {
+        "type": callType ?? "VIDEO",
+        "mode": mode ?? "GROUP",
+        "participants": participants,
+      };
+
+      print('📞 getRoomWithParticipants body: $body');
+
+      final NetworkResponse response = await Get.find<NetworkCaller>()
+          .postRequest(
+            Urls.roomUrl,
+            body: body,
+            accessToken: StorageUtil.getData(StorageUtil.userAccessToken),
+          );
+
+      if (response.isSuccess && response.responseData != null) {
+        _errorMessage.value = '';
+        _roomId.value = response.responseData['data']['roomId'];
+        _callId.value = response.responseData['data']['id'];
+        _inProgress.value = false;
+        return true;
+      } else {
+        _errorMessage.value = response.errorMessage;
+        _inProgress.value = false;
+        return false;
+      }
+    } catch (e) {
+      _errorMessage.value = 'Failed to create room: ${e.toString()}';
+      print('Error creating room: $e');
       _inProgress.value = false;
       return false;
     }
@@ -84,7 +128,6 @@ class CallController extends GetxController {
 
       if (response.isSuccess && response.responseData != null) {
         _errorMessage.value = '';
-
         _token.value = response.responseData['data']['token'];
         _uuid.value = response.responseData['data']['uid'];
         _inProgress.value = false;

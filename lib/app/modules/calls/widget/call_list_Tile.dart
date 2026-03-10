@@ -32,7 +32,7 @@ class CallListTile extends StatelessWidget {
             children: [
               CircleAvatar(
                 radius: 21.r,
-                backgroundImage: AssetImage(imagePath),
+                backgroundImage: NetworkImage(imagePath),
               ),
               widthBox10,
               Column(

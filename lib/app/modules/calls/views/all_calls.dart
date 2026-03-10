@@ -1,39 +1,121 @@
 import 'package:flutter/material.dart';
+import 'package:get/get.dart';
+import 'package:intl/intl.dart'; // ← add this for date formatting
+import 'package:wisper/app/core/config/theme/light_theme_colors.dart';
+import 'package:wisper/app/core/others/get_storage.dart';
+import 'package:wisper/app/core/widgets/shimmer/member_list_shimmer.dart';
+import 'package:wisper/app/modules/calls/controller/all_call_controller.dart';
+import 'package:wisper/app/modules/calls/widget/call_list_Tile.dart';
+import 'package:wisper/gen/assets.gen.dart';
 
-class AllCalls extends StatelessWidget {
+class AllCalls extends StatefulWidget {
   const AllCalls({super.key});
 
   @override
+  State<AllCalls> createState() => _AllCallsState();
+}
+
+class _AllCallsState extends State<AllCalls> {
+  final AllCallController allCallController = Get.put(AllCallController());
+
+  @override
+  void initState() {
+    allCallController.getAllCalls();
+    super.initState();
+  }
+
+  @override
   Widget build(BuildContext context) {
-    return Expanded(
-      child: Center(
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Icon(Icons.upcoming_outlined, color: Colors.white, size: 50),
-            Text(
-              'This feature is coming soon!',
-              style: TextStyle(color: Colors.white, fontSize: 12),
-            ),
-          ],
+    final String currentUserId = StorageUtil.getData(StorageUtil.userId) ?? '';
+
+    return Obx(() {
+      if (allCallController.inProgress) {
+        return SizedBox(
+          height: Get.height / 2,
+          child: Center(child: MemberShimmerEffectWidget()),
+        );
+      }
+
+      if (allCallController.allCallsData?.isEmpty ?? true) {
+        return const Center(
+          child: Text(
+            'No calls yet',
+            style: TextStyle(fontSize: 16, color: Colors.grey),
+          ),
+        );
+      }
+
+      final calls = allCallController.allCallsData!;
+
+      return Expanded(
+        child: ListView.builder(
+          padding: const EdgeInsets.all(0),
+          itemCount: calls.length,
+          itemBuilder: (context, index) {
+            final call = calls[index];
+
+            // Find the OTHER participant (not current user)
+            final otherParticipant = call.participants.firstWhere(
+              (p) => p.auth?.id != currentUserId,
+              orElse: () =>
+                  call.participants.first, // fallback (shouldn't happen)
+            );
+
+            // Get name & image — person has priority, then business
+            String displayName = 'Unknown';
+            String? displayImage;
+
+            if (otherParticipant.auth?.person?.name != null) {
+              displayName = otherParticipant.auth!.person!.name!;
+              displayImage = otherParticipant.auth!.person!.image;
+            } else if (otherParticipant.auth?.business?.name != null) {
+              displayName = otherParticipant.auth!.business!.name!;
+              displayImage = otherParticipant.auth!.business!.image;
+            }
+
+            // Format time (you can customize format)
+            final timeStr = _formatCallTime(call.date);
+
+            // You can also show incoming/outgoing based on logic
+            // Example: if first participant is me → outgoing, else incoming
+            final isOutgoing =
+                call.participants.first.auth?.id == currentUserId;
+            final callType = isOutgoing ? 'Outgoing' : 'Incoming';
+            final callTypeColor = isOutgoing
+                ? LightThemeColors.themeGreyColor
+                : Colors.green.shade700; // ← customize as needed
+
+            return Padding(
+              padding: const EdgeInsets.symmetric(vertical: 6, horizontal: 12),
+              child: CallListTile(
+                imagePath:
+                    displayImage ??
+                    Assets.images.image.keyName, // fallback image
+                name: call.mode == 'GROUP' ? displayName : displayName,
+                time: timeStr,
+                callType: callType,
+                callTypeColor: callTypeColor,
+              ),
+            );
+          },
         ),
-      ),
-      // child: ListView.builder(
-      //   padding: EdgeInsets.all(0),
-      //   itemCount: 10,
-      //   itemBuilder: (context, index) {
-      //     return Padding(
-      //       padding: const EdgeInsets.symmetric(vertical: 6),
-      //       child: CallListTile(
-      //         imagePath: Assets.images.image.keyName,
-      //         name: 'Aminul Islam',
-      //         time: '11:30 AM',
-      //         callType: 'Outgoing',
-      //         callTypeColor: LightThemeColors.themeGreyColor,
-      //       ),
-      //     );
-      //   },
-      // ),
-    );
+      );
+    });
+  }
+
+  String _formatCallTime(DateTime? date) {
+    if (date == null) return '—';
+
+    final now = DateTime.now();
+    final today = DateTime(now.year, now.month, now.day);
+    final callDay = DateTime(date.year, date.month, date.day);
+
+    if (callDay == today) {
+      return DateFormat('h:mm a').format(date); // 11:30 AM
+    } else if (callDay == today.subtract(const Duration(days: 1))) {
+      return 'Yesterday';
+    } else {
+      return DateFormat('dd MMM').format(date); // 05 Mar
+    }
   }
 }

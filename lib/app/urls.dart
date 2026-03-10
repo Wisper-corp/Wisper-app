@@ -119,6 +119,7 @@ class Urls {
   // =========================================== Call Block =========================================== //
   static const String roomUrl = '$_baseUrl/calls';
   static const String callTokenUrl = '$_baseUrl/calls/token';
+  static const String myCallUrl = '$_baseUrl/calls/my';
 
 
   // =========================================== Chat Block =========================================== //

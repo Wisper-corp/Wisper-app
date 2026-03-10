@@ -4,7 +4,6 @@ import 'package:get/get.dart';
 import 'package:wisper/app/core/services/socket/socket_service.dart';
 
 class VideoCallPage extends StatefulWidget {
-
   final String name;
   final String photoUrl;
   final String appID = '7c1109dc675e47f6b2562f2dab6581bd';
@@ -21,7 +20,8 @@ class VideoCallPage extends StatefulWidget {
     required this.chatId,
     required this.channelName,
     required this.token,
-    required this.uuid, required this.callId,
+    required this.uuid,
+    required this.callId,
   });
 
   @override
@@ -35,36 +35,99 @@ class _VideoCallPageState extends State<VideoCallPage> {
   bool _micEnabled = true;
   bool _cameraEnabled = true;
   String engineLog = 'Initializing...';
-  String callingStatus = 'Progressing...';
+  String callingStatus = 'Calling...';
   bool callProgress = true;
+  bool _isLeavingCall = false;
+
+  // ✅ Call শুরুর সময় track করবে
+  DateTime? _callStartTime;
 
   SocketService socketService = Get.find<SocketService>();
+
+  Worker? _declinedWorker;
+  Worker? _endedWorker;
 
   @override
   void initState() {
     super.initState();
-    print('Call info all');
+
+    // ✅ Page open হওয়ার সাথে সাথে signal reset করো
+    // এটা না করলে আগের true value থেকে ever() fire হবে না
+    socketService.resetCallSignals();
+
+    print('VideoCallPage initState');
     print(
-      'Token: ${widget.token} Channel Name: ${widget.channelName} Chat ID: ${widget.chatId} Name: ${widget.name} Image: ${widget.photoUrl}',
+      'Token: ${widget.token} | Channel: ${widget.channelName} | '
+      'CallId: ${widget.callId} | UUID: ${widget.uuid}',
     );
+
+    _declinedWorker = ever(socketService.callDeclinedSignal, (bool value) {
+      print('👀 callDeclinedSignal changed: $value');
+      if (value && mounted && !_isLeavingCall) {
+        print('📵 Call declined — closing VideoCallPage');
+        _leaveAndPop();
+      }
+    });
+
+    _endedWorker = ever(socketService.callEndedSignal, (bool value) {
+      print('👀 callEndedSignal changed: $value');
+      if (value && mounted && !_isLeavingCall) {
+        print('📵 Call ended — closing VideoCallPage');
+        _leaveAndPop();
+      }
+    });
+
     joinCall();
   }
 
+  /// ✅ Call duration সেকেন্ডে বের করো
+  int _getCallDuration() {
+    if (_callStartTime == null) return 0;
+    return DateTime.now().difference(_callStartTime!).inSeconds;
+  }
+
+  /// ✅ Agora cleanly leave করে socket emit করে page বন্ধ করো
+  Future<void> _leaveAndPop({bool emitCallEnd = false}) async {
+    if (_isLeavingCall) return;
+    _isLeavingCall = true;
+
+    // ✅ callEnd emit করতে বললে duration সহ পাঠাও
+    if (emitCallEnd) {
+      final duration = _getCallDuration();
+      print('📞 Emitting callEnd with duration: $duration seconds');
+      socketService.socket.emitWithAck(
+        'callEnd',
+        {
+          'callId': widget.callId,
+          'duration': duration,
+        },
+        ack: (response) {
+          print('Server acknowledged for callEnd: $response');
+        },
+      );
+    }
+
+    try {
+      await agoraEngine.leaveChannel();
+    } catch (e) {
+      print('Error leaving channel: $e');
+    }
+
+    if (mounted) {
+      Navigator.pop(context);
+    }
+  }
+
   Future<void> joinCall() async {
-    print('Call Info And Notification: ');
     callProgress = false;
     await Future.delayed(const Duration(milliseconds: 100));
-    setState(() {});
+    if (mounted) setState(() {});
     await initAgora();
   }
 
   Future<void> stopRingtone() async {}
 
   Future<void> ringtone() async {}
-
-  int _uuidToUid(String uuid) {
-    return uuid.hashCode.abs();
-  }
 
   Future<void> initAgora() async {
     try {
@@ -77,51 +140,73 @@ class _VideoCallPageState extends State<VideoCallPage> {
         ),
       );
 
-      callingStatus = 'Calling...';
       ringtone();
-      setState(() {});
+      if (mounted) setState(() {});
 
       agoraEngine.registerEventHandler(
         RtcEngineEventHandler(
           onJoinChannelSuccess: (RtcConnection connection, int elapsed) {
-            setState(() {
-              localUserJoined = true;
-              engineLog = 'Joined channel successfully';
-            });
+            if (mounted) {
+              setState(() {
+                localUserJoined = true;
+                engineLog = 'Joined channel successfully';
+              });
+            }
           },
           onUserJoined: (RtcConnection connection, int rUid, int elapsed) {
-            setState(() {
-              remoteUid = rUid;
-              engineLog = 'Remote user joined: $rUid';
+            if (mounted) {
+              setState(() {
+                remoteUid = rUid;
+                engineLog = 'Remote user joined: $rUid';
+              });
+              // ✅ Call শুরুর সময় save করো
+              _callStartTime = DateTime.now();
               stopRingtone();
               startTimer();
-            });
+            }
           },
-          onUserOffline:
-              (
-                RtcConnection connection,
-                int rUid,
-                UserOfflineReasonType reason,
-              ) {
-                if (mounted) {
-                  agoraEngine.leaveChannel();
-                  Navigator.pop(context);
-                }
-              },
-          onConnectionStateChanged:
-              (
-                RtcConnection connection,
-                ConnectionStateType state,
-                ConnectionChangedReasonType reason,
-              ) {
-                setState(() {
-                  engineLog = 'Connection: ${state.name} - ${reason.name}';
-                });
-              },
+          onUserOffline: (
+            RtcConnection connection,
+            int rUid,
+            UserOfflineReasonType reason,
+          ) {
+            print('onUserOffline: $rUid, reason: $reason');
+            if (mounted && !_isLeavingCall) {
+              final duration = _getCallDuration();
+              print('📞 Remote user left. Duration: $duration seconds');
+
+              // ✅ Duration সহ callEnd emit করো এবং page বন্ধ করো
+              socketService.socket.emitWithAck(
+                'callEnd',
+                {
+                  'callId': widget.callId,
+                  'duration': duration,
+                },
+                ack: (response) {
+                  print('Server acknowledged for callEnd: $response');
+                },
+              );
+
+              _leaveAndPop();
+            }
+          },
+          onConnectionStateChanged: (
+            RtcConnection connection,
+            ConnectionStateType state,
+            ConnectionChangedReasonType reason,
+          ) {
+            if (mounted) {
+              setState(() {
+                engineLog = 'Connection: ${state.name} - ${reason.name}';
+              });
+            }
+          },
           onError: (ErrorCodeType err, String msg) {
-            setState(() {
-              engineLog = 'Error: ${err.name} - $msg';
-            });
+            if (mounted) {
+              setState(() {
+                engineLog = 'Error: ${err.name} - $msg';
+              });
+            }
           },
         ),
       );
@@ -129,9 +214,11 @@ class _VideoCallPageState extends State<VideoCallPage> {
       await agoraEngine.enableVideo();
       await agoraEngine.startPreview();
 
-      setState(() {
-        engineLog = 'Joining channel: ${widget.channelName}...';
-      });
+      if (mounted) {
+        setState(() {
+          engineLog = 'Joining channel: ${widget.channelName}...';
+        });
+      }
 
       await agoraEngine.joinChannel(
         token: widget.token,
@@ -146,9 +233,11 @@ class _VideoCallPageState extends State<VideoCallPage> {
         ),
       );
     } catch (e) {
-      setState(() {
-        engineLog = 'Error: $e';
-      });
+      if (mounted) {
+        setState(() {
+          engineLog = 'Error: $e';
+        });
+      }
     }
   }
 
@@ -162,12 +251,15 @@ class _VideoCallPageState extends State<VideoCallPage> {
       final minutesStr = ((seconds ~/ 60) % 60).toString().padLeft(2, '0');
       final secondsStr = (seconds % 60).toString().padLeft(2, '0');
       time.value = '$minutesStr:$secondsStr';
-      return remoteUid != null;
+      return remoteUid != null && mounted;
     });
   }
 
   @override
   void dispose() {
+    _declinedWorker?.dispose();
+    _endedWorker?.dispose();
+    socketService.resetCallSignals();
     agoraEngine.leaveChannel();
     agoraEngine.release();
     super.dispose();
@@ -178,6 +270,7 @@ class _VideoCallPageState extends State<VideoCallPage> {
     return Scaffold(
       body: Stack(
         children: [
+          // Remote video (full screen)
           if (!callProgress)
             remoteUid != null
                 ? Positioned.fill(
@@ -195,9 +288,10 @@ class _VideoCallPageState extends State<VideoCallPage> {
                     ),
                   ),
 
+          // Waiting screen — remote user এখনো join করেনি
           if (remoteUid == null)
             Container(
-              color: Colors.black12,
+              color: Colors.black87,
               width: double.maxFinite,
               height: double.maxFinite,
               child: SafeArea(
@@ -206,7 +300,13 @@ class _VideoCallPageState extends State<VideoCallPage> {
                   children: [
                     const SizedBox(height: 128),
                     CircleAvatar(
-                      backgroundImage: NetworkImage(widget.photoUrl),
+                      radius: 48,
+                      backgroundImage: widget.photoUrl.isNotEmpty
+                          ? NetworkImage(widget.photoUrl)
+                          : null,
+                      child: widget.photoUrl.isEmpty
+                          ? const Icon(Icons.person, size: 48)
+                          : null,
                     ),
                     const SizedBox(height: 16),
                     Text(
@@ -230,6 +330,7 @@ class _VideoCallPageState extends State<VideoCallPage> {
               ),
             ),
 
+          // Local video (small, top right) — call চলাকালীন
           if (remoteUid != null && localUserJoined)
             Positioned(
               right: 16,
@@ -250,26 +351,34 @@ class _VideoCallPageState extends State<VideoCallPage> {
               ),
             ),
 
+          // End call button — waiting screen এ (receiver আসেনি)
           if (remoteUid == null)
             Positioned(
               bottom: 36,
               left: 0,
               right: 0,
               child: SafeArea(
-                child: CircleAvatar(
-                  radius: 32,
-                  backgroundColor: Colors.red,
-                  child: IconButton(
-                    onPressed: () {
-                      stopRingtone();
-                      Navigator.pop(context);
-                    },
-                    icon: const Icon(Icons.call_end, color: Colors.white),
+                child: Center(
+                  child: CircleAvatar(
+                    radius: 32,
+                    backgroundColor: Colors.red,
+                    child: IconButton(
+                      onPressed: () {
+                        stopRingtone();
+                        // Receiver আসার আগে cancel করলে callCancel emit করো
+                        socketService.socket.emit('callCancel', {
+                          'callId': widget.callId,
+                        });
+                        _leaveAndPop();
+                      },
+                      icon: const Icon(Icons.call_end, color: Colors.white),
+                    ),
                   ),
                 ),
               ),
             ),
 
+          // Call timer — call চলাকালীন
           if (remoteUid != null)
             Positioned(
               bottom: 130,
@@ -297,6 +406,7 @@ class _VideoCallPageState extends State<VideoCallPage> {
               ),
             ),
 
+          // Camera off indicator
           if (!_cameraEnabled)
             const Positioned(
               top: 70,
@@ -312,6 +422,7 @@ class _VideoCallPageState extends State<VideoCallPage> {
               ),
             ),
 
+          // Controls — call চলাকালীন (mic, camera, flip, end)
           if (remoteUid != null && localUserJoined)
             Positioned(
               bottom: 36,
@@ -321,6 +432,7 @@ class _VideoCallPageState extends State<VideoCallPage> {
                 child: Row(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
+                    // Mic toggle
                     CircleAvatar(
                       radius: 28,
                       backgroundColor: _micEnabled
@@ -328,18 +440,19 @@ class _VideoCallPageState extends State<VideoCallPage> {
                           : Colors.red,
                       child: IconButton(
                         onPressed: () async {
-                          setState(() {
-                            _micEnabled = !_micEnabled;
-                          });
+                          setState(() => _micEnabled = !_micEnabled);
                           await agoraEngine.muteLocalAudioStream(!_micEnabled);
                         },
                         icon: Icon(
-                          _micEnabled ? Icons.mic_none : Icons.mic_off_outlined,
+                          _micEnabled
+                              ? Icons.mic_none
+                              : Icons.mic_off_outlined,
                           color: Colors.white,
                         ),
                       ),
                     ),
                     const SizedBox(width: 24),
+                    // Camera toggle
                     CircleAvatar(
                       radius: 28,
                       backgroundColor: _cameraEnabled
@@ -347,12 +460,8 @@ class _VideoCallPageState extends State<VideoCallPage> {
                           : Colors.red,
                       child: IconButton(
                         onPressed: () async {
-                          setState(() {
-                            _cameraEnabled = !_cameraEnabled;
-                          });
-                          await agoraEngine.muteLocalVideoStream(
-                            !_cameraEnabled,
-                          );
+                          setState(() => _cameraEnabled = !_cameraEnabled);
+                          await agoraEngine.muteLocalVideoStream(!_cameraEnabled);
                         },
                         icon: Icon(
                           _cameraEnabled
@@ -363,6 +472,7 @@ class _VideoCallPageState extends State<VideoCallPage> {
                       ),
                     ),
                     const SizedBox(width: 24),
+                    // Flip camera
                     CircleAvatar(
                       radius: 28,
                       backgroundColor: Colors.black26,
@@ -377,16 +487,14 @@ class _VideoCallPageState extends State<VideoCallPage> {
                       ),
                     ),
                     const SizedBox(width: 24),
+                    // ✅ End call — duration সহ callEnd emit করো
                     CircleAvatar(
                       radius: 28,
                       backgroundColor: Colors.red,
                       child: IconButton(
                         onPressed: () {
-                          socketService.socket.emit('callEnd', {
-                            'callerId': widget.callId,
-                          });
-
-                          Navigator.pop(context);
+                          // emitCallEnd: true দিলে _leaveAndPop duration সহ emit করবে
+                          _leaveAndPop(emitCallEnd: true);
                         },
                         icon: const Icon(Icons.call_end, color: Colors.white),
                       ),
@@ -400,394 +508,3 @@ class _VideoCallPageState extends State<VideoCallPage> {
     );
   }
 }
-
-// import 'package:agora_rtc_engine/agora_rtc_engine.dart';
-// import 'package:flutter/material.dart';
-// import 'package:get/get.dart';
-
-// class VideoCallPage extends StatefulWidget {
-//   final String name;
-//   final String photoUrl;
-//   final String appID = '7c1109dc675e47f6b2562f2dab6581bd';
-//   final String chatId; // genareted token
-//   final String channelName;
-//   final String token;
-
-//   const VideoCallPage({
-//     super.key,
-//     required this.name,
-//     required this.photoUrl,
-//     required this.chatId,
-//     required this.channelName,
-//     required this.token,
-//   });
-
-//   @override
-//   State<VideoCallPage> createState() => _VideoCallPageState();
-// }
-
-// class _VideoCallPageState extends State<VideoCallPage> {
-//   // final AudioPlayer _player = AudioPlayer();
-
-//   late RtcEngine agoraEngine;
-//   int? remoteUid;
-//   bool localUserJoined = false;
-//   bool _micEnabled = true;
-//   bool _cameraEnabled = true;
-//   String engineLog = 'Initializing...';
-//   String callingStatus = 'Progressing...';
-//   bool callProgress = true;
-
-//   @override
-//   void initState() {
-//     super.initState();
-//     // _player.setReleaseMode(ReleaseMode.loop);
-//     print('Call info all');
-//     print(
-//       'Token: ${widget.token} Channel Name: ${widget.channelName} Chat ID: ${widget.chatId} Name: ${widget.name} Image: ${widget.photoUrl}',
-//     );
-//     joinCall();
-//   }
-
-//   Future<void> joinCall() async {
-
-//     print('Call Info And Notification: ');
-
-//     callProgress = false;
-
-//     await Future.delayed(const Duration(milliseconds: 100));
-//     setState(() {});
-//     await initAgora();
-//   }
-
-//   Future<void> stopRingtone() async {
-//     // await _player.stop();
-//   }
-
-//   Future<void> ringtone() async {
-//     // await _player.play(AssetSource('audio/ringtone.mp3'));
-//   }
-
-//   Future<void> initAgora() async {
-//     try {
-//       agoraEngine = createAgoraRtcEngine();
-
-//       await agoraEngine.initialize(
-//         RtcEngineContext(
-//           appId: widget.appID,
-//           channelProfile: ChannelProfileType.channelProfileCommunication,
-//         ),
-//       );
-
-//       callingStatus = 'Calling...';
-//       ringtone();
-//       setState(() {});
-
-//       agoraEngine.registerEventHandler(
-//         RtcEngineEventHandler(
-//           onJoinChannelSuccess: (RtcConnection connection, int elapsed) {
-//             setState(() {
-//               localUserJoined = true;
-//               engineLog = 'Joined channel successfully';
-//             });
-//           },
-//           onUserJoined: (RtcConnection connection, int rUid, int elapsed) {
-//             setState(() {
-//               remoteUid = rUid;
-//               engineLog = 'Remote user joined: $rUid';
-//               stopRingtone();
-//               startTimer();
-//             });
-//           },
-//           onUserOffline:
-//               (
-//                 RtcConnection connection,
-//                 int rUid,
-//                 UserOfflineReasonType reason,
-//               ) {
-//                 if (mounted) {
-//                   agoraEngine.leaveChannel();
-//                   Navigator.pop(context);
-//                 }
-//               },
-//           onConnectionStateChanged:
-//               (
-//                 RtcConnection connection,
-//                 ConnectionStateType state,
-//                 ConnectionChangedReasonType reason,
-//               ) {
-//                 setState(() {
-//                   engineLog = 'Connection: ${state.name} - ${reason.name}';
-//                 });
-//               },
-//           onError: (ErrorCodeType err, String msg) {
-//             setState(() {
-//               engineLog = 'Error: ${err.name} - $msg';
-//             });
-//           },
-//         ),
-//       );
-
-//       await agoraEngine.enableVideo();
-//       await agoraEngine.startPreview();
-
-//       setState(() {
-//         engineLog = 'Joining channel: ${widget.channelName}...';
-//       });
-
-//       await agoraEngine.joinChannel(
-//         token: widget.token,
-//         channelId: widget.channelName,
-//         uid: 0,
-//         options: ChannelMediaOptions(
-//           clientRoleType: ClientRoleType.clientRoleBroadcaster,
-//           publishMicrophoneTrack: true,
-//           publishCameraTrack: true,
-//           autoSubscribeAudio: true,
-//           autoSubscribeVideo: true,
-//         ),
-//       );
-//     } catch (e) {
-//       setState(() {
-//         engineLog = 'Error: $e';
-//       });
-//     }
-//   }
-
-//   RxString time = '00:00'.obs;
-
-//   Future<void> startTimer() async {
-//     int seconds = 0;
-//     Future.doWhile(() async {
-//       await Future.delayed(const Duration(seconds: 1));
-//       seconds++;
-//       final minutesStr = ((seconds ~/ 60) % 60).toString().padLeft(2, '0');
-//       final secondsStr = (seconds % 60).toString().padLeft(2, '0');
-//       time.value = '$minutesStr:$secondsStr';
-//       return remoteUid != null;
-//     });
-//   }
-
-//   @override
-//   void dispose() {
-//     agoraEngine.leaveChannel();
-//     agoraEngine.release();
-//     // _player.dispose();
-//     super.dispose();
-//   }
-
-//   @override
-//   Widget build(BuildContext context) {
-//     return Scaffold(
-//       body: Stack(
-//         children: [
-//           if (!callProgress)
-//             remoteUid != null
-//                 ? Positioned.fill(
-//                     child: AgoraVideoView(
-//                       controller: VideoViewController(
-//                         rtcEngine: agoraEngine,
-//                         canvas: VideoCanvas(uid: remoteUid),
-//                       ),
-//                     ),
-//                   )
-//                 : AgoraVideoView(
-//                     controller: VideoViewController(
-//                       rtcEngine: agoraEngine,
-//                       canvas: const VideoCanvas(uid: 0),
-//                     ),
-//                   ),
-
-//           if (remoteUid == null)
-//             Container(
-//               color: Colors.black12,
-//               width: double.maxFinite,
-//               height: double.maxFinite,
-//               child: SafeArea(
-//                 child: Column(
-//                   mainAxisSize: MainAxisSize.min,
-//                   children: [
-//                     SizedBox(height: 128),
-
-//                     CircleAvatar(
-//                       backgroundImage: NetworkImage(widget.photoUrl),
-//                     ),
-//                     SizedBox(height: 16),
-//                     Text(
-//                       widget.name,
-//                       style: TextStyle(
-//                         color: Colors.white,
-//                         fontWeight: FontWeight.w600,
-//                         fontSize: 20,
-//                       ),
-//                     ),
-//                     SizedBox(height: 4),
-//                     Text(
-//                       callingStatus,
-//                       style: TextStyle(color: Colors.white70, fontSize: 16),
-//                     ),
-//                   ],
-//                 ),
-//               ),
-//             ),
-
-//           if (remoteUid != null && localUserJoined)
-//             Positioned(
-//               right: 16,
-//               top: 16,
-//               width: 120,
-//               height: 160,
-//               child: Container(
-//                 decoration: BoxDecoration(
-//                   border: Border.all(color: Colors.white),
-//                   borderRadius: BorderRadius.circular(8),
-//                 ),
-//                 child: AgoraVideoView(
-//                   controller: VideoViewController(
-//                     rtcEngine: agoraEngine,
-//                     canvas: const VideoCanvas(uid: 0),
-//                   ),
-//                 ),
-//               ),
-//             ),
-//           if (remoteUid == null)
-//             Positioned(
-//               bottom: 36,
-//               left: 0,
-//               right: 0,
-//               child: SafeArea(
-//                 child: CircleAvatar(
-//                   radius: 32,
-//                   backgroundColor: Colors.red,
-//                   child: IconButton(
-//                     onPressed: () {
-//                       stopRingtone();
-//                       Navigator.pop(context);
-//                     },
-//                     icon: const Icon(Icons.call_end, color: Colors.white),
-//                   ),
-//                 ),
-//               ),
-//             ),
-
-//           if (remoteUid != null)
-//             Positioned(
-//               bottom: 130,
-//               left: 0,
-//               right: 0,
-//               child: SafeArea(
-//                 child: Center(
-//                   child: Container(
-//                     padding: EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-//                     decoration: BoxDecoration(
-//                       color: Colors.black26,
-//                       borderRadius: BorderRadius.circular(20),
-//                     ),
-//                     child: Obx(
-//                       () => Text(
-//                         time.value,
-//                         style: TextStyle(color: Colors.white),
-//                       ),
-//                     ),
-//                   ),
-//                 ),
-//               ),
-//             ),
-
-//           if (!_cameraEnabled)
-//             Positioned(
-//               top: 70,
-//               right: 50,
-//               child: CircleAvatar(
-//                 radius: 24,
-//                 backgroundColor: Colors.black26,
-//                 child: Icon(
-//                   Icons.videocam_off_outlined,
-//                   color: Colors.white,
-//                   size: 24,
-//                 ),
-//               ),
-//             ),
-
-//           if (remoteUid != null && localUserJoined)
-//             Positioned(
-//               bottom: 36,
-//               left: 0,
-//               right: 0,
-//               child: SafeArea(
-//                 child: Row(
-//                   mainAxisAlignment: MainAxisAlignment.center,
-//                   children: [
-//                     CircleAvatar(
-//                       radius: 28,
-//                       backgroundColor: _micEnabled
-//                           ? Colors.black26
-//                           : Colors.red,
-//                       child: IconButton(
-//                         onPressed: () async {
-//                           setState(() {
-//                             _micEnabled = !_micEnabled;
-//                           });
-//                           await agoraEngine.muteLocalAudioStream(!_micEnabled);
-//                         },
-//                         icon: Icon(
-//                           _micEnabled ? Icons.mic_none : Icons.mic_off_outlined,
-//                           color: Colors.white,
-//                         ),
-//                       ),
-//                     ),
-//                     const SizedBox(width: 24),
-//                     CircleAvatar(
-//                       radius: 28,
-//                       backgroundColor: _cameraEnabled
-//                           ? Colors.black26
-//                           : Colors.red,
-//                       child: IconButton(
-//                         onPressed: () async {
-//                           setState(() {
-//                             _cameraEnabled = !_cameraEnabled;
-//                           });
-//                           await agoraEngine.muteLocalVideoStream(
-//                             !_cameraEnabled,
-//                           );
-//                         },
-//                         icon: Icon(
-//                           _cameraEnabled
-//                               ? Icons.videocam_outlined
-//                               : Icons.videocam_off_outlined,
-//                           color: Colors.white,
-//                         ),
-//                       ),
-//                     ),
-//                     const SizedBox(width: 24),
-//                     CircleAvatar(
-//                       radius: 28,
-//                       backgroundColor: Colors.black26,
-//                       child: IconButton(
-//                         onPressed: () async {
-//                           await agoraEngine.switchCamera();
-//                         },
-//                         icon: const Icon(
-//                           Icons.flip_camera_ios_outlined,
-//                           color: Colors.white,
-//                         ),
-//                       ),
-//                     ),
-//                     const SizedBox(width: 24),
-//                     CircleAvatar(
-//                       radius: 28,
-//                       backgroundColor: Colors.red,
-//                       child: IconButton(
-//                         onPressed: () => Navigator.pop(context),
-//                         icon: const Icon(Icons.call_end, color: Colors.white),
-//                       ),
-//                     ),
-//                   ],
-//                 ),
-//               ),
-//             ),
-//         ],
-//       ),
-//     );
-//   }
-// }

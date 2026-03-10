@@ -1,42 +1,116 @@
 import 'package:flutter/material.dart';
+import 'package:get/get.dart';
+import 'package:wisper/app/core/others/get_storage.dart';
+import 'package:wisper/app/core/widgets/shimmer/member_list_shimmer.dart';
+import 'package:wisper/app/modules/calls/controller/all_call_controller.dart';
+import 'package:wisper/app/modules/calls/widget/call_list_Tile.dart';
+import 'package:wisper/gen/assets.gen.dart';
+import 'package:intl/intl.dart';
 
-class MissedCalls extends StatelessWidget {
+class MissedCalls extends StatefulWidget {
   const MissedCalls({super.key});
 
   @override
+  State<MissedCalls> createState() => _MissedCallsState();
+}
+
+class _MissedCallsState extends State<MissedCalls> {
+  final AllCallController allCallController = Get.put(AllCallController());
+
+  @override
+  void initState() {
+    super.initState();
+    allCallController.getAllCalls();
+  }
+
+  @override
   Widget build(BuildContext context) {
-    return Expanded(
-      child: Center(
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Icon(
-              Icons.upcoming_outlined,
-              color: Colors.white,
-              size: 50,),
-            Text(
-              'This feature is coming soon!',
-              style: TextStyle(color: Colors.white, fontSize: 12),
-            ),
-          ],
+    final String currentUserId = StorageUtil.getData(StorageUtil.userId) ?? '';
+
+    return Obx(() {
+      if (allCallController.inProgress) {
+        return SizedBox(
+          height: Get.height / 2,
+          child: Center(child: MemberShimmerEffectWidget()),
+        );
+      }
+
+      final allCalls = allCallController.allCallsData ?? [];
+
+      // ✅ শুধু missed call filter করো
+      // আমার participant এর status == 'MISSED' হলে missed call
+      final missedCalls = allCalls.where((call) {
+        final myParticipant = call.participants.firstWhereOrNull(
+          (p) => p.auth?.id == currentUserId,
+        );
+        return myParticipant?.status == 'MISSED';
+      }).toList();
+
+      if (missedCalls.isEmpty) {
+        return const Center(
+          child: Text(
+            'No missed calls',
+            style: TextStyle(fontSize: 16, color: Colors.grey),
+          ),
+        );
+      }
+
+      return Expanded(
+        child: ListView.builder(
+          padding: const EdgeInsets.all(0),
+          itemCount: missedCalls.length,
+          itemBuilder: (context, index) {
+            final call = missedCalls[index];
+
+            // অন্য participant খোঁজো (আমি না)
+            final otherParticipant = call.participants.firstWhere(
+              (p) => p.auth?.id != currentUserId,
+              orElse: () => call.participants.first,
+            );
+
+            // Name & image
+            String displayName = 'Unknown';
+            String? displayImage;
+
+            if (otherParticipant.auth?.person?.name != null) {
+              displayName = otherParticipant.auth!.person!.name!;
+              displayImage = otherParticipant.auth!.person!.image;
+            } else if (otherParticipant.auth?.business?.name != null) {
+              displayName = otherParticipant.auth!.business!.name!;
+              displayImage = otherParticipant.auth!.business!.image;
+            }
+
+            final timeStr = _formatCallTime(call.date);
+
+            return Padding(
+              padding: const EdgeInsets.symmetric(vertical: 6, horizontal: 12),
+              child: CallListTile(
+                imagePath: displayImage ?? Assets.images.image.keyName,
+                name: displayName,
+                time: timeStr,
+                callType: 'Missed',
+                callTypeColor: Colors.red,
+              ),
+            );
+          },
         ),
-      ),
-      // child: ListView.builder(
-      //   padding: EdgeInsets.all(0),
-      //   itemCount: 10,
-      //   itemBuilder: (context, index) {
-      //     return Padding(
-      //       padding: const EdgeInsets.symmetric(vertical: 6),
-      //       child: CallListTile(
-      //         imagePath: Assets.images.image.keyName,
-      //         name: 'Aminul Islam',
-      //         time: '11:30 AM',
-      //         callType: 'Missed Call',
-      //         callTypeColor: Colors.red,
-      //       ),
-      //     );
-      //   },
-      // ),
-    );
+      );
+    });
+  }
+
+  String _formatCallTime(DateTime? date) {
+    if (date == null) return '—';
+
+    final now = DateTime.now();
+    final today = DateTime(now.year, now.month, now.day);
+    final callDay = DateTime(date.year, date.month, date.day);
+
+    if (callDay == today) {
+      return DateFormat('h:mm a').format(date);
+    } else if (callDay == today.subtract(const Duration(days: 1))) {
+      return 'Yesterday';
+    } else {
+      return DateFormat('dd MMM').format(date);
+    }
   }
 }

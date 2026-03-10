@@ -3,9 +3,12 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:socket_io_client/socket_io_client.dart' as IO;
 import 'package:wisper/app/core/others/get_storage.dart';
+import 'package:wisper/app/core/widgets/common/circle_icon.dart';
 import 'package:wisper/app/modules/calls/controller/call_controller.dart';
+import 'package:wisper/app/modules/calls/views/audio_call.dart';
 import 'package:wisper/app/modules/calls/views/video_call.dart';
 import 'package:wisper/app/urls.dart';
+import 'package:wisper/gen/assets.gen.dart';
 
 class SocketService extends GetxController {
   late IO.Socket _socket;
@@ -18,19 +21,21 @@ class SocketService extends GetxController {
   final _notificationsList = <Map<String, dynamic>>[].obs;
   final _incomingCall = Rxn<Map<String, dynamic>>();
 
+  // VideoCallPage এই observable watch করবে
+  final RxBool callDeclinedSignal = false.obs;
+  final RxBool callEndedSignal = false.obs;
+
   RxList<Map<String, dynamic>> get messageList => _messageList;
   RxList<Map<String, dynamic>> get socketFriendList => _socketFriendList;
   RxList<Map<String, dynamic>> get notificationsList => _notificationsList;
   Rxn<Map<String, dynamic>> get incomingCall => _incomingCall;
   IO.Socket get socket => _socket;
 
-  // ✅ Get.put() দিয়ে রাখো যাতে GetX manage করে
   late final CallController callController;
 
   Future<SocketService> init() async {
     print('🔌 Initializing socket service. Connecting...');
 
-    // ✅ CallController এখানে initialize করো
     callController = Get.put(CallController());
 
     final token = StorageUtil.getData(StorageUtil.userAccessToken);
@@ -93,12 +98,61 @@ class SocketService extends GetxController {
       _showIncomingCallOverlay();
     });
 
+    // ✅ callDeclined — Caller এর VideoCallPage বন্ধ করার signal
     _socket.on('callDeclined', (data) {
-      print('Call Declined111111111111: $data');
+      print('📵 callDeclined received in SocketService: $data');
+      callDeclinedSignal.value = true;
+
+      // Incoming ringing dialog open থাকলে বন্ধ করো
+      if (_incomingCall.value != null) {
+        _incomingCall.value = null;
+        if (Get.isDialogOpen ?? false) {
+          Get.back();
+        }
+      }
+    });
+
+    // ✅ callEnded — VideoCallPage বন্ধ করার signal
+    _socket.on('callEnded', (data) {
+      print('📵 callEnded received in SocketService: $data');
+      callEndedSignal.value = true;
+    });
+
+    // ✅ callCanceled — Caller cancel করলে Receiver এর incoming dialog বন্ধ হবে
+    _socket.on('callCanceled', (data) {
+      print('📵 callCanceled received in SocketService: $data');
+
+      // VideoCallPage open থাকলে signal দাও
+      callEndedSignal.value = true;
+
+      // ✅ Incoming call dialog realtime বন্ধ করো
+      if (_incomingCall.value != null) {
+        _incomingCall.value = null;
+
+        // Dialog open থাকলে বন্ধ করো
+        if (Get.isDialogOpen ?? false) {
+          Get.back();
+        }
+
+        // Receiver কে জানাও
+        Get.snackbar(
+          'Call Cancelled',
+          'The caller has cancelled the call.',
+          backgroundColor: Colors.orange,
+          colorText: Colors.white,
+          snackPosition: SnackPosition.TOP,
+        );
+      }
     });
 
     _socket.connect();
     return this;
+  }
+
+  // Signal reset করো — VideoCallPage dispose হলে call করবে
+  void resetCallSignals() {
+    callDeclinedSignal.value = false;
+    callEndedSignal.value = false;
   }
 
   void _showIncomingCallOverlay() {
@@ -110,24 +164,23 @@ class SocketService extends GetxController {
       barrierDismissible: false,
       barrierColor: Colors.black.withOpacity(0.7),
       _IncomingCallDialog(
-        callerName: _incomingCall.value?['callerName'] ?? 'Unknown',
-        callerImage: _incomingCall.value?['callerImage'] ?? '',
+        callerName: _incomingCall.value?['groupName'] != null
+            ? _incomingCall.value!['groupName']
+            : _incomingCall.value?['callerName'],
+        callerImage: _incomingCall.value?['groupName'] != null
+            ? 'group'
+            : _incomingCall.value?['callerImage'],
         onAccept: () => _handleAcceptCall(),
         onReject: () => _handleRejectCall(),
       ),
     );
   }
 
-  // ✅ Accept Call — clean ও আলাদা method
   Future<void> _handleAcceptCall() async {
     final roomId = _incomingCall.value?['roomId'];
     final callId = _incomingCall.value?['callId'];
-    final uToken = _incomingCall.value?['token'];
-    // final callerName = _incomingCall.value?['callerName'] ?? '';
-    // final callerImage = _incomingCall.value?['callerImage'] ?? '';
-    // final chatId = _incomingCall.value?['chatId'] ?? '';
+    final type = _incomingCall.value?['type'];
 
-    // Loading দেখাও
     isLoading.value = true;
 
     final bool isSuccess = await callController.getToken(
@@ -138,25 +191,38 @@ class SocketService extends GetxController {
     isLoading.value = false;
 
     if (isSuccess) {
-      // ✅ Dialog বন্ধ করো তারপর navigate করো
       Get.back();
-      _socket.emit('callAccepted', {'callerId': callId});
+      _socket.emit('callAccepted', {'callId': callId});
 
-      Get.to(
-        () => VideoCallPage(
-          name: '',
-          photoUrl: '',
-          chatId: '',
-          channelName: roomId,
-          token: callController.token,
-          uuid: callController.uuid,
-          callId: callController.callId,
-        ),
-      );
+      // Signal reset করো নতুন call এর আগে
+      resetCallSignals();
+
+      type == 'AUDIO'
+          ? Get.to(
+              () => AudioCallPage(
+                name: '',
+                photoUrl: '',
+                chatId: '',
+                channelName: roomId,
+                token: callController.token,
+                uuid: callController.uuid,
+                callId: callController.callId,
+              ),
+            )
+          : Get.to(
+              () => VideoCallPage(
+                name: '',
+                photoUrl: '',
+                chatId: '',
+                channelName: roomId,
+                token: callController.token,
+                uuid: callController.uuid,
+                callId: callController.callId,
+              ),
+            );
 
       _incomingCall.value = null;
     } else {
-      // ❌ Error হলে snackbar দেখাও, dialog বন্ধ করো না
       Get.snackbar(
         'Error',
         callController.errorMessage,
@@ -167,11 +233,24 @@ class SocketService extends GetxController {
     }
   }
 
-  // ✅ Reject Call — clean ও আলাদা method
   void _handleRejectCall() {
-    print('Call Id: ${_incomingCall.value?['callId']}');
-    _socket.emit('callDecline', {'callerId': _incomingCall.value?['callId']});
-    print('❌ Call rejected');
+    final callId = _incomingCall.value?['callId'];
+    print('Trying to reject call. Call Id: $callId');
+
+    if (_socket.connected) {
+      print('Socket connected → using emitWithAck');
+      _socket.emitWithAck(
+        'callDecline',
+        {'callId': callId},
+        ack: (response) {
+          print('Server acknowledged: $response');
+        },
+      );
+    } else {
+      print('❌ Socket not connected → cannot emit');
+    }
+
+    print('❌ Call rejected (local)');
     _incomingCall.value = null;
     Get.back();
   }
@@ -192,9 +271,6 @@ class SocketService extends GetxController {
   }
 }
 
-// ───────────────────────────────────────────
-// 📞 Incoming Call Dialog Widget
-// ───────────────────────────────────────────
 class _IncomingCallDialog extends StatefulWidget {
   final String callerName;
   final String callerImage;
@@ -248,15 +324,9 @@ class _IncomingCallDialogState extends State<_IncomingCallDialog>
           children: [
             const Text(
               'Incoming Call...',
-              style: TextStyle(
-                color: Colors.white70,
-                fontSize: 14,
-                letterSpacing: 1.2,
-              ),
+              style: TextStyle(color: Colors.white70, fontSize: 14),
             ),
             const SizedBox(height: 24),
-
-            // ✅ Pulsing Avatar
             ScaleTransition(
               scale: _pulseAnimation,
               child: Container(
@@ -265,24 +335,32 @@ class _IncomingCallDialogState extends State<_IncomingCallDialog>
                   shape: BoxShape.circle,
                   border: Border.all(color: Colors.green, width: 2.5),
                 ),
-                child: CircleAvatar(
-                  radius: 45,
-                  backgroundColor: const Color(0xff2A2A2A),
-                  backgroundImage: widget.callerImage.isNotEmpty
-                      ? NetworkImage(widget.callerImage)
-                      : null,
-                  child: widget.callerImage.isEmpty
-                      ? const Icon(
-                          Icons.person,
-                          size: 45,
-                          color: Colors.white70,
-                        )
-                      : null,
-                ),
+                child: widget.callerImage == 'group'
+                    ? CircleIconWidget(
+                        color: Color(0xff051B33),
+                        iconColor: Color(0xff1F7DE9),
+                        iconRadius: 35,
+                        radius: 35,
+                        imagePath: Assets.images.userGroup.keyName,
+                        onTap: () {},
+                      )
+                    : CircleAvatar(
+                        radius: 45,
+                        backgroundColor: const Color(0xff2A2A2A),
+                        backgroundImage: widget.callerImage.isNotEmpty
+                            ? NetworkImage(widget.callerImage)
+                            : null,
+                        child: widget.callerImage.isEmpty
+                            ? const Icon(
+                                Icons.person,
+                                size: 45,
+                                color: Colors.white70,
+                              )
+                            : null,
+                      ),
               ),
             ),
             const SizedBox(height: 16),
-
             Text(
               widget.callerName,
               style: const TextStyle(
@@ -297,8 +375,6 @@ class _IncomingCallDialogState extends State<_IncomingCallDialog>
               style: TextStyle(color: Colors.white38, fontSize: 13),
             ),
             const SizedBox(height: 36),
-
-            // ✅ Loading indicator দেখাও accept করার পর
             Obx(() {
               final socketService = Get.find<SocketService>();
               if (socketService.isLoading.value) {
@@ -313,11 +389,9 @@ class _IncomingCallDialogState extends State<_IncomingCallDialog>
                   ],
                 );
               }
-
               return Row(
                 mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                 children: [
-                  // ❌ Reject
                   Column(
                     children: [
                       GestureDetector(
@@ -342,8 +416,6 @@ class _IncomingCallDialogState extends State<_IncomingCallDialog>
                       ),
                     ],
                   ),
-
-                  // ✅ Accept
                   Column(
                     children: [
                       GestureDetector(
