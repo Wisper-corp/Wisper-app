@@ -55,7 +55,7 @@ class _ChatListScreenState extends State<ChatListScreen> {
   Future<void> _navigateToChat(Map<String, dynamic> item) async {
     final String chatId = item['id'] ?? '';
     final String type = item['type'] ?? 'INDIVIDUAL';
-
+ 
     if (Get.isRegistered<MessageController>()) {
       await Get.delete<MessageController>(force: true);
     }
@@ -65,7 +65,7 @@ class _ChatListScreenState extends State<ChatListScreen> {
 
     if (type == 'GROUP') {
       Get.to(
-            () => GroupChatScreen(
+        () => GroupChatScreen(
           chatId: chatId,
           groupId: item['groupId'] ?? '',
           groupName: _mapVal(item['group'], 'name', 'Group Chat'),
@@ -75,7 +75,7 @@ class _ChatListScreenState extends State<ChatListScreen> {
       );
     } else if (type == 'CLASS') {
       Get.to(
-            () => ClassChatScreen(
+        () => ClassChatScreen(
           chatId: chatId,
           classImage: _mapVal(item['chatClass'], 'image'),
           className: _mapVal(item['chatClass'], 'name', 'Class Chat'),
@@ -85,7 +85,7 @@ class _ChatListScreenState extends State<ChatListScreen> {
       );
     } else {
       Get.to(
-            () => ChatScreen(
+        () => ChatScreen(
           isOnline: item['receiverOnline'] ?? false,
           isPerson: item['isPerson'] == true,
           chatId: chatId,
@@ -117,16 +117,18 @@ class _ChatListScreenState extends State<ChatListScreen> {
         final filteredList = query.isEmpty
             ? list
             : list.where((item) {
-          final String name =
-          (item['receiverName'] ?? '').toString().toLowerCase();
-          return name.contains(query);
-        }).toList();
+                final String name = (item['receiverName'] ?? '')
+                    .toString()
+                    .toLowerCase();
+                return name.contains(query);
+              }).toList();
 
         if (controller.inProgress.value && list.isEmpty) {
           return const Center(child: CircularProgressIndicator());
         }
 
         if (filteredList.isEmpty) {
+          print('No Chats Found and List length is ${filteredList.length}');
           return const Center(
             child: Text(
               'No Chats Found',
@@ -153,11 +155,14 @@ class _ChatListScreenState extends State<ChatListScreen> {
 
             final String image =
                 item['receiverImage'] ?? Assets.images.image.keyName;
+            final String groupImage = _mapVal(item['group'], 'image');
+            final String classImage = _mapVal(item['chatClass'], 'image');
             final String lastMessage = item['lastMessage'] ?? 'No messages yet';
             final String timeStr = item['latestMessageAt'] ?? '';
             final DateTime time = DateTime.tryParse(timeStr) ?? DateTime.now();
-            final String formattedTime =
-            DateFormatter(time).getRelativeTimeFormat();
+            final String formattedTime = DateFormatter(
+              time,
+            ).getRelativeTimeFormat();
             final int unread = item['unreadMessageCount'] ?? 0;
 
             return MemberListTile(
@@ -165,7 +170,11 @@ class _ChatListScreenState extends State<ChatListScreen> {
               onTap: () => _navigateToChat(item),
               isGroup: type == 'GROUP',
               isClass: type == 'CLASS',
-              imagePath: image,
+              imagePath: type == 'GROUP'
+                  ? groupImage
+                  : type == 'CLASS'
+                  ? classImage
+                  : image,
               name: name,
               message: lastMessage,
               time: formattedTime,

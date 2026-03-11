@@ -53,13 +53,19 @@ class MemberListTile extends StatelessWidget {
                         : isClass
                         ? const Color(0xff102B19)
                         : Colors.grey.shade800,
-                    child: isGroup
+                    child: isGroup && imagePath.isEmpty
                         ? CrashSafeImage(
                             Assets.images.userGroup.keyName,
                             color: const Color(0xff1F7DE9),
                             height: 26.h,
                           )
-                        : isClass
+                        : isGroup && imagePath.isNotEmpty
+                        ? CircleAvatar(
+                            radius: 25.r,
+                            backgroundImage: NetworkImage(imagePath),
+                            backgroundColor: Colors.transparent,
+                          )
+                        : isClass && imagePath.isEmpty
                         ? CrashSafeImage(
                             Assets.images.education.keyName,
                             color: const Color(0xff11AE46),

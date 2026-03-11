@@ -3,7 +3,7 @@ import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:wisper/app/core/others/custom_size.dart';
 import 'package:wisper/app/core/widgets/common/custom_text_filed.dart';
 import 'package:wisper/app/modules/chat/widgets/add_icon_widget.dart';
-import 'package:wisper/app/modules/chat/widgets/contact_widget.dart';
+import 'package:wisper/app/modules/chat/widgets/contact_widget.dart'; 
 import 'package:wisper/gen/assets.gen.dart';
 
 class AddCallScreen extends StatefulWidget {

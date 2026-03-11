@@ -1,10 +1,9 @@
-
-
 import 'dart:io';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:get/get.dart';
 
@@ -24,6 +23,8 @@ import 'package:wisper/app/modules/profile/views/business/others_business_screen
 import 'package:wisper/app/modules/profile/views/person/others_person_screen.dart';
 
 import 'package:wisper/firebase_options.dart';
+import 'package:wisper/push_notification.dart';
+
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -39,11 +40,8 @@ void main() async {
 
   await Future.delayed(const Duration(milliseconds: 300));
 
-  try {
-    await _initFCMToken();
-  } catch (e) {
-    debugPrint("🔥 FCM init prevented crash: $e");
-  }
+  // ── Push Notification init ──
+  await PushNotificationService().init();
 
   Get.put(ConnectivityService());
   Get.put(DeepLinkService());
@@ -98,22 +96,4 @@ void main() async {
       ),
     );
   });
-}
-
-Future<void> _initFCMToken() async {
-  try {
-    if (Platform.isIOS) {
-      await FirebaseMessaging.instance.requestPermission(
-        alert: true,
-        badge: true,
-        sound: true,
-      );
-    }
-
-    final fcmToken = await FirebaseMessaging.instance.getToken();
-    debugPrint("✅ FCM Token: $fcmToken");
-
-  } catch (e) {
-    debugPrint("❌ FCM Token Error: $e");
-  }
 }

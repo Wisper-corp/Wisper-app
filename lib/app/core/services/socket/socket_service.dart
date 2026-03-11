@@ -1,4 +1,5 @@
 // ignore_for_file: library_prefixes, avoid_print
+import 'package:audioplayers/audioplayers.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:socket_io_client/socket_io_client.dart' as IO;
@@ -13,6 +14,9 @@ import 'package:wisper/gen/assets.gen.dart';
 class SocketService extends GetxController {
   late IO.Socket _socket;
 
+  // ✅ Incoming call ringtone player
+  final AudioPlayer _incomingRingPlayer = AudioPlayer();
+
   RxBool isLoading = false.obs;
   RxBool isConnected = false.obs;
 
@@ -21,7 +25,6 @@ class SocketService extends GetxController {
   final _notificationsList = <Map<String, dynamic>>[].obs;
   final _incomingCall = Rxn<Map<String, dynamic>>();
 
-  // VideoCallPage এই observable watch করবে
   final RxBool callDeclinedSignal = false.obs;
   final RxBool callEndedSignal = false.obs;
 
@@ -35,6 +38,9 @@ class SocketService extends GetxController {
 
   Future<SocketService> init() async {
     print('🔌 Initializing socket service. Connecting...');
+
+    // ✅ Incoming ringtone loop mode
+    await _incomingRingPlayer.setReleaseMode(ReleaseMode.loop);
 
     callController = Get.put(CallController());
 
@@ -95,6 +101,8 @@ class SocketService extends GetxController {
     _socket.on('callIncoming', (data) {
       print('📞 Incoming call data: $data');
       _incomingCall.value = data as Map<String, dynamic>;
+      // ✅ Incoming call এলে ring বাজাও
+      _startIncomingRingtone();
       _showIncomingCallOverlay();
     });
 
@@ -103,7 +111,6 @@ class SocketService extends GetxController {
       print('📵 callDeclined received in SocketService: $data');
       callDeclinedSignal.value = true;
 
-      // Incoming ringing dialog open থাকলে বন্ধ করো
       if (_incomingCall.value != null) {
         _incomingCall.value = null;
         if (Get.isDialogOpen ?? false) {
@@ -122,19 +129,17 @@ class SocketService extends GetxController {
     _socket.on('callCanceled', (data) {
       print('📵 callCanceled received in SocketService: $data');
 
-      // VideoCallPage open থাকলে signal দাও
       callEndedSignal.value = true;
 
-      // ✅ Incoming call dialog realtime বন্ধ করো
       if (_incomingCall.value != null) {
         _incomingCall.value = null;
+        // ✅ Ring বন্ধ করো
+        _stopIncomingRingtone();
 
-        // Dialog open থাকলে বন্ধ করো
         if (Get.isDialogOpen ?? false) {
           Get.back();
         }
 
-        // Receiver কে জানাও
         Get.snackbar(
           'Call Cancelled',
           'The caller has cancelled the call.',
@@ -149,7 +154,26 @@ class SocketService extends GetxController {
     return this;
   }
 
-  // Signal reset করো — VideoCallPage dispose হলে call করবে
+  // ✅ Incoming ringtone শুরু করো
+  Future<void> _startIncomingRingtone() async {
+    try {
+      await _incomingRingPlayer.play(AssetSource('IncomingCallRingtone.mp3'));
+      print('🔔 Incoming ringtone started');
+    } catch (e) {
+      print('Incoming ringtone error: $e');
+    }
+  }
+
+  // ✅ Incoming ringtone বন্ধ করো
+  Future<void> _stopIncomingRingtone() async {
+    try {
+      await _incomingRingPlayer.stop();
+      print('🔕 Incoming ringtone stopped');
+    } catch (e) {
+      print('Stop incoming ringtone error: $e');
+    }
+  }
+
   void resetCallSignals() {
     callDeclinedSignal.value = false;
     callEndedSignal.value = false;
@@ -164,11 +188,17 @@ class SocketService extends GetxController {
       barrierDismissible: false,
       barrierColor: Colors.black.withOpacity(0.7),
       _IncomingCallDialog(
+        isGroup: _incomingCall.value?['groupName'] != null ? true : false,
         callerName: _incomingCall.value?['groupName'] != null
             ? _incomingCall.value!['groupName']
             : _incomingCall.value?['callerName'],
-        callerImage: _incomingCall.value?['groupName'] != null
+        callerImage:
+            _incomingCall.value?['groupName'] != null &&
+                _incomingCall.value?['groupImage'] == null
             ? 'group'
+            : _incomingCall.value?['groupName'] != null &&
+                  _incomingCall.value?['groupImage'] != null
+            ? _incomingCall.value!['groupImage']
             : _incomingCall.value?['callerImage'],
         onAccept: () => _handleAcceptCall(),
         onReject: () => _handleRejectCall(),
@@ -191,10 +221,12 @@ class SocketService extends GetxController {
     isLoading.value = false;
 
     if (isSuccess) {
+      // ✅ Accept করলে ring বন্ধ করো
+      await _stopIncomingRingtone();
+
       Get.back();
       _socket.emit('callAccepted', {'callId': callId});
 
-      // Signal reset করো নতুন call এর আগে
       resetCallSignals();
 
       type == 'AUDIO'
@@ -250,6 +282,9 @@ class SocketService extends GetxController {
       print('❌ Socket not connected → cannot emit');
     }
 
+    // ✅ Reject করলে ring বন্ধ করো
+    _stopIncomingRingtone();
+
     print('❌ Call rejected (local)');
     _incomingCall.value = null;
     Get.back();
@@ -266,6 +301,8 @@ class SocketService extends GetxController {
 
   @override
   void onClose() {
+    _stopIncomingRingtone();
+    _incomingRingPlayer.dispose();
     disconnect();
     super.onClose();
   }
@@ -276,12 +313,14 @@ class _IncomingCallDialog extends StatefulWidget {
   final String callerImage;
   final VoidCallback onAccept;
   final VoidCallback onReject;
+  final bool isGroup;
 
   const _IncomingCallDialog({
     required this.callerName,
     required this.callerImage,
     required this.onAccept,
     required this.onReject,
+    required this.isGroup,
   });
 
   @override
@@ -369,6 +408,12 @@ class _IncomingCallDialogState extends State<_IncomingCallDialog>
                 fontWeight: FontWeight.bold,
               ),
             ),
+            widget.isGroup
+                ? Text(
+                    'Group',
+                    style: TextStyle(color: Colors.white, fontSize: 13),
+                  )
+                : Container(),
             const SizedBox(height: 8),
             const Text(
               'is calling you...',

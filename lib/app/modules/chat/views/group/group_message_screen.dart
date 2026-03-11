@@ -16,7 +16,7 @@ import 'package:wisper/app/modules/chat/widgets/message_bubble.dart';
 class GroupChatScreen extends StatefulWidget {
   final String? groupName;
   final String? groupImage;
-  final String? chatId;
+  final String? chatId; 
   final String? groupId;
 
   const GroupChatScreen({

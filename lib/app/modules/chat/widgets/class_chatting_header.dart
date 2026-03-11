@@ -1,3 +1,5 @@
+// ignore_for_file: use_build_context_synchronously
+
 import 'package:camera/camera.dart';
 import 'package:crash_safe_image/crash_safe_image.dart';
 import 'package:flutter/material.dart';
@@ -5,13 +7,17 @@ import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:get/get.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:wisper/app/core/others/custom_size.dart';
+import 'package:wisper/app/core/others/get_storage.dart';
+import 'package:wisper/app/core/services/socket/socket_service.dart';
 import 'package:wisper/app/core/utils/show_over_loading.dart';
 import 'package:wisper/app/core/utils/snack_bar.dart';
 import 'package:wisper/app/core/widgets/common/circle_icon.dart';
 import 'package:wisper/app/core/widgets/common/custom_popup.dart';
 import 'package:wisper/app/core/widgets/common/details_card.dart';
-import 'package:wisper/app/modules/calls/views/group_audio_screen.dart';
-import 'package:wisper/app/modules/calls/views/group_video_call_screen.dart';
+import 'package:wisper/app/modules/calls/controller/call_controller.dart';
+import 'package:wisper/app/modules/calls/views/audio_call.dart';
+import 'package:wisper/app/modules/calls/views/video_call.dart';
+import 'package:wisper/app/modules/chat/controller/class/class_member_controller.dart';
 import 'package:wisper/app/modules/chat/controller/group/delete_group_chat_controller.dart';
 import 'package:wisper/app/modules/chat/controller/mute_chat_controller.dart';
 import 'package:wisper/app/modules/chat/controller/mute_info_controller.dart';
@@ -42,16 +48,22 @@ class _ClassChatHeaderState extends State<ClassChatHeader> {
   List<CameraDescription>? cameras;
 
   final DeleteGroupController deleteGroupController = DeleteGroupController();
+  final ClassMembersController classMembersController = Get.put(
+    ClassMembersController(),
+  );
   final GetMuteInfoController getMuteInfoController = Get.put(
     GetMuteInfoController(),
   );
   final MuteChatController muteChatController = MuteChatController();
+  final CallController callController = CallController();
+  final SocketService socketService = Get.find<SocketService>();
 
   @override
   void initState() {
     super.initState();
     WidgetsBinding.instance.addPostFrameCallback((_) {
       getMuteInfoController.getMuteInfo(widget.chatId);
+      classMembersController.getClassMembers(widget.classId);
     });
     _initializeCamera();
   }
@@ -62,6 +74,117 @@ class _ClassChatHeaderState extends State<ClassChatHeader> {
       cameras = availableCamerasList;
     });
   }
+
+  // ✅ আমার নিজের ID বাদ দিয়ে বাকি সব member এর participants list বানাও
+  List<Map<String, dynamic>> _buildParticipants() { 
+    final myId = StorageUtil.getData(StorageUtil.userId);
+    final members = classMembersController.groupMemnersData ?? [];
+
+    return members
+        .where((member) => member.auth?.id != myId)
+        .map((member) => {"id": member.auth?.id, "status": "INCOMING"})
+        .toList();
+  }
+
+  // ✅ Step 1 — Room তৈরি করো
+  void getRoomId(String? type, String? medium) { 
+    showLoadingOverLay(
+      asyncFunction: () async => await performRoomId(context, type, medium),
+      msg: 'Please wait...',
+    );
+  }
+
+  Future<void> performRoomId(
+    BuildContext context,
+    String? type, 
+    String? medium,
+  ) async {
+    final participants = _buildParticipants();
+
+    if (participants.isEmpty) {
+      showSnackBarMessage(context, 'No members found to call.', true);
+      return;
+    }
+
+    final bool isSuccess = await callController.getRoomWithParticipants(
+      callType: type,
+      mode: medium,
+      participants: participants,
+    );
+
+    if (isSuccess) {
+      getCallToken(callController.roomId, callController.callId, type, medium);
+    } else {
+      showSnackBarMessage(context, callController.errorMessage, true);
+    }
+  }
+
+  // ✅ Step 2 — Token নাও
+  void getCallToken(
+    String? roomId,
+    String? callId,
+    String? type,
+    String? medium,
+  ) {
+    showLoadingOverLay(
+      asyncFunction: () async =>
+          await performCallToken(context, roomId, callId, type, medium),
+      msg: 'Please wait...',
+    );
+  }
+
+  Future<void> performCallToken(
+    BuildContext context,
+    String? roomId,
+    String? callId,
+    String? type,
+    String? medium,
+  ) async {
+    socketService.resetCallSignals();
+
+    final bool isSuccess = await callController.getToken(
+      callId: callId,
+      roomId: roomId,
+    );
+
+    if (isSuccess) {
+      socketService.socket.emit('callInvite', {
+        "callId": callId,
+        "token": callController.token,
+        "groupName": widget.className,
+        "groupImage": widget.classImage,
+      });
+
+      if (type == 'VIDEO') {
+        Get.to(
+          VideoCallPage(
+            name: widget.className,
+            photoUrl: widget.classImage,
+            chatId: widget.chatId,
+            channelName: callController.roomId,
+            token: callController.token,
+            uuid: callController.uuid,
+            callId: callController.callId,
+          ),
+        );
+      } else {
+        Get.to(
+          AudioCallPage(
+            name: widget.className,
+            photoUrl: widget.classImage,
+            chatId: widget.chatId,
+            channelName: callController.roomId,
+            token: callController.token,
+            uuid: callController.uuid,
+            callId: callController.callId,
+          ),
+        );
+      }
+    } else {
+      showSnackBarMessage(context, callController.errorMessage, true);
+    }
+  }
+
   Future<void> executeWithLoading({
     required Future<bool> Function() action,
     required String loadingMessage,
@@ -98,9 +221,7 @@ class _ClassChatHeaderState extends State<ClassChatHeader> {
   void deleteChat() {
     executeWithLoading(
       loadingMessage: 'Please wait...',
-      action: () => deleteGroupController.deleteGroup(
-        groupId: widget.chatId,
-      ),
+      action: () => deleteGroupController.deleteGroup(groupId: widget.chatId),
       onSuccess: () async {
         Get.to(() => MainButtonNavbarScreen());
       },
@@ -119,10 +240,8 @@ class _ClassChatHeaderState extends State<ClassChatHeader> {
 
     executeWithLoading(
       loadingMessage: 'Please wait...',
-      action: () => muteChatController.muteChat(
-        chatId: widget.chatId,
-        muteFor: muteFor,
-      ),
+      action: () =>
+          muteChatController.muteChat(chatId: widget.chatId, muteFor: muteFor),
       onSuccess: () async {
         await getMuteInfoController.getMuteInfo(widget.chatId);
         if (context.mounted) {
@@ -139,7 +258,7 @@ class _ClassChatHeaderState extends State<ClassChatHeader> {
     );
   }
 
-  void _showDeleteConversation() { 
+  void _showDeleteConversation() {
     ConfirmationBottomSheet.show(
       context: context,
       title: "Delete Conversation?",
@@ -220,10 +339,8 @@ class _ClassChatHeaderState extends State<ClassChatHeader> {
       optionActions: {
         '0': () {
           Get.to(
-            () => ClassInfoScreen(
-              classId: widget.classId,
-              chatId: widget.chatId,
-            ),
+            () =>
+                ClassInfoScreen(classId: widget.classId, chatId: widget.chatId),
           );
         },
         '1': _showMutePopup,
@@ -263,11 +380,17 @@ class _ClassChatHeaderState extends State<ClassChatHeader> {
                         radius: 13,
                       ),
                       widthBox10,
-                      CircleAvatar(
-                        backgroundColor: Colors.grey,
-                        backgroundImage: NetworkImage(widget.classImage),
-                        radius: 20,
-                      ),
+                      widget.classImage.isEmpty
+                          ? CrashSafeImage(
+                              Assets.images.education.keyName,
+                              color: const Color(0xff11AE46),
+                              height: 20.h,
+                            )
+                          : CircleAvatar(
+                              backgroundColor: Colors.grey,
+                              backgroundImage: NetworkImage(widget.classImage),
+                              radius: 20,
+                            ),
                       widthBox10,
                       Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
@@ -287,21 +410,23 @@ class _ClassChatHeaderState extends State<ClassChatHeader> {
                 ),
                 Row(
                   children: [
+                    // ✅ Audio call — GROUP mode
                     CircleIconWidget(
                       imagePath: Assets.images.call.keyName,
                       onTap: () {
-                        Get.to(() => GroupAudioCallScreen());
+                        //print('Audio Call pressed');
+                        getRoomId('AUDIO', 'GROUP');
                       },
                       radius: 15,
                       iconColor: Colors.white,
                     ),
                     widthBox10,
+                    // ✅ Video call — GROUP mode
                     CircleIconWidget(
                       imagePath: Assets.images.video.keyName,
                       onTap: () {
-                        if (cameras != null) {
-                          Get.to(() => GroupVideoCallScreen());
-                        }
+                        // print('Video Call pressed');
+                        getRoomId('VIDEO', 'GROUP');
                       },
                       radius: 15,
                     ),
@@ -357,7 +482,7 @@ class _ClassChatHeaderState extends State<ClassChatHeader> {
                 bgColor: const Color(0xff181818),
                 borderColor: const Color(0xff181818),
                 child: Padding(
-                  padding: EdgeInsets.all(10.0),
+                  padding: const EdgeInsets.all(10.0),
                   child: Text(
                     'Other members will not see that you muted this chat, and you will still be notified if you are mentioned.',
                     style: TextStyle(
@@ -379,9 +504,7 @@ class _ClassChatHeaderState extends State<ClassChatHeader> {
                     if (getMuteInfoController.inProgress) {
                       return const Center(child: CircularProgressIndicator());
                     }
-
                     final muteFor = getMuteInfoController.muteInfoData?.muteFor;
-
                     return Column(
                       children: [
                         _buildMuteOption(

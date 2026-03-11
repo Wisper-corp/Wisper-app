@@ -1,4 +1,7 @@
+import 'dart:async';
+
 import 'package:agora_rtc_engine/agora_rtc_engine.dart';
+import 'package:audioplayers/audioplayers.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:wisper/app/core/services/socket/socket_service.dart';
@@ -29,50 +32,45 @@ class VideoCallPage extends StatefulWidget {
 }
 
 class _VideoCallPageState extends State<VideoCallPage> {
+  final AudioPlayer _player = AudioPlayer();
+
   late RtcEngine agoraEngine;
-  int? remoteUid;
+  final List<int> _remoteUids = [];
+
   bool localUserJoined = false;
   bool _micEnabled = true;
   bool _cameraEnabled = true;
-  String engineLog = 'Initializing...';
+  bool _speakerEnabled = true;
   String callingStatus = 'Calling...';
   bool callProgress = true;
   bool _isLeavingCall = false;
 
-  // ✅ Call শুরুর সময় track করবে
   DateTime? _callStartTime;
-
   SocketService socketService = Get.find<SocketService>();
 
   Worker? _declinedWorker;
   Worker? _endedWorker;
+  Timer? _noAnswerTimer;
+  RxString time = '00:00'.obs;
+
+  bool get hasRemoteUser => _remoteUids.isNotEmpty;
 
   @override
   void initState() {
     super.initState();
-
-    // ✅ Page open হওয়ার সাথে সাথে signal reset করো
-    // এটা না করলে আগের true value থেকে ever() fire হবে না
     socketService.resetCallSignals();
-
-    print('VideoCallPage initState');
-    print(
-      'Token: ${widget.token} | Channel: ${widget.channelName} | '
-      'CallId: ${widget.callId} | UUID: ${widget.uuid}',
-    );
+    _player.setReleaseMode(ReleaseMode.loop);
 
     _declinedWorker = ever(socketService.callDeclinedSignal, (bool value) {
-      print('👀 callDeclinedSignal changed: $value');
       if (value && mounted && !_isLeavingCall) {
-        print('📵 Call declined — closing VideoCallPage');
+        _cancelNoAnswerTimer();
         _leaveAndPop();
       }
     });
 
     _endedWorker = ever(socketService.callEndedSignal, (bool value) {
-      print('👀 callEndedSignal changed: $value');
       if (value && mounted && !_isLeavingCall) {
-        print('📵 Call ended — closing VideoCallPage');
+        _cancelNoAnswerTimer();
         _leaveAndPop();
       }
     });
@@ -80,42 +78,63 @@ class _VideoCallPageState extends State<VideoCallPage> {
     joinCall();
   }
 
-  /// ✅ Call duration সেকেন্ডে বের করো
+  Future<void> ringtone() async {
+    try {
+      await _player.play(AssetSource('ringtone.mp3'));
+    } catch (e) {
+      print('Ringtone error: $e');
+    }
+  }
+
+  Future<void> stopRingtone() async {
+    try {
+      await _player.stop();
+    } catch (e) {
+      print('Stop ringtone error: $e');
+    }
+  }
+
+  void _startNoAnswerTimer() {
+    _noAnswerTimer = Timer(const Duration(seconds: 30), () {
+      if (!hasRemoteUser && mounted && !_isLeavingCall) {
+        socketService.socket.emit('callCancel', {'callId': widget.callId});
+        _leaveAndPop();
+      }
+    });
+  }
+
+  void _cancelNoAnswerTimer() {
+    _noAnswerTimer?.cancel();
+    _noAnswerTimer = null;
+  }
+
   int _getCallDuration() {
     if (_callStartTime == null) return 0;
     return DateTime.now().difference(_callStartTime!).inSeconds;
   }
 
-  /// ✅ Agora cleanly leave করে socket emit করে page বন্ধ করো
   Future<void> _leaveAndPop({bool emitCallEnd = false}) async {
     if (_isLeavingCall) return;
     _isLeavingCall = true;
+    _cancelNoAnswerTimer();
+    await stopRingtone();
 
-    // ✅ callEnd emit করতে বললে duration সহ পাঠাও
     if (emitCallEnd) {
       final duration = _getCallDuration();
-      print('📞 Emitting callEnd with duration: $duration seconds');
       socketService.socket.emitWithAck(
         'callEnd',
-        {
-          'callId': widget.callId,
-          'duration': duration,
-        },
-        ack: (response) {
-          print('Server acknowledged for callEnd: $response');
-        },
+        {'callId': widget.callId, 'duration': duration},
+        ack: (response) => print('callEnd ack: $response'),
       );
     }
 
     try {
       await agoraEngine.leaveChannel();
     } catch (e) {
-      print('Error leaving channel: $e');
+      print('Error leaving: $e');
     }
 
-    if (mounted) {
-      Navigator.pop(context);
-    }
+    if (mounted) Navigator.pop(context);
   }
 
   Future<void> joinCall() async {
@@ -125,14 +144,9 @@ class _VideoCallPageState extends State<VideoCallPage> {
     await initAgora();
   }
 
-  Future<void> stopRingtone() async {}
-
-  Future<void> ringtone() async {}
-
   Future<void> initAgora() async {
     try {
       agoraEngine = createAgoraRtcEngine();
-
       await agoraEngine.initialize(
         RtcEngineContext(
           appId: widget.appID,
@@ -140,29 +154,28 @@ class _VideoCallPageState extends State<VideoCallPage> {
         ),
       );
 
-      ringtone();
+      await ringtone();
       if (mounted) setState(() {});
 
       agoraEngine.registerEventHandler(
         RtcEngineEventHandler(
           onJoinChannelSuccess: (RtcConnection connection, int elapsed) {
             if (mounted) {
-              setState(() {
-                localUserJoined = true;
-                engineLog = 'Joined channel successfully';
-              });
+              setState(() => localUserJoined = true);
+              _startNoAnswerTimer();
             }
           },
           onUserJoined: (RtcConnection connection, int rUid, int elapsed) {
             if (mounted) {
-              setState(() {
-                remoteUid = rUid;
-                engineLog = 'Remote user joined: $rUid';
-              });
-              // ✅ Call শুরুর সময় save করো
-              _callStartTime = DateTime.now();
+              _cancelNoAnswerTimer();
               stopRingtone();
-              startTimer();
+              setState(() {
+                if (!_remoteUids.contains(rUid)) _remoteUids.add(rUid);
+              });
+              if (_remoteUids.length == 1) {
+                _callStartTime = DateTime.now();
+                startTimer();
+              }
             }
           },
           onUserOffline: (
@@ -170,56 +183,29 @@ class _VideoCallPageState extends State<VideoCallPage> {
             int rUid,
             UserOfflineReasonType reason,
           ) {
-            print('onUserOffline: $rUid, reason: $reason');
-            if (mounted && !_isLeavingCall) {
-              final duration = _getCallDuration();
-              print('📞 Remote user left. Duration: $duration seconds');
-
-              // ✅ Duration সহ callEnd emit করো এবং page বন্ধ করো
-              socketService.socket.emitWithAck(
-                'callEnd',
-                {
-                  'callId': widget.callId,
-                  'duration': duration,
-                },
-                ack: (response) {
-                  print('Server acknowledged for callEnd: $response');
-                },
-              );
-
-              _leaveAndPop();
+            if (mounted) {
+              setState(() => _remoteUids.remove(rUid));
+              if (_remoteUids.isEmpty && !_isLeavingCall) {
+                socketService.socket.emitWithAck(
+                  'callEnd',
+                  {'callId': widget.callId, 'duration': _getCallDuration()},
+                  ack: (_) {},
+                );
+                _leaveAndPop();
+              }
             }
           },
-          onConnectionStateChanged: (
-            RtcConnection connection,
-            ConnectionStateType state,
-            ConnectionChangedReasonType reason,
-          ) {
-            if (mounted) {
-              setState(() {
-                engineLog = 'Connection: ${state.name} - ${reason.name}';
-              });
-            }
+          onConnectionStateChanged: (c, state, reason) {
+            if (mounted) setState(() {});
           },
-          onError: (ErrorCodeType err, String msg) {
-            if (mounted) {
-              setState(() {
-                engineLog = 'Error: ${err.name} - $msg';
-              });
-            }
+          onError: (err, msg) {
+            if (mounted) setState(() {});
           },
         ),
       );
 
       await agoraEngine.enableVideo();
       await agoraEngine.startPreview();
-
-      if (mounted) {
-        setState(() {
-          engineLog = 'Joining channel: ${widget.channelName}...';
-        });
-      }
-
       await agoraEngine.joinChannel(
         token: widget.token,
         channelId: widget.channelName,
@@ -233,277 +219,459 @@ class _VideoCallPageState extends State<VideoCallPage> {
         ),
       );
     } catch (e) {
-      if (mounted) {
-        setState(() {
-          engineLog = 'Error: $e';
-        });
-      }
+      if (mounted) setState(() {});
     }
   }
-
-  RxString time = '00:00'.obs;
 
   Future<void> startTimer() async {
     int seconds = 0;
     Future.doWhile(() async {
       await Future.delayed(const Duration(seconds: 1));
       seconds++;
-      final minutesStr = ((seconds ~/ 60) % 60).toString().padLeft(2, '0');
-      final secondsStr = (seconds % 60).toString().padLeft(2, '0');
-      time.value = '$minutesStr:$secondsStr';
-      return remoteUid != null && mounted;
+      final m = ((seconds ~/ 60) % 60).toString().padLeft(2, '0');
+      final s = (seconds % 60).toString().padLeft(2, '0');
+      time.value = '$m:$s';
+      return hasRemoteUser && mounted;
     });
   }
 
   @override
   void dispose() {
+    _cancelNoAnswerTimer();
     _declinedWorker?.dispose();
     _endedWorker?.dispose();
     socketService.resetCallSignals();
+    _player.dispose();
     agoraEngine.leaveChannel();
     agoraEngine.release();
     super.dispose();
   }
 
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      body: Stack(
+  // ─── Video tile helper ────────────────────────────────────────────────
+  Widget _videoTile(int uid, {String? label, double? radius}) {
+    return ClipRRect(
+      borderRadius: BorderRadius.circular(radius ?? 16),
+      child: Stack(
+        fit: StackFit.expand,
         children: [
-          // Remote video (full screen)
-          if (!callProgress)
-            remoteUid != null
-                ? Positioned.fill(
-                    child: AgoraVideoView(
-                      controller: VideoViewController(
-                        rtcEngine: agoraEngine,
-                        canvas: VideoCanvas(uid: remoteUid),
-                      ),
-                    ),
-                  )
-                : AgoraVideoView(
-                    controller: VideoViewController(
-                      rtcEngine: agoraEngine,
-                      canvas: const VideoCanvas(uid: 0),
-                    ),
-                  ),
-
-          // Waiting screen — remote user এখনো join করেনি
-          if (remoteUid == null)
-            Container(
-              color: Colors.black87,
-              width: double.maxFinite,
-              height: double.maxFinite,
-              child: SafeArea(
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    const SizedBox(height: 128),
-                    CircleAvatar(
-                      radius: 48,
-                      backgroundImage: widget.photoUrl.isNotEmpty
-                          ? NetworkImage(widget.photoUrl)
-                          : null,
-                      child: widget.photoUrl.isEmpty
-                          ? const Icon(Icons.person, size: 48)
-                          : null,
-                    ),
-                    const SizedBox(height: 16),
-                    Text(
-                      widget.name,
-                      style: const TextStyle(
-                        color: Colors.white,
-                        fontWeight: FontWeight.w600,
-                        fontSize: 20,
-                      ),
-                    ),
-                    const SizedBox(height: 4),
-                    Text(
-                      callingStatus,
-                      style: const TextStyle(
-                        color: Colors.white70,
-                        fontSize: 16,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
+          AgoraVideoView(
+            controller: VideoViewController(
+              rtcEngine: agoraEngine,
+              canvas: VideoCanvas(uid: uid),
             ),
-
-          // Local video (small, top right) — call চলাকালীন
-          if (remoteUid != null && localUserJoined)
+          ),
+          if (label != null)
             Positioned(
-              right: 16,
-              top: 16,
-              width: 120,
-              height: 160,
+              bottom: 8,
+              left: 8,
               child: Container(
+                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
                 decoration: BoxDecoration(
-                  border: Border.all(color: Colors.white),
+                  color: Colors.black54,
                   borderRadius: BorderRadius.circular(8),
                 ),
-                child: AgoraVideoView(
-                  controller: VideoViewController(
-                    rtcEngine: agoraEngine,
-                    canvas: const VideoCanvas(uid: 0),
+                child: Text(
+                  label,
+                  style: const TextStyle(
+                    color: Colors.white,
+                    fontSize: 11,
+                    fontWeight: FontWeight.w600,
                   ),
-                ),
-              ),
-            ),
-
-          // End call button — waiting screen এ (receiver আসেনি)
-          if (remoteUid == null)
-            Positioned(
-              bottom: 36,
-              left: 0,
-              right: 0,
-              child: SafeArea(
-                child: Center(
-                  child: CircleAvatar(
-                    radius: 32,
-                    backgroundColor: Colors.red,
-                    child: IconButton(
-                      onPressed: () {
-                        stopRingtone();
-                        // Receiver আসার আগে cancel করলে callCancel emit করো
-                        socketService.socket.emit('callCancel', {
-                          'callId': widget.callId,
-                        });
-                        _leaveAndPop();
-                      },
-                      icon: const Icon(Icons.call_end, color: Colors.white),
-                    ),
-                  ),
-                ),
-              ),
-            ),
-
-          // Call timer — call চলাকালীন
-          if (remoteUid != null)
-            Positioned(
-              bottom: 130,
-              left: 0,
-              right: 0,
-              child: SafeArea(
-                child: Center(
-                  child: Container(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 12,
-                      vertical: 6,
-                    ),
-                    decoration: BoxDecoration(
-                      color: Colors.black26,
-                      borderRadius: BorderRadius.circular(20),
-                    ),
-                    child: Obx(
-                      () => Text(
-                        time.value,
-                        style: const TextStyle(color: Colors.white),
-                      ),
-                    ),
-                  ),
-                ),
-              ),
-            ),
-
-          // Camera off indicator
-          if (!_cameraEnabled)
-            const Positioned(
-              top: 70,
-              right: 50,
-              child: CircleAvatar(
-                radius: 24,
-                backgroundColor: Colors.black26,
-                child: Icon(
-                  Icons.videocam_off_outlined,
-                  color: Colors.white,
-                  size: 24,
-                ),
-              ),
-            ),
-
-          // Controls — call চলাকালীন (mic, camera, flip, end)
-          if (remoteUid != null && localUserJoined)
-            Positioned(
-              bottom: 36,
-              left: 0,
-              right: 0,
-              child: SafeArea(
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    // Mic toggle
-                    CircleAvatar(
-                      radius: 28,
-                      backgroundColor: _micEnabled
-                          ? Colors.black26
-                          : Colors.red,
-                      child: IconButton(
-                        onPressed: () async {
-                          setState(() => _micEnabled = !_micEnabled);
-                          await agoraEngine.muteLocalAudioStream(!_micEnabled);
-                        },
-                        icon: Icon(
-                          _micEnabled
-                              ? Icons.mic_none
-                              : Icons.mic_off_outlined,
-                          color: Colors.white,
-                        ),
-                      ),
-                    ),
-                    const SizedBox(width: 24),
-                    // Camera toggle
-                    CircleAvatar(
-                      radius: 28,
-                      backgroundColor: _cameraEnabled
-                          ? Colors.black26
-                          : Colors.red,
-                      child: IconButton(
-                        onPressed: () async {
-                          setState(() => _cameraEnabled = !_cameraEnabled);
-                          await agoraEngine.muteLocalVideoStream(!_cameraEnabled);
-                        },
-                        icon: Icon(
-                          _cameraEnabled
-                              ? Icons.videocam_outlined
-                              : Icons.videocam_off_outlined,
-                          color: Colors.white,
-                        ),
-                      ),
-                    ),
-                    const SizedBox(width: 24),
-                    // Flip camera
-                    CircleAvatar(
-                      radius: 28,
-                      backgroundColor: Colors.black26,
-                      child: IconButton(
-                        onPressed: () async {
-                          await agoraEngine.switchCamera();
-                        },
-                        icon: const Icon(
-                          Icons.flip_camera_ios_outlined,
-                          color: Colors.white,
-                        ),
-                      ),
-                    ),
-                    const SizedBox(width: 24),
-                    // ✅ End call — duration সহ callEnd emit করো
-                    CircleAvatar(
-                      radius: 28,
-                      backgroundColor: Colors.red,
-                      child: IconButton(
-                        onPressed: () {
-                          // emitCallEnd: true দিলে _leaveAndPop duration সহ emit করবে
-                          _leaveAndPop(emitCallEnd: true);
-                        },
-                        icon: const Icon(Icons.call_end, color: Colors.white),
-                      ),
-                    ),
-                  ],
                 ),
               ),
             ),
         ],
+      ),
+    );
+  }
+
+  // ─── "Me" small overlay ───────────────────────────────────────────────
+  Widget _meOverlay() {
+    return Positioned(
+      top: 12,
+      right: 12,
+      width: 80,
+      height: 108,
+      child: Container(
+        decoration: BoxDecoration(
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(color: Colors.white, width: 2),
+          boxShadow: [
+            BoxShadow(color: Colors.black45, blurRadius: 8),
+          ],
+        ),
+        child: ClipRRect(
+          borderRadius: BorderRadius.circular(10),
+          child: AgoraVideoView(
+            controller: VideoViewController(
+              rtcEngine: agoraEngine,
+              canvas: const VideoCanvas(uid: 0),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  // ─── LAYOUT: 2 User (1 remote + me) ──────────────────────────────────
+  // Sketch: User full screen, me small top-right
+  Widget _layout2User() {
+    return Stack(
+      children: [
+        Positioned.fill(child: _videoTile(_remoteUids[0], label: 'User')),
+        _meOverlay(),
+      ],
+    );
+  }
+
+  // ─── LAYOUT: 3 User (2 remote + me) ──────────────────────────────────
+  // Sketch: User1 top big, User2 bottom half, me small top-right
+  Widget _layout3User() {
+    return Stack(
+      children: [
+        Column(
+          children: [
+            // User1 — top 60%
+            Expanded(
+              flex: 6,
+              child: SizedBox(
+                width: double.infinity,
+                child: _videoTile(_remoteUids[0], label: 'User 1'),
+              ),
+            ),
+            const SizedBox(height: 2),
+            // User2 — bottom 40%
+            Expanded(
+              flex: 4,
+              child: SizedBox(
+                width: double.infinity,
+                child: _videoTile(_remoteUids[1], label: 'User 2'),
+              ),
+            ),
+          ],
+        ),
+        _meOverlay(),
+      ],
+    );
+  }
+
+  // ─── LAYOUT: 4 User (3 remote + me) — 2x2 grid ───────────────────────
+  // Sketch: User1 | User2 / User3 | Me — সব equal
+  Widget _layout4User() {
+    final allUids = [..._remoteUids.take(3), 0]; // 3 remote + local (me)
+    final labels = ['User 1', 'User 2', 'User 3', 'Me'];
+
+    return GridView.builder(
+      physics: const NeverScrollableScrollPhysics(),
+      gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+        crossAxisCount: 2,
+        mainAxisSpacing: 2,
+        crossAxisSpacing: 2,
+        childAspectRatio: 0.75,
+      ),
+      itemCount: 4,
+      itemBuilder: (context, index) {
+        return _videoTile(allUids[index], label: labels[index], radius: 0);
+      },
+    );
+  }
+
+  // ─── LAYOUT: 5+ User — scrollable grid ───────────────────────────────
+  Widget _layoutManyUsers() {
+    final allUids = [..._remoteUids, 0]; // all remote + me
+    return GridView.builder(
+      gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+        crossAxisCount: 2,
+        mainAxisSpacing: 2,
+        crossAxisSpacing: 2,
+        childAspectRatio: 0.75,
+      ),
+      itemCount: allUids.length,
+      itemBuilder: (context, index) {
+        final label = allUids[index] == 0 ? 'Me' : 'User ${index + 1}';
+        return _videoTile(allUids[index], label: label, radius: 0);
+      },
+    );
+  }
+
+  // ─── Pick correct layout based on user count ─────────────────────────
+  Widget _buildCallLayout() {
+    final count = _remoteUids.length; // remote only
+    if (count == 1) return _layout2User();
+    if (count == 2) return _layout3User();
+    if (count == 3) return _layout4User();
+    return _layoutManyUsers();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      backgroundColor: Colors.black,
+      body: Stack(
+        children: [
+          // ═══════════════════════════════════════════════
+          // WAITING SCREEN — call start হওয়ার আগে
+          // ═══════════════════════════════════════════════
+          if (!hasRemoteUser)
+            Positioned.fill(
+              child: Container(
+                color: const Color(0xff0F0F1A),
+                child: SafeArea(
+                  child: Column(
+                    children: [
+                      const SizedBox(height: 60),
+                      Text(
+                        widget.name,
+                        style: const TextStyle(
+                          color: Colors.white,
+                          fontSize: 22,
+                          fontWeight: FontWeight.w700,
+                        ),
+                      ),
+                      const SizedBox(height: 8),
+                      Text(
+                        callingStatus,
+                        style: TextStyle(
+                          color: Colors.white.withOpacity(0.5),
+                          fontSize: 14,
+                        ),
+                      ),
+                      const Spacer(),
+                      // Local preview
+                      if (!callProgress)
+                        ClipRRect(
+                          borderRadius: BorderRadius.circular(20),
+                          child: SizedBox(
+                            width: 180,
+                            height: 260,
+                            child: AgoraVideoView(
+                              controller: VideoViewController(
+                                rtcEngine: agoraEngine,
+                                canvas: const VideoCanvas(uid: 0),
+                              ),
+                            ),
+                          ),
+                        ),
+                      const Spacer(),
+                      Padding(
+                        padding: const EdgeInsets.only(bottom: 48),
+                        child: GestureDetector(
+                          onTap: () {
+                            socketService.socket.emit('callCancel', {
+                              'callId': widget.callId,
+                            });
+                            _leaveAndPop();
+                          },
+                          child: Container(
+                            padding: const EdgeInsets.all(18),
+                            decoration: BoxDecoration(
+                              color: Colors.red,
+                              shape: BoxShape.circle,
+                              boxShadow: [
+                                BoxShadow(
+                                  color: Colors.red.withOpacity(0.5),
+                                  blurRadius: 20,
+                                  spreadRadius: 4,
+                                ),
+                              ],
+                            ),
+                            child: const Icon(
+                              Icons.call_end_rounded,
+                              color: Colors.white,
+                              size: 32,
+                            ),
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ),
+
+          // ═══════════════════════════════════════════════
+          // CALL LAYOUT — call চলাকালীন
+          // ═══════════════════════════════════════════════
+          if (hasRemoteUser && !callProgress) ...[
+            // Video area — controls এর উপরে পর্যন্ত
+            Positioned(
+              top: 0,
+              left: 0,
+              right: 0,
+              bottom: 90,
+              child: _buildCallLayout(),
+            ),
+
+            // ─── TOP: name + timer ──────────────────────
+            Positioned(
+              top: 0,
+              left: 0,
+              right: 0,
+              child: SafeArea(
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 16,
+                    vertical: 10,
+                  ),
+                  child: Row(
+                    children: [
+                      Expanded(
+                        child: Text(
+                          widget.name,
+                          style: const TextStyle(
+                            color: Colors.white,
+                            fontSize: 17,
+                            fontWeight: FontWeight.w700,
+                            shadows: [
+                              Shadow(color: Colors.black87, blurRadius: 10),
+                            ],
+                          ),
+                        ),
+                      ),
+                      Obx(
+                        () => Container(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 10,
+                            vertical: 4,
+                          ),
+                          decoration: BoxDecoration(
+                            color: Colors.black54,
+                            borderRadius: BorderRadius.circular(20),
+                          ),
+                          child: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              const Icon(
+                                Icons.circle,
+                                color: Colors.red,
+                                size: 7,
+                              ),
+                              const SizedBox(width: 5),
+                              Text(
+                                time.value,
+                                style: const TextStyle(
+                                  color: Colors.white,
+                                  fontSize: 12,
+                                  fontWeight: FontWeight.w600,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ),
+
+            // ─── BOTTOM CONTROLS ────────────────────────
+            Positioned(
+              bottom: 0,
+              left: 0,
+              right: 0,
+              child: Container(
+                height: 90,
+                color: const Color(0xff0F0F1A),
+                child: SafeArea(
+                  top: false,
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                    children: [
+                      _controlBtn(
+                        icon: _micEnabled
+                            ? Icons.mic_rounded
+                            : Icons.mic_off_rounded,
+                        active: _micEnabled,
+                        onTap: () async {
+                          setState(() => _micEnabled = !_micEnabled);
+                          await agoraEngine.muteLocalAudioStream(!_micEnabled);
+                        },
+                      ),
+                      _controlBtn(
+                        icon: _cameraEnabled
+                            ? Icons.videocam_rounded
+                            : Icons.videocam_off_rounded,
+                        active: _cameraEnabled,
+                        onTap: () async {
+                          setState(() => _cameraEnabled = !_cameraEnabled);
+                          await agoraEngine.muteLocalVideoStream(!_cameraEnabled);
+                        },
+                      ),
+                      // End call — bigger
+                      GestureDetector(
+                        onTap: () => _leaveAndPop(emitCallEnd: true),
+                        child: Container(
+                          padding: const EdgeInsets.all(16),
+                          decoration: BoxDecoration(
+                            color: Colors.red,
+                            shape: BoxShape.circle,
+                            boxShadow: [
+                              BoxShadow(
+                                color: Colors.red.withOpacity(0.4),
+                                blurRadius: 12,
+                                spreadRadius: 2,
+                              ),
+                            ],
+                          ),
+                          child: const Icon(
+                            Icons.call_end_rounded,
+                            color: Colors.white,
+                            size: 28,
+                          ),
+                        ),
+                      ),
+                      _controlBtn(
+                        icon: Icons.flip_camera_ios_rounded,
+                        active: true,
+                        onTap: () async => await agoraEngine.switchCamera(),
+                      ),
+                      _controlBtn(
+                        icon: _speakerEnabled
+                            ? Icons.volume_up_rounded
+                            : Icons.volume_off_rounded,
+                        active: _speakerEnabled,
+                        onTap: () async {
+                          setState(() => _speakerEnabled = !_speakerEnabled);
+                          await agoraEngine.setEnableSpeakerphone(_speakerEnabled);
+                        },
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ),
+          ],
+        ],
+      ),
+    );
+  }
+
+  Widget _controlBtn({
+    required IconData icon,
+    required bool active,
+    required VoidCallback onTap,
+  }) {
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        padding: const EdgeInsets.all(13),
+        decoration: BoxDecoration(
+          color: active
+              ? Colors.white.withOpacity(0.12)
+              : Colors.white.withOpacity(0.06),
+          shape: BoxShape.circle,
+          border: Border.all(
+            color: active
+                ? Colors.white.withOpacity(0.25)
+                : Colors.white.withOpacity(0.1),
+          ),
+        ),
+        child: Icon(
+          icon,
+          color: active ? Colors.white : Colors.white38,
+          size: 22,
+        ),
       ),
     );
   }

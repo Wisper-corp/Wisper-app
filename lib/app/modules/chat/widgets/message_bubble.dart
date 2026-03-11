@@ -476,12 +476,27 @@ class MessageBubble extends StatelessWidget {
                           padding: EdgeInsets.only(
                             top: fileUrl.isNotEmpty ? 8.h : 0,
                           ),
-                          child: Text(
-                            message['text'].toString(),
-                            style: TextStyle(
-                              fontSize: 14.sp,
-                              color: isMe ? Colors.white : Colors.black,
-                            ),
+                          child: Column(
+                            crossAxisAlignment: isMe
+                                ? CrossAxisAlignment.end
+                                : CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                message['text'].toString(),
+                                style: TextStyle(
+                                  fontSize: 14.sp,
+                                  color: isMe ? Colors.white : Colors.black,
+                                ),
+                              ),
+                              SizedBox(height: 4.h),
+                              Text(
+                                time,
+                                style: TextStyle(
+                                  fontSize: 8.sp,
+                                  color: isMe ? Colors.white : Colors.black,
+                                ),
+                              ),
+                            ],
                           ),
                         ),
                     ],
@@ -489,35 +504,35 @@ class MessageBubble extends StatelessWidget {
                 ),
 
                 // Time + seen tick
-                Padding(
-                  padding: EdgeInsets.only(top: 2.h),
-                  child: Row(
-                    mainAxisAlignment: isMe
-                        ? MainAxisAlignment.end
-                        : MainAxisAlignment.start,
-                    children: [
-                      Text(
-                        time,
-                        style: TextStyle(
-                          fontSize: 10.sp,
-                          color: isMe ? Colors.white70 : Colors.grey[600],
-                        ),
-                      ),
-                      if (isMe) ...[
-                        SizedBox(width: 6.w),
-                        Icon(
-                          message['seen'] == true
-                              ? Icons.check_circle
-                              : Icons.check,
-                          size: 14.sp,
-                          color: message['seen'] == true
-                              ? Colors.cyan
-                              : Colors.white70,
-                        ),
-                      ],
-                    ],
-                  ),
-                ),
+                // Padding(
+                //   padding: EdgeInsets.only(top: 2.h),
+                //   child: Row(
+                //     mainAxisAlignment: isMe
+                //         ? MainAxisAlignment.end
+                //         : MainAxisAlignment.start,
+                //     children: [
+                //       Text(
+                //         time,
+                //         style: TextStyle(
+                //           fontSize: 10.sp,
+                //           color: isMe ? Colors.white70 : Colors.grey[600],
+                //         ),
+                //       ),
+                //       if (isMe) ...[
+                //         SizedBox(width: 6.w),
+                //         Icon(
+                //           message['seen'] == true
+                //               ? Icons.check_circle
+                //               : Icons.check,
+                //           size: 14.sp,
+                //           color: message['seen'] == true
+                //               ? Colors.cyan
+                //               : Colors.white70,
+                //         ),
+                //       ],
+                //     ],
+                //   ),
+                // ),
               ],
             ),
           ),

@@ -1,4 +1,3 @@
-
 import 'package:crash_safe_image/crash_safe_image.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
@@ -29,7 +28,11 @@ class MemberWidget extends StatelessWidget {
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.center,
           children: [
-            CircleAvatar(radius: 8.5.r, backgroundImage: AssetImage(imagePath)),
+            CircleAvatar(
+              backgroundColor: Colors.grey,
+              radius: 8.5.r,
+              backgroundImage: NetworkImage(imagePath),
+            ),
             widthBox4,
             Text(
               name,

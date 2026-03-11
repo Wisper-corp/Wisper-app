@@ -11,11 +11,11 @@ import 'package:wisper/gen/assets.gen.dart';
 class ChatSection extends StatefulWidget {
   const ChatSection({super.key});
 
-  @override
+  @override 
   State<ChatSection> createState() => _ChatSectionState();
 }
 
- class _ChatSectionState extends State<ChatSection> {
+class _ChatSectionState extends State<ChatSection> {
   final AllChatsController controller = Get.put(AllChatsController());
   final SocketService socketService = Get.find<SocketService>();
 
@@ -80,10 +80,7 @@ class ChatSection extends StatefulWidget {
           return const Center(
             child: Text(
               'No group chat found',
-              style: TextStyle(
-                fontSize: 14,
-                color: Colors.white70,
-              ),
+              style: TextStyle(fontSize: 14, color: Colors.white70),
             ),
           );
         }
@@ -107,15 +104,19 @@ class ChatSection extends StatefulWidget {
               name = item['chatClass']?['name'] ?? 'Class Chat';
               image = item['chatClass']?['image'] ?? image;
             }
- 
+
             final String lastMessage = item['lastMessage'] ?? 'No messages yet';
             final String timeStr = item['latestMessageAt'] ?? '';
             final DateTime time = DateTime.tryParse(timeStr) ?? DateTime.now();
-            final String formattedTime = DateFormatter(time).getRelativeTimeFormat();
+            final String groupImage = item['group']?['image'] ?? '';
+            final String classImage = item['chatClass']?['image'] ?? '';
+            final String formattedTime = DateFormatter(
+              time,
+            ).getRelativeTimeFormat();
             final int unread = item['unreadMessageCount'] ?? 0;
 
             return MemberListTile(
-              isOnline: false, // usually no "online" for group/class
+              isOnline: false,
               onTap: () {
                 if (type == 'GROUP') {
                   Get.to(
@@ -139,7 +140,11 @@ class ChatSection extends StatefulWidget {
               },
               isGroup: type == 'GROUP',
               isClass: type == 'CLASS',
-              imagePath: image,
+              imagePath: type == 'GROUP'
+                  ? groupImage
+                  : type == 'CLASS'
+                  ? classImage
+                  : image,
               name: name,
               message: lastMessage,
               time: formattedTime,

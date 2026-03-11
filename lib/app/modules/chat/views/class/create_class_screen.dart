@@ -143,9 +143,14 @@ class _CreateClassScreenState extends State<CreateClassScreen> {
                                     horizontal: 4,
                                   ),
                                   child: MemberWidget(
-                                    imagePath: Assets.images.image.keyName,
+                                    imagePath:
+                                        connection.partner?.person != null
+                                        ? connection.partner?.person?.image ??
+                                              ''
+                                        : connection.partner?.business?.image ??
+                                              '',
                                     name:
-                                        connection?.partner?.person?.name ??
+                                        connection.partner?.person?.name ??
                                         'Unknown',
                                     onTap: () {
                                       setState(() {

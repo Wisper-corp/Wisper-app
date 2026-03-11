@@ -49,7 +49,7 @@ class _GroupChatHeaderState extends State<GroupChatHeader> {
 
   final DeleteGroupController deleteGroupController = DeleteGroupController();
   final GroupMembersController groupMembersController =
-      Get.find<GroupMembersController>();
+      Get.put(GroupMembersController());
   final GetMuteInfoController getMuteInfoController = Get.put(
     GetMuteInfoController(),
   );
@@ -152,6 +152,7 @@ class _GroupChatHeaderState extends State<GroupChatHeader> {
         "callId": callId,
         "token": callController.token,
         "groupName": widget.groupName,
+        "groupImage": widget.groupImage,
       });
 
       if (type == 'VIDEO') {
@@ -371,11 +372,17 @@ class _GroupChatHeaderState extends State<GroupChatHeader> {
                         radius: 13,
                       ),
                       widthBox10,
-                      CircleAvatar(
-                        backgroundColor: Colors.grey,
-                        backgroundImage: NetworkImage(widget.groupImage),
-                        radius: 20,
-                      ),
+                      widget.groupImage.isEmpty
+                          ? CrashSafeImage(
+                              Assets.images.userGroup.keyName,
+                              color: const Color(0xff1F7DE9),
+                              height: 20.h,
+                            )
+                          : CircleAvatar(
+                              backgroundColor: Colors.grey,
+                              backgroundImage: NetworkImage(widget.groupImage),
+                              radius: 20,
+                            ),
                       widthBox10,
                       Column(
                         crossAxisAlignment: CrossAxisAlignment.start,

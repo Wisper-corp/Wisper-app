@@ -214,7 +214,7 @@ class _CreateGroupScreenState extends State<CreateGroupScreen> {
                               });
                             },
                           ),
-                          imagePath: Assets.images.image.keyName,
+                          imagePath: data.partner?.person?.image ?? '',
                           title: data.partner?.person?.name ?? '',
                           subtitle: data.partner?.person?.title ?? '',
                           onTap: () {

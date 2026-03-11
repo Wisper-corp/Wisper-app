@@ -75,7 +75,7 @@ class _HomeScreenState extends State<HomeScreen> {
                     child: Column(
                       children: [
                         Text(
-                          'General Chat',
+                          'General Chat', 
                           style: TextStyle(
                             fontFamily: "Segoe UI",
                             fontSize: 15.sp,

@@ -1,5 +1,7 @@
+import 'dart:async';
+
 import 'package:agora_rtc_engine/agora_rtc_engine.dart';
-// import 'package:audioplayers/audioplayers.dart';
+import 'package:audioplayers/audioplayers.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:wisper/app/core/services/socket/socket_service.dart';
@@ -30,18 +32,20 @@ class AudioCallPage extends StatefulWidget {
 }
 
 class _AudioCallPageState extends State<AudioCallPage> {
-  // final AudioPlayer _player = AudioPlayer();
+  final AudioPlayer _player = AudioPlayer();
 
   late RtcEngine agoraEngine;
   bool localUserJoined = false;
   bool _micEnabled = true;
   bool _speakerEnabled = true;
-  int? remoteUid;
+
+  // ✅ Single remoteUid এর বদলে list — group call support
+  final List<int> _remoteUids = [];
+
   String engineLog = 'Initializing...';
   bool callProgress = true;
   bool _isLeavingCall = false;
 
-  // ✅ Call শুরুর সময় track করবে
   DateTime? _callStartTime;
 
   SocketService socketService = Get.find<SocketService>();
@@ -49,21 +53,24 @@ class _AudioCallPageState extends State<AudioCallPage> {
   Worker? _declinedWorker;
   Worker? _endedWorker;
 
+  Timer? _noAnswerTimer;
   RxString time = '00:00'.obs;
+
+  // ✅ কেউ join করেছে কিনা
+  bool get hasRemoteUser => _remoteUids.isNotEmpty;
 
   @override
   void initState() {
     super.initState();
 
-    // ✅ Page open হওয়ার সাথে সাথে signal reset করো
     socketService.resetCallSignals();
-
-    //  _player.setReleaseMode(ReleaseMode.loop);
+    _player.setReleaseMode(ReleaseMode.loop);
 
     _declinedWorker = ever(socketService.callDeclinedSignal, (bool value) {
       print('👀 callDeclinedSignal changed: $value');
       if (value && mounted && !_isLeavingCall) {
         print('📵 Call declined — closing AudioCallPage');
+        _cancelNoAnswerTimer();
         _leaveAndPop();
       }
     });
@@ -72,6 +79,7 @@ class _AudioCallPageState extends State<AudioCallPage> {
       print('👀 callEndedSignal changed: $value');
       if (value && mounted && !_isLeavingCall) {
         print('📵 Call ended — closing AudioCallPage');
+        _cancelNoAnswerTimer();
         _leaveAndPop();
       }
     });
@@ -79,17 +87,47 @@ class _AudioCallPageState extends State<AudioCallPage> {
     joinCall();
   }
 
-  /// ✅ Call duration সেকেন্ডে বের করো
+  Future<void> ringtone() async {
+    try {
+      await _player.play(AssetSource('ringtone.mp3'));
+    } catch (e) {
+      print('Ringtone error: $e');
+    }
+  }
+
+  Future<void> stopRingtone() async {
+    try {
+      await _player.stop();
+    } catch (e) {
+      print('Stop ringtone error: $e');
+    }
+  }
+
+  void _startNoAnswerTimer() {
+    _noAnswerTimer = Timer(const Duration(seconds: 30), () {
+      if (!hasRemoteUser && mounted && !_isLeavingCall) {
+        print('⏰ No answer after 30s — auto cancelling call');
+        socketService.socket.emit('callCancel', {'callId': widget.callId});
+        _leaveAndPop();
+      }
+    });
+  }
+
+  void _cancelNoAnswerTimer() {
+    _noAnswerTimer?.cancel();
+    _noAnswerTimer = null;
+  }
+
   int _getCallDuration() {
     if (_callStartTime == null) return 0;
     return DateTime.now().difference(_callStartTime!).inSeconds;
   }
 
-  /// ✅ Agora cleanly leave করে socket emit করে page বন্ধ করো
   Future<void> _leaveAndPop({bool emitCallEnd = false}) async {
     if (_isLeavingCall) return;
     _isLeavingCall = true;
 
+    _cancelNoAnswerTimer();
     await stopRingtone();
 
     if (emitCallEnd) {
@@ -110,9 +148,7 @@ class _AudioCallPageState extends State<AudioCallPage> {
       print('Error leaving channel: $e');
     }
 
-    if (mounted) {
-      Navigator.pop(context);
-    }
+    if (mounted) Navigator.pop(context);
   }
 
   Future<void> startTimer() async {
@@ -123,16 +159,8 @@ class _AudioCallPageState extends State<AudioCallPage> {
       final minutesStr = ((seconds ~/ 60) % 60).toString().padLeft(2, '0');
       final secondsStr = (seconds % 60).toString().padLeft(2, '0');
       time.value = '$minutesStr:$secondsStr';
-      return remoteUid != null && mounted;
+      return hasRemoteUser && mounted;
     });
-  }
-
-  Future<void> ringtone() async {
-    //  await _player.play(AssetSource('audio/ringtone.mp3'));
-  }
-
-  Future<void> stopRingtone() async {
-    // await _player.stop();
   }
 
   Future<void> joinCall() async {
@@ -164,58 +192,68 @@ class _AudioCallPageState extends State<AudioCallPage> {
                 localUserJoined = true;
                 engineLog = 'Connected to channel';
               });
+              _startNoAnswerTimer();
             }
             print('✅ Joined audio channel');
           },
           onUserJoined: (RtcConnection connection, int rUid, int elapsed) {
             if (mounted) {
+              _cancelNoAnswerTimer();
+              stopRingtone();
               setState(() {
-                remoteUid = rUid;
+                // ✅ List এ add করো — duplicate check সহ
+                if (!_remoteUids.contains(rUid)) {
+                  _remoteUids.add(rUid);
+                }
                 engineLog = 'Remote user joined: $rUid';
               });
-              // ✅ Call শুরুর সময় save করো
-              _callStartTime = DateTime.now();
-              stopRingtone();
-              startTimer();
+              // ✅ প্রথম user join করলে timer শুরু করো
+              if (_remoteUids.length == 1) {
+                _callStartTime = DateTime.now();
+                startTimer();
+              }
             }
-            print('✅ Remote user joined: $rUid');
+            print('✅ Remote user joined: $rUid | Total: ${_remoteUids.length}');
           },
-          onUserOffline:
-              (
-                RtcConnection connection,
-                int rUid,
-                UserOfflineReasonType reason,
-              ) {
-                print('onUserOffline: $rUid, reason: $reason');
-                if (mounted && !_isLeavingCall) {
-                  final duration = _getCallDuration();
-                  print('📞 Remote user left. Duration: $duration seconds');
+          onUserOffline: (
+            RtcConnection connection,
+            int rUid,
+            UserOfflineReasonType reason,
+          ) {
+            print('onUserOffline: $rUid, reason: $reason');
+            if (mounted) {
+              setState(() {
+                // ✅ List থেকে remove করো
+                _remoteUids.remove(rUid);
+              });
 
-                  // ✅ Duration সহ callEnd emit করো
-                  socketService.socket.emitWithAck(
-                    'callEnd',
-                    {'callId': widget.callId, 'duration': duration},
-                    ack: (response) {
-                      print('Server acknowledged for callEnd: $response');
-                    },
-                  );
-
-                  _leaveAndPop();
-                }
-              },
-          onConnectionStateChanged:
-              (
-                RtcConnection connection,
-                ConnectionStateType state,
-                ConnectionChangedReasonType reason,
-              ) {
-                if (mounted) {
-                  setState(() {
-                    engineLog = 'Connection: ${state.name}';
-                  });
-                }
-                print('📶 Connection: ${state.name} - ${reason.name}');
-              },
+              // ✅ সবাই চলে গেলে call শেষ করো
+              if (_remoteUids.isEmpty && !_isLeavingCall) {
+                final duration = _getCallDuration();
+                print('📞 All remote users left. Duration: $duration seconds');
+                socketService.socket.emitWithAck(
+                  'callEnd',
+                  {'callId': widget.callId, 'duration': duration},
+                  ack: (response) {
+                    print('Server acknowledged for callEnd: $response');
+                  },
+                );
+                _leaveAndPop();
+              }
+            }
+          },
+          onConnectionStateChanged: (
+            RtcConnection connection,
+            ConnectionStateType state,
+            ConnectionChangedReasonType reason,
+          ) {
+            if (mounted) {
+              setState(() {
+                engineLog = 'Connection: ${state.name}';
+              });
+            }
+            print('📶 Connection: ${state.name} - ${reason.name}');
+          },
           onError: (ErrorCodeType err, String msg) {
             if (mounted) {
               setState(() {
@@ -257,13 +295,117 @@ class _AudioCallPageState extends State<AudioCallPage> {
 
   @override
   void dispose() {
+    _cancelNoAnswerTimer();
     _declinedWorker?.dispose();
     _endedWorker?.dispose();
     socketService.resetCallSignals();
+    _player.dispose();
     agoraEngine.leaveChannel();
     agoraEngine.release();
-    // _player.dispose();
     super.dispose();
+  }
+
+  // ✅ Group audio call — participants list UI
+  Widget _buildParticipantsList() {
+    final count = _remoteUids.length;
+
+    if (count == 0) {
+      // কেউ আসেনি — শুধু waiting UI
+      return Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          CircleAvatar(
+            radius: 60,
+            backgroundImage: widget.photoUrl.isNotEmpty
+                ? NetworkImage(widget.photoUrl)
+                : null,
+            child: widget.photoUrl.isEmpty
+                ? const Icon(Icons.person, size: 60)
+                : null,
+          ),
+          const SizedBox(height: 20),
+          Text(
+            widget.name,
+            style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+          ),
+          const SizedBox(height: 4),
+          const Text('Calling...'),
+        ],
+      );
+    }
+
+    // ✅ ১+ জন — সবার avatar grid দেখাও
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        // Timer
+        Obx(
+          () => Text(
+            time.value,
+            style: const TextStyle(
+              fontSize: 18,
+              fontWeight: FontWeight.w500,
+              color: Colors.black54,
+            ),
+          ),
+        ),
+        const SizedBox(height: 24),
+        // ✅ Participant count badge
+        Container(
+          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
+          decoration: BoxDecoration(
+            color: Colors.blue.shade100,
+            borderRadius: BorderRadius.circular(20),
+          ),
+          child: Text(
+            '${count + 1} participants', // remote + local
+            style: TextStyle(
+              color: Colors.blue.shade800,
+              fontWeight: FontWeight.w600,
+            ),
+          ),
+        ),
+        const SizedBox(height: 24),
+        // ✅ Remote participants avatars
+        Wrap(
+          spacing: 16,
+          runSpacing: 16,
+          alignment: WrapAlignment.center,
+          children: [
+            // Local user
+            _buildAvatarTile(label: 'You', isLocal: true),
+            // Remote users
+            ..._remoteUids.map(
+              (uid) => _buildAvatarTile(label: 'User $uid', isLocal: false),
+            ),
+          ],
+        ),
+      ],
+    );
+  }
+
+  Widget _buildAvatarTile({required String label, required bool isLocal}) {
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        CircleAvatar(
+          radius: 36,
+          backgroundColor: isLocal
+              ? Colors.blue.shade300
+              : Colors.green.shade300,
+          child: Icon(
+            Icons.person,
+            size: 36,
+            color: Colors.white,
+          ),
+        ),
+        const SizedBox(height: 6),
+        Text(
+          label,
+          style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w500),
+        ),
+      ],
+    );
   }
 
   @override
@@ -284,41 +426,19 @@ class _AudioCallPageState extends State<AudioCallPage> {
         ),
         child: Stack(
           children: [
+            // ✅ Center content — participants
             Positioned(
-              top: 160,
-              right: 0,
+              top: 140,
               left: 0,
-              child: Column(
-                children: [
-                  CircleAvatar(
-                    radius: 60,
-                    backgroundImage: widget.photoUrl.isNotEmpty
-                        ? NetworkImage(widget.photoUrl)
-                        : null,
-                    child: widget.photoUrl.isEmpty
-                        ? const Icon(Icons.person, size: 60)
-                        : null,
-                  ),
-                  const SizedBox(height: 20),
-                  Text(
-                    widget.name,
-                    style: const TextStyle(
-                      fontSize: 20,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                  const SizedBox(height: 4),
-                  if (remoteUid != null)
-                    Obx(() => Text(time.value))
-                  else
-                    const Text('Calling...'),
-                  const SizedBox(height: 16),
-                ],
+              right: 0,
+              child: Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 24),
+                child: _buildParticipantsList(),
               ),
             ),
 
-            // End call button — waiting screen (receiver আসেনি)
-            if (remoteUid == null)
+            // End call button — waiting screen (কেউ আসেনি)
+            if (!hasRemoteUser)
               Positioned(
                 bottom: 60,
                 left: 0,
@@ -330,7 +450,6 @@ class _AudioCallPageState extends State<AudioCallPage> {
                       backgroundColor: Colors.red,
                       child: IconButton(
                         onPressed: () {
-                          // Receiver আসার আগে cancel করলে callCancel emit করো
                           socketService.socket.emit('callCancel', {
                             'callId': widget.callId,
                           });
@@ -344,7 +463,7 @@ class _AudioCallPageState extends State<AudioCallPage> {
               ),
 
             // Controls — call চলাকালীন
-            if (remoteUid != null)
+            if (hasRemoteUser)
               Positioned(
                 bottom: 60,
                 left: 0,
@@ -362,9 +481,7 @@ class _AudioCallPageState extends State<AudioCallPage> {
                         child: IconButton(
                           onPressed: () async {
                             setState(() => _micEnabled = !_micEnabled);
-                            await agoraEngine.muteLocalAudioStream(
-                              !_micEnabled,
-                            );
+                            await agoraEngine.muteLocalAudioStream(!_micEnabled);
                           },
                           icon: Icon(
                             _micEnabled ? Icons.mic : Icons.mic_off,
@@ -395,7 +512,7 @@ class _AudioCallPageState extends State<AudioCallPage> {
                         ),
                       ),
                       const SizedBox(width: 32),
-                      // ✅ End call — duration সহ callEnd emit করো
+                      // End call
                       CircleAvatar(
                         radius: 30,
                         backgroundColor: Colors.red,

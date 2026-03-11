@@ -14,11 +14,13 @@ import 'package:wisper/app/core/others/get_storage.dart';
 import 'package:wisper/app/core/utils/date_formatter.dart';
 import 'package:wisper/app/core/utils/image_picker.dart';
 import 'package:wisper/app/core/utils/snack_bar.dart';
+import 'package:wisper/app/core/widgets/common/circle_icon.dart';
 import 'package:wisper/app/core/widgets/common/custom_button.dart';
 import 'package:wisper/app/core/widgets/common/custom_popup.dart';
 import 'package:wisper/app/core/widgets/common/line_widget.dart';
 import 'package:wisper/app/modules/chat/widgets/location_info.dart';
 import 'package:wisper/app/modules/chat/widgets/select_option_widget.dart';
+import 'package:wisper/app/modules/homepage/views/connection_screen.dart';
 import 'package:wisper/app/modules/homepage/views/my_resume_section.dart';
 import 'package:wisper/app/modules/job/views/my_job_section.dart';
 import 'package:wisper/app/modules/post/controller/feed_post_controller.dart';
@@ -43,12 +45,14 @@ class ProfileScreen extends StatefulWidget {
   State<ProfileScreen> createState() => _ProfileScreenState();
 }
 
-class _ProfileScreenState extends State<ProfileScreen> with WidgetsBindingObserver {
+class _ProfileScreenState extends State<ProfileScreen>
+    with WidgetsBindingObserver {
   int selectedIndex = 0;
 
   final ProfileController personController = Get.put(ProfileController());
   final BusinessController businessController = Get.put(BusinessController());
-  final ProfilePhotoController photoController = Get.find<ProfilePhotoController>();
+  final ProfilePhotoController photoController =
+      Get.find<ProfilePhotoController>();
 
   final AllRecommendationController recommendationController = Get.put(
     AllRecommendationController(),
@@ -68,7 +72,9 @@ class _ProfileScreenState extends State<ProfileScreen> with WidgetsBindingObserv
     _updateProfileImage();
     _getProfileImage();
 
-    print('User id in ProfileScreen: ${StorageUtil.getData(StorageUtil.userId)}');
+    print(
+      'User id in ProfileScreen: ${StorageUtil.getData(StorageUtil.userId)}',
+    );
 
     // প্রথমবার + resumed-এ fresh location
     _fetchFreshLocation();
@@ -125,7 +131,9 @@ class _ProfileScreenState extends State<ProfileScreen> with WidgetsBindingObserv
       // Option 1: Quick last known (fast UI update)
       Position? lastPosition = await Geolocator.getLastKnownPosition();
       if (lastPosition != null) {
-        print('Quick last known: ${lastPosition.latitude}, ${lastPosition.longitude}');
+        print(
+          'Quick last known: ${lastPosition.latitude}, ${lastPosition.longitude}',
+        );
         _updateCityFromPosition(lastPosition); // optional: দ্রুত দেখাও
       }
 
@@ -137,22 +145,30 @@ class _ProfileScreenState extends State<ProfileScreen> with WidgetsBindingObserv
 
       // Stream দিয়ে একবার update নাও → almost সবসময় fresh GPS fix দেয়
       await _positionSubscription?.cancel(); // পুরোনো cancel করো
-      _positionSubscription = Geolocator.getPositionStream(locationSettings: locationSettings)
-          .listen((Position position) async {
-        print('Fresh stream position: ${position.latitude}, ${position.longitude} at ${DateTime.now()}');
-        await _updateCityFromPosition(position);
-        _positionSubscription?.cancel(); // শুধু একবার নেয়া হয়েছে → stop
-      }, onError: (e) {
-        print('Stream error: $e');
-      });
+      _positionSubscription =
+          Geolocator.getPositionStream(
+            locationSettings: locationSettings,
+          ).listen(
+            (Position position) async {
+              print(
+                'Fresh stream position: ${position.latitude}, ${position.longitude} at ${DateTime.now()}',
+              );
+              await _updateCityFromPosition(position);
+              _positionSubscription?.cancel(); // শুধু একবার নেয়া হয়েছে → stop
+            },
+            onError: (e) {
+              print('Stream error: $e');
+            },
+          );
 
       // Fallback: যদি stream দেরি করে → direct getCurrentPosition
       Position position = await Geolocator.getCurrentPosition(
         locationSettings: locationSettings,
       );
-      print('Fallback current position: ${position.latitude}, ${position.longitude}');
+      print(
+        'Fallback current position: ${position.latitude}, ${position.longitude}',
+      );
       await _updateCityFromPosition(position);
-
     } catch (e) {
       print('Location error: $e');
       currentCityCountry.value = 'Could not get fresh location';
@@ -168,7 +184,8 @@ class _ProfileScreenState extends State<ProfileScreen> with WidgetsBindingObserv
 
       if (placemarks.isNotEmpty) {
         Placemark place = placemarks[0];
-        String city = place.locality ?? place.subAdministrativeArea ?? 'Unknown city';
+        String city =
+            place.locality ?? place.subAdministrativeArea ?? 'Unknown city';
         String country = place.country ?? 'Unknown country';
         currentCityCountry.value = '$city, $country';
 
@@ -189,11 +206,17 @@ class _ProfileScreenState extends State<ProfileScreen> with WidgetsBindingObserv
     await personController.getMyProfile();
     await businessController.getMyProfile();
     if (userRole == 'PERSON') {
-      print('Person image: ${personController.profileData?.auth?.person?.image}');
-      currentImagePath.value = personController.profileData?.auth?.person?.image ?? '';
+      print(
+        'Person image: ${personController.profileData?.auth?.person?.image}',
+      );
+      currentImagePath.value =
+          personController.profileData?.auth?.person?.image ?? '';
     } else if (userRole == 'BUSINESS') {
-      print('Business image: ${businessController.buisnessData?.auth?.business?.image}');
-      currentImagePath.value = businessController.buisnessData?.auth?.business?.image ?? '';
+      print(
+        'Business image: ${businessController.buisnessData?.auth?.business?.image}',
+      );
+      currentImagePath.value =
+          businessController.buisnessData?.auth?.business?.image ?? '';
     }
   }
 
@@ -208,8 +231,8 @@ class _ProfileScreenState extends State<ProfileScreen> with WidgetsBindingObserv
     currentImagePath.value = imageUrl?.isNotEmpty == true
         ? imageUrl!
         : (userRole == 'PERSON'
-            ? Assets.images.person.keyName
-            : Assets.images.person.keyName);
+              ? Assets.images.person.keyName
+              : Assets.images.person.keyName);
   }
 
   void _onImagePicked(File imageFile) async {
@@ -219,8 +242,12 @@ class _ProfileScreenState extends State<ProfileScreen> with WidgetsBindingObserv
 
     if (success) {
       if (userRole == 'PERSON') {
-        final AllFeedPostController feedController = Get.put(AllFeedPostController());
-        final MyFeedPostController myFeedPostController = Get.put(MyFeedPostController());
+        final AllFeedPostController feedController = Get.put(
+          AllFeedPostController(),
+        );
+        final MyFeedPostController myFeedPostController = Get.put(
+          MyFeedPostController(),
+        );
 
         myFeedPostController.resetPagination();
         feedController.resetPagination();
@@ -316,86 +343,118 @@ class _ProfileScreenState extends State<ProfileScreen> with WidgetsBindingObserv
               SizedBox(height: 40.h),
 
               // InfoCard + বাকি UI একদম একই
-              InfoCard(
-                isShowNotification: true,
-                trailingKey: suffixButtonKey,
-                trailingOnTap: () => CustomPopupMenu(
-                  targetKey: suffixButtonKey,
-                  options: [
-                    Text(
-                      'Settings',
-                      style: TextStyle(fontSize: 12.sp, color: Colors.white),
-                    ),
-                  ],
-                  optionActions: {
-                    '0': () => Get.to(() => const SettingsScreen()),
-                  },
-                  menuWidth: 200,
-                  menuHeight: 40,
-                ).showMenuAtPosition(context),
-                imagePath: currentImagePath.value,
-                editOnTap: () => ImagePickerHelper().showAlertDialog(
-                  context,
-                  _onImagePicked,
-                ),
-                title: displayName,
-                memberInfo: displayTitle,
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    SizedBox(
-                      height: 31.h,
-                      width: 110.w,
-                      child: CustomElevatedButton(
-                        textSize: 11,
-                        title: 'Share Profile',
-                        onPress: () async {
-                          try {
-                            final String userId = StorageUtil.getData(StorageUtil.userId) ?? '';
-                            if (userId.isEmpty) {
-                              Get.snackbar('Error', 'User ID not found');
-                              return;
-                            }
-
-                            final String role = StorageUtil.getData(StorageUtil.userRole) ?? 'PERSON';
-                            final bool isPerson = role.toUpperCase() == 'PERSON';
-
-                            const String baseUrl = 'https://c9f1d48ba47f.ngrok-free.app';
-
-                            final Uri shareUri = Uri.https(
-                              baseUrl.replaceAll('https://', ''),
-                              isPerson ? '/persons/$userId' : '/businesses/$userId',
-                            );
-
-                            debugPrint("Sharing profile link: $shareUri");
-
-                            await Share.shareUri(shareUri);
-                          } catch (e) {
-                            debugPrint('Share error: $e');
-                            Get.snackbar('Error', 'Failed to share profile');
-                          }
-                        },
-                        borderRadius: 50,
-                      ),
-                    ),
-                    SizedBox(width: 10.w),
-                    SizedBox(
-                      height: 31.h,
-                      width: 110.w,
-                      child: CustomElevatedButton(
-                        color: Colors.black,
-                        textSize: 11,
-                        title: 'Edit Profile',
-                        onPress: () => Get.to(
-                          () => StorageUtil.getData(StorageUtil.userRole) == 'PERSON'
-                              ? EditPersonProfileScreen()
-                              : EditBusinessProfileScreen(),
+              Stack(
+                children: [
+                  InfoCard(
+                    isShowNotification: false,
+                    trailingKey: suffixButtonKey,
+                    trailingOnTap: () => CustomPopupMenu(
+                      targetKey: suffixButtonKey,
+                      options: [
+                        Text(
+                          'Settings',
+                          style: TextStyle(
+                            fontSize: 12.sp,
+                            color: Colors.white,
+                          ),
                         ),
-                        borderRadius: 50,
-                      ),
+                      ],
+                      optionActions: {
+                        '0': () => Get.to(() => const SettingsScreen()),
+                      },
+                      menuWidth: 200,
+                      menuHeight: 40,
+                    ).showMenuAtPosition(context),
+                    imagePath: currentImagePath.value,
+                    editOnTap: () => ImagePickerHelper().showAlertDialog(
+                      context,
+                      _onImagePicked,
                     ),
-                  ],
-                ),
+                    title: displayName,
+                    memberInfo: displayTitle,
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        SizedBox(
+                          height: 31.h,
+                          width: 110.w,
+                          child: CustomElevatedButton(
+                            textSize: 11,
+                            title: 'Share Profile',
+                            onPress: () async {
+                              try {
+                                final String userId =
+                                    StorageUtil.getData(StorageUtil.userId) ??
+                                    '';
+                                if (userId.isEmpty) {
+                                  Get.snackbar('Error', 'User ID not found');
+                                  return;
+                                }
+
+                                final String role =
+                                    StorageUtil.getData(StorageUtil.userRole) ??
+                                    'PERSON';
+                                final bool isPerson =
+                                    role.toUpperCase() == 'PERSON';
+
+                                const String baseUrl =
+                                    'https://c9f1d48ba47f.ngrok-free.app';
+
+                                final Uri shareUri = Uri.https(
+                                  baseUrl.replaceAll('https://', ''),
+                                  isPerson
+                                      ? '/persons/$userId'
+                                      : '/businesses/$userId',
+                                );
+
+                                debugPrint("Sharing profile link: $shareUri");
+
+                                await Share.shareUri(shareUri);
+                              } catch (e) {
+                                debugPrint('Share error: $e');
+                                Get.snackbar(
+                                  'Error',
+                                  'Failed to share profile',
+                                );
+                              }
+                            },
+                            borderRadius: 50,
+                          ),
+                        ),
+                        SizedBox(width: 10.w),
+                        SizedBox(
+                          height: 31.h,
+                          width: 110.w,
+                          child: CustomElevatedButton(
+                            color: Colors.black,
+                            textSize: 11,
+                            title: 'Edit Profile',
+                            onPress: () => Get.to(
+                              () =>
+                                  StorageUtil.getData(StorageUtil.userRole) ==
+                                      'PERSON'
+                                  ? EditPersonProfileScreen()
+                                  : EditBusinessProfileScreen(),
+                            ),
+                            borderRadius: 50,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  Positioned(
+                    top: Get.height * 0.025,
+                    right: Get.width * 0.12,
+                    child: CircleIconWidget(
+                      radius: 14,
+                      iconRadius: 18,
+                      imagePath: Assets.images.notification.keyName,
+                      onTap: () {
+                        Get.to(() => const ConnectionScreen());
+                      },
+                    ),
+                  ),
+                ],
               ),
 
               SizedBox(height: 10.h),
@@ -405,9 +464,12 @@ class _ProfileScreenState extends State<ProfileScreen> with WidgetsBindingObserv
                       height: 30.h,
                       child: GetBuilder<AllRecommendationController>(
                         builder: (controller) {
-                          final int count = controller.recommendationData.length;
+                          final int count =
+                              controller.recommendationData.length;
                           return Recommendation(
-                            images: controller.recommendationData.map((e) => e.giver!).toList(),
+                            images: controller.recommendationData
+                                .map((e) => e.giver!)
+                                .toList(),
                             isEmpty: count == 0,
                             onTap: _showCreateGroup,
                             count: count,

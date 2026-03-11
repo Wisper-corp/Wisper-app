@@ -20,7 +20,7 @@ class GroupMembersModel {
 }
 
 class Data {
-    Data({
+    Data({ 
         required this.meta,
         required this.community,
         required this.members,

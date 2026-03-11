@@ -191,7 +191,7 @@ class AllChatsController extends GetxController {
         errorMessage.value = '';
         final model = AllChatsModel.fromJson(response.responseData);
         allChatsModel.value = model;
-
+ 
         socketService.socketFriendList.clear();
 
         print(
