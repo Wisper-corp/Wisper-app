@@ -2,15 +2,26 @@ import 'dart:io';
 
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_callkit_incoming/entities/entities.dart';
+import 'package:flutter_callkit_incoming/flutter_callkit_incoming.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
+import 'package:uuid/uuid.dart';
 
 // ─────────────────────────────────────────────────────────────
 // BACKGROUND HANDLER — top-level function (must be outside class)
+// App killed বা background এ থাকলে এই function call হবে
 // ─────────────────────────────────────────────────────────────
 @pragma('vm:entry-point')
-Future<void> _firebaseMessagingBackgroundHandler(RemoteMessage message) async {
+Future<void> firebaseMessagingBackgroundHandler(RemoteMessage message) async {
   WidgetsFlutterBinding.ensureInitialized();
 
+  // ── Incoming call notification এলে callkit দেখাও ──
+  if (message.data['type'] == 'incoming_call') {
+    await showCallkitIncoming(message.data);
+    return;
+  }
+
+  // ── Regular notification ──
   final plugin = FlutterLocalNotificationsPlugin();
   const initSettings = InitializationSettings(
     android: AndroidInitializationSettings('@mipmap/ic_launcher'),
@@ -34,12 +45,78 @@ Future<void> _firebaseMessagingBackgroundHandler(RemoteMessage message) async {
     ),
   );
 }
+
+// ─────────────────────────────────────────────────────────────
+// CALLKIT SHOW — background ও foreground দুই জায়গায় ব্যবহার হবে
+// ─────────────────────────────────────────────────────────────
+Future<void> showCallkitIncoming(Map<String, dynamic> data) async {
+  // call_id না থাকলে একটা generate করো
+  final callId = data['call_id'] ?? const Uuid().v4();
+  final callerName = data['caller_name'] ?? 'Unknown';
+  final callerImage = data['caller_image'] ?? '';
+  final callType = data['call_type'] == 'VIDEO' ? 1 : 0; // 0=audio, 1=video
+  final channelName = data['channel_name'] ?? '';
+  final agoraToken = data['agora_token'] ?? '';
+
+  final params = CallKitParams(
+    id: callId,
+    nameCaller: callerName,
+    appName: 'Wisper',
+    avatar: callerImage.isNotEmpty ? callerImage : null,
+    handle: callerName,
+    type: callType,
+    textAccept: 'Accept',
+    textDecline: 'Decline',
+    missedCallNotification: const NotificationParams(
+      showNotification: true,
+      isShowCallback: true,
+      subtitle: 'Missed call',
+      callbackText: 'Call back',
+    ),
+    duration: 45000, // 45 seconds ring
+    extra: {
+      'call_id': callId,
+      'channel_name': channelName,
+      'agora_token': agoraToken,
+      'call_type': data['call_type'] ?? 'AUDIO',
+      'caller_id': data['caller_id'] ?? '',
+      'caller_name': callerName,
+      'caller_image': callerImage,
+    },
+    android: const AndroidParams(
+      isCustomNotification: true,
+      isShowLogo: false,
+      ringtonePath: 'system_ringtone_default',
+      backgroundColor: '#1E1E1E',
+      actionColor: '#4CAF50',
+      textColor: '#ffffff',
+      isShowCallID: false,
+    ),
+    ios: const IOSParams(
+      iconName: 'AppIcon',
+      handleType: 'generic',
+      supportsVideo: true,
+      maximumCallGroups: 1,
+      maximumCallsPerCallGroup: 1,
+      audioSessionMode: 'default',
+      audioSessionActive: true,
+      audioSessionPreferredSampleRate: 44100.0,
+      audioSessionPreferredIOBufferDuration: 0.005,
+      supportsDTMF: true,
+      supportsHolding: true,
+      supportsGrouping: false,
+      supportsUngrouping: false,
+      ringtonePath: 'system_ringtone_default',
+    ),
+  );
+
+  await FlutterCallkitIncoming.showCallkitIncoming(params);
+  debugPrint('📞 Callkit shown for: $callerName | callId: $callId');
+}
+
 // ─────────────────────────────────────────────────────────────
 // PUSH NOTIFICATION SERVICE CLASS
-// পরে এই class টা আলাদা file এ নিতে পারবে:
-// lib/app/core/services/push_notification/push_notification_service.dart
 // ─────────────────────────────────────────────────────────────
-
 class PushNotificationService {
   static final PushNotificationService _instance =
       PushNotificationService._internal();
@@ -49,21 +126,37 @@ class PushNotificationService {
   final FlutterLocalNotificationsPlugin _localNotifications =
       FlutterLocalNotificationsPlugin();
 
-  // Optional: notification tap callback
+  // Notification tap callback (non-call notifications এর জন্য)
   Function(String? payload)? onNotificationTap;
 
-  Future<void> init({Function(String? payload)? onTap}) async {
+  // VoIP token callback — server এ পাঠানোর জন্য
+  Function(String token)? onVoipToken;
+
+  Future<void> init({
+    Function(String? payload)? onTap,
+    Function(String token)? onVoipToken,
+  }) async {
     onNotificationTap = onTap;
+    this.onVoipToken = onVoipToken;
 
     await _requestPermission();
     await _initLocalNotifications();
 
     // Background handler
-    FirebaseMessaging.onBackgroundMessage(_firebaseMessagingBackgroundHandler);
+    FirebaseMessaging.onBackgroundMessage(firebaseMessagingBackgroundHandler);
 
-    // Foreground message
+    // ── Foreground message ──
     FirebaseMessaging.onMessage.listen((message) {
-      debugPrint('📩 Foreground: ${message.notification?.title}');
+      debugPrint('📩 Foreground FCM: ${message.data}');
+
+      // Incoming call → callkit দেখাও (socket না থাকলে fallback হিসেবে)
+      // সাধারণত app open থাকলে socket handle করবে, তবুও safeguard
+      if (message.data['type'] == 'incoming_call') {
+        debugPrint('📞 Foreground call notification — socket should handle this');
+        // socket service handle করবে, তাই এখানে কিছু করছি না
+        return;
+      }
+
       _showNotification(
         title: message.notification?.title,
         body: message.notification?.body,
@@ -71,22 +164,44 @@ class PushNotificationService {
       );
     });
 
-    // App opened from background (notification tap)
+    // ── App opened from background (notification tap) ──
     FirebaseMessaging.onMessageOpenedApp.listen((message) {
-      debugPrint('📲 Opened from background: ${message.notification?.title}');
-      onNotificationTap?.call(message.data['route']);
+      debugPrint('📲 Opened from background: ${message.data}');
+      if (message.data['type'] != 'incoming_call') {
+        onNotificationTap?.call(message.data['route']);
+      }
     });
 
-    // App opened from terminated state
+    // ── App opened from terminated state ──
     final initialMessage = await FirebaseMessaging.instance.getInitialMessage();
     if (initialMessage != null) {
-      debugPrint(
-        '💀 Opened from terminated: ${initialMessage.notification?.title}',
-      );
-      onNotificationTap?.call(initialMessage.data['route']);
+      debugPrint('💀 Opened from terminated: ${initialMessage.data}');
+      if (initialMessage.data['type'] != 'incoming_call') {
+        onNotificationTap?.call(initialMessage.data['route']);
+      }
     }
 
     await _initFCMToken();
+
+    // ── iOS VoIP token ──
+    if (Platform.isIOS) {
+      await _initVoipToken();
+    }
+  }
+
+  // ── iOS VoIP token নাও ──
+  Future<void> _initVoipToken() async {
+    try {
+      final voipToken = await FlutterCallkitIncoming.getDevicePushTokenVoIP();
+      if (voipToken != null && voipToken.isNotEmpty) {
+        debugPrint('📱 VoIP Token: $voipToken');
+        onVoipToken?.call(voipToken);
+      } else {
+        debugPrint('⚠️ VoIP token empty, will retry on refresh');
+      }
+    } catch (e) {
+      debugPrint('❌ VoIP token error: $e');
+    }
   }
 
   Future<void> _requestPermission() async {
@@ -110,6 +225,7 @@ class PushNotificationService {
         debugPrint('⚠️ APNs token not available, listening for refresh...');
         FirebaseMessaging.instance.onTokenRefresh.listen((t) {
           debugPrint('📱 FCM Token (refresh): $t');
+          // TODO: server এ পাঠাও
         });
         return;
       }
@@ -142,7 +258,6 @@ class PushNotificationService {
       },
     );
 
-    // Android 8+ channel
     if (Platform.isAndroid) {
       const channel = AndroidNotificationChannel(
         'default_channel_id',

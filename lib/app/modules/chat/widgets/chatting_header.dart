@@ -85,7 +85,7 @@ class _ChatHeaderState extends State<ChatHeader> {
     }
   }
 
-  void getCallToken(
+  void getCallToken( 
     String? roomId,
     String? callId,
     String? type,
@@ -102,7 +102,7 @@ class _ChatHeaderState extends State<ChatHeader> {
     BuildContext context,
     String? roomId,
     String? callId,
-    String? type,
+    String? type, 
     String? medium,
   ) async {
     final bool isSuccess = await callController.getToken(

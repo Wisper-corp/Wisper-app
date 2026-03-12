@@ -29,7 +29,8 @@ class SignInController extends GetxController {
         "email": email,
         "password": password,
         "isMobileApp": true,
-        "fcmToken": fcmToken
+        "fcmToken": fcmToken,
+        "deviceType": "android"
       };
 
       final NetworkResponse response =

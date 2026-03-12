@@ -1,6 +1,9 @@
 // ignore_for_file: library_prefixes, avoid_print
 import 'package:audioplayers/audioplayers.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/scheduler.dart';
+import 'package:flutter_callkit_incoming/entities/entities.dart';
+import 'package:flutter_callkit_incoming/flutter_callkit_incoming.dart';
 import 'package:get/get.dart';
 import 'package:socket_io_client/socket_io_client.dart' as IO;
 import 'package:wisper/app/core/others/get_storage.dart';
@@ -14,7 +17,6 @@ import 'package:wisper/gen/assets.gen.dart';
 class SocketService extends GetxController {
   late IO.Socket _socket;
 
-  // ✅ Incoming call ringtone player
   final AudioPlayer _incomingRingPlayer = AudioPlayer();
 
   RxBool isLoading = false.obs;
@@ -34,21 +36,28 @@ class SocketService extends GetxController {
   Rxn<Map<String, dynamic>> get incomingCall => _incomingCall;
   IO.Socket get socket => _socket;
 
-  late final CallController callController;
+  CallController? _callController;
+  CallController get callController => _callController!;
+
+  bool _initialized = false;
+  bool _callkitHandled = false; // duplicate callkit accept prevent করো
 
   Future<SocketService> init() async {
+    // Double init guard — AllChatsController বা অন্য কেউ আবার call করলে skip
+    if (_initialized) {
+      print('⚠️ SocketService already initialized — skipping');
+      return this;
+    }
+    _initialized = true;
+
     print('🔌 Initializing socket service. Connecting...');
 
-    // ✅ Incoming ringtone loop mode
     await _incomingRingPlayer.setReleaseMode(ReleaseMode.loop);
 
-    callController = Get.put(CallController());
+    _callController = Get.put(CallController());
 
     final token = StorageUtil.getData(StorageUtil.userAccessToken);
     final userId = StorageUtil.getData(StorageUtil.userId);
-
-    print('Token: $token');
-    print('User ID: $userId');
 
     if (token == null || userId == null) {
       print('🔴 Token or User ID is missing!');
@@ -66,7 +75,7 @@ class SocketService extends GetxController {
     );
 
     _socket.onConnect((_) {
-      print('✅ Successfully connected to the server!');
+      print('✅ Connected!');
       isConnected.value = true;
       _socket.emit("connection", userId);
     });
@@ -82,63 +91,70 @@ class SocketService extends GetxController {
     });
 
     _socket.onDisconnect((_) {
-      print('🔴 Socket disconnected');
+      print('🔴 Disconnected');
       isConnected.value = false;
     });
 
     _socket.onReconnect((attempt) {
-      print('🟢 Reconnected successfully! Attempt: $attempt');
+      print('🟢 Reconnected! Attempt: $attempt');
       isConnected.value = true;
       _socket.emit("connection", userId);
     });
 
     _socket.on('checking_notification', (data) {
-      print('🔔 Notification data received:');
-      print(data);
+      print('🔔 Notification: $data');
     });
 
-    // 📞 Incoming Call Event
-    _socket.on('callIncoming', (data) {
-      print('📞 Incoming call data: $data');
+    // ──────────────────────────────────────────────────────────
+    // 📞 Incoming Call
+    // App FOREGROUND → custom dialog
+    // App BACKGROUND → callkit bar
+    // App KILLED     → FCM → push_notification.dart
+    // ──────────────────────────────────────────────────────────
+    _socket.on('callIncoming', (data) async {
+      print('📞 Incoming call: $data');
       _incomingCall.value = data as Map<String, dynamic>;
-      // ✅ Incoming call এলে ring বাজাও
-      _startIncomingRingtone();
-      _showIncomingCallOverlay();
+
+      final appState = SchedulerBinding.instance.lifecycleState;
+      final isAppForeground = appState == AppLifecycleState.resumed;
+
+      print('📱 App state: $appState | foreground: $isAppForeground');
+
+      if (isAppForeground) {
+        _startIncomingRingtone();
+        _showIncomingCallOverlay();
+      } else {
+        await _showCallkitFromSocketData(data);
+      }
     });
 
-    // ✅ callDeclined — Caller এর VideoCallPage বন্ধ করার signal
     _socket.on('callDeclined', (data) {
-      print('📵 callDeclined received in SocketService: $data');
+      print('📵 callDeclined: $data');
       callDeclinedSignal.value = true;
 
       if (_incomingCall.value != null) {
         _incomingCall.value = null;
-        if (Get.isDialogOpen ?? false) {
-          Get.back();
-        }
+        _stopIncomingRingtone();
+        FlutterCallkitIncoming.endAllCalls();
+        if (Get.isDialogOpen ?? false) Get.back();
       }
     });
 
-    // ✅ callEnded — VideoCallPage বন্ধ করার signal
     _socket.on('callEnded', (data) {
-      print('📵 callEnded received in SocketService: $data');
+      print('📵 callEnded: $data');
       callEndedSignal.value = true;
     });
 
-    // ✅ callCanceled — Caller cancel করলে Receiver এর incoming dialog বন্ধ হবে
     _socket.on('callCanceled', (data) {
-      print('📵 callCanceled received in SocketService: $data');
-
+      print('📵 callCanceled: $data');
       callEndedSignal.value = true;
 
       if (_incomingCall.value != null) {
         _incomingCall.value = null;
-        // ✅ Ring বন্ধ করো
         _stopIncomingRingtone();
+        FlutterCallkitIncoming.endAllCalls();
 
-        if (Get.isDialogOpen ?? false) {
-          Get.back();
-        }
+        if (Get.isDialogOpen ?? false) Get.back();
 
         Get.snackbar(
           'Call Cancelled',
@@ -150,66 +166,409 @@ class SocketService extends GetxController {
       }
     });
 
+    // ── Callkit listeners আগে setup করো ──
+    _setupCallkitListeners();
+
     _socket.connect();
+
+    // ── _checkActiveCalls disabled ──
+    // কারণ: activeCalls() এ পুরনো agora_token থাকে যেটা expire হয়ে যায়
+    // onEvent listener (actionCallAccept) এটা সঠিক fresh token দিয়ে handle করে
+    // await _checkActiveCalls();
+
     return this;
   }
 
-  // ✅ Incoming ringtone শুরু করো
-  Future<void> _startIncomingRingtone() async {
-    try {
-      await _incomingRingPlayer.play(AssetSource('IncomingCallRingtone.mp3'));
-      print('🔔 Incoming ringtone started');
-    } catch (e) {
-      print('Incoming ringtone error: $e');
-    }
-  }
-
-  // ✅ Incoming ringtone বন্ধ করো
-  Future<void> _stopIncomingRingtone() async {
-    try {
-      await _incomingRingPlayer.stop();
-      print('🔕 Incoming ringtone stopped');
-    } catch (e) {
-      print('Stop incoming ringtone error: $e');
-    }
-  }
-
-  void resetCallSignals() {
-    callDeclinedSignal.value = false;
-    callEndedSignal.value = false;
-  }
-
+  // ──────────────────────────────────────────────────────────
+  // App FOREGROUND — custom dialog
+  // ──────────────────────────────────────────────────────────
   void _showIncomingCallOverlay() {
-    if (Get.isDialogOpen ?? false) {
-      Get.back();
-    }
+    if (Get.isDialogOpen ?? false) Get.back();
 
     Get.dialog(
       barrierDismissible: false,
       barrierColor: Colors.black.withOpacity(0.7),
       _IncomingCallDialog(
-        isGroup: _incomingCall.value?['groupName'] != null ? true : false,
+        isGroup: _incomingCall.value?['groupName'] != null,
         callerName: _incomingCall.value?['groupName'] != null
             ? _incomingCall.value!['groupName']
             : _incomingCall.value?['callerName'],
-        callerImage:
-            _incomingCall.value?['groupName'] != null &&
+        callerImage: _incomingCall.value?['groupName'] != null &&
                 _incomingCall.value?['groupImage'] == null
             ? 'group'
             : _incomingCall.value?['groupName'] != null &&
-                  _incomingCall.value?['groupImage'] != null
-            ? _incomingCall.value!['groupImage']
-            : _incomingCall.value?['callerImage'],
+                    _incomingCall.value?['groupImage'] != null
+                ? _incomingCall.value!['groupImage']
+                : _incomingCall.value?['callerImage'],
         onAccept: () => _handleAcceptCall(),
         onReject: () => _handleRejectCall(),
       ),
     );
   }
 
+  // ──────────────────────────────────────────────────────────
+  // App BACKGROUND — callkit bar
+  // ──────────────────────────────────────────────────────────
+  Future<void> _showCallkitFromSocketData(Map<String, dynamic> data) async {
+    final callId = data['callId'] ?? data['call_id'] ?? '';
+    final callerName = data['groupName'] ?? data['callerName'] ?? 'Unknown';
+    final callerImage = data['groupImage'] ?? data['callerImage'] ?? '';
+    final callType = data['type'] == 'VIDEO' ? 1 : 0;
+    final roomId = data['roomId'] ?? '';
+
+    final params = CallKitParams(
+      id: callId,
+      nameCaller: callerName,
+      appName: 'Wisper',
+      avatar: callerImage.isNotEmpty ? callerImage : null,
+      handle: callerName,
+      type: callType,
+      textAccept: 'Accept',
+      textDecline: 'Decline',
+      missedCallNotification: const NotificationParams(
+        showNotification: true,
+        isShowCallback: true,
+        subtitle: 'Missed call',
+        callbackText: 'Call back',
+      ),
+      duration: 45000,
+      extra: {
+        'call_id': callId,
+        'channel_name': roomId,
+        'agora_token': data['token'] ?? '',
+        'call_type': data['type'] ?? 'AUDIO',
+        'caller_id': data['callerId'] ?? '',
+        'caller_name': callerName,
+        'caller_image': callerImage,
+      },
+      android: const AndroidParams(
+        isCustomNotification: true,
+        isShowLogo: false,
+        ringtonePath: 'system_ringtone_default',
+        backgroundColor: '#1E1E1E',
+        actionColor: '#4CAF50',
+        textColor: '#ffffff',
+        isShowCallID: false,
+      ),
+      ios: const IOSParams(
+        iconName: 'AppIcon',
+        handleType: 'generic',
+        supportsVideo: true,
+        maximumCallGroups: 1,
+        maximumCallsPerCallGroup: 1,
+        audioSessionMode: 'default',
+        audioSessionActive: true,
+        audioSessionPreferredSampleRate: 44100.0,
+        audioSessionPreferredIOBufferDuration: 0.005,
+        supportsDTMF: true,
+        supportsHolding: true,
+        supportsGrouping: false,
+        supportsUngrouping: false,
+        ringtonePath: 'system_ringtone_default',
+      ),
+    );
+
+    await FlutterCallkitIncoming.showCallkitIncoming(params);
+    print('📞 Callkit shown: $callerName | callId: $callId | roomId: $roomId');
+  }
+
+  // ──────────────────────────────────────────────────────────
+  // CALLKIT LISTENERS
+  // ──────────────────────────────────────────────────────────
+  void _setupCallkitListeners() {
+    FlutterCallkitIncoming.onEvent.listen((CallEvent? event) async {
+      if (event == null) return;
+      print('📞 Callkit event: ${event.event} | body: ${event.body}');
+
+      switch (event.event) {
+        case Event.actionCallAccept:
+          await _handleCallkitAccept(event.body);
+          break;
+
+        case Event.actionCallDecline:
+          _handleCallkitDecline(event.body);
+          break;
+
+        case Event.actionCallTimeout:
+          _stopIncomingRingtone();
+          _incomingCall.value = null;
+          break;
+
+        case Event.actionDidUpdateDevicePushTokenVoip:
+          final newToken = event.body['deviceTokenVoIP'];
+          if (newToken != null) {
+            print('📱 VoIP token updated: $newToken');
+          }
+          break;
+
+        default:
+          break;
+      }
+    });
+  }
+
+  // ──────────────────────────────────────────────────────────
+  // CALLKIT ACCEPT
+  // Background/killed থেকে accept হলে এখানে আসবে
+  // ──────────────────────────────────────────────────────────
+  Future<void> _handleCallkitAccept(Map<String, dynamic> body) async {
+    // Duplicate prevent — onEvent এবং _checkActiveCalls দুটো থেকেই আসতে পারে
+    if (_callkitHandled) {
+      print('⚠️ Callkit already handled — skipping duplicate');
+      return;
+    }
+    _callkitHandled = true;
+
+    print('✅ Callkit accept raw body: $body');
+
+    // extra হয় Map<String, dynamic> হয় Map<Object?, Object?>
+    // দুটো case ই handle করতে হবে
+    final rawExtra = body['extra'];
+    final Map<String, dynamic> extra = rawExtra != null
+        ? Map<String, dynamic>.from(rawExtra as Map)
+        : {};
+
+    print('📦 Extra: $extra');
+
+    // callId — extra থেকে অথবা body['id'] থেকে
+    final callId = (extra['call_id'] ?? body['id'] ?? '').toString();
+
+    // channelName — extra থেকে
+    final channelName = (extra['channel_name'] ?? '').toString();
+
+    // callType
+    final callType = (extra['call_type'] ?? 'AUDIO').toString();
+
+    // caller info
+    final callerName = (extra['caller_name'] ?? body['nameCaller'] ?? '').toString();
+    final callerImage = (extra['caller_image'] ?? body['avatar'] ?? '').toString();
+
+    print('📞 Parsed → callId: $callId | channelName: $channelName | type: $callType');
+
+    if (callId.isEmpty || channelName.isEmpty) {
+      print('❌ callId or channelName is empty — cannot proceed');
+      print('❌ Full body was: $body');
+      FlutterCallkitIncoming.endAllCalls();
+      return;
+    }
+
+    isLoading.value = true;
+
+    // ── agora_token extra তেই আছে — getToken API call করার দরকার নেই ──
+    // getToken করলে NetworkCaller not found error হয় কারণ app তখনও boot হয়নি
+    final agoraTokenFromExtra = (extra['agora_token'] ?? '').toString();
+
+    String tokenToUse = '';
+    int uuidToUse = 0;
+
+    if (agoraTokenFromExtra.isNotEmpty) {
+      // Extra থেকে token পাওয়া গেছে — directly use করো
+      print('✅ Using agora_token from extra (no API call needed)');
+      tokenToUse = agoraTokenFromExtra;
+      uuidToUse = callController.uuid; // 0 হলেও চলবে, Agora uid optional
+
+      // ── Socket connected হওয়ার জন্য wait করো ──
+      await _waitForSocketConnection();
+
+      if (_socket.connected) {
+        _socket.emit('callAccepted', {'callId': callId});
+        print('✅ callAccepted emitted');
+      }
+    } else {
+      // Extra তে token নেই — fallback: getToken API call করো
+      print('⚠️ No agora_token in extra — calling getToken API');
+      await _waitForSocketConnection();
+
+      final bool isSuccess = await callController.getToken(
+        callId: callId,
+        roomId: channelName,
+      );
+
+      print('🔑 getToken result: $isSuccess | token: ${callController.token} | uuid: ${callController.uuid}');
+
+      if (!isSuccess) {
+        print('❌ getToken failed: ${callController.errorMessage}');
+        isLoading.value = false;
+        FlutterCallkitIncoming.endAllCalls();
+        return;
+      }
+
+      tokenToUse = callController.token;
+      uuidToUse = callController.uuid;
+
+      if (_socket.connected) {
+        _socket.emit('callAccepted', {'callId': callId});
+        print('✅ callAccepted emitted');
+      }
+    }
+
+    isLoading.value = false;
+
+    if (tokenToUse.isEmpty) {
+      print('❌ No token available — cannot navigate');
+      FlutterCallkitIncoming.endAllCalls();
+      return;
+    }
+
+    _stopIncomingRingtone();
+
+    resetCallSignals();
+    _callkitHandled = false; // next call এর জন্য reset
+    _incomingCall.value = null;
+
+    final callIdToUse = callId;
+
+      print('🚀 Navigating to ${callType == 'VIDEO' ? 'Video' : 'Audio'}CallPage');
+      print('   room: $channelName');
+      print('   token: $tokenToUse');
+      print('   uuid: $uuidToUse');
+      print('   callId: $callIdToUse');
+
+      if (callType == 'VIDEO') {
+        Get.to(
+          () => VideoCallPage(
+            name: callerName,
+            photoUrl: callerImage,
+            chatId: '',
+            channelName: channelName,
+            token: tokenToUse,
+            uuid: uuidToUse,
+            callId: callIdToUse,
+          ),
+        );
+      } else {
+        Get.to(
+          () => AudioCallPage(
+            name: callerName,
+            photoUrl: callerImage,
+            chatId: '',
+            channelName: channelName,
+            token: tokenToUse,
+            uuid: uuidToUse,
+            callId: callIdToUse,
+          ),
+        );
+      }
+    // (getToken fallback error handling already done above)
+    // placeholder to maintain structure
+    if (false) {
+    }
+  }
+
+  // ──────────────────────────────────────────────────────────
+  // App open হওয়ার পর pending callkit action check করো
+  // Background/terminated থেকে accept হলে onEvent miss হতে পারে
+  // তাই activeCalls check করে manually handle করো
+  // ──────────────────────────────────────────────────────────
+  Future<void> _checkActiveCalls() async {
+    try {
+      // Flutter callkit এর active calls check করো
+      final calls = await FlutterCallkitIncoming.activeCalls();
+      print('📋 Active calls on init: ');
+
+      if (calls == null || (calls is List && calls.isEmpty)) {
+        print('📋 No active calls found');
+        return;
+      }
+
+      final List callList = calls is List ? calls : [calls];
+
+      for (final call in callList) {
+        if (call == null) continue;
+        final Map<String, dynamic> callMap = Map<String, dynamic>.from(call as Map);
+        print('📞 Found active call: ');
+
+        // extra থেকে data নাও
+        final rawExtra = callMap['extra'];
+        if (rawExtra == null) continue;
+
+        final Map<String, dynamic> extra = Map<String, dynamic>.from(rawExtra as Map);
+        final callId = (extra['call_id'] ?? callMap['id'] ?? '').toString();
+        final channelName = (extra['channel_name'] ?? '').toString();
+
+        if (callId.isEmpty || channelName.isEmpty) {
+          print('⏭ Skipping active call — no callId/channelName in extra');
+          continue;
+        }
+
+        print('📞 Processing active call | callId: $callId | channel: $channelName');
+
+        // App উঠতে সময় লাগে তাই delay দাও
+        // GetMaterialApp ready হতে ~3 সেকেন্ড লাগে
+        await Future.delayed(const Duration(milliseconds: 3500));
+
+        // Handle করো
+        await _handleCallkitAccept(callMap);
+        break; // একটাই handle করো
+      }
+    } catch (e) {
+      print('❌ checkActiveCalls error: ');
+    }
+  }
+
+  // Socket connected হওয়ার জন্য wait — max 5 seconds
+  Future<void> _waitForSocketConnection() async {
+    if (_socket.connected) {
+      print('✅ Socket already connected');
+      return;
+    }
+    print('⏳ Waiting for socket connection...');
+    for (int i = 0; i < 10; i++) {
+      await Future.delayed(const Duration(milliseconds: 500));
+      if (_socket.connected) {
+        print('✅ Socket connected after ${(i + 1) * 500}ms');
+        return;
+      }
+    }
+    print('⚠️ Socket not connected after 5s');
+  }
+
+  // ──────────────────────────────────────────────────────────
+  // CALLKIT DECLINE
+  // ──────────────────────────────────────────────────────────
+  void _handleCallkitDecline(Map<String, dynamic> body) {
+    print('❌ Callkit decline: $body');
+
+    final rawExtra = body['extra'];
+    final Map<String, dynamic> extra = rawExtra != null
+        ? Map<String, dynamic>.from(rawExtra as Map)
+        : {};
+
+    final callId = (extra['call_id'] ?? body['id'] ?? '').toString();
+
+    if (_socket.connected) {
+      _socket.emitWithAck(
+        'callDecline',
+        {'callId': callId},
+        ack: (response) => print('callDecline ack: $response'),
+      );
+    }
+
+    _stopIncomingRingtone();
+    _incomingCall.value = null;
+  }
+
+  // App terminated থেকে callkit accept — main.dart থেকে call হয়
+  Future<void> handleCallkitAcceptFromTerminated(
+    Map<String, dynamic> body,
+  ) async {
+    print('📞 Callkit accept from terminated: $body');
+    await _handleCallkitAccept(body);
+  }
+
+  // ──────────────────────────────────────────────────────────
+  // Dialog Accept (app foreground)
+  // ──────────────────────────────────────────────────────────
   Future<void> _handleAcceptCall() async {
     final roomId = _incomingCall.value?['roomId'];
     final callId = _incomingCall.value?['callId'];
     final type = _incomingCall.value?['type'];
+    final callerName = _incomingCall.value?['groupName'] ??
+        _incomingCall.value?['callerName'] ??
+        '';
+    final callerImage = _incomingCall.value?['groupImage'] ??
+        _incomingCall.value?['callerImage'] ??
+        '';
 
     isLoading.value = true;
 
@@ -221,19 +580,16 @@ class SocketService extends GetxController {
     isLoading.value = false;
 
     if (isSuccess) {
-      // ✅ Accept করলে ring বন্ধ করো
       await _stopIncomingRingtone();
-
       Get.back();
       _socket.emit('callAccepted', {'callId': callId});
-
       resetCallSignals();
 
       type == 'AUDIO'
           ? Get.to(
               () => AudioCallPage(
-                name: '',
-                photoUrl: '',
+                name: callerName,
+                photoUrl: callerImage,
                 chatId: '',
                 channelName: roomId,
                 token: callController.token,
@@ -243,8 +599,8 @@ class SocketService extends GetxController {
             )
           : Get.to(
               () => VideoCallPage(
-                name: '',
-                photoUrl: '',
+                name: callerName,
+                photoUrl: callerImage,
                 chatId: '',
                 channelName: roomId,
                 token: callController.token,
@@ -265,35 +621,54 @@ class SocketService extends GetxController {
     }
   }
 
+  // Dialog Reject (app foreground)
   void _handleRejectCall() {
     final callId = _incomingCall.value?['callId'];
-    print('Trying to reject call. Call Id: $callId');
+    print('❌ Rejecting. callId: $callId');
 
     if (_socket.connected) {
-      print('Socket connected → using emitWithAck');
       _socket.emitWithAck(
         'callDecline',
         {'callId': callId},
-        ack: (response) {
-          print('Server acknowledged: $response');
-        },
+        ack: (response) => print('callDecline ack: $response'),
       );
-    } else {
-      print('❌ Socket not connected → cannot emit');
     }
 
-    // ✅ Reject করলে ring বন্ধ করো
     _stopIncomingRingtone();
-
-    print('❌ Call rejected (local)');
     _incomingCall.value = null;
     Get.back();
+  }
+
+  // ──────────────────────────────────────────────────────────
+  // RINGTONE
+  // ──────────────────────────────────────────────────────────
+  Future<void> _startIncomingRingtone() async {
+    try {
+      await _incomingRingPlayer.play(AssetSource('IncomingCallRingtone.mp3'));
+      print('🔔 Ringtone started');
+    } catch (e) {
+      print('Ringtone error: $e');
+    }
+  }
+
+  Future<void> _stopIncomingRingtone() async {
+    try {
+      await _incomingRingPlayer.stop();
+      print('🔕 Ringtone stopped');
+    } catch (e) {
+      print('Stop ringtone error: $e');
+    }
+  }
+
+  void resetCallSignals() {
+    callDeclinedSignal.value = false;
+    callEndedSignal.value = false;
   }
 
   void disconnect() {
     if (_socket.connected || isConnected.value) {
       _socket.disconnect();
-      print('🔌 Socket manually disconnected');
+      print('🔌 Socket disconnected');
     }
     _socket.clearListeners();
     isConnected.value = false;
@@ -308,6 +683,9 @@ class SocketService extends GetxController {
   }
 }
 
+// ──────────────────────────────────────────────────────────────
+// INCOMING CALL DIALOG — App foreground এ দেখাবে
+// ──────────────────────────────────────────────────────────────
 class _IncomingCallDialog extends StatefulWidget {
   final String callerName;
   final String callerImage;
@@ -376,8 +754,8 @@ class _IncomingCallDialogState extends State<_IncomingCallDialog>
                 ),
                 child: widget.callerImage == 'group'
                     ? CircleIconWidget(
-                        color: Color(0xff051B33),
-                        iconColor: Color(0xff1F7DE9),
+                        color: const Color(0xff051B33),
+                        iconColor: const Color(0xff1F7DE9),
                         iconRadius: 35,
                         radius: 35,
                         imagePath: Assets.images.userGroup.keyName,
@@ -409,11 +787,11 @@ class _IncomingCallDialogState extends State<_IncomingCallDialog>
               ),
             ),
             widget.isGroup
-                ? Text(
+                ? const Text(
                     'Group',
                     style: TextStyle(color: Colors.white, fontSize: 13),
                   )
-                : Container(),
+                : const SizedBox.shrink(),
             const SizedBox(height: 8),
             const Text(
               'is calling you...',

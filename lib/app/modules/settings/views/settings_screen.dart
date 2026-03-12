@@ -14,6 +14,7 @@ import 'package:wisper/app/modules/job/views/favorite_job_screen.dart';
 import 'package:wisper/app/modules/post/views/my_post_section.dart';
 import 'package:wisper/app/modules/profile/controller/buisness/buisness_controller.dart';
 import 'package:wisper/app/modules/profile/controller/person/profile_controller.dart';
+import 'package:wisper/app/modules/settings/controller/demo_notify.dart';
 import 'package:wisper/app/modules/settings/views/change_password_screen.dart';
 import 'package:wisper/app/modules/settings/views/content_screen.dart';
 import 'package:wisper/app/modules/profile/views/profile_screen.dart';
@@ -34,6 +35,7 @@ class SettingsScreen extends StatefulWidget {
 class _SettingsScreenState extends State<SettingsScreen> {
   final ProfileController profileController = Get.put(ProfileController());
   final BusinessController businessController = Get.put(BusinessController());
+  final DemoNController demoNController = Get.put(DemoNController());
 
   @override
   Widget build(BuildContext context) {
@@ -111,7 +113,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
 
                               SettingsFeatureRow(
                                 title: 'Favorites',
-                                onTap: () { 
+                                onTap: () {
                                   Get.to(() => const FavoriteJobScreen());
                                 },
                               ),
@@ -121,7 +123,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                         : Container(),
                     // StraightLiner(height: 0.5),
                     // heightBox10,
-                    // SettingsFeatureRow( 
+                    // SettingsFeatureRow(
                     //   title: 'Connections',
                     //   onTap: () {
                     //     Get.to(() => const ConnectionScreen());
@@ -198,7 +200,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
                     SettingsFeatureRow(
                       title: 'Wallet',
                       onTap: () {
-                        Get.to(() => const WalletScreen());
+                        demoNController.demo();
+                          // Get.to(() => const WalletScreen());
                       },
                     ),
                   ],

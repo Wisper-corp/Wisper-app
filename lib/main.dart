@@ -1,9 +1,6 @@
-import 'dart:io';
 import 'package:firebase_core/firebase_core.dart';
-import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:get/get.dart';
 
@@ -25,23 +22,29 @@ import 'package:wisper/app/modules/profile/views/person/others_person_screen.dar
 import 'package:wisper/firebase_options.dart';
 import 'package:wisper/push_notification.dart';
 
-
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
-  await Firebase.initializeApp(
-    options: DefaultFirebaseOptions.currentPlatform,
-  );
+  await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
 
   await StorageUtil.init();
 
+  // ── SocketService init ──
+  // _setupCallkitListeners() এখন SocketService.init() এর ভেতরেই আছে
+  // সেখানে সব callkit event handle হবে — terminated, background, foreground সব
   final SocketService socketService = Get.put(SocketService());
   await socketService.init();
 
   await Future.delayed(const Duration(milliseconds: 300));
 
   // ── Push Notification init ──
-  await PushNotificationService().init();
+  await PushNotificationService().init(
+    onTap: (route) {
+      if (route != null && route.isNotEmpty) {
+        Get.toNamed(route);
+      }
+    },
+  );
 
   Get.put(ConnectivityService());
   Get.put(DeepLinkService());
@@ -73,21 +76,25 @@ void main() async {
             initialRoute: '/',
             getPages: [
               GetPage(name: '/', page: () => const SplashScreen()),
-              GetPage(name: '/dashboard', page: () => const MainButtonNavbarScreen()),
+              GetPage(
+                name: '/dashboard',
+                page: () => const MainButtonNavbarScreen(),
+              ),
               GetPage(name: '/onboarding', page: () => const OnboardingView()),
               GetPage(
                 name: '/profile/person/:id',
-                page: () => OthersPersonScreen(
-                  userId: Get.parameters['id'] ?? '',
-                ),
+                page: () =>
+                    OthersPersonScreen(userId: Get.parameters['id'] ?? ''),
               ),
               GetPage(
                 name: '/profile/business/:id',
-                page: () => OthersBusinessScreen(
-                  userId: Get.parameters['id'] ?? '',
-                ),
+                page: () =>
+                    OthersBusinessScreen(userId: Get.parameters['id'] ?? ''),
               ),
-              GetPage(name: '/no-internet', page: () => const NoInternetScreen()),
+              GetPage(
+                name: '/no-internet',
+                page: () => const NoInternetScreen(),
+              ),
             ],
             locale: StorageUtil.getLocale(),
             translations: LocalizationService.getInstance(),
