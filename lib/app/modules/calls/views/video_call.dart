@@ -4,6 +4,8 @@ import 'package:agora_rtc_engine/agora_rtc_engine.dart';
 import 'package:audioplayers/audioplayers.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import 'package:permission_handler/permission_handler.dart';
+import 'package:wisper/app/modules/calls/controller/call_controller.dart';
 import 'package:wisper/app/core/services/socket/socket_service.dart';
 
 class VideoCallPage extends StatefulWidget {
@@ -47,17 +49,21 @@ class _VideoCallPageState extends State<VideoCallPage> {
 
   DateTime? _callStartTime;
   SocketService socketService = Get.find<SocketService>();
+  final CallController _callController = CallController();
 
   Worker? _declinedWorker;
   Worker? _endedWorker;
   Timer? _noAnswerTimer;
   RxString time = '00:00'.obs;
+  String _currentToken = '';
+  bool _tokenRefreshing = false;
 
   bool get hasRemoteUser => _remoteUids.isNotEmpty;
 
   @override
   void initState() {
     super.initState();
+    _currentToken = widget.token;
     socketService.resetCallSignals();
     _player.setReleaseMode(ReleaseMode.loop);
 
@@ -75,7 +81,32 @@ class _VideoCallPageState extends State<VideoCallPage> {
       }
     });
 
-    joinCall();
+    WidgetsBinding.instance.addPostFrameCallback((_) async {
+      final ok = await _ensurePermissions();
+      if (!ok) {
+        if (mounted) Navigator.pop(context);
+        return;
+      }
+      joinCall();
+    });
+  }
+
+  Future<bool> _ensurePermissions() async {
+    final statuses = await [
+      Permission.microphone,
+      Permission.camera,
+    ].request();
+
+    final micOk = statuses[Permission.microphone]?.isGranted ?? false;
+    final camOk = statuses[Permission.camera]?.isGranted ?? false;
+    if (!micOk || !camOk) {
+      Get.snackbar(
+        'Permission Required',
+        'Camera and Microphone permissions are needed.',
+      );
+      return false;
+    }
+    return true;
   }
 
   Future<void> ringtone() async {
@@ -200,6 +231,9 @@ class _VideoCallPageState extends State<VideoCallPage> {
           },
           onError: (err, msg) {
             if (mounted) setState(() {});
+            if (err == ErrorCodeType.errInvalidToken) {
+              _refreshTokenAndRejoin();
+            }
           },
         ),
       );
@@ -207,7 +241,7 @@ class _VideoCallPageState extends State<VideoCallPage> {
       await agoraEngine.enableVideo();
       await agoraEngine.startPreview();
       await agoraEngine.joinChannel(
-        token: widget.token,
+        token: _currentToken,
         channelId: widget.channelName,
         uid: widget.uuid,
         options: const ChannelMediaOptions(
@@ -221,6 +255,45 @@ class _VideoCallPageState extends State<VideoCallPage> {
     } catch (e) {
       if (mounted) setState(() {});
     }
+  }
+
+  Future<void> _refreshTokenAndRejoin() async {
+    if (_tokenRefreshing) return;
+    _tokenRefreshing = true;
+    print('🔁 Invalid token — refreshing...');
+
+    final bool ok = await _callController.getToken(
+      callId: widget.callId,
+      roomId: widget.channelName,
+    );
+
+    if (!ok) {
+      print('❌ Token refresh failed: ${_callController.errorMessage}');
+      _tokenRefreshing = false;
+      return;
+    }
+
+    _currentToken = _callController.token;
+    print('✅ Token refreshed — rejoining...');
+
+    try {
+      await agoraEngine.leaveChannel();
+    } catch (_) {}
+
+    await agoraEngine.joinChannel(
+      token: _currentToken,
+      channelId: widget.channelName,
+      uid: widget.uuid,
+      options: const ChannelMediaOptions(
+        clientRoleType: ClientRoleType.clientRoleBroadcaster,
+        publishMicrophoneTrack: true,
+        publishCameraTrack: true,
+        autoSubscribeAudio: true,
+        autoSubscribeVideo: true,
+      ),
+    );
+
+    _tokenRefreshing = false;
   }
 
   Future<void> startTimer() async {

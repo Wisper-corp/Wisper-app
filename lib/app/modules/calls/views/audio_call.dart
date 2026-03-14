@@ -4,6 +4,8 @@ import 'package:agora_rtc_engine/agora_rtc_engine.dart';
 import 'package:audioplayers/audioplayers.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import 'package:permission_handler/permission_handler.dart';
+import 'package:wisper/app/modules/calls/controller/call_controller.dart';
 import 'package:wisper/app/core/services/socket/socket_service.dart';
 
 class AudioCallPage extends StatefulWidget {
@@ -49,12 +51,15 @@ class _AudioCallPageState extends State<AudioCallPage> {
   DateTime? _callStartTime;
 
   SocketService socketService = Get.find<SocketService>();
+  final CallController _callController = CallController();
 
   Worker? _declinedWorker;
   Worker? _endedWorker;
 
   Timer? _noAnswerTimer;
   RxString time = '00:00'.obs;
+  String _currentToken = '';
+  bool _tokenRefreshing = false;
 
   // ✅ কেউ join করেছে কিনা
   bool get hasRemoteUser => _remoteUids.isNotEmpty;
@@ -62,6 +67,7 @@ class _AudioCallPageState extends State<AudioCallPage> {
   @override
   void initState() {
     super.initState();
+    _currentToken = widget.token;
 
     socketService.resetCallSignals();
     _player.setReleaseMode(ReleaseMode.loop);
@@ -84,7 +90,23 @@ class _AudioCallPageState extends State<AudioCallPage> {
       }
     });
 
-    joinCall();
+    WidgetsBinding.instance.addPostFrameCallback((_) async {
+      final ok = await _ensurePermissions();
+      if (!ok) {
+        if (mounted) Navigator.pop(context);
+        return;
+      }
+      joinCall();
+    });
+  }
+
+  Future<bool> _ensurePermissions() async {
+    final micStatus = await Permission.microphone.request();
+    if (!micStatus.isGranted) {
+      Get.snackbar('Permission Required', 'Microphone permission is needed.');
+      return false;
+    }
+    return true;
   }
 
   Future<void> ringtone() async {
@@ -261,6 +283,10 @@ class _AudioCallPageState extends State<AudioCallPage> {
               });
             }
             print('❌ Error: ${err.name} - $msg');
+
+            if (err == ErrorCodeType.errInvalidToken) {
+              _refreshTokenAndRejoin();
+            }
           },
         ),
       );
@@ -272,7 +298,7 @@ class _AudioCallPageState extends State<AudioCallPage> {
       }
 
       await agoraEngine.joinChannel(
-        token: widget.token,
+        token: _currentToken,
         channelId: widget.channelName,
         uid: widget.uuid,
         options: const ChannelMediaOptions(
@@ -291,6 +317,43 @@ class _AudioCallPageState extends State<AudioCallPage> {
       }
       print('❌ Error: $e');
     }
+  }
+
+  Future<void> _refreshTokenAndRejoin() async {
+    if (_tokenRefreshing) return;
+    _tokenRefreshing = true;
+    print('🔁 Invalid token — refreshing...');
+
+    final bool ok = await _callController.getToken(
+      callId: widget.callId,
+      roomId: widget.channelName,
+    );
+
+    if (!ok) {
+      print('❌ Token refresh failed: ${_callController.errorMessage}');
+      _tokenRefreshing = false;
+      return;
+    }
+
+    _currentToken = _callController.token;
+    print('✅ Token refreshed — rejoining...');
+
+    try {
+      await agoraEngine.leaveChannel();
+    } catch (_) {}
+
+    await agoraEngine.joinChannel(
+      token: _currentToken,
+      channelId: widget.channelName,
+      uid: widget.uuid,
+      options: const ChannelMediaOptions(
+        clientRoleType: ClientRoleType.clientRoleBroadcaster,
+        publishMicrophoneTrack: true,
+        autoSubscribeAudio: true,
+      ),
+    );
+
+    _tokenRefreshing = false;
   }
 
   @override

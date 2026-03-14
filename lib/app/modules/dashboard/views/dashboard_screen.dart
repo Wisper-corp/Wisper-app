@@ -4,6 +4,7 @@ import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:get/get.dart';
 import 'package:wisper/app/core/others/custom_size.dart';
 import 'package:wisper/app/core/others/get_storage.dart';
+import 'package:wisper/app/core/services/socket/pending_banner.dart';
 import 'package:wisper/app/core/services/socket/socket_service.dart';
 import 'package:wisper/app/modules/calls/views/call_screen.dart';
 import 'package:wisper/app/modules/chat/views/chat_list_screen.dart';
@@ -26,35 +27,24 @@ class MainButtonNavbarScreen extends StatefulWidget {
   State<MainButtonNavbarScreen> createState() => _MainButtonNavbarScreenState();
 }
 
-class _MainButtonNavbarScreenState extends State<MainButtonNavbarScreen> {
+class _MainButtonNavbarScreenState extends State<MainButtonNavbarScreen>
+    with WidgetsBindingObserver {
   int selectedKey = 0;
 
-  // কন্ট্রোলারগুলো এখানে lazy load করছি → Get.reset() করলেও সমস্যা নেই
   final ProfileController profileController = Get.put(ProfileController());
   final BusinessController businessController = Get.put(BusinessController());
   final SocketService socketService = Get.find<SocketService>();
 
-  
-
-  final AllFeedPostController allFeedPostController = Get.put(
-    AllFeedPostController(),
-  );
-  final AllFeedJobController allFeedJobController = Get.put(
-    AllFeedJobController(),
-  );
-  final MyFeedJobController myFeedJobController = Get.put(
-    MyFeedJobController(),
-  );
-  final MyFeedPostController myFeedPostController = Get.put(
-    MyFeedPostController(),
-  );
-  
+  final AllFeedPostController allFeedPostController = Get.put(AllFeedPostController());
+  final AllFeedJobController allFeedJobController = Get.put(AllFeedJobController());
+  final MyFeedJobController myFeedJobController = Get.put(MyFeedJobController());
+  final MyFeedPostController myFeedPostController = Get.put(MyFeedPostController());
   final AllRoleController allRoleController = Get.put(AllRoleController());
 
   final List<Widget> screens = const [
     HomeScreen(),
     CallScreen(),
-    CreatePostScreen(),  
+    CreatePostScreen(),
     ChatListScreen(),
     ProfileScreen(),
   ];
@@ -62,7 +52,26 @@ class _MainButtonNavbarScreenState extends State<MainButtonNavbarScreen> {
   @override
   void initState() {
     super.initState();
+    WidgetsBinding.instance.addObserver(this);
     _initializeData();
+
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      socketService.checkAndShowPendingCallDialogIfNeeded();
+    });
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    super.didChangeAppLifecycleState(state);
+    if (state == AppLifecycleState.resumed) {
+      socketService.checkAndShowPendingCallDialogIfNeeded();
+    }
+  }
+
+  @override
+  void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
+    super.dispose();
   }
 
   Future<void> _initializeData() async {
@@ -80,17 +89,11 @@ class _MainButtonNavbarScreenState extends State<MainButtonNavbarScreen> {
       businessController.getMyProfile(),
       profileController.getMyProfile(),
     ]);
-
-    // if (StorageUtil.getData(StorageUtil.userRole) == 'PERSON') {
-    //   await profileController.getMyProfile();
-    // } else {
-    //   await businessController.getMyProfile();
-    // }
   }
 
   String _getProfileImageUrl() {
     final role = StorageUtil.getData(StorageUtil.userRole);
-    String? url; 
+    String? url;
 
     if (role == 'PERSON') {
       url = profileController.profileData?.auth?.person?.image;
@@ -99,51 +102,51 @@ class _MainButtonNavbarScreenState extends State<MainButtonNavbarScreen> {
     }
 
     if (url == null || url.isEmpty || url == 'null') return '';
-
-    // Cache bypass করার জন্য timestamp যোগ করলাম
     return url;
   }
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      body: IndexedStack(index: selectedKey, children: screens),
-      bottomNavigationBar: Container(
-        height: 80.h,
-        color: const Color(0xff121212),
-        child: Row(
-          mainAxisAlignment: MainAxisAlignment.spaceAround,
-          children: [
-            _buildNavItem(
-              index: 0,
-              selectedIcon: Assets.images.home.keyName,
-              unselectedIcon: Assets.images.unselectedHome.keyName,
-              label: "Home",
-            ),
-            _buildNavItem(
-              index: 1,
-              selectedIcon: Assets.images.selectedCall.keyName,
-              unselectedIcon: Assets.images.call.keyName,
-              label: "Call",
-            ),
-            // Middle Create Post Button
-            _buildNavItem(
-              index: 2,
-              height: 50.h,
-              width: 56.h,
-              selectedIcon: Assets.images.frame5313.keyName,
-              unselectedIcon: Assets.images.frame5313.keyName,
-              label: "",
-            ),
-            _buildNavItem(
-              index: 3,
-              selectedIcon: Assets.images.unselectedChat.keyName,
-              unselectedIcon: Assets.images.selectedChat.keyName,
-              label: "Chat",
-            ),
-            // Profile Item → Reactive + Cache Safe
-            Obx(() => _buildProfileNavItem(index: 4)),
-          ],
+    // ── PendingCallBanner দিয়ে পুরো screen wrap করো ──
+    // Background/terminated থেকে call accept হলে এখানে banner দেখাবে
+    return PendingCallBanner(
+      child: Scaffold(
+        body: IndexedStack(index: selectedKey, children: screens),
+        bottomNavigationBar: Container(
+          height: 80.h,
+          color: const Color(0xff121212),
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.spaceAround,
+            children: [
+              _buildNavItem(
+                index: 0,
+                selectedIcon: Assets.images.home.keyName,
+                unselectedIcon: Assets.images.unselectedHome.keyName,
+                label: "Home",
+              ),
+              _buildNavItem(
+                index: 1,
+                selectedIcon: Assets.images.selectedCall.keyName,
+                unselectedIcon: Assets.images.call.keyName,
+                label: "Call",
+              ),
+              _buildNavItem(
+                index: 2,
+                height: 50.h,
+                width: 56.h,
+                selectedIcon: Assets.images.frame5313.keyName,
+                unselectedIcon: Assets.images.frame5313.keyName,
+                label: "",
+              ),
+              _buildNavItem(
+                index: 3,
+                selectedIcon: Assets.images.unselectedChat.keyName,
+                unselectedIcon: Assets.images.selectedChat.keyName,
+                label: "Chat",
+              ),
+              Obx(() => _buildProfileNavItem(index: 4)),
+            ],
+          ),
         ),
       ),
     );
@@ -161,9 +164,7 @@ class _MainButtonNavbarScreenState extends State<MainButtonNavbarScreen> {
 
     return GestureDetector(
       onTap: () {
-        if (selectedKey != index) {
-          setState(() => selectedKey = index);
-        }
+        if (selectedKey != index) setState(() => selectedKey = index);
       },
       child: Container(
         color: Colors.transparent,
@@ -183,13 +184,9 @@ class _MainButtonNavbarScreenState extends State<MainButtonNavbarScreen> {
                 : Text(
                     label,
                     style: TextStyle(
-                      color: isSelected
-                          ? Colors.white
-                          : const Color(0xff98A2B3),
+                      color: isSelected ? Colors.white : const Color(0xff98A2B3),
                       fontSize: 12.sp,
-                      fontWeight: isSelected
-                          ? FontWeight.w600
-                          : FontWeight.w400,
+                      fontWeight: isSelected ? FontWeight.w600 : FontWeight.w400,
                     ),
                   ),
           ],
@@ -204,9 +201,7 @@ class _MainButtonNavbarScreenState extends State<MainButtonNavbarScreen> {
 
     return GestureDetector(
       onTap: () {
-        if (selectedKey != index) { 
-          setState(() => selectedKey = index);
-        }
+        if (selectedKey != index) setState(() => selectedKey = index);
       },
       child: Container(
         color: Colors.transparent,
@@ -218,9 +213,8 @@ class _MainButtonNavbarScreenState extends State<MainButtonNavbarScreen> {
             CircleAvatar(
               radius: 14.r,
               backgroundColor: const Color(0xff2A2A2A),
-              backgroundImage: imageUrl.isNotEmpty
-                  ? NetworkImage(imageUrl) as ImageProvider
-                  : null,
+              backgroundImage:
+                  imageUrl.isNotEmpty ? NetworkImage(imageUrl) as ImageProvider : null,
               child: imageUrl.isEmpty
                   ? Icon(Icons.person, size: 18.r, color: Colors.white70)
                   : null,

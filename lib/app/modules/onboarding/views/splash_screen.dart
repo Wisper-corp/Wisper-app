@@ -1,8 +1,3 @@
-
-
-// SplashScreen.dart - Updated with Camera & Mic permission
-// বাকি সব অপরিবর্তিত রাখা হয়েছে
-
 import 'package:crash_safe_image/crash_safe_image.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
@@ -11,6 +6,7 @@ import 'package:permission_handler/permission_handler.dart';
 import 'package:wisper/app/core/config/theme/light_theme_colors.dart';
 import 'package:wisper/app/core/others/get_storage.dart';
 import 'package:wisper/app/core/services/others/deeplink_services.dart';
+import 'package:wisper/app/core/services/socket/socket_service.dart';
 import 'package:wisper/app/core/utils/connectivity_services.dart';
 import 'package:wisper/app/core/utils/no_inter_screen.dart';
 import 'package:wisper/gen/assets.gen.dart';
@@ -23,26 +19,46 @@ class SplashScreen extends StatefulWidget {
   State<SplashScreen> createState() => _SplashScreenState();
 }
 
-class _SplashScreenState extends State<SplashScreen> {
-
+class _SplashScreenState extends State<SplashScreen> with WidgetsBindingObserver {
   @override
   void initState() {
     super.initState();
+    WidgetsBinding.instance.addObserver(this);
     _startFlow();
   }
 
-  Future<void> _startFlow() async {
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    super.didChangeAppLifecycleState(state);
+    print('Splash → Lifecycle changed to: $state');
 
-    /// 🔥 Permission request (UI ready হওয়ার পর)
+    if (state == AppLifecycleState.resumed) {
+      print('Splash → App resumed → checking pending call dialog');
+      try {
+        final socketService = Get.find<SocketService>();
+        socketService.checkAndShowPendingCallDialogIfNeeded();
+      } catch (e) {
+        print('Error finding SocketService in splash: $e');
+      }
+    }
+  }
+
+  Future<void> _startFlow() async {
     await Future.delayed(const Duration(milliseconds: 500));
     await _requestPermissions();
-
-    /// এরপর original flow
     await _checkAndNavigate();
+
+    // Extra safety: splash শেষে চেক
+    await Future.delayed(const Duration(milliseconds: 800));
+    try {
+      final socketService = Get.find<SocketService>();
+      socketService.checkAndShowPendingCallDialogIfNeeded();
+    } catch (e) {
+      print('SocketService not found yet in splash _startFlow');
+    }
   }
 
   Future<void> _requestPermissions() async {
-
     Map<Permission, PermissionStatus> statuses = await [
       Permission.camera,
       Permission.microphone,
@@ -55,23 +71,17 @@ class _SplashScreenState extends State<SplashScreen> {
   }
 
   Future<void> _checkAndNavigate() async {
-
-    // স্প্ল্যাশ স্ক্রিন delay
     await Future.delayed(const Duration(seconds: 2, milliseconds: 500));
 
     final connectivityService = Get.find<ConnectivityService>();
-
     final List<ConnectivityResult> results =
         await Connectivity().checkConnectivity();
-
     final bool hasNetwork =
         results.isNotEmpty && !results.contains(ConnectivityResult.none);
 
     bool isActuallyOnline = false;
-
     if (hasNetwork) {
-      isActuallyOnline =
-          await connectivityService.checkInternetAccess();
+      isActuallyOnline = await connectivityService.checkInternetAccess();
     }
 
     connectivityService.isOnline.value = isActuallyOnline;
@@ -81,22 +91,22 @@ class _SplashScreenState extends State<SplashScreen> {
       return;
     }
 
-    final String? token =
-        StorageUtil.getData(StorageUtil.userAccessToken);
-
+    final String? token = StorageUtil.getData(StorageUtil.userAccessToken);
     print('Local Token in Splash: $token');
 
     if (token != null && token.isNotEmpty) {
-
       Get.offAllNamed('/dashboard');
-
-      final deepLinkService =
-          Get.find<DeepLinkService>();
+      final deepLinkService = Get.find<DeepLinkService>();
       deepLinkService.processPendingDeepLink();
-
     } else {
       Get.offAllNamed('/onboarding');
     }
+  }
+
+  @override
+  void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
+    super.dispose();
   }
 
   @override

@@ -117,7 +117,7 @@ Future<void> showCallkitIncoming(Map<String, dynamic> data) async {
 // ─────────────────────────────────────────────────────────────
 // PUSH NOTIFICATION SERVICE CLASS
 // ─────────────────────────────────────────────────────────────
-class PushNotificationService {
+class PushNotificationService { 
   static final PushNotificationService _instance =
       PushNotificationService._internal();
   factory PushNotificationService() => _instance;

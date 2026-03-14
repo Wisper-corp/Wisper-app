@@ -20,6 +20,7 @@ class StorageUtil {
   static const String _currentLocalKey = 'current_local';
   static const String _lightThemeKey = 'is_theme_light';
   static const String _onboardingCompleteKey = 'onboarding_complete';
+  static const String pendingCallKey = 'pending_call_data';
 
   /// init storage
   static Future<void> init() async {

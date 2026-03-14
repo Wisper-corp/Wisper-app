@@ -55,7 +55,7 @@ void main() async {
   ]).then((_) {
     runApp(
       ScreenUtilInit(
-        designSize: const Size(375, 812),
+        designSize: const Size(375, 812), 
         minTextAdapt: true,
         splitScreenMode: true,
         useInheritedMediaQuery: true,

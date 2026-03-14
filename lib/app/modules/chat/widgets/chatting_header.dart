@@ -49,7 +49,7 @@ class ChatHeader extends StatefulWidget {
 
 class _ChatHeaderState extends State<ChatHeader> {
   List<CameraDescription>? cameras;
-
+ 
   final BlockUnblockMemberController blockUnblockMemberController =
       BlockUnblockMemberController();
   final GetMuteInfoController getMuteInfoController = Get.put(
