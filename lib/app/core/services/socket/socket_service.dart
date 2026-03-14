@@ -12,8 +12,10 @@ import 'package:wisper/app/core/widgets/common/circle_icon.dart';
 import 'package:wisper/app/modules/calls/controller/call_controller.dart';
 import 'package:wisper/app/modules/calls/views/audio_call.dart';
 import 'package:wisper/app/modules/calls/views/video_call.dart';
+import 'package:wisper/app/modules/chat/controller/group/group_info_controller.dart';
 import 'package:wisper/app/urls.dart';
 import 'package:wisper/gen/assets.gen.dart';
+import 'dart:async';
 
 class SocketService extends GetxController {
   late IO.Socket _socket;
@@ -43,6 +45,9 @@ class SocketService extends GetxController {
 
   bool _initialized = false;
   bool _callkitHandled = false;
+  final Map<String, Map<String, dynamic>> _callInfoCache = {};
+  final Set<String> _callkitShownKeys = {};
+  bool _callkitShowing = false;
 
   // Pending call data — dashboard banner + incoming dialog এর জন্য
   final Rxn<Map<String, dynamic>> pendingCall = Rxn<Map<String, dynamic>>();
@@ -140,7 +145,43 @@ class SocketService extends GetxController {
 
     _socket.on('callIncoming', (data) async {
       print('📞 Incoming call: $data');
-      _incomingCall.value = data as Map<String, dynamic>;
+      final normalized =
+          await _normalizeCallDataAsync(data as Map<String, dynamic>);
+      final callKey = _getCallKey(normalized);
+
+      if (callKey.isNotEmpty && _callInfoCache.containsKey(callKey)) {
+        // Keep previously resolved group name/image (avoid name flip)
+        final cached = _callInfoCache[callKey]!;
+        if (cached['groupName'] != null &&
+            cached['groupName'].toString().isNotEmpty) {
+          normalized['groupName'] = cached['groupName'];
+        }
+        if (cached['groupImage'] != null &&
+            cached['groupImage'].toString().isNotEmpty) {
+          normalized['groupImage'] = cached['groupImage'];
+        }
+      }
+
+      if (callKey.isNotEmpty) {
+        _callInfoCache[callKey] = Map<String, dynamic>.from(normalized);
+      }
+
+      // If we already have a group name for this call, do not downgrade to caller name
+      final existing = _incomingCall.value;
+      if (existing != null &&
+          existing['groupName'] != null &&
+          existing['groupName'].toString().isNotEmpty &&
+          (normalized['groupName'] == null ||
+              normalized['groupName'].toString().isEmpty)) {
+        print('⚠️ Keeping existing groupName to avoid name flip');
+        _incomingCall.value = {
+          ...normalized,
+          'groupName': existing['groupName'],
+          'groupImage': existing['groupImage'] ?? normalized['groupImage'],
+        };
+      } else {
+        _incomingCall.value = normalized;
+      }
 
       final appState = SchedulerBinding.instance.lifecycleState;
       final isAppForeground = appState == AppLifecycleState.resumed;
@@ -151,7 +192,7 @@ class SocketService extends GetxController {
         _startIncomingRingtone();
         _showIncomingCallOverlay();
       } else {
-        await _showCallkitFromSocketData(data);
+        await _showCallkitFromSocketData(normalized);
       }
     });
 
@@ -264,6 +305,9 @@ class SocketService extends GetxController {
     pendingCall.value = null;
     _incomingCall.value = null;
     StorageUtil.deleteData(StorageUtil.pendingCallKey);
+    _callInfoCache.clear();
+    _callkitShownKeys.clear();
+    _callkitShowing = false;
     _stopIncomingRingtone();
     FlutterCallkitIncoming.endAllCalls();
     if (Get.isDialogOpen ?? false) Get.back();
@@ -298,6 +342,17 @@ class SocketService extends GetxController {
   }
 
   Future<void> _showCallkitFromSocketData(Map<String, dynamic> data) async {
+    if (_callkitShowing) {
+      print('⚠️ Callkit already showing — skipping');
+      return;
+    }
+
+    final callKey = _getCallKey(data);
+    if (callKey.isNotEmpty && _callkitShownKeys.contains(callKey)) {
+      print('⚠️ Callkit already shown for $callKey — skipping');
+      return;
+    }
+
     final callId = data['callId'] ?? data['call_id'] ?? '';
     final callerName = data['groupName'] ?? data['callerName'] ?? 'Unknown';
     final callerImage = data['groupImage'] ?? data['callerImage'] ?? '';
@@ -357,7 +412,86 @@ class SocketService extends GetxController {
     );
 
     await FlutterCallkitIncoming.showCallkitIncoming(params);
+    if (callKey.isNotEmpty) _callkitShownKeys.add(callKey);
+    _callkitShowing = true;
     print('📞 Callkit shown: $callerName | callId: $callId | roomId: $roomId');
+  }
+
+  Future<Map<String, dynamic>> _normalizeCallDataAsync(
+    Map<String, dynamic> data,
+  ) async {
+    final map = Map<String, dynamic>.from(data);
+
+    final mode = (map['mode'] ??
+            map['callMode'] ??
+            map['call_mode'] ??
+            '')
+        .toString();
+
+    final groupId =
+        (map['groupId'] ?? map['group_id'] ?? map['groupID'])?.toString();
+
+    final groupName = map['groupName'] ??
+        map['group_name'] ??
+        (map['group'] is Map ? map['group']['name'] : null) ??
+        (map['groupInfo'] is Map ? map['groupInfo']['name'] : null);
+
+    final groupImage = map['groupImage'] ??
+        map['group_image'] ??
+        (map['group'] is Map ? map['group']['image'] : null) ??
+        (map['groupInfo'] is Map ? map['groupInfo']['image'] : null);
+
+    if (groupName != null) map['groupName'] = groupName;
+    if (groupImage != null) map['groupImage'] = groupImage;
+
+    // If group info missing but groupId exists, fetch from API
+    if ((mode == 'GROUP' || mode == 'GROUP_CALL') &&
+        (map['groupName'] == null || map['groupName'].toString().isEmpty) &&
+        groupId != null &&
+        groupId.isNotEmpty) {
+      try {
+        final controller = Get.put(GroupInfoController());
+        final ok = await controller
+            .getGroupInfo(groupId)
+            .timeout(const Duration(seconds: 2), onTimeout: () => false);
+        if (ok) {
+          final info = controller.groupInfoData;
+          if (info?.name != null && info!.name!.isNotEmpty) {
+            map['groupName'] = info.name;
+          }
+          if (info?.image != null && info!.image!.isNotEmpty) {
+            map['groupImage'] = info.image;
+          }
+        }
+      } catch (_) {}
+    }
+
+    final bool isGroup = (mode == 'GROUP' || mode == 'GROUP_CALL') ||
+        (map['groupName'] != null && map['groupName'].toString().isNotEmpty) ||
+        (map['groupImage'] != null &&
+            map['groupImage'].toString().isNotEmpty);
+
+    if (isGroup &&
+        (map['groupName'] == null || map['groupName'].toString().isEmpty)) {
+      map['groupName'] = 'Group Call';
+    }
+
+    // If this is a group call, always prefer group name over caller name
+    if (isGroup &&
+        map['groupName'] != null &&
+        map['groupName'].toString().isNotEmpty) {
+      map['mode'] = 'GROUP_CALL';
+      map['callerName'] = map['groupName'];
+    }
+
+    return map;
+  }
+
+  String _getCallKey(Map<String, dynamic> data) {
+    final callId = (data['callId'] ?? data['call_id'] ?? '').toString();
+    if (callId.isNotEmpty) return callId;
+    final roomId = (data['roomId'] ?? data['room_id'] ?? '').toString();
+    return roomId;
   }
 
   void _setupCallkitListeners() {
@@ -367,14 +501,17 @@ class SocketService extends GetxController {
 
       switch (event.event) {
         case Event.actionCallAccept:
+          _callkitShowing = false;
           await _handleCallkitAccept(event.body);
           break;
 
         case Event.actionCallDecline:
+          _callkitShowing = false;
           _handleCallkitDecline(event.body);
           break;
 
         case Event.actionCallTimeout:
+          _callkitShowing = false;
           _stopIncomingRingtone();
           _incomingCall.value = null;
           pendingCall.value = null;

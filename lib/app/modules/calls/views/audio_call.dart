@@ -438,8 +438,14 @@ class _AudioCallPageState extends State<AudioCallPage> {
             // Local user
             _buildAvatarTile(label: 'You', isLocal: true),
             // Remote users
-            ..._remoteUids.map(
-              (uid) => _buildAvatarTile(label: 'User $uid', isLocal: false),
+            ..._remoteUids.asMap().entries.map(
+              (entry) {
+                final idx = entry.key;
+                final uid = entry.value;
+                final label =
+                    (idx == 0 && widget.name.isNotEmpty) ? widget.name : 'User $uid';
+                return _buildAvatarTile(label: label, isLocal: false);
+              },
             ),
           ],
         ),

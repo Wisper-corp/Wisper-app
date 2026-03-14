@@ -391,7 +391,12 @@ class _VideoCallPageState extends State<VideoCallPage> {
   Widget _layout2User() {
     return Stack(
       children: [
-        Positioned.fill(child: _videoTile(_remoteUids[0], label: 'User')),
+        Positioned.fill(
+          child: _videoTile(
+            _remoteUids[0],
+            label: widget.name.isNotEmpty ? widget.name : 'User',
+          ),
+        ),
         _meOverlay(),
       ],
     );
@@ -409,7 +414,10 @@ class _VideoCallPageState extends State<VideoCallPage> {
               flex: 6,
               child: SizedBox(
                 width: double.infinity,
-                child: _videoTile(_remoteUids[0], label: 'User 1'),
+                child: _videoTile(
+                  _remoteUids[0],
+                  label: widget.name.isNotEmpty ? widget.name : 'User 1',
+                ),
               ),
             ),
             const SizedBox(height: 2),
@@ -432,7 +440,12 @@ class _VideoCallPageState extends State<VideoCallPage> {
   // Sketch: User1 | User2 / User3 | Me — সব equal
   Widget _layout4User() {
     final allUids = [..._remoteUids.take(3), 0]; // 3 remote + local (me)
-    final labels = ['User 1', 'User 2', 'User 3', 'Me'];
+    final labels = [
+      widget.name.isNotEmpty ? widget.name : 'User 1',
+      'User 2',
+      'User 3',
+      'Me',
+    ];
 
     return GridView.builder(
       physics: const NeverScrollableScrollPhysics(),
@@ -461,7 +474,11 @@ class _VideoCallPageState extends State<VideoCallPage> {
       ),
       itemCount: allUids.length,
       itemBuilder: (context, index) {
-        final label = allUids[index] == 0 ? 'Me' : 'User ${index + 1}';
+        final label = allUids[index] == 0
+            ? 'Me'
+            : (index == 0 && widget.name.isNotEmpty)
+                ? widget.name
+                : 'User ${index + 1}';
         return _videoTile(allUids[index], label: label, radius: 0);
       },
     );
