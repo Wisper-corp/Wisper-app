@@ -74,6 +74,10 @@ class _PendingCallBannerState extends State<PendingCallBanner> {
             token: callData['token'] ?? '',
             uuid: callData['uuid'] ?? 0,
             callId: callData['callId'] ?? '',
+            groupId: callData['groupId'],
+            classId: callData['classId'],
+            isGroupCall: callData['isGroupCall'] == true,
+            callerName: callData['callerName'],
           ));
     } else {
       Get.to(() => AudioCallPage(
@@ -84,6 +88,10 @@ class _PendingCallBannerState extends State<PendingCallBanner> {
             token: callData['token'] ?? '',
             uuid: callData['uuid'] ?? 0,
             callId: callData['callId'] ?? '',
+            groupId: callData['groupId'],
+            classId: callData['classId'],
+            isGroupCall: callData['isGroupCall'] == true,
+            callerName: callData['callerName'],
           ));
     }
   }

@@ -286,6 +286,10 @@ class SocketService extends GetxController {
             token: callData['token'] ?? '',
             uuid: callData['uuid'] ?? 0,
             callId: callData['callId'] ?? '',
+            groupId: callData['groupId'],
+            classId: callData['classId'],
+            isGroupCall: callData['isGroupCall'] == true,
+            callerName: callData['callerName'],
           ));
     } else {
       Get.to(() => AudioCallPage(
@@ -296,6 +300,10 @@ class SocketService extends GetxController {
             token: callData['token'] ?? '',
             uuid: callData['uuid'] ?? 0,
             callId: callData['callId'] ?? '',
+            groupId: callData['groupId'],
+            classId: callData['classId'],
+            isGroupCall: callData['isGroupCall'] == true,
+            callerName: callData['callerName'],
           ));
     }
   }
@@ -383,6 +391,10 @@ class SocketService extends GetxController {
         'caller_id': data['callerId'] ?? '',
         'caller_name': callerName,
         'caller_image': callerImage,
+        'group_id': data['groupId'] ?? '',
+        'class_id': data['classId'] ?? '',
+        'group_name': data['groupName'] ?? '',
+        'mode': data['mode'] ?? '',
       },
       android: const AndroidParams(
         isCustomNotification: true,
@@ -428,8 +440,23 @@ class SocketService extends GetxController {
             '')
         .toString();
 
-    final groupId =
-        (map['groupId'] ?? map['group_id'] ?? map['groupID'])?.toString();
+    final groupId = (map['groupId'] ??
+            map['group_id'] ??
+            map['groupID'] ??
+            (map['group'] is Map ? map['group']['id'] : null) ??
+            (map['groupInfo'] is Map ? map['groupInfo']['id'] : null) ??
+            (map['community'] is Map ? map['community']['id'] : null))
+        ?.toString();
+    final classId = (map['classId'] ??
+            map['class_id'] ??
+            (map['class'] is Map ? map['class']['id'] : null))
+        ?.toString();
+    final className = map['className'] ??
+        map['class_name'] ??
+        (map['class'] is Map ? map['class']['name'] : null);
+    final classImage = map['classImage'] ??
+        map['class_image'] ??
+        (map['class'] is Map ? map['class']['image'] : null);
 
     final groupName = map['groupName'] ??
         map['group_name'] ??
@@ -443,6 +470,16 @@ class SocketService extends GetxController {
 
     if (groupName != null) map['groupName'] = groupName;
     if (groupImage != null) map['groupImage'] = groupImage;
+    if (groupId != null && groupId.isNotEmpty) map['groupId'] = groupId;
+    if (classId != null && classId.isNotEmpty) map['classId'] = classId;
+    if ((map['groupName'] == null || map['groupName'].toString().isEmpty) &&
+        className != null) {
+      map['groupName'] = className;
+    }
+    if ((map['groupImage'] == null || map['groupImage'].toString().isEmpty) &&
+        classImage != null) {
+      map['groupImage'] = classImage;
+    }
 
     // If group info missing but groupId exists, fetch from API
     if ((mode == 'GROUP' || mode == 'GROUP_CALL') &&
@@ -467,6 +504,8 @@ class SocketService extends GetxController {
     }
 
     final bool isGroup = (mode == 'GROUP' || mode == 'GROUP_CALL') ||
+        (mode == 'CLASS' || mode == 'CLASS_CALL') ||
+        (classId != null && classId.isNotEmpty) ||
         (map['groupName'] != null && map['groupName'].toString().isNotEmpty) ||
         (map['groupImage'] != null &&
             map['groupImage'].toString().isNotEmpty);
@@ -549,8 +588,20 @@ class SocketService extends GetxController {
     final callId = (extra['call_id'] ?? body['id'] ?? '').toString();
     final channelName = (extra['channel_name'] ?? '').toString();
     final callType = (extra['call_type'] ?? 'AUDIO').toString();
-    final callerName = (extra['caller_name'] ?? body['nameCaller'] ?? '').toString();
-    final callerImage = (extra['caller_image'] ?? body['avatar'] ?? '').toString();
+    final callerName =
+        (extra['caller_name'] ?? body['nameCaller'] ?? '').toString();
+    final callerImage =
+        (extra['caller_image'] ?? body['avatar'] ?? '').toString();
+    final groupId =
+        (extra['group_id'] ?? extra['groupId'] ?? '').toString();
+    final classId =
+        (extra['class_id'] ?? extra['classId'] ?? '').toString();
+    final bool isGroupCall =
+        (extra['mode'] ?? '').toString() == 'GROUP' ||
+        (extra['mode'] ?? '').toString() == 'GROUP_CALL' ||
+        groupId.isNotEmpty ||
+        classId.isNotEmpty ||
+        (extra['group_name'] ?? extra['groupName'] ?? '').toString().isNotEmpty;
 
     print('📞 Parsed → callId: $callId | channelName: $channelName | type: $callType');
 
@@ -628,6 +679,9 @@ class SocketService extends GetxController {
       'token': tokenToUse,
       'uuid': uuidToUse,
       'callId': callId,
+      'groupId': groupId,
+      'classId': classId,
+      'isGroupCall': isGroupCall,
     };
 
     // Save in storage for cold-start resume flow
@@ -672,6 +726,13 @@ class SocketService extends GetxController {
     final callerImage = _incomingCall.value?['groupImage'] ??
         _incomingCall.value?['callerImage'] ??
         '';
+    final groupId = _incomingCall.value?['groupId'];
+    final classId = _incomingCall.value?['classId'];
+    final bool isGroupCall = (_incomingCall.value?['mode'] == 'GROUP' ||
+        _incomingCall.value?['mode'] == 'GROUP_CALL' ||
+        groupId != null ||
+        classId != null ||
+        (_incomingCall.value?['groupName'] ?? '').toString().isNotEmpty);
 
     isLoading.value = true;
 
@@ -698,6 +759,10 @@ class SocketService extends GetxController {
                 token: callController.token,
                 uuid: callController.uuid,
                 callId: callController.callId,
+                groupId: groupId,
+                classId: classId,
+                isGroupCall: isGroupCall,
+                callerName: callerName,
               ),
             )
           : Get.to(
@@ -709,6 +774,10 @@ class SocketService extends GetxController {
                 token: callController.token,
                 uuid: callController.uuid,
                 callId: callController.callId,
+                groupId: groupId,
+                classId: classId,
+                isGroupCall: isGroupCall,
+                callerName: callerName,
               ),
             );
 
@@ -783,6 +852,9 @@ class SocketService extends GetxController {
     final token = (data['token'] ?? '').toString();
     final uuid = data['uuid'] is int ? data['uuid'] as int : 0;
     final callId = (data['callId'] ?? '').toString();
+    final groupId = (data['groupId'] ?? '').toString();
+    final classId = (data['classId'] ?? '').toString();
+    final bool isGroupCall = data['isGroupCall'] == true;
 
     // Wait for app to be resumed and Navigator ready (cold start from CallKit)
     for (int i = 0; i < 20; i++) {
@@ -803,6 +875,9 @@ class SocketService extends GetxController {
         'token': token,
         'uuid': uuid,
         'callId': callId,
+        'groupId': groupId,
+        'classId': classId,
+        'isGroupCall': isGroupCall,
       };
       StorageUtil.saveData(StorageUtil.pendingCallKey, pendingCall.value);
       print('⚠️ Navigator not ready — pendingCall fallback set');
@@ -822,6 +897,10 @@ class SocketService extends GetxController {
             token: token,
             uuid: uuid,
             callId: callId,
+            groupId: groupId.isEmpty ? null : groupId,
+            classId: classId.isEmpty ? null : classId,
+            isGroupCall: isGroupCall,
+            callerName: callerName,
           ));
     } else {
       Get.to(() => AudioCallPage(
@@ -832,6 +911,10 @@ class SocketService extends GetxController {
             token: token,
             uuid: uuid,
             callId: callId,
+            groupId: groupId.isEmpty ? null : groupId,
+            classId: classId.isEmpty ? null : classId,
+            isGroupCall: isGroupCall,
+            callerName: callerName,
           ));
     }
   }

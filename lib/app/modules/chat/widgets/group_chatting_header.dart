@@ -153,6 +153,7 @@ class _GroupChatHeaderState extends State<GroupChatHeader> {
         "token": callController.token,
         "groupName": widget.groupName,
         "groupImage": widget.groupImage,
+        "groupId": widget.groupId,
       });
 
       if (type == 'VIDEO') {
@@ -165,6 +166,8 @@ class _GroupChatHeaderState extends State<GroupChatHeader> {
             token: callController.token,
             uuid: callController.uuid,
             callId: callController.callId,
+            groupId: widget.groupId,
+            isGroupCall: true,
           ),
         );
       } else {
@@ -177,6 +180,8 @@ class _GroupChatHeaderState extends State<GroupChatHeader> {
             token: callController.token,
             uuid: callController.uuid,
             callId: callController.callId,
+            groupId: widget.groupId,
+            isGroupCall: true,
           ),
         );
       }

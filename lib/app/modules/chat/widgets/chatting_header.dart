@@ -128,6 +128,7 @@ class _ChatHeaderState extends State<ChatHeader> {
             token: callController.token,
             uuid: callController.uuid,
             callId: callController.callId,
+            isGroupCall: false,
           ),
         );
       } else {
@@ -140,6 +141,7 @@ class _ChatHeaderState extends State<ChatHeader> {
             token: callController.token,
             uuid: callController.uuid,
             callId: callController.callId,
+            isGroupCall: false,
           ),
         );
       }

@@ -7,6 +7,12 @@ import 'package:get/get.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:wisper/app/modules/calls/controller/call_controller.dart';
 import 'package:wisper/app/core/services/socket/socket_service.dart';
+import 'package:wisper/app/modules/chat/controller/group/all_group_member_controller.dart';
+import 'package:wisper/app/modules/chat/controller/class/class_member_controller.dart';
+import 'package:wisper/app/core/others/get_storage.dart';
+import 'package:wisper/app/core/services/network_caller/network_caller.dart';
+import 'package:wisper/app/core/services/network_caller/network_response.dart';
+import 'package:wisper/app/urls.dart';
 
 class VideoCallPage extends StatefulWidget {
   final String name;
@@ -17,6 +23,10 @@ class VideoCallPage extends StatefulWidget {
   final String token;
   final int uuid;
   final String callId;
+  final String? groupId;
+  final String? classId;
+  final bool isGroupCall;
+  final String? callerName;
 
   const VideoCallPage({
     super.key,
@@ -27,6 +37,10 @@ class VideoCallPage extends StatefulWidget {
     required this.token,
     required this.uuid,
     required this.callId,
+    this.groupId,
+    this.classId,
+    this.isGroupCall = false,
+    this.callerName,
   });
 
   @override
@@ -50,6 +64,10 @@ class _VideoCallPageState extends State<VideoCallPage> {
   DateTime? _callStartTime;
   SocketService socketService = Get.find<SocketService>();
   final CallController _callController = CallController();
+  final GroupMembersController _groupMembersController =
+      Get.put(GroupMembersController());
+  final ClassMembersController _classMembersController =
+      Get.put(ClassMembersController());
 
   Worker? _declinedWorker;
   Worker? _endedWorker;
@@ -57,8 +75,16 @@ class _VideoCallPageState extends State<VideoCallPage> {
   RxString time = '00:00'.obs;
   String _currentToken = '';
   bool _tokenRefreshing = false;
+  final Map<int, String> _uidToName = {};
+  final List<String> _nameQueue = [];
+  bool _forceMultiParty = false;
+  bool _callLogRetryDone = false;
 
   bool get hasRemoteUser => _remoteUids.isNotEmpty;
+  bool get _isGroupCall =>
+      (widget.groupId ?? '').isNotEmpty || widget.isGroupCall;
+  bool get _isClassCall => (widget.classId ?? '').isNotEmpty;
+  bool get _isMultiParty => _isGroupCall || _isClassCall || _forceMultiParty;
 
   @override
   void initState() {
@@ -87,6 +113,7 @@ class _VideoCallPageState extends State<VideoCallPage> {
         if (mounted) Navigator.pop(context);
         return;
       }
+      _loadGroupMemberNames();
       joinCall();
     });
   }
@@ -175,6 +202,293 @@ class _VideoCallPageState extends State<VideoCallPage> {
     await initAgora();
   }
 
+  Future<void> _loadGroupMemberNames() async {
+    final classId = (widget.classId ?? '').trim();
+    if (classId.isNotEmpty) {
+      print('🔎 [VideoCall] classId for members: $classId');
+      final ok = await _classMembersController.getClassMembers(classId);
+      print('✅ [VideoCall] getClassMembers ok: $ok');
+      if (!ok) return;
+
+      final myId = StorageUtil.getData(StorageUtil.userId);
+      final members = _classMembersController.groupMemnersData ?? [];
+      print('👥 [VideoCall] class members count: ${members.length}');
+      _nameQueue
+        ..clear()
+        ..addAll(
+          members
+              .where((m) => m.auth?.id != myId)
+              .map((m) => m.auth?.person?.name ?? 'User')
+              .toList(),
+        );
+      print('🧾 [VideoCall] class nameQueue: $_nameQueue');
+      if (_nameQueue.isNotEmpty) _forceMultiParty = true;
+    } else {
+      var groupId = (widget.groupId ?? '').trim();
+      bool resolvedClassFromChats = false;
+      print('🔎 [VideoCall] groupId for members: $groupId');
+      if (groupId.isEmpty && widget.name.isNotEmpty) {
+        final ids =
+            await _resolveChatIdsFromChatsByName(widget.name, widget.callerName);
+        final resolvedClassId = ids['classId'] ?? '';
+        if (resolvedClassId.isNotEmpty) {
+          print('✅ [VideoCall] resolved classId from chats: $resolvedClassId');
+          final ok = await _classMembersController.getClassMembers(
+            resolvedClassId,
+          );
+          print('✅ [VideoCall] getClassMembers ok: $ok');
+          if (ok) {
+            final myId = StorageUtil.getData(StorageUtil.userId);
+            final members = _classMembersController.groupMemnersData ?? [];
+            print('👥 [VideoCall] class members count: ${members.length}');
+            _nameQueue
+              ..clear()
+              ..addAll(
+                members
+                    .where((m) => m.auth?.id != myId)
+                    .map((m) => m.auth?.person?.name ?? 'User')
+                    .toList(),
+              );
+            print('🧾 [VideoCall] class nameQueue: $_nameQueue');
+            if (_nameQueue.isNotEmpty) _forceMultiParty = true;
+          }
+          resolvedClassFromChats = true;
+        }
+
+        groupId = ids['groupId'] ?? '';
+        if (groupId.isNotEmpty) {
+          print('✅ [VideoCall] resolved groupId from chats: $groupId');
+        }
+      }
+      if (resolvedClassFromChats) {
+        // Skip group fetch if class was resolved
+      } else if (groupId.isEmpty) {
+        await _loadNamesFromCallLog();
+        return;
+      } else {
+        final ok = await _groupMembersController.getGroupMembers(groupId);
+        print('✅ [VideoCall] getGroupMembers ok: $ok');
+        if (!ok) return;
+
+        final myId = StorageUtil.getData(StorageUtil.userId);
+        final members = _groupMembersController.groupMemnersData ?? [];
+        print('👥 [VideoCall] members count: ${members.length}');
+        _nameQueue
+          ..clear()
+          ..addAll(
+            members
+                .where((m) => m.auth?.id != myId)
+                .map((m) => m.auth?.person?.name ?? 'User')
+                .toList(),
+          );
+        print('🧾 [VideoCall] nameQueue: $_nameQueue');
+        if (_nameQueue.isNotEmpty) _forceMultiParty = true;
+      }
+    }
+
+    // Assign names to already-joined uids (if any)
+    for (final uid in _remoteUids) {
+      _assignNameForUid(uid);
+    }
+    if (_nameQueue.isEmpty) {
+      await _loadNamesFromCallLog();
+    }
+    if (mounted) setState(() {});
+  }
+
+  Future<Map<String, String>> _resolveChatIdsFromChatsByName(
+    String groupName,
+    String? callerName,
+  ) async {
+    String groupId = '';
+    String classId = '';
+    try {
+      final NetworkResponse response = await Get.find<NetworkCaller>()
+          .getRequest(
+            '${Urls.allChatsUrl}?limit=9999',
+            accessToken: StorageUtil.getData(StorageUtil.userAccessToken),
+          );
+      if (!response.isSuccess || response.responseData == null) {
+        return {'groupId': groupId, 'classId': classId};
+      }
+      final responseData = response.responseData;
+      if (responseData is! Map) {
+        return {'groupId': groupId, 'classId': classId};
+      }
+      final data = responseData['data'];
+      final chats = data is Map ? (data['chats'] as List? ?? []) : <dynamic>[];
+
+      final target = groupName.trim().toLowerCase();
+      final callerTarget = callerName?.trim().toLowerCase() ?? '';
+      final myId = StorageUtil.getData(StorageUtil.userId);
+      for (final item in chats) {
+        if (item is! Map) continue;
+        final type = (item['type'] ?? '').toString();
+
+        // CLASS by classId in chat list + name match (from item.name)
+        if (type == 'CLASS') {
+          final chatName =
+              item['name']?.toString().trim().toLowerCase() ?? '';
+          if (chatName.isNotEmpty && chatName == target) {
+            final id = item['classId']?.toString();
+            if (id != null && id.isNotEmpty) {
+              classId = id;
+              break;
+            }
+          }
+        }
+
+        // GROUP
+        final group = item['group'];
+        if (group is Map) {
+          final name = group['name']?.toString().trim().toLowerCase();
+          if (name != null && name == target) {
+            final id = group['id']?.toString();
+            if (id != null && id.isNotEmpty) {
+              groupId = id;
+              break;
+            }
+          }
+        }
+
+        // COMMUNITY (some APIs use community for group)
+        final community = item['community'];
+        if (community is Map) {
+          final name = community['name']?.toString().trim().toLowerCase();
+          if (name != null && name == target) {
+            final id = community['id']?.toString();
+            if (id != null && id.isNotEmpty) {
+              groupId = id;
+              break;
+            }
+          }
+        }
+
+        // CLASS
+        if (type == 'CLASS') {
+          final klass = item['class'];
+          if (klass is Map) {
+            final name = klass['name']?.toString().trim().toLowerCase();
+            if (name != null && name == target) {
+              final id = klass['id']?.toString();
+              if (id != null && id.isNotEmpty) {
+                classId = id;
+                break;
+              }
+            }
+          }
+        }
+
+        // Fallback: match by participants when name match fails
+        if ((groupId.isEmpty && classId.isEmpty) &&
+            callerTarget.isNotEmpty &&
+            (type == 'GROUP' || type == 'CLASS')) {
+          final participants = item['participants'] as List? ?? [];
+          bool hasCaller = false;
+          bool hasMe = false;
+          for (final p in participants) {
+            if (p is! Map) continue;
+            final auth = p['auth'];
+            if (auth is! Map) continue;
+            final authId = auth['id']?.toString();
+            if (authId != null && authId == myId) hasMe = true;
+            final person = auth['person'];
+            final name =
+                person is Map ? person['name']?.toString().trim().toLowerCase() : '';
+            if (name != null && name == callerTarget) hasCaller = true;
+          }
+          if (hasCaller && hasMe) {
+            if (type == 'CLASS') {
+              final id = item['classId']?.toString();
+              if (id != null && id.isNotEmpty) {
+                classId = id;
+                break;
+              }
+            }
+            final id = item['groupId']?.toString();
+            if (id != null && id.isNotEmpty) {
+              groupId = id;
+              break;
+            }
+          }
+        }
+      }
+    } catch (e) {
+      print('❌ [VideoCall] resolve groupId failed: $e');
+    }
+    return {'groupId': groupId, 'classId': classId};
+  }
+
+  void _assignNameForUid(int uid) {
+    if (_uidToName.containsKey(uid)) return;
+    if (_nameQueue.isEmpty) return;
+    _uidToName[uid] = _nameQueue.removeAt(0);
+    print('🏷️ [VideoCall] assign uid $uid -> ${_uidToName[uid]}');
+  }
+
+  String _labelForUid(int uid, String fallback) {
+    return _uidToName[uid] ?? fallback;
+  }
+
+  String _fallbackLabel(int index, int uid) {
+    if (!_isMultiParty && index == 0 && widget.name.isNotEmpty) {
+      return widget.name;
+    }
+    return 'User ${index + 1}';
+  }
+
+  Future<void> _loadNamesFromCallLog() async {
+    if (widget.callId.isEmpty) return;
+    try {
+      final NetworkResponse response = await Get.find<NetworkCaller>()
+          .getRequest(
+            '${Urls.myCallUrl}?limit=99999',
+            accessToken: StorageUtil.getData(StorageUtil.userAccessToken),
+          );
+      if (!response.isSuccess || response.responseData == null) return;
+      final responseData = response.responseData;
+      if (responseData is! Map) return;
+      final data = responseData['data'];
+      final calls = data is Map ? (data['calls'] as List? ?? []) : <dynamic>[];
+      final match = calls.cast<Map?>().firstWhere(
+            (c) => c?['id'] == widget.callId,
+            orElse: () => null,
+          ) ??
+          {};
+      final participants = match['participants'] as List? ?? [];
+      if (participants.isEmpty) return;
+      if (participants.length > 1) _forceMultiParty = true;
+
+      final myId = StorageUtil.getData(StorageUtil.userId);
+      _nameQueue
+        ..clear()
+        ..addAll(
+          participants
+              .where((p) => p is Map && p['auth'] is Map)
+              .map((p) => p as Map)
+              .where((p) => p['auth']?['id'] != myId)
+              .map<String>((p) => p['auth']?['person']?['name'] ?? 'User')
+              .toList(),
+        );
+
+      for (final uid in _remoteUids) {
+        _assignNameForUid(uid);
+      }
+      if (_nameQueue.isNotEmpty) _forceMultiParty = true;
+      if (mounted) setState(() {});
+      print('🧾 [VideoCall] fallback nameQueue from call log: $_nameQueue');
+      if (_nameQueue.isEmpty && !_callLogRetryDone) {
+        _callLogRetryDone = true;
+        Future.delayed(const Duration(milliseconds: 1500), () async {
+          if (!mounted) return;
+          await _loadNamesFromCallLog();
+        });
+      }
+    } catch (e) {
+      print('❌ [VideoCall] fallback name load failed: $e');
+    }
+  }
+
   Future<void> initAgora() async {
     try {
       agoraEngine = createAgoraRtcEngine();
@@ -201,7 +515,14 @@ class _VideoCallPageState extends State<VideoCallPage> {
               _cancelNoAnswerTimer();
               stopRingtone();
               setState(() {
-                if (!_remoteUids.contains(rUid)) _remoteUids.add(rUid);
+                if (!_remoteUids.contains(rUid)) {
+                  _remoteUids.add(rUid);
+                  if (_nameQueue.isEmpty) {
+                    _loadNamesFromCallLog();
+                  } else {
+                    _assignNameForUid(rUid);
+                  }
+                }
               });
               if (_remoteUids.length == 1) {
                 _callStartTime = DateTime.now();
@@ -215,7 +536,10 @@ class _VideoCallPageState extends State<VideoCallPage> {
             UserOfflineReasonType reason,
           ) {
             if (mounted) {
-              setState(() => _remoteUids.remove(rUid));
+              setState(() {
+                _remoteUids.remove(rUid);
+                _uidToName.remove(rUid);
+              });
               if (_remoteUids.isEmpty && !_isLeavingCall) {
                 socketService.socket.emitWithAck(
                   'callEnd',
@@ -361,10 +685,10 @@ class _VideoCallPageState extends State<VideoCallPage> {
   // ─── "Me" small overlay ───────────────────────────────────────────────
   Widget _meOverlay() {
     return Positioned(
-      top: 12,
+      top: 20,
       right: 12,
-      width: 80,
-      height: 108,
+      width: 120,
+      height: 160,
       child: Container(
         decoration: BoxDecoration(
           borderRadius: BorderRadius.circular(12),
@@ -394,7 +718,10 @@ class _VideoCallPageState extends State<VideoCallPage> {
         Positioned.fill(
           child: _videoTile(
             _remoteUids[0],
-            label: widget.name.isNotEmpty ? widget.name : 'User',
+            label: _labelForUid(
+              _remoteUids[0],
+              _fallbackLabel(0, _remoteUids[0]),
+            ),
           ),
         ),
         _meOverlay(),
@@ -416,7 +743,10 @@ class _VideoCallPageState extends State<VideoCallPage> {
                 width: double.infinity,
                 child: _videoTile(
                   _remoteUids[0],
-                  label: widget.name.isNotEmpty ? widget.name : 'User 1',
+                  label: _labelForUid(
+                    _remoteUids[0],
+                    _fallbackLabel(0, _remoteUids[0]),
+                  ),
                 ),
               ),
             ),
@@ -426,7 +756,10 @@ class _VideoCallPageState extends State<VideoCallPage> {
               flex: 4,
               child: SizedBox(
                 width: double.infinity,
-                child: _videoTile(_remoteUids[1], label: 'User 2'),
+                child: _videoTile(
+                  _remoteUids[1],
+                  label: _labelForUid(_remoteUids[1], _fallbackLabel(1, _remoteUids[1])),
+                ),
               ),
             ),
           ],
@@ -441,9 +774,9 @@ class _VideoCallPageState extends State<VideoCallPage> {
   Widget _layout4User() {
     final allUids = [..._remoteUids.take(3), 0]; // 3 remote + local (me)
     final labels = [
-      widget.name.isNotEmpty ? widget.name : 'User 1',
-      'User 2',
-      'User 3',
+      _labelForUid(_remoteUids[0], _fallbackLabel(0, _remoteUids[0])),
+      _labelForUid(_remoteUids[1], _fallbackLabel(1, _remoteUids[1])),
+      _labelForUid(_remoteUids[2], _fallbackLabel(2, _remoteUids[2])),
       'Me',
     ];
 
@@ -476,9 +809,7 @@ class _VideoCallPageState extends State<VideoCallPage> {
       itemBuilder: (context, index) {
         final label = allUids[index] == 0
             ? 'Me'
-            : (index == 0 && widget.name.isNotEmpty)
-                ? widget.name
-                : 'User ${index + 1}';
+            : _labelForUid(allUids[index], _fallbackLabel(index, allUids[index]));
         return _videoTile(allUids[index], label: label, radius: 0);
       },
     );
@@ -532,8 +863,8 @@ class _VideoCallPageState extends State<VideoCallPage> {
                         ClipRRect(
                           borderRadius: BorderRadius.circular(20),
                           child: SizedBox(
-                            width: 180,
-                            height: 260,
+                            width: 220,
+                            height: 320,
                             child: AgoraVideoView(
                               controller: VideoViewController(
                                 rtcEngine: agoraEngine,
@@ -592,9 +923,9 @@ class _VideoCallPageState extends State<VideoCallPage> {
               child: _buildCallLayout(),
             ),
 
-            // ─── TOP: name + timer ──────────────────────
+            // ─── TOP: name ──────────────────────────────
             Positioned(
-              top: 0,
+              top: 50,
               left: 0,
               right: 0,
               child: SafeArea(
@@ -618,38 +949,50 @@ class _VideoCallPageState extends State<VideoCallPage> {
                           ),
                         ),
                       ),
-                      Obx(
-                        () => Container(
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: 10,
-                            vertical: 4,
-                          ),
-                          decoration: BoxDecoration(
-                            color: Colors.black54,
-                            borderRadius: BorderRadius.circular(20),
-                          ),
-                          child: Row(
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              const Icon(
-                                Icons.circle,
-                                color: Colors.red,
-                                size: 7,
-                              ),
-                              const SizedBox(width: 5),
-                              Text(
-                                time.value,
-                                style: const TextStyle(
-                                  color: Colors.white,
-                                  fontSize: 12,
-                                  fontWeight: FontWeight.w600,
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-                      ),
                     ],
+                  ),
+                ),
+              ),
+            ),
+
+            // ─── TIMER: bottom center over caller canvas ───────────────
+            Positioned(
+              left: 0,
+              right: 0,
+              bottom: 120,
+              child: SafeArea(
+                top: false,
+                child: Center(
+                  child: Obx(
+                    () => Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 8,
+                        vertical: 3,
+                      ),
+                      decoration: BoxDecoration(
+                        color: Colors.black54,
+                        borderRadius: BorderRadius.circular(20),
+                      ),
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          const Icon(
+                            Icons.circle,
+                            color: Colors.red,
+                            size: 4,
+                          ),
+                          const SizedBox(width: 5),
+                          Text(
+                            time.value,
+                            style: const TextStyle(
+                              color: Colors.white,
+                              fontSize: 9,
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
                   ),
                 ),
               ),
