@@ -700,11 +700,6 @@ class _AudioCallPageState extends State<AudioCallPage> {
                 : null,
           ),
           const SizedBox(height: 20),
-          Text(
-            widget.name,
-            style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
-          ),
-          const SizedBox(height: 4),
           const Text('Calling...'),
         ],
       );
@@ -783,11 +778,6 @@ class _AudioCallPageState extends State<AudioCallPage> {
             size: 36,
             color: Colors.white,
           ),
-        ),
-        const SizedBox(height: 6),
-        Text(
-          label,
-          style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w500),
         ),
       ],
     );

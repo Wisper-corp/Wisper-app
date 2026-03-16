@@ -657,26 +657,6 @@ class _VideoCallPageState extends State<VideoCallPage> {
               canvas: VideoCanvas(uid: uid),
             ),
           ),
-          if (label != null)
-            Positioned(
-              bottom: 8,
-              left: 8,
-              child: Container(
-                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-                decoration: BoxDecoration(
-                  color: Colors.black54,
-                  borderRadius: BorderRadius.circular(8),
-                ),
-                child: Text(
-                  label,
-                  style: const TextStyle(
-                    color: Colors.white,
-                    fontSize: 11,
-                    fontWeight: FontWeight.w600,
-                  ),
-                ),
-              ),
-            ),
         ],
       ),
     );
@@ -842,15 +822,6 @@ class _VideoCallPageState extends State<VideoCallPage> {
                     children: [
                       const SizedBox(height: 60),
                       Text(
-                        widget.name,
-                        style: const TextStyle(
-                          color: Colors.white,
-                          fontSize: 22,
-                          fontWeight: FontWeight.w700,
-                        ),
-                      ),
-                      const SizedBox(height: 8),
-                      Text(
                         callingStatus,
                         style: TextStyle(
                           color: Colors.white.withOpacity(0.5),
@@ -921,38 +892,6 @@ class _VideoCallPageState extends State<VideoCallPage> {
               right: 0,
               bottom: 90,
               child: _buildCallLayout(),
-            ),
-
-            // ─── TOP: name ──────────────────────────────
-            Positioned(
-              top: 50,
-              left: 0,
-              right: 0,
-              child: SafeArea(
-                child: Padding(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 16,
-                    vertical: 10,
-                  ),
-                  child: Row(
-                    children: [
-                      Expanded(
-                        child: Text(
-                          widget.name,
-                          style: const TextStyle(
-                            color: Colors.white,
-                            fontSize: 17,
-                            fontWeight: FontWeight.w700,
-                            shadows: [
-                              Shadow(color: Colors.black87, blurRadius: 10),
-                            ],
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              ),
             ),
 
             // ─── TIMER: bottom center over caller canvas ───────────────
