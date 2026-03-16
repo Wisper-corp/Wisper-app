@@ -3,12 +3,13 @@ import 'package:get/get.dart';
 import 'package:wisper/app/core/services/socket/socket_service.dart';
 import 'package:wisper/app/core/utils/date_formatter.dart';
 import 'package:wisper/app/modules/chat/controller/all_chats_controller.dart';
+import 'package:wisper/app/modules/chat/controller/message_controller.dart';
 import 'package:wisper/app/modules/chat/views/class/class_message_screen.dart';
 import 'package:wisper/app/modules/chat/views/group/group_message_screen.dart';
 import 'package:wisper/app/modules/chat/widgets/member_list_title.dart';
 import 'package:wisper/gen/assets.gen.dart';
 
-class ChatSection extends StatefulWidget {
+class ChatSection extends StatefulWidget { 
   const ChatSection({super.key});
 
   @override 
@@ -117,7 +118,13 @@ class _ChatSectionState extends State<ChatSection> {
 
             return MemberListTile(
               isOnline: false,
-              onTap: () {
+              onTap: () async {
+                if (Get.isRegistered<MessageController>()) {
+                  await Get.delete<MessageController>(force: true);
+                }
+                final MessageController msgCtrl = Get.put(MessageController());
+                await msgCtrl.setupChat(chatId: chatId);
+
                 if (type == 'GROUP') {
                   Get.to(
                     () => GroupChatScreen(
@@ -126,6 +133,7 @@ class _ChatSectionState extends State<ChatSection> {
                       groupName: name,
                       groupImage: image,
                     ),
+                    preventDuplicates: false,
                   );
                 } else if (type == 'CLASS') {
                   Get.to(
@@ -135,6 +143,7 @@ class _ChatSectionState extends State<ChatSection> {
                       className: name,
                       classId: item['classId'] ?? '',
                     ),
+                    preventDuplicates: false,
                   );
                 }
               },

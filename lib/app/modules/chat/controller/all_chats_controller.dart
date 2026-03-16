@@ -98,7 +98,7 @@ class AllChatsController extends GetxController {
 
       for (var chatJson in incomingChats) {
         final chat = chatJson as Map<String, dynamic>;
-
+ 
         final String chatId = chat['id'] ?? ''; 
         if (chatId.isEmpty) continue;
 

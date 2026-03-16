@@ -19,7 +19,7 @@ class ChatListScreen extends StatefulWidget {
   @override
   State<ChatListScreen> createState() => _ChatListScreenState();
 }
-
+ 
 class _ChatListScreenState extends State<ChatListScreen> {
   final AllChatsController controller = Get.put(AllChatsController());
   final SocketService socketService = Get.find<SocketService>();
