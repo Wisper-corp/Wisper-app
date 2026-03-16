@@ -34,10 +34,8 @@ class MessageController extends GetxController {
 
     // Register socket listeners first
     socketService.socket.off('newMessage');
-    socketService.socket.off('chatList');
     socketService.socket.off('typingStatus');
 
-    socketService.socket.on('chatList', _handleIncomingChat);
     socketService.socket.on('newMessage', _handleIncomingMessage);
     socketService.socket.on('typingStatus', _handleTypingStatus);
 
@@ -45,12 +43,6 @@ class MessageController extends GetxController {
     await getMessages(chatId: chatId ?? '');
 
     scrollToBottom();
-  }
-
-  void _handleIncomingChat(dynamic rawData) {
-    print(
-      'Real-time chatList event received from message controller: $rawData',
-    );
   }
 
   void _sortSocketList() {
@@ -218,7 +210,6 @@ class MessageController extends GetxController {
   @override
   void onClose() {
     socketService.socket.off('newMessage');
-    socketService.socket.off('chatList');
     socketService.socket.off('typingStatus');
     scrollController.dispose();
     textController.dispose();

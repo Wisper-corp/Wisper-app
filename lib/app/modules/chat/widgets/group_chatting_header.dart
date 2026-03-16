@@ -149,7 +149,7 @@ class _GroupChatHeaderState extends State<GroupChatHeader> {
 
     if (isSuccess) {
       socketService.socket.emit('callInvite', {
-        "callId": callId,
+        "callId": callId, 
         "token": callController.token,
         "groupName": widget.groupName,
         "groupImage": widget.groupImage,

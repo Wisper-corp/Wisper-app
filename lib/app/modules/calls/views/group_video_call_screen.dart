@@ -17,7 +17,7 @@ class GroupVideoCallScreen extends StatefulWidget {
 class _GroupVideoCallScreenState extends State<GroupVideoCallScreen> {
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
+    return Scaffold( 
       body: Container(
         decoration: BoxDecoration(
           gradient: LinearGradient(

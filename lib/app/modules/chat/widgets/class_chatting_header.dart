@@ -144,7 +144,7 @@ class _ClassChatHeaderState extends State<ClassChatHeader> {
 
     final bool isSuccess = await callController.getToken(
       callId: callId,
-      roomId: roomId,
+      roomId: roomId, 
     );
 
     if (isSuccess) {
