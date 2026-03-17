@@ -160,13 +160,14 @@ class AllChatsController extends GetxController {
               ..['receiverOnline'] = receiverOnline; // নতুন ফিল্ড যোগ করলাম
           }
         } else {
-          // নতুন চ্যাট → যোগ করো (getAllChats-এর মতোই)
-          socketService.socketFriendList.add({
-            "lastMessage": lastMessage,
-            "receiverOnline": type == 'INDIVIDUAL'
-                ? receiverOnline
-                : false, // এখানেও
-          });
+          // New chat ? payload incomplete, do a full refresh
+          if (!_isChatPayloadComplete(chat)) {
+            getAllChats();
+            continue;
+          }
+
+          // Payload complete ? build list item and add
+          socketService.socketFriendList.add(_buildListItemFromSocket(chat));
         }
       }
 
@@ -175,6 +176,134 @@ class AllChatsController extends GetxController {
     } catch (e) {
       print('Error in _handleIncomingChat: $e');
     }
+  }
+
+  bool _isChatPayloadComplete(Map<String, dynamic> chat) {
+    final String type = chat['type'] ?? 'INDIVIDUAL';
+    if (type == 'INDIVIDUAL') {
+      final participants = chat['participants'];
+      return participants is List && participants.isNotEmpty;
+    }
+    return true;
+  }
+
+  Map<String, dynamic> _buildListItemFromSocket(Map<String, dynamic> chat) {
+    final String type = chat['type'] ?? 'INDIVIDUAL';
+    final String chatId = chat['id'] ?? '';
+
+    final List<dynamic> messages = chat['messages'] is List
+        ? chat['messages'] as List<dynamic>
+        : <dynamic>[];
+
+    String lastMessage = 'No message yet';
+    if (messages.isNotEmpty && messages.first is Map) {
+      final Map first = messages.first as Map;
+      final String text = first['text']?.toString() ?? '';
+      final String file = first['file']?.toString() ?? '';
+      if (text.isNotEmpty) {
+        lastMessage = text;
+      } else if (file.isNotEmpty) {
+        lastMessage = 'photo';
+      } else {
+        lastMessage = 'file';
+      }
+    }
+
+    String latestMessageAt = chat['latestMessageAt']?.toString() ?? '';
+    if (latestMessageAt.isEmpty && messages.isNotEmpty && messages.first is Map) {
+      final Map first = messages.first as Map;
+      latestMessageAt =
+          (first['createdAt'] ?? first['updatedAt'] ?? '').toString();
+    }
+    if (latestMessageAt.isEmpty) {
+      latestMessageAt = DateTime.now().toIso8601String();
+    }
+
+    int unreadCount = 0;
+    final count = chat['_count'];
+    if (count is Map && count['messages'] != null) {
+      unreadCount = count['messages'] is int
+          ? count['messages'] as int
+          : int.tryParse(count['messages'].toString()) ?? 0;
+    }
+
+    String receiverName = 'Unknown';
+    String receiverImage = '';
+    String receiverId = '';
+    bool receiverOnline = false;
+    bool isPerson = false;
+
+    if (type == 'INDIVIDUAL') {
+      final List<dynamic> participants = chat['participants'] is List
+          ? chat['participants'] as List<dynamic>
+          : <dynamic>[];
+      final otherParticipant = participants.firstWhere(
+        (p) => p is Map && p['auth']?['id'] != myAuthId,
+        orElse: () => participants.isNotEmpty ? participants.first : null,
+      );
+
+      if (otherParticipant is Map) {
+        final receiverAuth = otherParticipant['auth'];
+        if (receiverAuth is Map) {
+          final person = receiverAuth['person'];
+          final business = receiverAuth['business'];
+
+          if (person is Map) {
+            receiverName = person['name']?.toString() ?? receiverName;
+            receiverImage = person['image']?.toString() ?? receiverImage;
+            isPerson = true;
+          } else if (business is Map) {
+            receiverName = business['name']?.toString() ?? receiverName;
+            receiverImage = business['image']?.toString() ?? receiverImage;
+            isPerson = false;
+          }
+
+          receiverId = receiverAuth['id']?.toString() ?? '';
+        }
+
+        receiverOnline = otherParticipant['isOnline'] == true;
+      }
+    }
+
+    String groupId = '';
+    String classId = '';
+    Map<String, dynamic>? group;
+    Map<String, dynamic>? chatClass;
+
+    if (type == 'GROUP') {
+      final g = chat['group'];
+      if (g is Map) {
+        group = {"name": g['name'], "image": g['image']};
+        groupId = g['id']?.toString() ?? '';
+      }
+      groupId = chat['groupId']?.toString() ?? groupId;
+    }
+
+    if (type == 'CLASS') {
+      final c = chat['chatClass'] ?? chat['class'];
+      if (c is Map) {
+        chatClass = {"name": c['name'], "image": c['image']};
+        classId = c['id']?.toString() ?? '';
+      }
+      classId = chat['classId']?.toString() ?? classId;
+    }
+
+    return {
+      "id": chatId,
+      "type": type,
+      "latestMessageAt": latestMessageAt,
+      "lastMessage": lastMessage,
+      "unreadMessageCount": unreadCount,
+      "group": group,
+      "groupId": groupId,
+      "classId": classId,
+      "chatClass": chatClass,
+      "receiverName": type == 'INDIVIDUAL' ? receiverName : '',
+      "receiverImage": type == 'INDIVIDUAL' ? receiverImage : '',
+      "receiverId": type == 'INDIVIDUAL' ? receiverId : '',
+      "isPerson": isPerson,
+      "receiverOnline": type == 'INDIVIDUAL' ? receiverOnline : false,
+    };
   }
 
   Future<void> getAllChats() async {

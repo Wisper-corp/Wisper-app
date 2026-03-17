@@ -39,6 +39,13 @@ class MessageBubble extends StatelessWidget {
     return Uri.tryParse(fileUrl)?.pathSegments.last ?? 'file';
   }
 
+  bool _isValidRemoteUrl(String url) {
+    final uri = Uri.tryParse(url);
+    if (uri == null) return false;
+    return (uri.scheme == 'http' || uri.scheme == 'https') &&
+        uri.host.isNotEmpty;
+  }
+
   // Helper: get file extension
   String _getFileExtension() {
     if (fileUrl.isEmpty) return '';
@@ -77,6 +84,7 @@ class MessageBubble extends StatelessWidget {
   }
 
   void _openFullScreenImage() {
+    if (!_isValidRemoteUrl(fileUrl)) return;
     Get.to(
       () => Scaffold(
         appBar: AppBar(
@@ -130,8 +138,9 @@ class MessageBubble extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final String safeFileUrl = _isValidRemoteUrl(fileUrl) ? fileUrl : '';
     Future<void> _handleFileOpen() async {
-      if (fileUrl.isEmpty) {
+      if (safeFileUrl.isEmpty) {
         showSnackBarMessage(context, "No file available", true);
         return;
       }
@@ -193,7 +202,7 @@ class MessageBubble extends StatelessWidget {
 
         // Download the file
         await Dio().download(
-          fileUrl,
+          safeFileUrl,
           filePath,
           onReceiveProgress: (received, total) {
             if (total != -1) {
@@ -309,14 +318,14 @@ class MessageBubble extends StatelessWidget {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       // File Attachment Handling
-                      if (fileUrl.isNotEmpty) ...[
+                      if (safeFileUrl.isNotEmpty) ...[
                         if (fileType == 'IMAGE')
                           GestureDetector(
                             onTap: _openFullScreenImage,
                             child: ClipRRect(
                               borderRadius: BorderRadius.circular(12.r),
                               child: Image.network(
-                                fileUrl,
+                                safeFileUrl,
                                 height: 200.h,
                                 width: double.infinity,
                                 fit: BoxFit.cover,
@@ -356,7 +365,7 @@ class MessageBubble extends StatelessWidget {
                           GestureDetector(
                             onTap: () {
                               Get.to(
-                                () => VideoPlayerScreen(videoUrl: fileUrl),
+                                () => VideoPlayerScreen(videoUrl: safeFileUrl),
                               );
                             },
                             child: Container(
@@ -474,7 +483,7 @@ class MessageBubble extends StatelessWidget {
                       if (message['text'].toString().isNotEmpty)
                         Padding(
                           padding: EdgeInsets.only(
-                            top: fileUrl.isNotEmpty ? 8.h : 0,
+                            top: safeFileUrl.isNotEmpty ? 8.h : 0,
                           ),
                           child: Column(
                             crossAxisAlignment: isMe

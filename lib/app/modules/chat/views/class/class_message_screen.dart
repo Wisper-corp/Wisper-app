@@ -43,7 +43,12 @@ class _ClassChatScreenState extends State<ClassChatScreen> {
     super.initState();
     // ✅ Only mark as seen — setupChat already ran before navigation
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      seenMessageController.seenMessage(widget.chatId!);
+      if (widget.chatId != null && widget.chatId!.isNotEmpty) {
+        seenMessageController.seenMessage(widget.chatId!);
+        if (ctrl.currentChatId != widget.chatId) {
+          ctrl.setupChat(chatId: widget.chatId);
+        }
+      }
     });
   }
 

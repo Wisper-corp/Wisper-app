@@ -20,41 +20,44 @@ class ContactWidget extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Row(
-      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-      children: [
-        Row(
-          children: [
-            CircleAvatar(
-              radius: 18,
-              backgroundImage: NetworkImage(imagePath),
-              backgroundColor: Colors.grey,
-            ),
-            widthBox10,
-            Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  title,
-                  style: TextStyle(
-                    fontSize: 14.sp,
-                    fontWeight: FontWeight.w600,
+    return GestureDetector(
+      onTap: onTap,
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        children: [
+          Row(
+            children: [
+              CircleAvatar(
+                radius: 18,
+                backgroundImage: NetworkImage(imagePath),
+                backgroundColor: Colors.grey,
+              ),
+              widthBox10,
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    title,
+                    style: TextStyle(
+                      fontSize: 14.sp,
+                      fontWeight: FontWeight.w600,
+                    ),
                   ),
-                ),
-                Text(
-                  subtitle,
-                  style: TextStyle(
-                    fontSize: 10.sp,
-                    fontWeight: FontWeight.w400,
-                    color: LightThemeColors.themeGreyColor,
+                  Text(
+                    subtitle,
+                    style: TextStyle(
+                      fontSize: 10.sp,
+                      fontWeight: FontWeight.w400,
+                      color: LightThemeColors.themeGreyColor,
+                    ),
                   ),
-                ),
-              ],
-            ),
-          ],
-        ),
-        trailing == null ? const SizedBox() : trailing!,
-      ],
+                ],
+              ),
+            ],
+          ),
+          trailing == null ? const SizedBox() : trailing!,
+        ],
+      ),
     );
   }
 }

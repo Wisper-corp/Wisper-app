@@ -409,10 +409,20 @@ class _ChatHeaderState extends State<ChatHeader> {
                         radius: 13,
                       ),
                       widthBox10,
-                      CircleAvatar(
-                        backgroundImage: NetworkImage(widget.image ?? ''),
-                        radius: 20,
-                      ),
+                      (widget.image == null || widget.image!.isEmpty)
+                          ? CircleAvatar(
+                              radius: 20,
+                              backgroundColor: Colors.grey.shade800,
+                              child: CrashSafeImage(
+                                Assets.images.image.keyName,
+                                color: Colors.white70,
+                                height: 20.h,
+                              ),
+                            )
+                          : CircleAvatar(
+                              backgroundImage: NetworkImage(widget.image!),
+                              radius: 20,
+                            ),
                       widthBox10,
                       Column(
                         crossAxisAlignment: CrossAxisAlignment.start,

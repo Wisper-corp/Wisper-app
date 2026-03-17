@@ -31,8 +31,8 @@ class GalleryPostScreen extends StatefulWidget {
 class _GalleryPostScreenState extends State<GalleryPostScreen> {
   final TextEditingController _captionCtrl = TextEditingController();
   final CreatePostController createPostController = CreatePostController();
-  final ProfileController profileController = Get.find<ProfileController>();
-  final BusinessController businessController = Get.find<BusinessController>();
+  final ProfileController profileController = Get.put(ProfileController());
+  final BusinessController businessController = Get.put(BusinessController());
   final formKey = GlobalKey<FormState>();
   final List<File> _selectedImages = [];
   final ImagePickerHelper _imagePickerHelper = ImagePickerHelper();

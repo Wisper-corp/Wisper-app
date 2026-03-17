@@ -4,6 +4,7 @@ import 'package:get/get.dart';
 import 'package:wisper/app/core/others/get_storage.dart';
 import 'package:wisper/app/core/services/network_caller/network_caller.dart';
 import 'package:wisper/app/core/services/socket/socket_service.dart';
+import 'package:wisper/app/modules/chat/controller/all_chats_controller.dart';
 import 'package:wisper/app/modules/chat/controller/image_decode_controller.dart';
 import 'package:wisper/app/modules/chat/model/message_keys.dart';
 import 'package:wisper/app/modules/chat/model/message_model.dart';
@@ -20,6 +21,8 @@ class MessageController extends GetxController {
   final ScrollController scrollController = ScrollController();
   final TextEditingController textController = TextEditingController();
   late String userAuthId;
+  bool _chatListRefreshInFlight = false;
+  String? currentChatId;
 
   @override
   void onInit() {
@@ -29,6 +32,7 @@ class MessageController extends GetxController {
 
   // ✅ Now async — ChatListScreen can await this before navigating
   Future<void> setupChat({required String? chatId}) async {
+    currentChatId = chatId;
     messages.clear();
     isLoading.value = true;
 
@@ -66,6 +70,13 @@ class MessageController extends GetxController {
     try {
       print('Real-time message event received from message controller: $data');
       final String msgId = data['id'] ?? '';
+      final String msgChatId = (data['chatId'] ?? data['chat'] ?? '').toString();
+      if (currentChatId != null &&
+          msgChatId.isNotEmpty &&
+          msgChatId != currentChatId) {
+        _upsertChatListFromMessage(data);
+        return;
+      }
       if (messages.any((e) => e[SocketMessageKeys.id] == msgId)) return;
 
       String senderName = 'Unknown';
@@ -90,7 +101,7 @@ class MessageController extends GetxController {
         data['sender']['id'] ?? data['senderId'] ?? '',
         SocketMessageKeys.senderName: senderName,
         SocketMessageKeys.senderImage: senderImage,
-        SocketMessageKeys.chat: data['chatId'] ?? '',
+        SocketMessageKeys.chat: msgChatId,
         SocketMessageKeys.createdAt: (data['createdAt'] ?? DateTime.now())
             .toString(),
         SocketMessageKeys.seen: data['isRead'] ?? false,
@@ -98,6 +109,7 @@ class MessageController extends GetxController {
       };
 
       messages.insert(0, msg);
+      _upsertChatListFromMessage(data);
       scrollToBottom();
     } catch (e) {
       print("Socket parse error: $e");
@@ -142,6 +154,16 @@ class MessageController extends GetxController {
     print('File type : $fileType');
     print('User Id : $userId');
     print('Message Done sending message');
+
+    // Optimistically update chat list for instant UI feedback.
+    _upsertChatListFromMessage({
+      'chatId': chatId,
+      'text': text,
+      'file': fileUrl,
+      'fileType': fileType,
+      'createdAt': DateTime.now().toIso8601String(),
+      'senderId': userId,
+    });
 
     textController.clear();
     imageDecodeController.clearAll();
@@ -214,5 +236,50 @@ class MessageController extends GetxController {
     scrollController.dispose();
     textController.dispose();
     super.onClose();
+  }
+
+  void _upsertChatListFromMessage(dynamic data) {
+    try {
+      final String chatId = (data['chatId'] ?? data['chat'] ?? '').toString();
+      if (chatId.isEmpty) return;
+
+      final int index = socketService.socketFriendList.indexWhere(
+        (element) => element['id'] == chatId,
+      );
+
+      final String text = (data['text'] ?? '').toString();
+      final dynamic file = data['file'];
+      final String lastMessage = text.isNotEmpty
+          ? text
+          : (file == null || file.toString().isEmpty)
+          ? '📎 file'
+          : '📷 photo';
+
+      final String createdAt =
+          (data['createdAt'] ?? DateTime.now().toIso8601String()).toString();
+
+      if (index != -1) {
+        socketService.socketFriendList[index]
+          ..['lastMessage'] = lastMessage
+          ..['latestMessageAt'] = createdAt;
+        _sortSocketList();
+        return;
+      }
+
+      // If chat not found yet (new conversation), refresh the whole list once.
+      if (_chatListRefreshInFlight) return;
+      _chatListRefreshInFlight = true;
+
+      if (Get.isRegistered<AllChatsController>()) {
+        Get.find<AllChatsController>()
+            .getAllChats()
+            .whenComplete(() => _chatListRefreshInFlight = false);
+      } else {
+        _chatListRefreshInFlight = false;
+      }
+    } catch (e) {
+      _chatListRefreshInFlight = false;
+      print('Chat list update failed: $e');
+    }
   }
 }

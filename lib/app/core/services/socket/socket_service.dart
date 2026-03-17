@@ -90,7 +90,6 @@ class SocketService extends GetxController {
       print('⚠️ SocketService already initialized — skipping');
       return this;
     }
-    _initialized = true;
 
     print('🔌 Initializing socket service. Connecting...');
 
@@ -103,6 +102,7 @@ class SocketService extends GetxController {
 
     if (token == null || userId == null) {
       print('🔴 Token or User ID is missing!');
+      _initialized = false;
       return this;
     }
 
@@ -115,6 +115,7 @@ class SocketService extends GetxController {
           .setTimeout(10000)
           .build(),
     );
+    _initialized = true;
 
     _socket.onConnect((_) {
       print('✅ Connected!');

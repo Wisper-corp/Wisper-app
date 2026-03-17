@@ -4,7 +4,10 @@ import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:get/get.dart';
 import 'package:wisper/app/core/utils/date_formatter.dart';
 import 'package:wisper/app/core/widgets/shimmer/chat_shimmer.dart';
+import 'package:wisper/app/core/services/socket/socket_service.dart';
 import 'package:wisper/app/modules/calls/controller/call_controller.dart';
+import 'package:wisper/app/modules/chat/controller/all_chats_controller.dart';
+import 'package:wisper/app/modules/chat/controller/create_chat_controller.dart';
 import 'package:wisper/app/modules/chat/controller/message_controller.dart';
 import 'package:wisper/app/modules/chat/controller/seen_message_controller.dart';
 import 'package:wisper/app/modules/chat/model/message_keys.dart';
@@ -37,6 +40,11 @@ class ChatScreen extends StatefulWidget {
 class _ChatScreenState extends State<ChatScreen> {
   // ✅ Use Get.find — controller was pre-loaded in ChatListScreen before navigation
   final MessageController ctrl = Get.put(MessageController());
+  final CreateChatController createChatController =
+      Get.put(CreateChatController());
+  final AllChatsController allChatsController =
+      Get.put(AllChatsController());
+  final SocketService socketService = Get.find<SocketService>();
   final ScrollController _scrollController = ScrollController();
   final SeenMessageController seenMessageController = SeenMessageController();
   
@@ -45,6 +53,7 @@ class _ChatScreenState extends State<ChatScreen> {
   bool _isAtBottom = true;
   int _previousMessageCount = 0;
   String? _lastDateSeparator;
+  String? _chatId;
 
   @override
   void initState() {
@@ -52,7 +61,13 @@ class _ChatScreenState extends State<ChatScreen> {
 
     // ✅ Only mark as seen — setupChat already ran before navigation
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      seenMessageController.seenMessage(widget.chatId!);
+      _chatId = widget.chatId;
+      if (_chatId != null && _chatId!.isNotEmpty) {
+        seenMessageController.seenMessage(_chatId!);
+        if (ctrl.currentChatId != _chatId) {
+          ctrl.setupChat(chatId: _chatId);
+        }
+      }
       _previousMessageCount = ctrl.messages.length;
       _scrollToBottom(animated: false);
     });
@@ -93,6 +108,87 @@ class _ChatScreenState extends State<ChatScreen> {
         _showNewMessageIndicator = false;
       });
     }
+  }
+
+  Future<bool> _ensureChatId() async {
+    if (_chatId != null && _chatId!.isNotEmpty) return true;
+    if (widget.receiverId == null || widget.receiverId!.isEmpty) return false;
+
+    final ok = await createChatController.createChat(
+      memberId: widget.receiverId,
+    );
+    if (!ok) return false;
+
+    final createdId = createChatController.chatId;
+    if (createdId.isEmpty) return false;
+
+    if (!mounted) return false;
+    setState(() {
+      _chatId = createdId;
+    });
+
+    // Initialize message socket/list for the new chat
+    await ctrl.setupChat(chatId: _chatId);
+    // Refresh chat list so new conversation appears immediately
+    await allChatsController.getAllChats();
+    return true;
+  }
+
+  Future<void> _handleSend() async {
+    final ok = await _ensureChatId();
+    if (!ok) {
+      Get.snackbar('Error', 'Unable to start chat');
+      return;
+    }
+    _ensureChatListEntry();
+    ctrl.sendMessage(_chatId ?? '');
+    Future.delayed(const Duration(milliseconds: 100), () {
+      _scrollToBottom();
+    });
+  }
+
+  void _ensureChatListEntry() {
+    final String chatId = _chatId ?? '';
+    if (chatId.isEmpty) return;
+
+    final int index = socketService.socketFriendList.indexWhere(
+      (e) => e['id'] == chatId,
+    );
+    if (index != -1) return;
+
+    final String text = ctrl.textController.text.trim();
+    final String fileUrl = ctrl.imageDecodeController.imageUrl.trim();
+    final String lastMessage = text.isNotEmpty
+        ? text
+        : fileUrl.isNotEmpty
+        ? '📷 photo'
+        : '📎 file';
+
+    socketService.socketFriendList.add({
+      "id": chatId,
+      "type": "INDIVIDUAL",
+      "latestMessageAt": DateTime.now().toIso8601String(),
+      "lastMessage": lastMessage,
+      "unreadMessageCount": 0,
+      "group": null,
+      "groupId": "",
+      "classId": "",
+      "chatClass": null,
+      "receiverName": widget.receiverName ?? '',
+      "receiverImage": widget.receiverImage ?? '',
+      "receiverId": widget.receiverId ?? '',
+      "isPerson": widget.isPerson == true,
+      "receiverOnline": widget.isOnline == true,
+    });
+
+    socketService.socketFriendList.sort((a, b) {
+      final DateTime aTime =
+          DateTime.tryParse(a['latestMessageAt'] ?? '') ?? DateTime(1970);
+      final DateTime bTime =
+          DateTime.tryParse(b['latestMessageAt'] ?? '') ?? DateTime(1970);
+      return bTime.compareTo(aTime);
+    });
+    socketService.socketFriendList.refresh();
   }
 
   void _handleNewMessages() {
@@ -224,7 +320,7 @@ class _ChatScreenState extends State<ChatScreen> {
         children: [
           ChatHeader(
             isPerson: widget.isPerson,
-            chatId: widget.chatId,
+            chatId: _chatId ?? widget.chatId,
             name: widget.receiverName,
             image: widget.receiverImage,
             memberId: widget.receiverId,
@@ -408,12 +504,7 @@ class _ChatScreenState extends State<ChatScreen> {
 
           MessageInputBar(
             controller: ctrl.textController,
-            onSend: () {
-              ctrl.sendMessage(widget.chatId ?? '');
-              Future.delayed(const Duration(milliseconds: 100), () {
-                _scrollToBottom();
-              });
-            },
+            onSend: _handleSend,
           ),
         ],
       ),

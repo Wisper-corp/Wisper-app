@@ -71,6 +71,12 @@ class MemberListTile extends StatelessWidget {
                             color: const Color(0xff11AE46),
                             height: 22.h,
                           )
+                        : imagePath.isEmpty
+                        ? CrashSafeImage(
+                            Assets.images.image.keyName,
+                            color: Colors.white70,
+                            height: 26.h,
+                          )
                         : CircleAvatar(
                             radius: 25.r,
                             backgroundImage: NetworkImage(imagePath),
