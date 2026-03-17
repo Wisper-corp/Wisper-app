@@ -19,6 +19,7 @@ class AllChatsController extends GetxController {
   final Rx<AllChatsModel?> allChatsModel = Rx<AllChatsModel?>(null);
 
   final String myAuthId = StorageUtil.getData(StorageUtil.userId) ?? '';
+  bool _listRefreshInFlight = false;
 
   @override
   void onInit() {
@@ -37,8 +38,10 @@ class AllChatsController extends GetxController {
     socketService.socket.off('chatList');
     socketService.socket.off('typingStatus');
     socketService.socket.off('chatList:typing');
+    socketService.socket.off('newMessage');
 
     socketService.socket.on('chatList', _handleIncomingChat);
+    socketService.socket.on('newMessage', _handleNewMessageForList);
   }
 
   // void _handleIncomingChat(dynamic rawData) {
@@ -175,6 +178,43 @@ class AllChatsController extends GetxController {
       _sortSocketList();
     } catch (e) {
       print('Error in _handleIncomingChat: $e');
+    }
+  }
+
+  void _handleNewMessageForList(dynamic data) {
+    try {
+      final String chatId = (data['chatId'] ?? data['chat'] ?? '').toString();
+      if (chatId.isEmpty) return;
+
+      final int index = socketService.socketFriendList.indexWhere(
+        (element) => element['id'] == chatId,
+      );
+
+      final String text = (data['text'] ?? '').toString();
+      final dynamic file = data['file'];
+      final String lastMessage = text.isNotEmpty
+          ? text
+          : (file == null || file.toString().isEmpty)
+          ? '📎 file'
+          : '📷 photo';
+
+      final String createdAt =
+          (data['createdAt'] ?? DateTime.now().toIso8601String()).toString();
+
+      if (index != -1) {
+        socketService.socketFriendList[index]
+          ..['lastMessage'] = lastMessage
+          ..['latestMessageAt'] = createdAt;
+        _sortSocketList();
+        return;
+      }
+
+      if (_listRefreshInFlight) return;
+      _listRefreshInFlight = true;
+      getAllChats().whenComplete(() => _listRefreshInFlight = false);
+    } catch (e) {
+      _listRefreshInFlight = false;
+      print('Error in _handleNewMessageForList: $e');
     }
   }
 
@@ -436,6 +476,7 @@ class AllChatsController extends GetxController {
     socketService.socket.off('chatList');
     socketService.socket.off('typingStatus');
     socketService.socket.off('chatList:typing');
+    socketService.socket.off('newMessage');
     super.onClose();
   }
 }

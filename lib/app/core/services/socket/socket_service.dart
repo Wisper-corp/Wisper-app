@@ -12,6 +12,7 @@ import 'package:wisper/app/core/widgets/common/circle_icon.dart';
 import 'package:wisper/app/modules/calls/controller/call_controller.dart';
 import 'package:wisper/app/modules/calls/views/audio_call.dart';
 import 'package:wisper/app/modules/calls/views/video_call.dart';
+import 'package:wisper/app/modules/chat/controller/all_chats_controller.dart';
 import 'package:wisper/app/modules/chat/controller/group/group_info_controller.dart';
 import 'package:wisper/app/urls.dart';
 import 'package:wisper/gen/assets.gen.dart';
@@ -48,6 +49,7 @@ class SocketService extends GetxController {
   final Map<String, Map<String, dynamic>> _callInfoCache = {};
   final Set<String> _callkitShownKeys = {};
   bool _callkitShowing = false;
+  bool _listRefreshInFlight = false;
 
   // Pending call data — dashboard banner + incoming dialog এর জন্য
   final Rxn<Map<String, dynamic>> pendingCall = Rxn<Map<String, dynamic>>();
@@ -137,6 +139,8 @@ class SocketService extends GetxController {
       print('🔴 Disconnected');
       isConnected.value = false;
     });
+
+    _socket.on('newMessage', _handleNewMessageForList);
 
     _socket.onReconnect((attempt) {
       print('🟢 Reconnected! Attempt: $attempt');
@@ -306,6 +310,56 @@ class SocketService extends GetxController {
             isGroupCall: callData['isGroupCall'] == true,
             callerName: callData['callerName'],
           ));
+    }
+  }
+
+  void _handleNewMessageForList(dynamic data) {
+    try {
+      final String chatId = (data['chatId'] ?? data['chat'] ?? '').toString();
+      if (chatId.isEmpty) return;
+
+      final int index = _socketFriendList.indexWhere(
+        (element) => element['id'] == chatId,
+      );
+
+      final String text = (data['text'] ?? '').toString();
+      final dynamic file = data['file'];
+      final String lastMessage = text.isNotEmpty
+          ? text
+          : (file == null || file.toString().isEmpty)
+          ? '📎 file'
+          : '📷 photo';
+
+      final String createdAt =
+          (data['createdAt'] ?? DateTime.now().toIso8601String()).toString();
+
+      if (index != -1) {
+        _socketFriendList[index]
+          ..['lastMessage'] = lastMessage
+          ..['latestMessageAt'] = createdAt;
+        _socketFriendList.sort((a, b) {
+          final DateTime aTime =
+              DateTime.tryParse(a['latestMessageAt'] ?? '') ?? DateTime(1970);
+          final DateTime bTime =
+              DateTime.tryParse(b['latestMessageAt'] ?? '') ?? DateTime(1970);
+          return bTime.compareTo(aTime);
+        });
+        _socketFriendList.refresh();
+        return;
+      }
+
+      if (_listRefreshInFlight) return;
+      _listRefreshInFlight = true;
+      if (Get.isRegistered<AllChatsController>()) {
+        Get.find<AllChatsController>()
+            .getAllChats()
+            .whenComplete(() => _listRefreshInFlight = false);
+      } else {
+        _listRefreshInFlight = false;
+      }
+    } catch (e) {
+      _listRefreshInFlight = false;
+      print('SocketService newMessage list update failed: $e');
     }
   }
 
