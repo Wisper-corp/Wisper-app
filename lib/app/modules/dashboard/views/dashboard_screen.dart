@@ -4,6 +4,7 @@ import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:get/get.dart';
 import 'package:wisper/app/core/others/custom_size.dart';
 import 'package:wisper/app/core/others/get_storage.dart';
+import 'package:wisper/app/core/services/socket/call_services.dart';
 import 'package:wisper/app/core/services/socket/pending_banner.dart';
 import 'package:wisper/app/core/services/socket/socket_service.dart';
 import 'package:wisper/app/modules/calls/views/call_screen.dart';
@@ -34,11 +35,22 @@ class _MainButtonNavbarScreenState extends State<MainButtonNavbarScreen>
   final ProfileController profileController = Get.put(ProfileController());
   final BusinessController businessController = Get.put(BusinessController());
   final SocketService socketService = Get.find<SocketService>();
+  final CallService callService = Get.isRegistered<CallService>()
+      ? Get.find<CallService>()
+      : Get.put(CallService());
 
-  final AllFeedPostController allFeedPostController = Get.put(AllFeedPostController());
-  final AllFeedJobController allFeedJobController = Get.put(AllFeedJobController());
-  final MyFeedJobController myFeedJobController = Get.put(MyFeedJobController());
-  final MyFeedPostController myFeedPostController = Get.put(MyFeedPostController());
+  final AllFeedPostController allFeedPostController = Get.put(
+    AllFeedPostController(),
+  );
+  final AllFeedJobController allFeedJobController = Get.put(
+    AllFeedJobController(),
+  );
+  final MyFeedJobController myFeedJobController = Get.put(
+    MyFeedJobController(),
+  );
+  final MyFeedPostController myFeedPostController = Get.put(
+    MyFeedPostController(),
+  );
   final AllRoleController allRoleController = Get.put(AllRoleController());
 
   final List<Widget> screens = const [
@@ -56,7 +68,8 @@ class _MainButtonNavbarScreenState extends State<MainButtonNavbarScreen>
     _initializeData();
 
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      socketService.checkAndShowPendingCallDialogIfNeeded();
+      socketService.onInit();
+      callService.checkAndShowPendingCallDialogIfNeeded();
     });
   }
 
@@ -64,7 +77,7 @@ class _MainButtonNavbarScreenState extends State<MainButtonNavbarScreen>
   void didChangeAppLifecycleState(AppLifecycleState state) {
     super.didChangeAppLifecycleState(state);
     if (state == AppLifecycleState.resumed) {
-      socketService.checkAndShowPendingCallDialogIfNeeded();
+      callService.checkAndShowPendingCallDialogIfNeeded();
     }
   }
 
@@ -184,9 +197,13 @@ class _MainButtonNavbarScreenState extends State<MainButtonNavbarScreen>
                 : Text(
                     label,
                     style: TextStyle(
-                      color: isSelected ? Colors.white : const Color(0xff98A2B3),
+                      color: isSelected
+                          ? Colors.white
+                          : const Color(0xff98A2B3),
                       fontSize: 12.sp,
-                      fontWeight: isSelected ? FontWeight.w600 : FontWeight.w400,
+                      fontWeight: isSelected
+                          ? FontWeight.w600
+                          : FontWeight.w400,
                     ),
                   ),
           ],
@@ -213,8 +230,9 @@ class _MainButtonNavbarScreenState extends State<MainButtonNavbarScreen>
             CircleAvatar(
               radius: 14.r,
               backgroundColor: const Color(0xff2A2A2A),
-              backgroundImage:
-                  imageUrl.isNotEmpty ? NetworkImage(imageUrl) as ImageProvider : null,
+              backgroundImage: imageUrl.isNotEmpty
+                  ? NetworkImage(imageUrl) as ImageProvider
+                  : null,
               child: imageUrl.isEmpty
                   ? Icon(Icons.person, size: 18.r, color: Colors.white70)
                   : null,

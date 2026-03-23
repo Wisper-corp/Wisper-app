@@ -1,4 +1,4 @@
-import 'dart:async';
+﻿import 'dart:async';
 
 import 'package:agora_rtc_engine/agora_rtc_engine.dart';
 import 'package:audioplayers/audioplayers.dart';
@@ -6,6 +6,7 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:wisper/app/modules/calls/controller/call_controller.dart';
+import 'package:wisper/app/core/services/socket/call_services.dart';
 import 'package:wisper/app/core/services/socket/socket_service.dart';
 import 'package:wisper/app/modules/chat/controller/group/all_group_member_controller.dart';
 import 'package:wisper/app/modules/chat/controller/class/class_member_controller.dart';
@@ -62,7 +63,8 @@ class _VideoCallPageState extends State<VideoCallPage> {
   bool _isLeavingCall = false;
 
   DateTime? _callStartTime;
-  SocketService socketService = Get.find<SocketService>();
+  final SocketService socketService = Get.find<SocketService>();
+  final CallService callService = Get.isRegistered<CallService>() ? Get.find<CallService>() : Get.put(CallService());
   final CallController _callController = CallController();
   final GroupMembersController _groupMembersController =
       Get.put(GroupMembersController());
@@ -90,17 +92,17 @@ class _VideoCallPageState extends State<VideoCallPage> {
   void initState() {
     super.initState();
     _currentToken = widget.token;
-    socketService.resetCallSignals();
+    callService.resetCallSignals();
     _player.setReleaseMode(ReleaseMode.loop);
 
-    _declinedWorker = ever(socketService.callDeclinedSignal, (bool value) {
+    _declinedWorker = ever(callService.callDeclinedSignal, (bool value) {
       if (value && mounted && !_isLeavingCall) {
         _cancelNoAnswerTimer();
         _leaveAndPop();
       }
     });
 
-    _endedWorker = ever(socketService.callEndedSignal, (bool value) {
+    _endedWorker = ever(callService.callEndedSignal, (bool value) {
       if (value && mounted && !_isLeavingCall) {
         _cancelNoAnswerTimer();
         _leaveAndPop();
@@ -205,14 +207,14 @@ class _VideoCallPageState extends State<VideoCallPage> {
   Future<void> _loadGroupMemberNames() async {
     final classId = (widget.classId ?? '').trim();
     if (classId.isNotEmpty) {
-      print('🔎 [VideoCall] classId for members: $classId');
+      print('ðŸ”Ž [VideoCall] classId for members: $classId');
       final ok = await _classMembersController.getClassMembers(classId);
-      print('✅ [VideoCall] getClassMembers ok: $ok');
+      print('âœ… [VideoCall] getClassMembers ok: $ok');
       if (!ok) return;
 
       final myId = StorageUtil.getData(StorageUtil.userId);
       final members = _classMembersController.groupMemnersData ?? [];
-      print('👥 [VideoCall] class members count: ${members.length}');
+      print('ðŸ‘¥ [VideoCall] class members count: ${members.length}');
       _nameQueue
         ..clear()
         ..addAll(
@@ -221,26 +223,26 @@ class _VideoCallPageState extends State<VideoCallPage> {
               .map((m) => m.auth?.person?.name ?? 'User')
               .toList(),
         );
-      print('🧾 [VideoCall] class nameQueue: $_nameQueue');
+      print('ðŸ§¾ [VideoCall] class nameQueue: $_nameQueue');
       if (_nameQueue.isNotEmpty) _forceMultiParty = true;
     } else {
       var groupId = (widget.groupId ?? '').trim();
       bool resolvedClassFromChats = false;
-      print('🔎 [VideoCall] groupId for members: $groupId');
+      print('ðŸ”Ž [VideoCall] groupId for members: $groupId');
       if (groupId.isEmpty && widget.name.isNotEmpty) {
         final ids =
             await _resolveChatIdsFromChatsByName(widget.name, widget.callerName);
         final resolvedClassId = ids['classId'] ?? '';
         if (resolvedClassId.isNotEmpty) {
-          print('✅ [VideoCall] resolved classId from chats: $resolvedClassId');
+          print('âœ… [VideoCall] resolved classId from chats: $resolvedClassId');
           final ok = await _classMembersController.getClassMembers(
             resolvedClassId,
           );
-          print('✅ [VideoCall] getClassMembers ok: $ok');
+          print('âœ… [VideoCall] getClassMembers ok: $ok');
           if (ok) {
             final myId = StorageUtil.getData(StorageUtil.userId);
             final members = _classMembersController.groupMemnersData ?? [];
-            print('👥 [VideoCall] class members count: ${members.length}');
+            print('ðŸ‘¥ [VideoCall] class members count: ${members.length}');
             _nameQueue
               ..clear()
               ..addAll(
@@ -249,7 +251,7 @@ class _VideoCallPageState extends State<VideoCallPage> {
                     .map((m) => m.auth?.person?.name ?? 'User')
                     .toList(),
               );
-            print('🧾 [VideoCall] class nameQueue: $_nameQueue');
+            print('ðŸ§¾ [VideoCall] class nameQueue: $_nameQueue');
             if (_nameQueue.isNotEmpty) _forceMultiParty = true;
           }
           resolvedClassFromChats = true;
@@ -257,7 +259,7 @@ class _VideoCallPageState extends State<VideoCallPage> {
 
         groupId = ids['groupId'] ?? '';
         if (groupId.isNotEmpty) {
-          print('✅ [VideoCall] resolved groupId from chats: $groupId');
+          print('âœ… [VideoCall] resolved groupId from chats: $groupId');
         }
       }
       if (resolvedClassFromChats) {
@@ -267,12 +269,12 @@ class _VideoCallPageState extends State<VideoCallPage> {
         return;
       } else {
         final ok = await _groupMembersController.getGroupMembers(groupId);
-        print('✅ [VideoCall] getGroupMembers ok: $ok');
+        print('âœ… [VideoCall] getGroupMembers ok: $ok');
         if (!ok) return;
 
         final myId = StorageUtil.getData(StorageUtil.userId);
         final members = _groupMembersController.groupMemnersData ?? [];
-        print('👥 [VideoCall] members count: ${members.length}');
+        print('ðŸ‘¥ [VideoCall] members count: ${members.length}');
         _nameQueue
           ..clear()
           ..addAll(
@@ -281,7 +283,7 @@ class _VideoCallPageState extends State<VideoCallPage> {
                 .map((m) => m.auth?.person?.name ?? 'User')
                 .toList(),
           );
-        print('🧾 [VideoCall] nameQueue: $_nameQueue');
+        print('ðŸ§¾ [VideoCall] nameQueue: $_nameQueue');
         if (_nameQueue.isNotEmpty) _forceMultiParty = true;
       }
     }
@@ -414,7 +416,7 @@ class _VideoCallPageState extends State<VideoCallPage> {
         }
       }
     } catch (e) {
-      print('❌ [VideoCall] resolve groupId failed: $e');
+      print('âŒ [VideoCall] resolve groupId failed: $e');
     }
     return {'groupId': groupId, 'classId': classId};
   }
@@ -423,7 +425,7 @@ class _VideoCallPageState extends State<VideoCallPage> {
     if (_uidToName.containsKey(uid)) return;
     if (_nameQueue.isEmpty) return;
     _uidToName[uid] = _nameQueue.removeAt(0);
-    print('🏷️ [VideoCall] assign uid $uid -> ${_uidToName[uid]}');
+    print('ðŸ·ï¸ [VideoCall] assign uid $uid -> ${_uidToName[uid]}');
   }
 
   String _labelForUid(int uid, String fallback) {
@@ -476,7 +478,7 @@ class _VideoCallPageState extends State<VideoCallPage> {
       }
       if (_nameQueue.isNotEmpty) _forceMultiParty = true;
       if (mounted) setState(() {});
-      print('🧾 [VideoCall] fallback nameQueue from call log: $_nameQueue');
+      print('ðŸ§¾ [VideoCall] fallback nameQueue from call log: $_nameQueue');
       if (_nameQueue.isEmpty && !_callLogRetryDone) {
         _callLogRetryDone = true;
         Future.delayed(const Duration(milliseconds: 1500), () async {
@@ -485,7 +487,7 @@ class _VideoCallPageState extends State<VideoCallPage> {
         });
       }
     } catch (e) {
-      print('❌ [VideoCall] fallback name load failed: $e');
+      print('âŒ [VideoCall] fallback name load failed: $e');
     }
   }
 
@@ -584,7 +586,7 @@ class _VideoCallPageState extends State<VideoCallPage> {
   Future<void> _refreshTokenAndRejoin() async {
     if (_tokenRefreshing) return;
     _tokenRefreshing = true;
-    print('🔁 Invalid token — refreshing...');
+    print('ðŸ” Invalid token â€” refreshing...');
 
     final bool ok = await _callController.getToken(
       callId: widget.callId,
@@ -592,13 +594,13 @@ class _VideoCallPageState extends State<VideoCallPage> {
     );
 
     if (!ok) {
-      print('❌ Token refresh failed: ${_callController.errorMessage}');
+      print('âŒ Token refresh failed: ${_callController.errorMessage}');
       _tokenRefreshing = false;
       return;
     }
 
     _currentToken = _callController.token;
-    print('✅ Token refreshed — rejoining...');
+    print('âœ… Token refreshed â€” rejoining...');
 
     try {
       await agoraEngine.leaveChannel();
@@ -637,14 +639,14 @@ class _VideoCallPageState extends State<VideoCallPage> {
     _cancelNoAnswerTimer();
     _declinedWorker?.dispose();
     _endedWorker?.dispose();
-    socketService.resetCallSignals();
+    callService.resetCallSignals();
     _player.dispose();
     agoraEngine.leaveChannel();
     agoraEngine.release();
     super.dispose();
   }
 
-  // ─── Video tile helper ────────────────────────────────────────────────
+  // â”€â”€â”€ Video tile helper â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
   Widget _videoTile(int uid, {String? label, double? radius}) {
     return ClipRRect(
       borderRadius: BorderRadius.circular(radius ?? 16),
@@ -662,7 +664,7 @@ class _VideoCallPageState extends State<VideoCallPage> {
     );
   }
 
-  // ─── "Me" small overlay ───────────────────────────────────────────────
+  // â”€â”€â”€ "Me" small overlay â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
   Widget _meOverlay() {
     return Positioned(
       top: 20,
@@ -690,7 +692,7 @@ class _VideoCallPageState extends State<VideoCallPage> {
     );
   }
 
-  // ─── LAYOUT: 2 User (1 remote + me) ──────────────────────────────────
+  // â”€â”€â”€ LAYOUT: 2 User (1 remote + me) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
   // Sketch: User full screen, me small top-right
   Widget _layout2User() {
     return Stack(
@@ -709,14 +711,14 @@ class _VideoCallPageState extends State<VideoCallPage> {
     );
   }
 
-  // ─── LAYOUT: 3 User (2 remote + me) ──────────────────────────────────
+  // â”€â”€â”€ LAYOUT: 3 User (2 remote + me) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
   // Sketch: User1 top big, User2 bottom half, me small top-right
   Widget _layout3User() {
     return Stack(
       children: [
         Column(
           children: [
-            // User1 — top 60%
+            // User1 â€” top 60%
             Expanded(
               flex: 6,
               child: SizedBox(
@@ -731,7 +733,7 @@ class _VideoCallPageState extends State<VideoCallPage> {
               ),
             ),
             const SizedBox(height: 2),
-            // User2 — bottom 40%
+            // User2 â€” bottom 40%
             Expanded(
               flex: 4,
               child: SizedBox(
@@ -749,8 +751,8 @@ class _VideoCallPageState extends State<VideoCallPage> {
     );
   }
 
-  // ─── LAYOUT: 4 User (3 remote + me) — 2x2 grid ───────────────────────
-  // Sketch: User1 | User2 / User3 | Me — সব equal
+  // â”€â”€â”€ LAYOUT: 4 User (3 remote + me) â€” 2x2 grid â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+  // Sketch: User1 | User2 / User3 | Me â€” à¦¸à¦¬ equal
   Widget _layout4User() {
     final allUids = [..._remoteUids.take(3), 0]; // 3 remote + local (me)
     final labels = [
@@ -775,7 +777,7 @@ class _VideoCallPageState extends State<VideoCallPage> {
     );
   }
 
-  // ─── LAYOUT: 5+ User — scrollable grid ───────────────────────────────
+  // â”€â”€â”€ LAYOUT: 5+ User â€” scrollable grid â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
   Widget _layoutManyUsers() {
     final allUids = [..._remoteUids, 0]; // all remote + me
     return GridView.builder(
@@ -795,7 +797,7 @@ class _VideoCallPageState extends State<VideoCallPage> {
     );
   }
 
-  // ─── Pick correct layout based on user count ─────────────────────────
+  // â”€â”€â”€ Pick correct layout based on user count â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
   Widget _buildCallLayout() {
     final count = _remoteUids.length; // remote only
     if (count == 1) return _layout2User();
@@ -810,9 +812,9 @@ class _VideoCallPageState extends State<VideoCallPage> {
       backgroundColor: Colors.black,
       body: Stack(
         children: [
-          // ═══════════════════════════════════════════════
-          // WAITING SCREEN — call start হওয়ার আগে
-          // ═══════════════════════════════════════════════
+          // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+          // WAITING SCREEN â€” call start à¦¹à¦“à¦¯à¦¼à¦¾à¦° à¦†à¦—à§‡
+          // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
           if (!hasRemoteUser)
             Positioned.fill(
               child: Container(
@@ -881,11 +883,11 @@ class _VideoCallPageState extends State<VideoCallPage> {
               ),
             ),
 
-          // ═══════════════════════════════════════════════
-          // CALL LAYOUT — call চলাকালীন
-          // ═══════════════════════════════════════════════
+          // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+          // CALL LAYOUT â€” call à¦šà¦²à¦¾à¦•à¦¾à¦²à§€à¦¨
+          // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
           if (hasRemoteUser && !callProgress) ...[
-            // Video area — controls এর উপরে পর্যন্ত
+            // Video area â€” controls à¦à¦° à¦‰à¦ªà¦°à§‡ à¦ªà¦°à§à¦¯à¦¨à§à¦¤
             Positioned(
               top: 0,
               left: 0,
@@ -894,7 +896,7 @@ class _VideoCallPageState extends State<VideoCallPage> {
               child: _buildCallLayout(),
             ),
 
-            // ─── TIMER: bottom center over caller canvas ───────────────
+            // â”€â”€â”€ TIMER: bottom center over caller canvas â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
             Positioned(
               left: 0,
               right: 0,
@@ -937,7 +939,7 @@ class _VideoCallPageState extends State<VideoCallPage> {
               ),
             ),
 
-            // ─── BOTTOM CONTROLS ────────────────────────
+            // â”€â”€â”€ BOTTOM CONTROLS â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
             Positioned(
               bottom: 0,
               left: 0,
@@ -970,7 +972,7 @@ class _VideoCallPageState extends State<VideoCallPage> {
                           await agoraEngine.muteLocalVideoStream(!_cameraEnabled);
                         },
                       ),
-                      // End call — bigger
+                      // End call â€” bigger
                       GestureDetector(
                         onTap: () => _leaveAndPop(emitCallEnd: true),
                         child: Container(

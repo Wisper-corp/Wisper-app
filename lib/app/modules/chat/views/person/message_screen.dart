@@ -5,7 +5,6 @@ import 'package:get/get.dart';
 import 'package:wisper/app/core/utils/date_formatter.dart';
 import 'package:wisper/app/core/widgets/shimmer/chat_shimmer.dart';
 import 'package:wisper/app/core/services/socket/socket_service.dart';
-import 'package:wisper/app/modules/calls/controller/call_controller.dart';
 import 'package:wisper/app/modules/chat/controller/all_chats_controller.dart';
 import 'package:wisper/app/modules/chat/controller/create_chat_controller.dart';
 import 'package:wisper/app/modules/chat/controller/message_controller.dart';
@@ -437,7 +436,7 @@ class _ChatScreenState extends State<ChatScreen> {
                             ),
                         ],
                       );
-                    },
+                    }, 
                   );
                 }),
 

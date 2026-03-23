@@ -15,7 +15,7 @@ import 'package:wisper/app/urls.dart';
 class MessageController extends GetxController {
   final SocketService socketService = Get.find<SocketService>();
   final FileDecodeController imageDecodeController =
-  Get.find<FileDecodeController>();
+      Get.find<FileDecodeController>();
 
   var isLoading = false.obs;
   var messages = <Map<String, dynamic>>[].obs; // newest first
@@ -87,6 +87,7 @@ class MessageController extends GetxController {
   }
 
   void _handleIncomingMessage(dynamic data) {
+    print('📨📨 newMessage called from message controller');
     try {
       // Some servers send JSON string payloads via Socket.IO.
       if (data is String) {
@@ -94,9 +95,13 @@ class MessageController extends GetxController {
       }
       if (data is! Map) return;
 
-      print('Real-time message event received from message controller: $data');
+      print(
+        '📲📲 Real-time message event received from message controller: $data',
+      );
+
       final String msgId = data['id'] ?? '';
-      final String msgChatId = (data['chatId'] ?? data['chat'] ?? '').toString();
+      final String msgChatId = (data['chatId'] ?? data['chat'] ?? '')
+          .toString();
       if (currentChatId != null &&
           msgChatId.isNotEmpty &&
           msgChatId != currentChatId) {
@@ -124,7 +129,7 @@ class MessageController extends GetxController {
         SocketMessageKeys.text: (data['text'] ?? "").toString(),
         SocketMessageKeys.imageUrl: _safeImageUrl(data['file']),
         SocketMessageKeys.senderId:
-        data['sender']['id'] ?? data['senderId'] ?? '',
+            data['sender']['id'] ?? data['senderId'] ?? '',
         SocketMessageKeys.senderName: senderName,
         SocketMessageKeys.senderImage: senderImage,
         SocketMessageKeys.chat: msgChatId,
@@ -159,15 +164,15 @@ class MessageController extends GetxController {
           : (payload['id'] != null ? [payload] : <dynamic>[]);
 
       final chat = chats.cast<dynamic>().firstWhere(
-            (c) => c is Map && (c['id']?.toString() ?? '') == currentChatId,
-            orElse: () => null,
-          );
+        (c) => c is Map && (c['id']?.toString() ?? '') == currentChatId,
+        orElse: () => null,
+      );
 
       if (chat == null || chat is! Map) return;
 
       final latestAt = (chat['latestMessageAt'] ?? '').toString();
       if (latestAt.isEmpty) return;
-
+ 
       // Debounce repeated chatList payloads.
       if (_lastChatListLatestAt == latestAt) return;
       _lastChatListLatestAt = latestAt;
@@ -214,14 +219,18 @@ class MessageController extends GetxController {
     final messageData = {
       "chatId": chatId,
       if (text.isNotEmpty) "text": text,
-      if (fileUrl.isNotEmpty) "file": fileUrl, 
+      if (fileUrl.isNotEmpty) "file": fileUrl,
       if (fileUrl.isNotEmpty) "fileType": fileType,
     };
 
-    socketService.socket.emit('sendMessage', messageData);
-    print('File type : $fileType');
+    socketService.socket.emitWithAck(
+      'sendMessage',
+      messageData,
+      ack: (response) => print('📲✅ sendMessage ack: $response'),
+    );
+    print('File type : $fileType'); 
     print('User Id : $userId');
-    print('Message Done sending message');
+    print('Message Done sending message from sendMessage(){}');
 
     // Optimistically update chat list for instant UI feedback.
     _upsertChatListFromMessage({
@@ -277,12 +286,12 @@ class MessageController extends GetxController {
               SocketMessageKeys.senderImage: senderImage,
               SocketMessageKeys.chat: msg.chatId ?? "",
               SocketMessageKeys.createdAt:
-              msg.createdAt?.toIso8601String() ??
+                  msg.createdAt?.toIso8601String() ??
                   DateTime.now().toIso8601String(),
             };
 
             if (!messages.any(
-                  (e) => e[SocketMessageKeys.id] == mapMsg[SocketMessageKeys.id],
+              (e) => e[SocketMessageKeys.id] == mapMsg[SocketMessageKeys.id],
             )) {
               messages.add(mapMsg);
             }
@@ -347,9 +356,9 @@ class MessageController extends GetxController {
       _chatListRefreshInFlight = true;
 
       if (Get.isRegistered<AllChatsController>()) {
-        Get.find<AllChatsController>()
-            .getAllChats()
-            .whenComplete(() => _chatListRefreshInFlight = false);
+        Get.find<AllChatsController>().getAllChats().whenComplete(
+          () => _chatListRefreshInFlight = false,
+        );
       } else {
         _chatListRefreshInFlight = false;
       }

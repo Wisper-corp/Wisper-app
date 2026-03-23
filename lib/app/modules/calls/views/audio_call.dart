@@ -1,4 +1,4 @@
-import 'dart:async';
+﻿import 'dart:async';
 
 import 'package:agora_rtc_engine/agora_rtc_engine.dart';
 import 'package:audioplayers/audioplayers.dart';
@@ -6,6 +6,7 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:wisper/app/modules/calls/controller/call_controller.dart';
+import 'package:wisper/app/core/services/socket/call_services.dart';
 import 'package:wisper/app/core/services/socket/socket_service.dart';
 import 'package:wisper/app/modules/chat/controller/group/all_group_member_controller.dart';
 import 'package:wisper/app/modules/chat/controller/class/class_member_controller.dart';
@@ -55,7 +56,7 @@ class _AudioCallPageState extends State<AudioCallPage> {
   bool _micEnabled = true;
   bool _speakerEnabled = true;
 
-  // ✅ Single remoteUid এর বদলে list — group call support
+  // âœ… Single remoteUid à¦à¦° à¦¬à¦¦à¦²à§‡ list â€” group call support
   final List<int> _remoteUids = [];
 
   String engineLog = 'Initializing...';
@@ -64,7 +65,8 @@ class _AudioCallPageState extends State<AudioCallPage> {
 
   DateTime? _callStartTime;
 
-  SocketService socketService = Get.find<SocketService>();
+  final SocketService socketService = Get.find<SocketService>();
+  final CallService callService = Get.isRegistered<CallService>() ? Get.find<CallService>() : Get.put(CallService());
   final CallController _callController = CallController();
   final GroupMembersController _groupMembersController =
       Get.put(GroupMembersController());
@@ -83,7 +85,7 @@ class _AudioCallPageState extends State<AudioCallPage> {
   bool _forceMultiParty = false;
   bool _callLogRetryDone = false;
 
-  // ✅ কেউ join করেছে কিনা
+  // âœ… à¦•à§‡à¦‰ join à¦•à¦°à§‡à¦›à§‡ à¦•à¦¿à¦¨à¦¾
   bool get hasRemoteUser => _remoteUids.isNotEmpty;
   bool get _isGroupCall =>
       (widget.groupId ?? '').isNotEmpty || widget.isGroupCall;
@@ -95,22 +97,22 @@ class _AudioCallPageState extends State<AudioCallPage> {
     super.initState();
     _currentToken = widget.token;
 
-    socketService.resetCallSignals();
+    callService.resetCallSignals();
     _player.setReleaseMode(ReleaseMode.loop);
 
-    _declinedWorker = ever(socketService.callDeclinedSignal, (bool value) {
-      print('👀 callDeclinedSignal changed: $value');
+    _declinedWorker = ever(callService.callDeclinedSignal, (bool value) {
+      print('ðŸ‘€ callDeclinedSignal changed: $value');
       if (value && mounted && !_isLeavingCall) {
-        print('📵 Call declined — closing AudioCallPage');
+        print('ðŸ“µ Call declined â€” closing AudioCallPage');
         _cancelNoAnswerTimer();
         _leaveAndPop();
       }
     });
 
-    _endedWorker = ever(socketService.callEndedSignal, (bool value) {
-      print('👀 callEndedSignal changed: $value');
+    _endedWorker = ever(callService.callEndedSignal, (bool value) {
+      print('ðŸ‘€ callEndedSignal changed: $value');
       if (value && mounted && !_isLeavingCall) {
-        print('📵 Call ended — closing AudioCallPage');
+        print('ðŸ“µ Call ended â€” closing AudioCallPage');
         _cancelNoAnswerTimer();
         _leaveAndPop();
       }
@@ -155,7 +157,7 @@ class _AudioCallPageState extends State<AudioCallPage> {
   void _startNoAnswerTimer() {
     _noAnswerTimer = Timer(const Duration(seconds: 30), () {
       if (!hasRemoteUser && mounted && !_isLeavingCall) {
-        print('⏰ No answer after 30s — auto cancelling call');
+        print('â° No answer after 30s â€” auto cancelling call');
         socketService.socket.emit('callCancel', {'callId': widget.callId});
         _leaveAndPop();
       }
@@ -181,7 +183,7 @@ class _AudioCallPageState extends State<AudioCallPage> {
 
     if (emitCallEnd) {
       final duration = _getCallDuration();
-      print('📞 Emitting callEnd with duration: $duration seconds');
+      print('ðŸ“ž Emitting callEnd with duration: $duration seconds');
       socketService.socket.emitWithAck(
         'callEnd',
         {'callId': widget.callId, 'duration': duration},
@@ -222,14 +224,14 @@ class _AudioCallPageState extends State<AudioCallPage> {
   Future<void> _loadGroupMemberNames() async {
     final classId = (widget.classId ?? '').trim();
     if (classId.isNotEmpty) {
-      print('🔎 [AudioCall] classId for members: $classId');
+      print('ðŸ”Ž [AudioCall] classId for members: $classId');
       final ok = await _classMembersController.getClassMembers(classId);
-      print('✅ [AudioCall] getClassMembers ok: $ok');
+      print('âœ… [AudioCall] getClassMembers ok: $ok');
       if (!ok) return;
 
       final myId = StorageUtil.getData(StorageUtil.userId);
       final members = _classMembersController.groupMemnersData ?? [];
-      print('👥 [AudioCall] class members count: ${members.length}');
+      print('ðŸ‘¥ [AudioCall] class members count: ${members.length}');
       _nameQueue
         ..clear()
         ..addAll(
@@ -238,26 +240,26 @@ class _AudioCallPageState extends State<AudioCallPage> {
               .map((m) => m.auth?.person?.name ?? 'User')
               .toList(),
         );
-      print('🧾 [AudioCall] class nameQueue: $_nameQueue');
+      print('ðŸ§¾ [AudioCall] class nameQueue: $_nameQueue');
       if (_nameQueue.isNotEmpty) _forceMultiParty = true;
     } else {
       var groupId = (widget.groupId ?? '').trim();
       bool resolvedClassFromChats = false;
-      print('🔎 [AudioCall] groupId for members: $groupId');
+      print('ðŸ”Ž [AudioCall] groupId for members: $groupId');
       if (groupId.isEmpty && widget.name.isNotEmpty) {
         final ids =
             await _resolveChatIdsFromChatsByName(widget.name, widget.callerName);
         final resolvedClassId = ids['classId'] ?? '';
         if (resolvedClassId.isNotEmpty) {
-          print('✅ [AudioCall] resolved classId from chats: $resolvedClassId');
+          print('âœ… [AudioCall] resolved classId from chats: $resolvedClassId');
           final ok = await _classMembersController.getClassMembers(
             resolvedClassId,
           );
-          print('✅ [AudioCall] getClassMembers ok: $ok');
+          print('âœ… [AudioCall] getClassMembers ok: $ok');
           if (ok) {
             final myId = StorageUtil.getData(StorageUtil.userId);
             final members = _classMembersController.groupMemnersData ?? [];
-            print('👥 [AudioCall] class members count: ${members.length}');
+            print('ðŸ‘¥ [AudioCall] class members count: ${members.length}');
             _nameQueue
               ..clear()
               ..addAll(
@@ -266,7 +268,7 @@ class _AudioCallPageState extends State<AudioCallPage> {
                     .map((m) => m.auth?.person?.name ?? 'User')
                     .toList(),
               );
-            print('🧾 [AudioCall] class nameQueue: $_nameQueue');
+            print('ðŸ§¾ [AudioCall] class nameQueue: $_nameQueue');
             if (_nameQueue.isNotEmpty) _forceMultiParty = true;
           }
           resolvedClassFromChats = true;
@@ -274,7 +276,7 @@ class _AudioCallPageState extends State<AudioCallPage> {
 
         groupId = ids['groupId'] ?? '';
         if (groupId.isNotEmpty) {
-          print('✅ [AudioCall] resolved groupId from chats: $groupId');
+          print('âœ… [AudioCall] resolved groupId from chats: $groupId');
         }
       }
       if (resolvedClassFromChats) {
@@ -284,12 +286,12 @@ class _AudioCallPageState extends State<AudioCallPage> {
         return;
       } else {
         final ok = await _groupMembersController.getGroupMembers(groupId);
-        print('✅ [AudioCall] getGroupMembers ok: $ok');
+        print('âœ… [AudioCall] getGroupMembers ok: $ok');
         if (!ok) return;
 
         final myId = StorageUtil.getData(StorageUtil.userId);
         final members = _groupMembersController.groupMemnersData ?? [];
-        print('👥 [AudioCall] members count: ${members.length}');
+        print('ðŸ‘¥ [AudioCall] members count: ${members.length}');
         _nameQueue
           ..clear()
           ..addAll(
@@ -298,7 +300,7 @@ class _AudioCallPageState extends State<AudioCallPage> {
                 .map((m) => m.auth?.person?.name ?? 'User')
                 .toList(),
           );
-        print('🧾 [AudioCall] nameQueue: $_nameQueue');
+        print('ðŸ§¾ [AudioCall] nameQueue: $_nameQueue');
         if (_nameQueue.isNotEmpty) _forceMultiParty = true;
       }
     }
@@ -431,7 +433,7 @@ class _AudioCallPageState extends State<AudioCallPage> {
         }
       }
     } catch (e) {
-      print('❌ [AudioCall] resolve groupId failed: $e');
+      print('âŒ [AudioCall] resolve groupId failed: $e');
     }
     return {'groupId': groupId, 'classId': classId};
   }
@@ -440,7 +442,7 @@ class _AudioCallPageState extends State<AudioCallPage> {
     if (_uidToName.containsKey(uid)) return;
     if (_nameQueue.isEmpty) return;
     _uidToName[uid] = _nameQueue.removeAt(0);
-    print('🏷️ [AudioCall] assign uid $uid -> ${_uidToName[uid]}');
+    print('ðŸ·ï¸ [AudioCall] assign uid $uid -> ${_uidToName[uid]}');
   }
 
   String _labelForUid(int uid) {
@@ -486,7 +488,7 @@ class _AudioCallPageState extends State<AudioCallPage> {
       }
       if (_nameQueue.isNotEmpty) _forceMultiParty = true;
       if (mounted) setState(() {});
-      print('🧾 [AudioCall] fallback nameQueue from call log: $_nameQueue');
+      print('ðŸ§¾ [AudioCall] fallback nameQueue from call log: $_nameQueue');
       if (_nameQueue.isEmpty && !_callLogRetryDone) {
         _callLogRetryDone = true;
         Future.delayed(const Duration(milliseconds: 1500), () async {
@@ -495,7 +497,7 @@ class _AudioCallPageState extends State<AudioCallPage> {
         });
       }
     } catch (e) {
-      print('❌ [AudioCall] fallback name load failed: $e');
+      print('âŒ [AudioCall] fallback name load failed: $e');
     }
   }
 
@@ -523,14 +525,14 @@ class _AudioCallPageState extends State<AudioCallPage> {
               });
               _startNoAnswerTimer();
             }
-            print('✅ Joined audio channel');
+            print('âœ… Joined audio channel');
           },
           onUserJoined: (RtcConnection connection, int rUid, int elapsed) {
             if (mounted) {
               _cancelNoAnswerTimer();
               stopRingtone();
               setState(() {
-                // ✅ List এ add করো — duplicate check সহ
+                // âœ… List à¦ add à¦•à¦°à§‹ â€” duplicate check à¦¸à¦¹
                 if (!_remoteUids.contains(rUid)) {
                   _remoteUids.add(rUid);
                   if (_nameQueue.isEmpty) {
@@ -541,13 +543,13 @@ class _AudioCallPageState extends State<AudioCallPage> {
                 }
                 engineLog = 'Remote user joined: $rUid';
               });
-              // ✅ প্রথম user join করলে timer শুরু করো
+              // âœ… à¦ªà§à¦°à¦¥à¦® user join à¦•à¦°à¦²à§‡ timer à¦¶à§à¦°à§ à¦•à¦°à§‹
               if (_remoteUids.length == 1) {
                 _callStartTime = DateTime.now();
                 startTimer();
               }
             }
-            print('✅ Remote user joined: $rUid | Total: ${_remoteUids.length}');
+            print('âœ… Remote user joined: $rUid | Total: ${_remoteUids.length}');
           },
           onUserOffline: (
             RtcConnection connection,
@@ -557,15 +559,15 @@ class _AudioCallPageState extends State<AudioCallPage> {
             print('onUserOffline: $rUid, reason: $reason');
             if (mounted) {
               setState(() {
-                // ✅ List থেকে remove করো
+                // âœ… List à¦¥à§‡à¦•à§‡ remove à¦•à¦°à§‹
                 _remoteUids.remove(rUid);
                 _uidToName.remove(rUid);
               });
 
-              // ✅ সবাই চলে গেলে call শেষ করো
+              // âœ… à¦¸à¦¬à¦¾à¦‡ à¦šà¦²à§‡ à¦—à§‡à¦²à§‡ call à¦¶à§‡à¦· à¦•à¦°à§‹
               if (_remoteUids.isEmpty && !_isLeavingCall) {
                 final duration = _getCallDuration();
-                print('📞 All remote users left. Duration: $duration seconds');
+                print('ðŸ“ž All remote users left. Duration: $duration seconds');
                 socketService.socket.emitWithAck(
                   'callEnd',
                   {'callId': widget.callId, 'duration': duration},
@@ -587,7 +589,7 @@ class _AudioCallPageState extends State<AudioCallPage> {
                 engineLog = 'Connection: ${state.name}';
               });
             }
-            print('📶 Connection: ${state.name} - ${reason.name}');
+            print('ðŸ“¶ Connection: ${state.name} - ${reason.name}');
           },
           onError: (ErrorCodeType err, String msg) {
             if (mounted) {
@@ -595,7 +597,7 @@ class _AudioCallPageState extends State<AudioCallPage> {
                 engineLog = 'Error: ${err.name}';
               });
             }
-            print('❌ Error: ${err.name} - $msg');
+            print('âŒ Error: ${err.name} - $msg');
 
             if (err == ErrorCodeType.errInvalidToken) {
               _refreshTokenAndRejoin();
@@ -621,21 +623,21 @@ class _AudioCallPageState extends State<AudioCallPage> {
         ),
       );
 
-      print('✅ Join channel request sent');
+      print('âœ… Join channel request sent');
     } catch (e) {
       if (mounted) {
         setState(() {
           engineLog = 'Error: $e';
         });
       }
-      print('❌ Error: $e');
+      print('âŒ Error: $e');
     }
   }
 
   Future<void> _refreshTokenAndRejoin() async {
     if (_tokenRefreshing) return;
     _tokenRefreshing = true;
-    print('🔁 Invalid token — refreshing...');
+    print('ðŸ” Invalid token â€” refreshing...');
 
     final bool ok = await _callController.getToken(
       callId: widget.callId,
@@ -643,13 +645,13 @@ class _AudioCallPageState extends State<AudioCallPage> {
     );
 
     if (!ok) {
-      print('❌ Token refresh failed: ${_callController.errorMessage}');
+      print('âŒ Token refresh failed: ${_callController.errorMessage}');
       _tokenRefreshing = false;
       return;
     }
 
     _currentToken = _callController.token;
-    print('✅ Token refreshed — rejoining...');
+    print('âœ… Token refreshed â€” rejoining...');
 
     try {
       await agoraEngine.leaveChannel();
@@ -674,19 +676,19 @@ class _AudioCallPageState extends State<AudioCallPage> {
     _cancelNoAnswerTimer();
     _declinedWorker?.dispose();
     _endedWorker?.dispose();
-    socketService.resetCallSignals();
+    callService.resetCallSignals();
     _player.dispose();
     agoraEngine.leaveChannel();
     agoraEngine.release();
     super.dispose();
   }
 
-  // ✅ Group audio call — participants list UI
+  // âœ… Group audio call â€” participants list UI
   Widget _buildParticipantsList() {
     final count = _remoteUids.length;
 
     if (count == 0) {
-      // কেউ আসেনি — শুধু waiting UI
+      // à¦•à§‡à¦‰ à¦†à¦¸à§‡à¦¨à¦¿ â€” à¦¶à§à¦§à§ waiting UI
       return Column(
         mainAxisSize: MainAxisSize.min,
         children: [
@@ -705,7 +707,7 @@ class _AudioCallPageState extends State<AudioCallPage> {
       );
     }
 
-    // ✅ ১+ জন — সবার avatar grid দেখাও
+    // âœ… à§§+ à¦œà¦¨ â€” à¦¸à¦¬à¦¾à¦° avatar grid à¦¦à§‡à¦–à¦¾à¦“
     return Column(
       mainAxisSize: MainAxisSize.min,
       children: [
@@ -721,7 +723,7 @@ class _AudioCallPageState extends State<AudioCallPage> {
           ),
         ),
         const SizedBox(height: 24),
-        // ✅ Participant count badge
+        // âœ… Participant count badge
         Container(
           padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
           decoration: BoxDecoration(
@@ -737,7 +739,7 @@ class _AudioCallPageState extends State<AudioCallPage> {
           ),
         ),
         const SizedBox(height: 24),
-        // ✅ Remote participants avatars
+        // âœ… Remote participants avatars
         Wrap(
           spacing: 16,
           runSpacing: 16,
@@ -801,7 +803,7 @@ class _AudioCallPageState extends State<AudioCallPage> {
         ),
         child: Stack(
           children: [
-            // ✅ Center content — participants
+            // âœ… Center content â€” participants
             Positioned(
               top: 140,
               left: 0,
@@ -812,7 +814,7 @@ class _AudioCallPageState extends State<AudioCallPage> {
               ),
             ),
 
-            // End call button — waiting screen (কেউ আসেনি)
+            // End call button â€” waiting screen (à¦•à§‡à¦‰ à¦†à¦¸à§‡à¦¨à¦¿)
             if (!hasRemoteUser)
               Positioned(
                 bottom: 60,
@@ -837,7 +839,7 @@ class _AudioCallPageState extends State<AudioCallPage> {
                 ),
               ),
 
-            // Controls — call চলাকালীন
+            // Controls â€” call à¦šà¦²à¦¾à¦•à¦¾à¦²à§€à¦¨
             if (hasRemoteUser)
               Positioned(
                 bottom: 60,

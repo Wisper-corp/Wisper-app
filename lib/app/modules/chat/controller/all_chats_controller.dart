@@ -73,11 +73,11 @@ class AllChatsController extends GetxController {
   //     _sortSocketList();
   //   } catch (e) {
   //     print('Error handling incoming chatList event: $e');
-  //   }
+  //   } 
   // }
 
   void _handleIncomingChat(dynamic rawData) {
-    print('Real-time chatList event received from chat controller: $rawData');
+    print('📋📋 Real-time chatList event received from chat controller');
 
     try {
       // rawData কে Map এ কনভার্ট
@@ -181,8 +181,9 @@ class AllChatsController extends GetxController {
   }
 
   void _handleNewMessageForList(dynamic data) {
+    print('📨📨 newMessage called from All chat controller');
     try {
-      if (data is String) {
+      if (data is String) { 
         data = jsonDecode(data);
       }
       if (data is! Map) return;
@@ -365,7 +366,7 @@ class AllChatsController extends GetxController {
         final model = AllChatsModel.fromJson(response.responseData);
         allChatsModel.value = model;
  
-        socketService.socketFriendList.clear();
+        socketService.socketFriendList.clear(); 
 
         print(
           'Socket List length initial : ${socketService.socketFriendList.length}',

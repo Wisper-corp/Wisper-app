@@ -1,4 +1,4 @@
-// ignore_for_file: use_build_context_synchronously
+﻿// ignore_for_file: use_build_context_synchronously
 
 import 'package:camera/camera.dart';
 import 'package:crash_safe_image/crash_safe_image.dart';
@@ -9,6 +9,7 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:wisper/app/core/others/custom_size.dart';
 import 'package:wisper/app/core/others/get_storage.dart';
 import 'package:wisper/app/core/services/socket/socket_service.dart';
+import 'package:wisper/app/core/services/socket/call_services.dart';
 import 'package:wisper/app/core/utils/show_over_loading.dart';
 import 'package:wisper/app/core/utils/snack_bar.dart';
 import 'package:wisper/app/core/widgets/common/circle_icon.dart';
@@ -56,6 +57,7 @@ class _GroupChatHeaderState extends State<GroupChatHeader> {
   final MuteChatController muteChatController = MuteChatController();
   final CallController callController = CallController();
   final SocketService socketService = Get.find<SocketService>();
+  final CallService callService = Get.isRegistered<CallService>() ? Get.find<CallService>() : Get.put(CallService());
 
   @override
   void initState() {
@@ -74,18 +76,18 @@ class _GroupChatHeaderState extends State<GroupChatHeader> {
     });
   }
 
-  // ✅ আমার নিজের ID বাদ দিয়ে বাকি সব member এর participants list বানাও
+  // âœ… à¦†à¦®à¦¾à¦° à¦¨à¦¿à¦œà§‡à¦° ID à¦¬à¦¾à¦¦ à¦¦à¦¿à¦¯à¦¼à§‡ à¦¬à¦¾à¦•à¦¿ à¦¸à¦¬ member à¦à¦° participants list à¦¬à¦¾à¦¨à¦¾à¦“
   List<Map<String, dynamic>> _buildParticipants() {
     final myId = StorageUtil.getData(StorageUtil.userId);
     final members = groupMembersController.groupMemnersData ?? [];
 
     return members
-        .where((member) => member.auth?.id != myId) // নিজেকে বাদ দাও
+        .where((member) => member.auth?.id != myId) // à¦¨à¦¿à¦œà§‡à¦•à§‡ à¦¬à¦¾à¦¦ à¦¦à¦¾à¦“
         .map((member) => {"id": member.auth?.id, "status": "INCOMING"})
         .toList();
   }
 
-  // ✅ Step 1 — Room তৈরি করো
+  // âœ… Step 1 â€” Room à¦¤à§ˆà¦°à¦¿ à¦•à¦°à§‹
   void getRoomId(String? type, String? medium) {
     showLoadingOverLay(
       asyncFunction: () async => await performRoomId(context, type, medium),
@@ -105,7 +107,7 @@ class _GroupChatHeaderState extends State<GroupChatHeader> {
       return;
     }
 
-    // ✅ List wise participants পাঠাও
+    // âœ… List wise participants à¦ªà¦¾à¦ à¦¾à¦“
     final bool isSuccess = await callController.getRoomWithParticipants(
       callType: type,
       mode: medium,
@@ -119,7 +121,7 @@ class _GroupChatHeaderState extends State<GroupChatHeader> {
     }
   }
 
-  // ✅ Step 2 — Token নাও
+  // âœ… Step 2 â€” Token à¦¨à¦¾à¦“
   void getCallToken(
     String? roomId,
     String? callId,
@@ -140,7 +142,7 @@ class _GroupChatHeaderState extends State<GroupChatHeader> {
     String? type,
     String? medium,
   ) async {
-    socketService.resetCallSignals();
+    callService.resetCallSignals();
 
     final bool isSuccess = await callController.getToken(
       callId: callId,

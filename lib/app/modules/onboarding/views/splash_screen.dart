@@ -6,6 +6,7 @@ import 'package:permission_handler/permission_handler.dart';
 import 'package:wisper/app/core/config/theme/light_theme_colors.dart';
 import 'package:wisper/app/core/others/get_storage.dart';
 import 'package:wisper/app/core/services/others/deeplink_services.dart';
+import 'package:wisper/app/core/services/socket/call_services.dart';
 import 'package:wisper/app/core/services/socket/socket_service.dart';
 import 'package:wisper/app/core/utils/connectivity_services.dart';
 import 'package:wisper/app/core/utils/no_inter_screen.dart';
@@ -35,8 +36,10 @@ class _SplashScreenState extends State<SplashScreen> with WidgetsBindingObserver
     if (state == AppLifecycleState.resumed) {
       print('Splash → App resumed → checking pending call dialog');
       try {
-        final socketService = Get.find<SocketService>();
-        socketService.checkAndShowPendingCallDialogIfNeeded();
+        final callService = Get.isRegistered<CallService>()
+            ? Get.find<CallService>()
+            : Get.put(CallService());
+        callService.checkAndShowPendingCallDialogIfNeeded();
       } catch (e) {
         print('Error finding SocketService in splash: $e');
       }
@@ -51,8 +54,10 @@ class _SplashScreenState extends State<SplashScreen> with WidgetsBindingObserver
     // Extra safety: splash শেষে চেক
     await Future.delayed(const Duration(milliseconds: 800));
     try {
-      final socketService = Get.find<SocketService>();
-      socketService.checkAndShowPendingCallDialogIfNeeded();
+      final callService = Get.isRegistered<CallService>()
+          ? Get.find<CallService>()
+          : Get.put(CallService());
+      callService.checkAndShowPendingCallDialogIfNeeded();
     } catch (e) {
       print('SocketService not found yet in splash _startFlow');
     }

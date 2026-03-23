@@ -1,7 +1,7 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
-import 'package:wisper/app/core/services/socket/socket_service.dart';
+import 'package:wisper/app/core/services/socket/call_services.dart';
 import 'package:wisper/app/modules/calls/views/audio_call.dart';
 import 'package:wisper/app/modules/calls/views/video_call.dart';
 
@@ -21,11 +21,13 @@ class _PendingCallBannerState extends State<PendingCallBanner> {
   @override
   void initState() {
     super.initState();
-    // SocketService এর pendingCall listen করো
-    final socketService = Get.find<SocketService>();
+    // CallService এর pendingCall listen করো
+    final callService = Get.isRegistered<CallService>()
+        ? Get.find<CallService>()
+        : Get.put(CallService());
 
     // If pendingCall was already set before this widget mounted, show it
-    _currentCallData = socketService.pendingCall.value;
+    _currentCallData = callService.pendingCall.value;
     if (_currentCallData != null) {
       _dismissTimer?.cancel();
       _dismissTimer = Timer(const Duration(seconds: 30), () {
@@ -33,7 +35,7 @@ class _PendingCallBannerState extends State<PendingCallBanner> {
       });
     }
 
-    _pendingWorker = ever(socketService.pendingCall, (callData) {
+    _pendingWorker = ever(callService.pendingCall, (callData) {
       if (mounted) {
         setState(() {
           _currentCallData = callData;
@@ -59,7 +61,10 @@ class _PendingCallBannerState extends State<PendingCallBanner> {
   }
 
   void _dismiss() {
-    Get.find<SocketService>().pendingCall.value = null;
+    final callService = Get.isRegistered<CallService>()
+        ? Get.find<CallService>()
+        : Get.put(CallService());
+    callService.pendingCall.value = null;
   }
 
   void _joinCall(Map<String, dynamic> callData) {
