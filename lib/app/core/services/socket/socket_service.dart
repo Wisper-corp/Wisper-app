@@ -42,13 +42,13 @@ class SocketService extends GetxController {
     if (_initialized) {
       if (_activeToken == token && _activeUserId == userId) {
         if (!_socket.connected) {
-          print('Socket initialized but disconnected â€” reconnecting');
+          print('Socket initialized but disconnected — reconnecting');
           _socket.connect();
         }
         return this;
       }
 
-      // Auth changed (fresh login / switch account) â†’ rebuild socket with new headers.
+      // Auth changed (fresh login / switch account) → rebuild socket with new headers.
       print('Socket auth changed reinitializing');
       disconnect();
       _initialized = false;
@@ -72,8 +72,10 @@ class SocketService extends GetxController {
 
     _socket.onConnect((_) {
       print('✅ Socket Connected!');
+      print('Socket ID: ${_socket.id}');
       isConnected.value = true;
       emitConnection();
+      ensureRegistered();
     });
 
     _socket.onConnectError((err) {
@@ -103,6 +105,7 @@ class SocketService extends GetxController {
       print('Reconnected! Attempt: $attempt');
       isConnected.value = true;
       emitConnection();
+      ensureRegistered();
     });
 
     _socket.connect();
@@ -127,11 +130,27 @@ class SocketService extends GetxController {
   void emitConnection() {
     if (!_initialized) return;
     final uid = StorageUtil.getData(StorageUtil.userId);
+    final aid = StorageUtil.getData(StorageUtil.userAuthId);
     final userId = uid?.toString().trim();
-    if (userId == null || userId.isEmpty) return;
+    final authId = aid?.toString().trim();
+    if ((userId == null || userId.isEmpty) &&
+        (authId == null || authId.isEmpty)) {
+      return;
+    }
     try {
-      _socket.emit('connection', userId);
-      print('emit connection â†’ $userId');
+      void emitFor(String id, String label) {
+        _socket.emit('connection', id);
+        _socket.emit('connection', {'userId': id});
+        _socket.emit('connection', {'id': id});
+        print('emit connection $label -> $id');
+      }
+
+      if (userId != null && userId.isNotEmpty) {
+        emitFor(userId, 'userId');
+      }
+      if (authId != null && authId.isNotEmpty && authId != userId) {
+        emitFor(authId, 'authId');
+      }
     } catch (e) {
       print('emit connection failed: $e');
     }
@@ -149,7 +168,7 @@ class SocketService extends GetxController {
       await Future.delayed(interval);
     }
   }
- 
+
   void _handleNewMessageForList(dynamic data) {
     print('📨📨 newMessage called from socket services');
     try {
@@ -165,8 +184,8 @@ class SocketService extends GetxController {
       final String lastMessage = text.isNotEmpty
           ? text
           : (file == null || file.toString().isEmpty)
-          ? 'file'
-          : 'photo';
+              ? 'file'
+              : 'photo';
 
       final String createdAt =
           (data['createdAt'] ?? DateTime.now().toIso8601String()).toString();
@@ -190,8 +209,8 @@ class SocketService extends GetxController {
       _listRefreshInFlight = true;
       if (Get.isRegistered<AllChatsController>()) {
         Get.find<AllChatsController>().getAllChats().whenComplete(
-          () => _listRefreshInFlight = false,
-        );
+              () => _listRefreshInFlight = false,
+            );
       } else {
         _listRefreshInFlight = false;
       }

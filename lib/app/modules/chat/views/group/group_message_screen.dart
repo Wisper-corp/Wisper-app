@@ -50,7 +50,7 @@ class _GroupChatScreenState extends State<GroupChatScreen> {
     });
   }
 
-  @override
+  @override 
   Widget build(BuildContext context) {
     return Scaffold(
       body: Column(

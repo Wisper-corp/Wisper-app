@@ -113,7 +113,7 @@ class _ChatSectionState extends State<ChatSection> {
             final String classImage = item['chatClass']?['image'] ?? '';
             final String formattedTime = DateFormatter(
               time,
-            ).getRelativeTimeFormat();
+            ).getRelativeTimeFormat(); 
             final int unread = item['unreadMessageCount'] ?? 0;
 
             return MemberListTile(

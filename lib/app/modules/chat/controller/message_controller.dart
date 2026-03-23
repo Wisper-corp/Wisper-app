@@ -1,4 +1,4 @@
-// app/modules/chat/controller/message_controller.dart
+﻿// app/modules/chat/controller/message_controller.dart
 import 'dart:convert';
 
 import 'package:flutter/material.dart';
@@ -34,37 +34,42 @@ class MessageController extends GetxController {
     userAuthId = StorageUtil.getData(StorageUtil.userId) ?? "";
   }
 
-  // ✅ Now async — ChatListScreen can await this before navigating
+  /// Setup chat — now async so ChatListScreen can await it
   Future<void> setupChat({required String? chatId}) async {
+    if (chatId == null || chatId.isEmpty) return;
+
+    // Avoid duplicate setup for the same chat
+    if (currentChatId == chatId) {
+      print('Already setup for chat $chatId → skipping duplicate');
+      return;
+    }
+
     currentChatId = chatId;
     _lastChatListLatestAt = null;
     messages.clear();
     isLoading.value = true;
 
-    // Some backends require joining a room to receive newMessage events.
-    // These emits are safe no-ops if the server doesn't implement them.
+    // Wait for socket connection
     await socketService.waitUntilConnected(timeout: const Duration(seconds: 5));
     socketService.emitConnection();
-    if (currentChatId != null && currentChatId!.isNotEmpty) {
-      socketService.socket.emit('join', {'chatId': currentChatId});
-      socketService.socket.emit('joinChat', {'chatId': currentChatId});
-      socketService.socket.emit('join_room', currentChatId);
-    }
 
-    // Register socket listeners first
-    // IMPORTANT: never call `off(event)` without a handler — it removes other
-    // listeners too (e.g. chat-list updates in SocketService), breaking realtime.
+    // Join the chat room (multiple variants — depending on backend)
+    socketService.socket.emit('join', {'chatId': currentChatId});
+    socketService.socket.emit('joinChat', {'chatId': currentChatId});
+    socketService.socket.emit('join_room', currentChatId);
+
+    // IMPORTANT: Remove previous listeners first, then add new ones
+    // This prevents stacking listeners when switching chats
     socketService.socket.off('newMessage', _handleIncomingMessage);
     socketService.socket.off('typingStatus', _handleTypingStatus);
-    // Fallback: some servers only broadcast chat list updates to receivers.
     socketService.socket.off('chatList', _handleChatListSync);
 
     socketService.socket.on('newMessage', _handleIncomingMessage);
     socketService.socket.on('typingStatus', _handleTypingStatus);
     socketService.socket.on('chatList', _handleChatListSync);
 
-    // ✅ Await the actual message fetch — so caller knows when data is ready
-    await getMessages(chatId: chatId ?? '');
+    // Fetch historical messages
+    await getMessages(chatId: chatId);
 
     scrollToBottom();
   }
@@ -77,37 +82,40 @@ class MessageController extends GetxController {
           DateTime.tryParse(b['latestMessageAt'] ?? '') ?? DateTime(1970);
       return bTime.compareTo(aTime);
     });
-
     socketService.socketFriendList.refresh();
   }
 
   void _handleTypingStatus(dynamic data) {
-    print('typingStatus called');
-    print(data);
+    print('typingStatus received: $data');
+    // You can add typing indicator logic here later
   }
 
   void _handleIncomingMessage(dynamic data) {
-    print('📨📨 newMessage called from message controller');
+    print('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
+    print('newMessage EVENT RECEIVED for currentChatId: $currentChatId');
+    print('Raw data: $data');
+    print('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
+    print('📨 newMessage received in MessageController');
+
     try {
-      // Some servers send JSON string payloads via Socket.IO.
+      // Handle possible string payload
       if (data is String) {
         data = jsonDecode(data);
       }
       if (data is! Map) return;
 
-      print(
-        '📲📲 Real-time message event received from message controller: $data',
-      );
-
       final String msgId = data['id'] ?? '';
-      final String msgChatId = (data['chatId'] ?? data['chat'] ?? '')
-          .toString();
+      final String msgChatId = (data['chatId'] ?? data['chat'] ?? '').toString();
+
+      // If message belongs to different chat → just update list, don't add to messages
       if (currentChatId != null &&
           msgChatId.isNotEmpty &&
           msgChatId != currentChatId) {
         _upsertChatListFromMessage(data);
         return;
       }
+
+      // Avoid duplicate messages
       if (messages.any((e) => e[SocketMessageKeys.id] == msgId)) return;
 
       String senderName = 'Unknown';
@@ -129,7 +137,7 @@ class MessageController extends GetxController {
         SocketMessageKeys.text: (data['text'] ?? "").toString(),
         SocketMessageKeys.imageUrl: _safeImageUrl(data['file']),
         SocketMessageKeys.senderId:
-            data['sender']['id'] ?? data['senderId'] ?? '',
+            data['sender']?['id'] ?? data['senderId'] ?? '',
         SocketMessageKeys.senderName: senderName,
         SocketMessageKeys.senderImage: senderImage,
         SocketMessageKeys.chat: msgChatId,
@@ -143,27 +151,26 @@ class MessageController extends GetxController {
       _upsertChatListFromMessage(data);
       scrollToBottom();
     } catch (e) {
-      print("Socket parse error: $e");
+      print("Error parsing newMessage: $e");
     }
   }
 
   void _handleChatListSync(dynamic rawData) {
+    // ... তোমার আগের কোড একই রাখা যায়, পরিবর্তনের দরকার নেই ...
     try {
       if (currentChatId == null || currentChatId!.isEmpty) return;
 
       dynamic data = rawData;
-      if (data is String) {
-        data = jsonDecode(data);
-      }
+      if (data is String) data = jsonDecode(data);
       if (data is! Map) return;
 
-      final payload = Map<String, dynamic>.from(data as Map);
+      final payload = Map<String, dynamic>.from(data);
 
       final List<dynamic> chats = payload['chats'] is List
-          ? payload['chats'] as List<dynamic>
-          : (payload['id'] != null ? [payload] : <dynamic>[]);
+          ? payload['chats']
+          : (payload['id'] != null ? [payload] : []);
 
-      final chat = chats.cast<dynamic>().firstWhere(
+      final chat = chats.firstWhere(
         (c) => c is Map && (c['id']?.toString() ?? '') == currentChatId,
         orElse: () => null,
       );
@@ -172,12 +179,10 @@ class MessageController extends GetxController {
 
       final latestAt = (chat['latestMessageAt'] ?? '').toString();
       if (latestAt.isEmpty) return;
- 
-      // Debounce repeated chatList payloads.
+
       if (_lastChatListLatestAt == latestAt) return;
       _lastChatListLatestAt = latestAt;
 
-      // If we didn’t receive `newMessage`, sync messages from REST.
       if (_chatListSyncInFlight) return;
       _chatListSyncInFlight = true;
       getMessages(chatId: currentChatId!).whenComplete(() {
@@ -185,7 +190,7 @@ class MessageController extends GetxController {
       });
     } catch (e) {
       _chatListSyncInFlight = false;
-      print('chatList sync failed: $e');
+      print('chatList sync error: $e');
     }
   }
 
@@ -205,6 +210,7 @@ class MessageController extends GetxController {
     );
   }
 
+  /// Main change is here — handling new chat creation via ack
   void sendMessage(String chatId) {
     final text = textController.text.trim();
     final fileUrl = imageDecodeController.imageUrl.trim();
@@ -216,6 +222,8 @@ class MessageController extends GetxController {
       return;
     }
 
+    socketService.ensureRegistered();
+
     final messageData = {
       "chatId": chatId,
       if (text.isNotEmpty) "text": text,
@@ -223,16 +231,57 @@ class MessageController extends GetxController {
       if (fileUrl.isNotEmpty) "fileType": fileType,
     };
 
+    // ────────────────────────────────────────────────
+    // KEY FIX: Wait for server acknowledgment
+    // ────────────────────────────────────────────────
     socketService.socket.emitWithAck(
       'sendMessage',
       messageData,
-      ack: (response) => print('📲✅ sendMessage ack: $response'),
-    );
-    print('File type : $fileType'); 
-    print('User Id : $userId');
-    print('Message Done sending message from sendMessage(){}');
+      ack: (response) async {
+        print('sendMessage ACK: $response');
 
-    // Optimistically update chat list for instant UI feedback.
+        try {
+          dynamic resp = response;
+          if (resp is String) {
+            resp = jsonDecode(resp);
+          }
+          if (resp is! Map<String, dynamic>) return;
+
+          // Try to extract new chatId from different possible keys
+          final String? newChatId = resp['chatId'] ??
+              resp['id'] ??
+              resp['chat']?.toString() ??
+              resp['newChatId'];
+
+          if (newChatId != null &&
+              newChatId.isNotEmpty &&
+              newChatId != currentChatId) {
+            print('→ New chat created! Switching to chatId: $newChatId');
+
+            currentChatId = newChatId;
+
+            // Immediately join the new chat room
+            socketService.socket.emit('join', {'chatId': newChatId});
+            socketService.socket.emit('joinChat', {'chatId': newChatId});
+            socketService.socket.emit('join_room', newChatId);
+
+            // Full setup (fetch messages + ensure listeners)
+            await setupChat(chatId: newChatId);
+          }
+
+          // Fallback: always refresh chat list after send
+          if (Get.isRegistered<AllChatsController>()) {
+            await Get.find<AllChatsController>().getAllChats();
+          }
+        } catch (e) {
+          print('Error in sendMessage ack handler: $e');
+        }
+      },
+    );
+
+    print('Sending message → text: "$text", file: $fileUrl ($fileType)');
+
+    // Optimistic update
     _upsertChatListFromMessage({
       'chatId': chatId,
       'text': text,
@@ -287,7 +336,7 @@ class MessageController extends GetxController {
               SocketMessageKeys.chat: msg.chatId ?? "",
               SocketMessageKeys.createdAt:
                   msg.createdAt?.toIso8601String() ??
-                  DateTime.now().toIso8601String(),
+                      DateTime.now().toIso8601String(),
             };
 
             if (!messages.any(
@@ -312,12 +361,12 @@ class MessageController extends GetxController {
     socketService.socket.off('typingStatus', _handleTypingStatus);
     socketService.socket.off('chatList', _handleChatListSync);
 
-    // Best-effort leave room.
     if (currentChatId != null && currentChatId!.isNotEmpty) {
       socketService.socket.emit('leave', {'chatId': currentChatId});
       socketService.socket.emit('leaveChat', {'chatId': currentChatId});
       socketService.socket.emit('leave_room', currentChatId);
     }
+
     scrollController.dispose();
     textController.dispose();
     super.onClose();
@@ -337,8 +386,8 @@ class MessageController extends GetxController {
       final String lastMessage = text.isNotEmpty
           ? text
           : (file == null || file.toString().isEmpty)
-          ? '📎 file'
-          : '📷 photo';
+              ? '📎 file'
+              : '📷 photo';
 
       final String createdAt =
           (data['createdAt'] ?? DateTime.now().toIso8601String()).toString();
@@ -351,14 +400,14 @@ class MessageController extends GetxController {
         return;
       }
 
-      // If chat not found yet (new conversation), refresh the whole list once.
+      // New chat → refresh full list (with debounce)
       if (_chatListRefreshInFlight) return;
       _chatListRefreshInFlight = true;
 
       if (Get.isRegistered<AllChatsController>()) {
         Get.find<AllChatsController>().getAllChats().whenComplete(
-          () => _chatListRefreshInFlight = false,
-        );
+              () => _chatListRefreshInFlight = false,
+            );
       } else {
         _chatListRefreshInFlight = false;
       }
