@@ -45,6 +45,8 @@ class SocketService extends GetxController {
   CallController get callController => _callController!;
 
   bool _initialized = false;
+  String? _activeToken;
+  String? _activeUserId;
   bool _callkitHandled = false;
   final Map<String, Map<String, dynamic>> _callInfoCache = {};
   final Set<String> _callkitShownKeys = {};
@@ -88,17 +90,6 @@ class SocketService extends GetxController {
   }
 
   Future<SocketService> init() async {
-    if (_initialized) {
-      print('⚠️ SocketService already initialized — skipping');
-      return this;
-    }
-
-    print('🔌 Initializing socket service. Connecting...');
-
-    await _incomingRingPlayer.setReleaseMode(ReleaseMode.loop);
-
-    _callController = Get.put(CallController());
-
     final token = StorageUtil.getData(StorageUtil.userAccessToken);
     final userId = StorageUtil.getData(StorageUtil.userId);
 
@@ -107,6 +98,28 @@ class SocketService extends GetxController {
       _initialized = false;
       return this;
     }
+
+    // If already initialized for the same auth, just ensure connection.
+    if (_initialized) {
+      if (_activeToken == token && _activeUserId == userId) {
+        if (!_socket.connected) {
+          print('⚠️ Socket initialized but disconnected — reconnecting');
+          _socket.connect();
+        }
+        return this;
+      }
+
+      // Auth changed (fresh login / switch account) → rebuild socket with new headers.
+      print('🔁 Socket auth changed — reinitializing');
+      disconnect();
+      _initialized = false;
+    }
+
+    print('🔌 Initializing socket service. Connecting...');
+
+    await _incomingRingPlayer.setReleaseMode(ReleaseMode.loop);
+
+    _callController = Get.put(CallController());
 
     _socket = IO.io(
       Urls.socketUrl,
@@ -118,11 +131,13 @@ class SocketService extends GetxController {
           .build(),
     );
     _initialized = true;
+    _activeToken = token.toString();
+    _activeUserId = userId.toString();
 
     _socket.onConnect((_) {
       print('✅ Connected!');
       isConnected.value = true;
-      _socket.emit("connection", userId);
+      emitConnection();
     });
 
     _socket.onConnectError((err) {
@@ -145,7 +160,7 @@ class SocketService extends GetxController {
     _socket.onReconnect((attempt) {
       print('🟢 Reconnected! Attempt: $attempt');
       isConnected.value = true;
-      _socket.emit("connection", userId);
+      emitConnection();
     });
 
     _socket.on('callIncoming', (data) async {
@@ -232,6 +247,46 @@ class SocketService extends GetxController {
     _socket.connect();
 
     return this;
+  }
+
+  /// Wait until socket becomes connected (use after login before opening chats).
+  Future<bool> waitUntilConnected({
+    Duration timeout = const Duration(seconds: 8),
+    Duration pollInterval = const Duration(milliseconds: 100),
+  }) async {
+    final end = DateTime.now().add(timeout);
+    while (!isConnected.value && DateTime.now().isBefore(end)) {
+      await Future.delayed(pollInterval);
+    }
+    return isConnected.value;
+  }
+
+  /// Emit "connection" with the latest stored user id.
+  /// Some backends use this as the authoritative mapping for realtime delivery.
+  void emitConnection() {
+    if (!_initialized) return;
+    final uid = StorageUtil.getData(StorageUtil.userId);
+    final userId = uid?.toString().trim();
+    if (userId == null || userId.isEmpty) return;
+    try {
+      _socket.emit('connection', userId);
+      print('🔁 emit connection → $userId');
+    } catch (e) {
+      print('emit connection failed: $e');
+    }
+  }
+
+  /// Best-effort: retry connection registration (helps right-after-login races).
+  Future<void> ensureRegistered({
+    int attempts = 5,
+    Duration interval = const Duration(milliseconds: 250),
+  }) async {
+    final ok = await waitUntilConnected(timeout: const Duration(seconds: 8));
+    if (!ok) return;
+    for (int i = 0; i < attempts; i++) {
+      emitConnection();
+      await Future.delayed(interval);
+    }
   }
 
   // Pending call থেকে dialog দেখানোর ফাংশন
@@ -975,12 +1030,22 @@ class SocketService extends GetxController {
   }
 
   void disconnect() {
+    if (!_initialized) {
+      isConnected.value = false;
+      _activeToken = null;
+      _activeUserId = null;
+      return;
+    }
+
     if (_socket.connected || isConnected.value) {
       _socket.disconnect();
       print('🔌 Socket disconnected');
     }
     _socket.clearListeners();
     isConnected.value = false;
+    _initialized = false;
+    _activeToken = null;
+    _activeUserId = null;
   }
 
   @override

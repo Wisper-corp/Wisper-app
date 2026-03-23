@@ -8,6 +8,7 @@ import 'package:jwt_decoder/jwt_decoder.dart';
 import 'package:wisper/app/core/others/get_storage.dart';
 import 'package:wisper/app/core/services/network_caller/network_caller.dart';
 import 'package:wisper/app/core/services/network_caller/network_response.dart';
+import 'package:wisper/app/core/services/socket/socket_service.dart';
 import 'package:wisper/app/modules/dashboard/views/dashboard_screen.dart';
 import 'package:wisper/app/modules/profile/controller/buisness/buisness_controller.dart';
 import 'package:wisper/app/modules/profile/controller/person/profile_controller.dart';
@@ -30,6 +31,22 @@ class GoogleSignUpAuthController extends GetxController {
 
   final ProfileController profileController = Get.put(ProfileController());
   final BusinessController businessController = Get.put((BusinessController()));
+
+  String? _extractAuthIdFromJwt(Map<String, dynamic> decodedToken) {
+    final candidates = [
+      decodedToken['id'],
+      decodedToken['authId'],
+      decodedToken['userId'],
+      decodedToken['sub'],
+    ];
+    for (final value in candidates) {
+      if (value is String && value.trim().isNotEmpty) return value.trim();
+      if (value != null && value.toString().trim().isNotEmpty) {
+        return value.toString().trim();
+      }
+    }
+    return null;
+  }
 
   /// Main Google Sign-In Function
   Future<bool> signUpWithGoogle(String role) async {
@@ -93,6 +110,9 @@ class GoogleSignUpAuthController extends GetxController {
       // Step 7️⃣: Handle backend response
       if (response.isSuccess) {
         // Save backend access token in local storage
+        await StorageUtil.deleteData(StorageUtil.userId);
+        await StorageUtil.deleteData(StorageUtil.userAuthId);
+
         StorageUtil.saveData(
           StorageUtil.userAccessToken,
           response.responseData['data']['accessToken'],
@@ -108,12 +128,26 @@ class GoogleSignUpAuthController extends GetxController {
           response.responseData['data']['accessToken'],
         );
 
+        final authId = _extractAuthIdFromJwt(decodedToken);
+        if (authId != null) {
+          StorageUtil.saveData(StorageUtil.userId, authId);
+          StorageUtil.saveData(StorageUtil.userAuthId, authId);
+        }
+
         _errorMessage.value = '';
         _inProgress.value = false;
 
         // Fetch user profile data after login
-        profileController.getMyProfile();
-        businessController.getMyProfile();
+        await profileController.getMyProfile();
+        await businessController.getMyProfile();
+
+        // Ensure socket is initialized for realtime events right after login.
+        if (StorageUtil.getData(StorageUtil.userId) != null &&
+            Get.isRegistered<SocketService>()) {
+          final socketService = Get.find<SocketService>();
+          await socketService.init();
+          await socketService.ensureRegistered();
+        }
 
         // Navigate to main home screen
         Future.delayed(Duration.zero, () {

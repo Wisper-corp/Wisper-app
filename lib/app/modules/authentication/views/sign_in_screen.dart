@@ -5,6 +5,7 @@ import 'package:get/get.dart';
 import 'package:wisper/app/core/config/theme/light_theme_colors.dart';
 import 'package:wisper/app/core/others/custom_size.dart';
 import 'package:wisper/app/core/others/get_storage.dart';
+import 'package:wisper/app/core/services/socket/socket_service.dart';
 import 'package:wisper/app/core/utils/show_over_loading.dart';
 import 'package:wisper/app/core/utils/snack_bar.dart';
 import 'package:wisper/app/core/utils/validator_service.dart';
@@ -73,14 +74,23 @@ class _SignInScreenState extends State<SignInScreen> {
     );
 
     if (isSuccess) {
+      // Re-init socket immediately using JWT-derived auth id (if present).
+      // Profile calls below may update/override IDs, but we want realtime ready ASAP.
+      final socketService = Get.find<SocketService>();
+      await socketService.init();
+      await socketService.ensureRegistered();
+
       await profileController.getMyProfile();
       await businessController.getMyProfile();
       if (StorageUtil.getData(StorageUtil.userId) == null) {
         await profileController.getMyProfile();
         await businessController.getMyProfile();
-      } else {
-        Get.offAll(() => MainButtonNavbarScreen());
       }
+
+      // After profile fetch, re-init if auth id changed/filled and wait for connect.
+      await socketService.init();
+      await socketService.ensureRegistered();
+      Get.offAll(() => MainButtonNavbarScreen());
     } else {
       showSnackBarMessage(context, signInController.errorMessage, true);
     }

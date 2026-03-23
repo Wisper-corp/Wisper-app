@@ -7,6 +7,22 @@ import 'package:wisper/app/core/services/network_caller/network_response.dart';
 import 'package:wisper/app/urls.dart';
 
 class SignInController extends GetxController {
+  String? _extractAuthIdFromJwt(Map<String, dynamic> decodedToken) {
+    // Support common claim names
+    final candidates = [
+      decodedToken['id'],
+      decodedToken['authId'],
+      decodedToken['userId'],
+      decodedToken['sub'],
+    ];
+    for (final value in candidates) {
+      if (value is String && value.trim().isNotEmpty) return value.trim();
+      if (value != null && value.toString().trim().isNotEmpty) {
+        return value.toString().trim();
+      }
+    }
+    return null;
+  }
 
   final RxBool _inProgress = false.obs;
   bool get inProgress => _inProgress.value;
@@ -49,10 +65,22 @@ class SignInController extends GetxController {
 
         StorageUtil.saveData(StorageUtil.userRole, role);
 
+        // Clear stale IDs before writing the new session.
+        await StorageUtil.deleteData(StorageUtil.userId);
+        await StorageUtil.deleteData(StorageUtil.userAuthId);
+
         StorageUtil.saveData(
           StorageUtil.userAccessToken,
           response.responseData['data']['accessToken'],
         );
+
+        // Best-effort: set auth id from JWT immediately so SocketService can connect
+        // without waiting for profile APIs.
+        final authId = _extractAuthIdFromJwt(decodedToken);
+        if (authId != null) {
+          StorageUtil.saveData(StorageUtil.userId, authId);
+          StorageUtil.saveData(StorageUtil.userAuthId, authId);
+        }
 
         _inProgress.value = false;
 

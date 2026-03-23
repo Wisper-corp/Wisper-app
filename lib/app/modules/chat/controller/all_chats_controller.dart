@@ -34,11 +34,10 @@ class AllChatsController extends GetxController {
   }
 
   void _setupSocketListeners() {
-    // পুরানো listener গুলো remove করে নতুন add করা
-    socketService.socket.off('chatList');
-    socketService.socket.off('typingStatus');
-    socketService.socket.off('chatList:typing');
-    socketService.socket.off('newMessage');
+    // IMPORTANT: never call `off(event)` without a handler — it removes other
+    // listeners too (e.g. MessageController / SocketService), breaking realtime.
+    socketService.socket.off('chatList', _handleIncomingChat);
+    socketService.socket.off('newMessage', _handleNewMessageForList);
 
     socketService.socket.on('chatList', _handleIncomingChat);
     socketService.socket.on('newMessage', _handleNewMessageForList);
@@ -183,6 +182,11 @@ class AllChatsController extends GetxController {
 
   void _handleNewMessageForList(dynamic data) {
     try {
+      if (data is String) {
+        data = jsonDecode(data);
+      }
+      if (data is! Map) return;
+
       final String chatId = (data['chatId'] ?? data['chat'] ?? '').toString();
       if (chatId.isEmpty) return;
 
@@ -473,10 +477,8 @@ class AllChatsController extends GetxController {
 
   @override
   void onClose() {
-    socketService.socket.off('chatList');
-    socketService.socket.off('typingStatus');
-    socketService.socket.off('chatList:typing');
-    socketService.socket.off('newMessage');
+    socketService.socket.off('chatList', _handleIncomingChat);
+    socketService.socket.off('newMessage', _handleNewMessageForList);
     super.onClose();
   }
 }

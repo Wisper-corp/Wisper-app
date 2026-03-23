@@ -1,4 +1,6 @@
 // app/modules/chat/controller/message_controller.dart
+import 'dart:convert';
+
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:wisper/app/core/others/get_storage.dart';
@@ -23,6 +25,8 @@ class MessageController extends GetxController {
   late String userAuthId;
   bool _chatListRefreshInFlight = false;
   String? currentChatId;
+  String? _lastChatListLatestAt;
+  bool _chatListSyncInFlight = false;
 
   @override
   void onInit() {
@@ -33,15 +37,31 @@ class MessageController extends GetxController {
   // ✅ Now async — ChatListScreen can await this before navigating
   Future<void> setupChat({required String? chatId}) async {
     currentChatId = chatId;
+    _lastChatListLatestAt = null;
     messages.clear();
     isLoading.value = true;
 
+    // Some backends require joining a room to receive newMessage events.
+    // These emits are safe no-ops if the server doesn't implement them.
+    await socketService.waitUntilConnected(timeout: const Duration(seconds: 5));
+    socketService.emitConnection();
+    if (currentChatId != null && currentChatId!.isNotEmpty) {
+      socketService.socket.emit('join', {'chatId': currentChatId});
+      socketService.socket.emit('joinChat', {'chatId': currentChatId});
+      socketService.socket.emit('join_room', currentChatId);
+    }
+
     // Register socket listeners first
-    socketService.socket.off('newMessage');
-    socketService.socket.off('typingStatus');
+    // IMPORTANT: never call `off(event)` without a handler — it removes other
+    // listeners too (e.g. chat-list updates in SocketService), breaking realtime.
+    socketService.socket.off('newMessage', _handleIncomingMessage);
+    socketService.socket.off('typingStatus', _handleTypingStatus);
+    // Fallback: some servers only broadcast chat list updates to receivers.
+    socketService.socket.off('chatList', _handleChatListSync);
 
     socketService.socket.on('newMessage', _handleIncomingMessage);
     socketService.socket.on('typingStatus', _handleTypingStatus);
+    socketService.socket.on('chatList', _handleChatListSync);
 
     // ✅ Await the actual message fetch — so caller knows when data is ready
     await getMessages(chatId: chatId ?? '');
@@ -68,6 +88,12 @@ class MessageController extends GetxController {
 
   void _handleIncomingMessage(dynamic data) {
     try {
+      // Some servers send JSON string payloads via Socket.IO.
+      if (data is String) {
+        data = jsonDecode(data);
+      }
+      if (data is! Map) return;
+
       print('Real-time message event received from message controller: $data');
       final String msgId = data['id'] ?? '';
       final String msgChatId = (data['chatId'] ?? data['chat'] ?? '').toString();
@@ -113,6 +139,48 @@ class MessageController extends GetxController {
       scrollToBottom();
     } catch (e) {
       print("Socket parse error: $e");
+    }
+  }
+
+  void _handleChatListSync(dynamic rawData) {
+    try {
+      if (currentChatId == null || currentChatId!.isEmpty) return;
+
+      dynamic data = rawData;
+      if (data is String) {
+        data = jsonDecode(data);
+      }
+      if (data is! Map) return;
+
+      final payload = Map<String, dynamic>.from(data as Map);
+
+      final List<dynamic> chats = payload['chats'] is List
+          ? payload['chats'] as List<dynamic>
+          : (payload['id'] != null ? [payload] : <dynamic>[]);
+
+      final chat = chats.cast<dynamic>().firstWhere(
+            (c) => c is Map && (c['id']?.toString() ?? '') == currentChatId,
+            orElse: () => null,
+          );
+
+      if (chat == null || chat is! Map) return;
+
+      final latestAt = (chat['latestMessageAt'] ?? '').toString();
+      if (latestAt.isEmpty) return;
+
+      // Debounce repeated chatList payloads.
+      if (_lastChatListLatestAt == latestAt) return;
+      _lastChatListLatestAt = latestAt;
+
+      // If we didn’t receive `newMessage`, sync messages from REST.
+      if (_chatListSyncInFlight) return;
+      _chatListSyncInFlight = true;
+      getMessages(chatId: currentChatId!).whenComplete(() {
+        _chatListSyncInFlight = false;
+      });
+    } catch (e) {
+      _chatListSyncInFlight = false;
+      print('chatList sync failed: $e');
     }
   }
 
@@ -231,8 +299,16 @@ class MessageController extends GetxController {
 
   @override
   void onClose() {
-    socketService.socket.off('newMessage');
-    socketService.socket.off('typingStatus');
+    socketService.socket.off('newMessage', _handleIncomingMessage);
+    socketService.socket.off('typingStatus', _handleTypingStatus);
+    socketService.socket.off('chatList', _handleChatListSync);
+
+    // Best-effort leave room.
+    if (currentChatId != null && currentChatId!.isNotEmpty) {
+      socketService.socket.emit('leave', {'chatId': currentChatId});
+      socketService.socket.emit('leaveChat', {'chatId': currentChatId});
+      socketService.socket.emit('leave_room', currentChatId);
+    }
     scrollController.dispose();
     textController.dispose();
     super.onClose();
