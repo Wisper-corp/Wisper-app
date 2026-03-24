@@ -3,11 +3,13 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:get/get.dart';
+import 'package:hive_flutter/hive_flutter.dart';
 
 import 'package:wisper/app/core/others/app_binder.dart';
 import 'package:wisper/app/core/config/theme/my_theme.dart';
 import 'package:wisper/app/core/config/translations/localization_service.dart';
 import 'package:wisper/app/core/others/get_storage.dart';
+import 'package:wisper/app/core/services/local_cache/chat_cache_service.dart';
 import 'package:wisper/app/core/services/others/deeplink_services.dart';
 import 'package:wisper/app/core/services/socket/socket_service.dart';
 import 'package:wisper/app/core/utils/connectivity_services.dart';
@@ -28,6 +30,9 @@ void main() async {
   await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
 
   await StorageUtil.init();
+  // Local cache init (Hive).
+  await Hive.initFlutter();
+  await ChatCacheService.init();
 
   // ── SocketService init ──
   // _setupCallkitListeners() এখন SocketService.init() এর ভেতরেই আছে

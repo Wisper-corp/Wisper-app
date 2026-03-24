@@ -4,6 +4,7 @@ import 'dart:convert';
 
 import 'package:get/get.dart';
 import 'package:wisper/app/core/others/get_storage.dart';
+import 'package:wisper/app/core/services/local_cache/chat_cache_service.dart';
 import 'package:wisper/app/core/services/network_caller/network_caller.dart';
 import 'package:wisper/app/core/services/socket/socket_service.dart';
 import 'package:wisper/app/modules/authentication/views/sign_in_screen.dart';
@@ -24,6 +25,8 @@ class AllChatsController extends GetxController {
   @override
   void onInit() {
     super.onInit();
+    // Load cached chat list first for instant UI (offline friendly).
+    _loadCachedChats();
     _bootstrap();
   }
 
@@ -172,8 +175,8 @@ class AllChatsController extends GetxController {
         errorMessage.value = '';
         final model = AllChatsModel.fromJson(response.responseData);
         allChatsModel.value = model;
-
-        socketService.socketFriendList.clear();
+ 
+        socketService.socketFriendList.clear(); 
 
         for (final chat in model.data?.chats ?? []) {
           final String type = chat.type ?? 'INDIVIDUAL';
@@ -239,6 +242,12 @@ class AllChatsController extends GetxController {
         }
 
         _sortSocketList();
+        // Cache the latest chat list after successful fetch.
+        await ChatCacheService.saveChats(
+          socketService.socketFriendList
+              .map((e) => Map<String, dynamic>.from(e))
+              .toList(),
+        );
       } else {
         errorMessage.value = response.errorMessage;
         if ((response.errorMessage).toLowerCase().contains('expired')) {
@@ -269,5 +278,14 @@ class AllChatsController extends GetxController {
     // ✅ handler সহ off — অন্য controller এর listener নষ্ট হবে না
     socketService.socket.off('newMessage', _handleNewMessageForList);
     super.onClose();
+  }
+
+  void _loadCachedChats() {
+    final cached = ChatCacheService.getCachedChats();
+    if (cached.isEmpty) return;
+    socketService.socketFriendList
+      ..clear()
+      ..addAll(cached);
+    _sortSocketList();
   }
 }

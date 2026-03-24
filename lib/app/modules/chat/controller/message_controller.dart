@@ -4,8 +4,10 @@ import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:wisper/app/core/others/get_storage.dart';
+import 'package:wisper/app/core/services/local_cache/chat_cache_service.dart';
 import 'package:wisper/app/core/services/network_caller/network_caller.dart';
 import 'package:wisper/app/core/services/socket/socket_service.dart';
+import 'package:wisper/app/core/utils/connectivity_services.dart';
 import 'package:wisper/app/modules/chat/controller/all_chats_controller.dart';
 import 'package:wisper/app/modules/chat/controller/image_decode_controller.dart';
 import 'package:wisper/app/modules/chat/model/message_keys.dart';
@@ -48,6 +50,12 @@ class MessageController extends GetxController {
     _lastChatListLatestAt = null;
     messages.clear();
     isLoading.value = true;
+
+    // Load cached messages first for instant UI (offline friendly).
+    final cached = ChatCacheService.getCachedMessages(chatId);
+    if (cached.isNotEmpty) {
+      messages.assignAll(cached);
+    }
 
     // Wait for socket connection
     await socketService.waitUntilConnected(timeout: const Duration(seconds: 5));
@@ -150,6 +158,13 @@ class MessageController extends GetxController {
       messages.insert(0, msg);
       _upsertChatListFromMessage(data);
       scrollToBottom();
+      // Cache updated messages when realtime arrives.
+      if (currentChatId != null && currentChatId!.isNotEmpty) {
+        ChatCacheService.saveMessages(
+          currentChatId!,
+          messages.map((e) => Map<String, dynamic>.from(e)).toList(),
+        );
+      }
     } catch (e) {
       print("Error parsing newMessage: $e");
     }
@@ -212,6 +227,17 @@ class MessageController extends GetxController {
 
   /// Main change is here — handling new chat creation via ack
   void sendMessage(String chatId) {
+    final ConnectivityService connectivityService =
+        Get.find<ConnectivityService>();
+    if (!connectivityService.isOnline.value) {
+      Get.snackbar(
+        'No Internet',
+        'You are offline. Message cannot be sent.',
+        snackPosition: SnackPosition.TOP,
+      );
+      return;
+    }
+
     final text = textController.text.trim();
     final fileUrl = imageDecodeController.imageUrl.trim();
     final fileType = imageDecodeController.currentFileType;
@@ -346,6 +372,11 @@ class MessageController extends GetxController {
             }
           }
         }
+        // Cache latest messages after API success.
+        await ChatCacheService.saveMessages(
+          chatId,
+          messages.map((e) => Map<String, dynamic>.from(e)).toList(),
+        );
       }
     } catch (e) {
       Get.snackbar("Error", "Failed to load messages");
@@ -417,3 +448,4 @@ class MessageController extends GetxController {
     }
   }
 }
+ 

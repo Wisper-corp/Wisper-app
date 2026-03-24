@@ -5,6 +5,7 @@ import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:get/get.dart';
 import 'package:wisper/app/core/utils/date_formatter.dart';
 import 'package:wisper/app/core/widgets/shimmer/chat_shimmer.dart';
+import 'package:wisper/app/core/utils/connectivity_services.dart';
 import 'package:wisper/app/modules/chat/controller/message_controller.dart';
 import 'package:wisper/app/modules/chat/controller/seen_message_controller.dart';
 import 'package:wisper/app/modules/chat/model/message_keys.dart';
@@ -35,10 +36,14 @@ class _GroupChatScreenState extends State<GroupChatScreen> {
   // ✅ Use Get.find — controller was already created & loaded in ChatListScreen
   final MessageController ctrl = Get.put(MessageController());
   final SeenMessageController seenMessageController = SeenMessageController();
+  final ConnectivityService connectivityService =
+      Get.find<ConnectivityService>();
 
   @override
   void initState() {
     super.initState();
+    // Suppress blocking no-internet popup while in chat screen.
+    connectivityService.suppressDialog.value = true;
     // ✅ Only mark as seen — setupChat already ran before navigation
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (widget.chatId != null && widget.chatId!.isNotEmpty) {
@@ -48,6 +53,13 @@ class _GroupChatScreenState extends State<GroupChatScreen> {
         }
       }
     });
+  }
+
+  @override
+  void dispose() {
+    // Re-enable popup for other screens.
+    connectivityService.suppressDialog.value = false;
+    super.dispose();
   }
 
   @override 

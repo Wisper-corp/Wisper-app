@@ -10,6 +10,7 @@ import 'package:wisper/app/core/services/socket/call_services.dart';
 import 'package:wisper/app/core/services/socket/socket_service.dart';
 import 'package:wisper/app/core/utils/connectivity_services.dart';
 import 'package:wisper/app/core/utils/no_inter_screen.dart';
+import 'package:wisper/app/modules/dashboard/views/dashboard_screen.dart';
 import 'package:wisper/gen/assets.gen.dart';
 import 'package:connectivity_plus/connectivity_plus.dart';
 
@@ -92,7 +93,13 @@ class _SplashScreenState extends State<SplashScreen> with WidgetsBindingObserver
     connectivityService.isOnline.value = isActuallyOnline;
 
     if (!isActuallyOnline) {
-      Get.offAll(() => const NoInternetScreen());
+      final String? token = StorageUtil.getData(StorageUtil.userAccessToken);
+      if (token != null && token.isNotEmpty) {
+        // Offline start: go directly to Chat tab to show cached data.
+        Get.offAll(() =>  MainButtonNavbarScreen(initialIndex: 3));
+      } else {
+        Get.offAll(() => const NoInternetScreen());
+      }
       return;
     }
 

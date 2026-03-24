@@ -5,6 +5,7 @@ import 'package:get/get.dart';
 import 'package:wisper/app/core/utils/date_formatter.dart';
 import 'package:wisper/app/core/widgets/shimmer/chat_shimmer.dart';
 import 'package:wisper/app/core/services/socket/socket_service.dart';
+import 'package:wisper/app/core/utils/connectivity_services.dart';
 import 'package:wisper/app/modules/chat/controller/all_chats_controller.dart';
 import 'package:wisper/app/modules/chat/controller/create_chat_controller.dart';
 import 'package:wisper/app/modules/chat/controller/message_controller.dart';
@@ -44,6 +45,8 @@ class _ChatScreenState extends State<ChatScreen> {
   final AllChatsController allChatsController =
       Get.put(AllChatsController());
   final SocketService socketService = Get.find<SocketService>();
+  final ConnectivityService connectivityService =
+      Get.find<ConnectivityService>();
   final ScrollController _scrollController = ScrollController();
   final SeenMessageController seenMessageController = SeenMessageController();
   
@@ -57,6 +60,8 @@ class _ChatScreenState extends State<ChatScreen> {
   @override
   void initState() {
     super.initState();
+    // Suppress blocking no-internet popup while in chat screen.
+    connectivityService.suppressDialog.value = true;
 
     // ✅ Only mark as seen — setupChat already ran before navigation
     WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -305,6 +310,8 @@ class _ChatScreenState extends State<ChatScreen> {
 
   @override
   void dispose() {
+    // Re-enable popup for other screens.
+    connectivityService.suppressDialog.value = false;
     _scrollController.removeListener(_scrollListener);
     _scrollController.dispose();
     super.dispose();

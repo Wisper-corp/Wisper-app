@@ -7,6 +7,7 @@ import 'package:wisper/app/core/others/get_storage.dart';
 import 'package:wisper/app/core/services/socket/call_services.dart';
 import 'package:wisper/app/core/services/socket/pending_banner.dart';
 import 'package:wisper/app/core/services/socket/socket_service.dart';
+import 'package:wisper/app/core/utils/connectivity_services.dart';
 import 'package:wisper/app/modules/calls/views/call_screen.dart';
 import 'package:wisper/app/modules/chat/views/chat_list_screen.dart';
 import 'package:wisper/app/modules/homepage/controller/all_role_controller.dart';
@@ -22,7 +23,9 @@ import 'package:wisper/app/modules/profile/views/profile_screen.dart';
 import 'package:wisper/gen/assets.gen.dart';
 
 class MainButtonNavbarScreen extends StatefulWidget {
-  const MainButtonNavbarScreen({super.key});
+  const MainButtonNavbarScreen({super.key, this.initialIndex = 0});
+
+  final int initialIndex;
 
   @override
   State<MainButtonNavbarScreen> createState() => _MainButtonNavbarScreenState();
@@ -30,11 +33,13 @@ class MainButtonNavbarScreen extends StatefulWidget {
 
 class _MainButtonNavbarScreenState extends State<MainButtonNavbarScreen>
     with WidgetsBindingObserver {
-  int selectedKey = 0;
+  late int selectedKey;
 
   final ProfileController profileController = Get.put(ProfileController());
   final BusinessController businessController = Get.put(BusinessController());
   final SocketService socketService = Get.find<SocketService>();
+  final ConnectivityService connectivityService =
+      Get.find<ConnectivityService>();
   final CallService callService = Get.isRegistered<CallService>()
       ? Get.find<CallService>()
       : Get.put(CallService());
@@ -64,12 +69,14 @@ class _MainButtonNavbarScreenState extends State<MainButtonNavbarScreen>
   @override
   void initState() {
     super.initState();
+    selectedKey = widget.initialIndex;
     WidgetsBinding.instance.addObserver(this);
     _initializeData();
 
     WidgetsBinding.instance.addPostFrameCallback((_) {
       socketService.onInit();
       callService.checkAndShowPendingCallDialogIfNeeded();
+      connectivityService.suppressDialog.value = selectedKey == 3;
     });
   }
 
@@ -177,7 +184,10 @@ class _MainButtonNavbarScreenState extends State<MainButtonNavbarScreen>
 
     return GestureDetector(
       onTap: () {
-        if (selectedKey != index) setState(() => selectedKey = index);
+        if (selectedKey != index) {
+          setState(() => selectedKey = index);
+          connectivityService.suppressDialog.value = selectedKey == 3;
+        }
       },
       child: Container(
         color: Colors.transparent,
