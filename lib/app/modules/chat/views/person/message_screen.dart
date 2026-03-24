@@ -3,7 +3,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:get/get.dart';
 import 'package:wisper/app/core/utils/date_formatter.dart';
-import 'package:wisper/app/core/widgets/shimmer/chat_shimmer.dart';
 import 'package:wisper/app/core/services/socket/socket_service.dart';
 import 'package:wisper/app/core/utils/connectivity_services.dart';
 import 'package:wisper/app/modules/chat/controller/all_chats_controller.dart';
@@ -17,7 +16,7 @@ import 'package:wisper/app/modules/chat/widgets/message_bubble.dart';
 
 class ChatScreen extends StatefulWidget {
   final String? receiverId;
-  final String? receiverName;
+  final String? receiverName; 
   final String? receiverImage;
   final String? chatId; 
   final bool? isPerson;
@@ -342,10 +341,6 @@ class _ChatScreenState extends State<ChatScreen> {
                       _handleNewMessages();
                     }
                   });
-
-                  if (ctrl.isLoading.value) {
-                    return const Center(child: ChatShimmerEffectWidget());
-                  }
 
                   if (ctrl.messages.isEmpty) {
                     return Column(

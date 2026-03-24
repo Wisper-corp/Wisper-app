@@ -14,7 +14,7 @@ import 'package:wisper/app/modules/profile/views/business/others_business_screen
 import 'package:wisper/app/modules/profile/views/person/others_person_screen.dart';
 
 class ConnectionScreen extends StatefulWidget {
-  const ConnectionScreen({super.key});
+  const ConnectionScreen({super.key}); 
 
   @override
   State<ConnectionScreen> createState() => _ConnectionScreenState();

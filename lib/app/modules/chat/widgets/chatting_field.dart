@@ -110,7 +110,7 @@ class _ChattingFieldWidgetState extends State<ChattingFieldWidget> {
                     vertical: 12,
                   ),
                   border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(999),
+                    borderRadius: BorderRadius.circular(20),
                     borderSide: BorderSide.none,
                   ),
                   isDense: true,

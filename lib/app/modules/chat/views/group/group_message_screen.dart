@@ -4,7 +4,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:get/get.dart';
 import 'package:wisper/app/core/utils/date_formatter.dart';
-import 'package:wisper/app/core/widgets/shimmer/chat_shimmer.dart';
 import 'package:wisper/app/core/utils/connectivity_services.dart';
 import 'package:wisper/app/modules/chat/controller/message_controller.dart';
 import 'package:wisper/app/modules/chat/controller/seen_message_controller.dart';
@@ -15,17 +14,19 @@ import 'package:wisper/app/modules/chat/widgets/group_chatting_header.dart';
 import 'package:wisper/app/modules/chat/widgets/message_bubble.dart';
 
 class GroupChatScreen extends StatefulWidget {
+  final bool? isGeneralChat;
   final String? groupName;
   final String? groupImage;
-  final String? chatId; 
+  final String? chatId;
   final String? groupId;
 
   const GroupChatScreen({
     super.key,
-    this.groupName,
+    this.groupName, 
     this.groupImage,
     this.chatId,
     this.groupId,
+    this.isGeneralChat,
   });
 
   @override
@@ -62,24 +63,23 @@ class _GroupChatScreenState extends State<GroupChatScreen> {
     super.dispose();
   }
 
-  @override 
+  @override
   Widget build(BuildContext context) {
     return Scaffold(
       body: Column(
         children: [
-          GroupChatHeader(
-            chatId: widget.chatId ?? '',
-            groupName: widget.groupName ?? '',
-            groupImage: widget.groupImage ?? '',
-            groupId: widget.groupId ?? '',
-          ),
+          widget.isGeneralChat ?? false
+              ? Container()
+              : GroupChatHeader(
+                  isGeneralChat: widget.isGeneralChat ?? false,
+                  chatId: widget.chatId ?? '',
+                  groupName: widget.groupName ?? '',
+                  groupImage: widget.groupImage ?? '',
+                  groupId: widget.groupId ?? '',
+                ),
 
           Expanded(
             child: Obx(() {
-              if (ctrl.isLoading.value) {
-                return const Center(child: ChatShimmerEffectWidget());
-              }
-
               if (ctrl.messages.isEmpty) {
                 return Center(
                   child: EmptyGroupInfoCard(

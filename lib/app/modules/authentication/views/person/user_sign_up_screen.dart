@@ -15,8 +15,7 @@ import 'package:wisper/app/modules/authentication/views/person/password_section.
 import 'package:wisper/app/modules/authentication/views/sign_in_screen.dart';
 import 'package:wisper/gen/assets.gen.dart';
 
-class SignUpScreen extends StatefulWidget { 
-
+class SignUpScreen extends StatefulWidget {
   @override
   State<SignUpScreen> createState() => _SignUpScreenState();
 }
@@ -130,7 +129,7 @@ class _SignUpScreenState extends State<SignUpScreen> {
                             color: LightThemeColors.blueColor,
                             iconColor: Colors.white,
                             imagePath: Assets.images.arrowBack.keyName,
-                            onTap: () {},
+                            onTap: _goToInformationPage,
                           ),
                           widthBox8,
                           Text(

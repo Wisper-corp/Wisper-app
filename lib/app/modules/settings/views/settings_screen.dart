@@ -5,6 +5,8 @@ import 'package:get/get.dart';
 import 'package:wisper/app/core/config/theme/light_theme_colors.dart';
 import 'package:wisper/app/core/others/custom_size.dart';
 import 'package:wisper/app/core/others/get_storage.dart';
+import 'package:wisper/app/core/utils/show_over_loading.dart';
+import 'package:wisper/app/core/utils/snack_bar.dart';
 import 'package:wisper/app/core/widgets/common/circle_icon.dart';
 import 'package:wisper/app/core/widgets/common/details_card.dart';
 import 'package:wisper/app/core/widgets/common/line_widget.dart';
@@ -15,10 +17,10 @@ import 'package:wisper/app/modules/post/views/my_post_section.dart';
 import 'package:wisper/app/modules/profile/controller/buisness/buisness_controller.dart';
 import 'package:wisper/app/modules/profile/controller/person/profile_controller.dart';
 import 'package:wisper/app/modules/settings/controller/demo_notify.dart';
+import 'package:wisper/app/modules/settings/controller/remove_fcm_controller.dart';
 import 'package:wisper/app/modules/settings/views/change_password_screen.dart';
 import 'package:wisper/app/modules/settings/views/content_screen.dart';
 import 'package:wisper/app/modules/profile/views/profile_screen.dart';
-import 'package:wisper/app/modules/settings/views/wallet_screen.dart';
 import 'package:wisper/app/modules/profile/widget/my_info_card.dart';
 import 'package:wisper/app/modules/settings/wigdets/seetings_button.dart';
 import 'package:wisper/app/modules/settings/wigdets/seetings_feature_row.dart';
@@ -36,6 +38,32 @@ class _SettingsScreenState extends State<SettingsScreen> {
   final ProfileController profileController = Get.put(ProfileController());
   final BusinessController businessController = Get.put(BusinessController());
   final DemoNController demoNController = Get.put(DemoNController());
+  final RemoveFcmTokenController removeFcmController =
+      RemoveFcmTokenController();
+
+  void removeFcm() {
+    showLoadingOverLay(
+      asyncFunction: () async => await performRemoveToken(context),
+      msg: 'Please wait...',
+    );
+  }
+
+  Future<void> performRemoveToken(BuildContext context) async {
+    final bool isSuccess = await removeFcmController.removeFcmToken();
+
+    if (isSuccess) {
+      Get.delete<ProfileController>(force: true);
+      StorageUtil.deleteData(StorageUtil.userAccessToken);
+      StorageUtil.deleteData(StorageUtil.userId);
+      StorageUtil.deleteData(StorageUtil.userRole);
+      StorageUtil.deleteData(StorageUtil.userAuthId);
+      StorageUtil.clear();
+
+      Get.offAll(() => SignInScreen());
+    } else {
+      showSnackBarMessage(context, removeFcmController.errorMessage, true);
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -207,7 +235,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                       title: 'Wallet',
                       onTap: () {
                         demoNController.demo();
-                          // Get.to(() => const WalletScreen());
+                        // Get.to(() => const WalletScreen());
                       },
                     ),
                   ],
@@ -373,9 +401,9 @@ class _SettingsScreenState extends State<SettingsScreen> {
                           children: [
                             Text(
                               (StorageUtil.getData(
-                                    StorageUtil.cachedUserRegion,
-                                  ) ??
-                                  'No Region')
+                                        StorageUtil.cachedUserRegion,
+                                      ) ??
+                                      'No Region')
                                   .toString(),
                               style: TextStyle(
                                 fontSize: 12.sp,
@@ -458,16 +486,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
       context: context,
       title: "Logout?",
       message: "Are you sure you want to logout from your account?",
-      onDelete: () {
-        Get.delete<ProfileController>(force: true);
-        StorageUtil.deleteData(StorageUtil.userAccessToken);
-        StorageUtil.deleteData(StorageUtil.userId);
-        StorageUtil.deleteData(StorageUtil.userRole);
-        StorageUtil.deleteData(StorageUtil.userAuthId);
-        StorageUtil.clear();
-
-        Get.offAll(() => SignInScreen());
-      },
+      onDelete: removeFcm,
     );
   }
 }

@@ -28,6 +28,7 @@ import 'package:wisper/app/modules/post/views/my_post_section.dart';
 import 'package:wisper/gen/assets.gen.dart';
 
 class GroupChatHeader extends StatefulWidget {
+  final bool isGeneralChat;
   final String groupName;
   final String groupImage;
   final String groupId;
@@ -39,6 +40,7 @@ class GroupChatHeader extends StatefulWidget {
     required this.groupImage,
     required this.groupId,
     required this.chatId,
+    required this.isGeneralChat,
   });
 
   @override
@@ -49,15 +51,18 @@ class _GroupChatHeaderState extends State<GroupChatHeader> {
   List<CameraDescription>? cameras;
 
   final DeleteGroupController deleteGroupController = DeleteGroupController();
-  final GroupMembersController groupMembersController =
-      Get.put(GroupMembersController());
+  final GroupMembersController groupMembersController = Get.put(
+    GroupMembersController(),
+  );
   final GetMuteInfoController getMuteInfoController = Get.put(
     GetMuteInfoController(),
   );
   final MuteChatController muteChatController = MuteChatController();
   final CallController callController = CallController();
   final SocketService socketService = Get.find<SocketService>();
-  final CallService callService = Get.isRegistered<CallService>() ? Get.find<CallService>() : Get.put(CallService());
+  final CallService callService = Get.isRegistered<CallService>()
+      ? Get.find<CallService>()
+      : Get.put(CallService());
 
   @override
   void initState() {
@@ -76,13 +81,12 @@ class _GroupChatHeaderState extends State<GroupChatHeader> {
     });
   }
 
-  // âœ… à¦†à¦®à¦¾à¦° à¦¨à¦¿à¦œà§‡à¦° ID à¦¬à¦¾à¦¦ à¦¦à¦¿à¦¯à¦¼à§‡ à¦¬à¦¾à¦•à¦¿ à¦¸à¦¬ member à¦à¦° participants list à¦¬à¦¾à¦¨à¦¾à¦“
   List<Map<String, dynamic>> _buildParticipants() {
     final myId = StorageUtil.getData(StorageUtil.userId);
     final members = groupMembersController.groupMemnersData ?? [];
 
     return members
-        .where((member) => member.auth?.id != myId) // à¦¨à¦¿à¦œà§‡à¦•à§‡ à¦¬à¦¾à¦¦ à¦¦à¦¾à¦“
+        .where((member) => member.auth?.id != myId)
         .map((member) => {"id": member.auth?.id, "status": "INCOMING"})
         .toList();
   }
@@ -107,7 +111,6 @@ class _GroupChatHeaderState extends State<GroupChatHeader> {
       return;
     }
 
-    // âœ… List wise participants à¦ªà¦¾à¦ à¦¾à¦“
     final bool isSuccess = await callController.getRoomWithParticipants(
       callType: type,
       mode: medium,
@@ -121,7 +124,6 @@ class _GroupChatHeaderState extends State<GroupChatHeader> {
     }
   }
 
-  // âœ… Step 2 â€” Token à¦¨à¦¾à¦“
   void getCallToken(
     String? roomId,
     String? callId,
@@ -151,7 +153,7 @@ class _GroupChatHeaderState extends State<GroupChatHeader> {
 
     if (isSuccess) {
       socketService.socket.emit('callInvite', {
-        "callId": callId, 
+        "callId": callId,
         "token": callController.token,
         "groupName": widget.groupName,
         "groupImage": widget.groupImage,
@@ -373,11 +375,13 @@ class _GroupChatHeaderState extends State<GroupChatHeader> {
                   },
                   child: Row(
                     children: [
-                      CircleIconWidget(
-                        imagePath: Assets.images.arrowBack.keyName,
-                        onTap: () => Navigator.pop(context),
-                        radius: 13,
-                      ),
+                      widget.isGeneralChat != true
+                          ? CircleIconWidget(
+                              imagePath: Assets.images.arrowBack.keyName,
+                              onTap: () => Navigator.pop(context),
+                              radius: 13,
+                            )
+                          : const SizedBox(),
                       widthBox10,
                       widget.groupImage.isEmpty
                           ? CrashSafeImage(

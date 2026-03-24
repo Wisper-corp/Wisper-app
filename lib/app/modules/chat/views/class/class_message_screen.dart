@@ -78,10 +78,6 @@ class _ClassChatScreenState extends State<ClassChatScreen> {
 
           Expanded(
             child: Obx(() {
-              if (ctrl.isLoading.value) {
-                return const Center(child: ChatShimmerEffectWidget());
-              }
-
               if (ctrl.messages.isEmpty) {
                 return Center(
                   child: EmptyGroupInfoCard(

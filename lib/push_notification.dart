@@ -231,8 +231,13 @@ class PushNotificationService {
       }
     }
 
-    final token = await FirebaseMessaging.instance.getToken();
-    debugPrint('📱 FCM Token: $token');
+    try {
+      final token = await FirebaseMessaging.instance.getToken();
+      debugPrint('📱 FCM Token: $token');
+    } catch (e) {
+      debugPrint('❌ FCM token error: $e');
+      return;
+    }
 
     FirebaseMessaging.instance.onTokenRefresh.listen((t) {
       debugPrint('🔄 FCM Token refreshed: $t');

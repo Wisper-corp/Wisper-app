@@ -9,6 +9,8 @@ import 'package:wisper/app/core/widgets/common/custom_text_filed.dart';
 import 'package:wisper/app/modules/post/controller/comment_controller.dart';
 import 'package:wisper/app/modules/post/controller/edit_comment_controller.dart';
 import 'package:wisper/app/modules/post/views/my_post_section.dart';
+import 'package:wisper/app/modules/profile/views/business/others_business_screen.dart';
+import 'package:wisper/app/modules/profile/views/person/others_person_screen.dart';
 
 class CommentScreen extends StatefulWidget {
   final String postId;
@@ -172,9 +174,18 @@ class _CommentScreenState extends State<CommentScreen> {
                       height: 70.h,
                       child: ListTile(
                         contentPadding: EdgeInsets.zero,
-                        leading: CircleAvatar(
-                          backgroundImage: NetworkImage(authorImage ?? ''),
-                          radius: 20.r,
+                        leading: GestureDetector(
+                          onTap: () {
+                            if (isPerson) {
+                              Get.to(OthersPersonScreen(userId: authorId));
+                            } else {
+                              Get.to(OthersBusinessScreen(userId: authorId));
+                            }
+                          },
+                          child: CircleAvatar(
+                            backgroundImage: NetworkImage(authorImage ?? ''),
+                            radius: 20.r,
+                          ),
                         ),
                         title: Text(
                           authorName ?? '',

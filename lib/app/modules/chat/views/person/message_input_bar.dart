@@ -11,7 +11,7 @@ class MessageInputBar extends StatelessWidget {
   final RxBool isSendEnabled = false.obs;
 
   MessageInputBar({
-    super.key,
+    super.key, 
     required this.controller,
     required this.onSend,
   });
@@ -26,7 +26,7 @@ class MessageInputBar extends StatelessWidget {
           color: Colors.black,
           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
           child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
+            padding:  EdgeInsets.symmetric(horizontal: 0, vertical: 6),
             child: Row(
               crossAxisAlignment: CrossAxisAlignment.center,
               children: [

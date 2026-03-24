@@ -87,6 +87,7 @@ class Urls {
   static const String roleUrl = '$_baseUrl/persons/roles';
   static const String walletUrl = '$_baseUrl/payments';
   static const String allGroupUrl = '$_baseUrl/groups';
+  static const String removeFcmToken = '$_baseUrl/auths/logout';
  
   static String editPostId(String id) {
     return '$_baseUrl/posts/$id';

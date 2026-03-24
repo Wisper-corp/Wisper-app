@@ -46,10 +46,13 @@ class _AllCallsState extends State<AllCalls> {
             child: Center(child: MemberShimmerEffectWidget()),
           );
         }
-        return const Center(
-          child: Text(
-            'No calls yet',
-            style: TextStyle(fontSize: 16, color: Colors.grey),
+        return SizedBox(
+          height: Get.height / 2,
+          child: const Center(
+            child: Text(
+              'No calls yet',
+              style: TextStyle(fontSize: 12, color: Colors.grey),
+            ),
           ),
         );
       }
