@@ -93,6 +93,10 @@ class SocketService extends GetxController {
       isConnected.value = false;
     });
 
+    _socket.onAny((event, data) {
+      print('🛰️ onAny event: $event | data: $data');
+    });
+
     _socket.on('newMessage', _handleNewMessageForList);
 
     final callService = Get.isRegistered<CallService>()

@@ -62,6 +62,7 @@ class MessageController extends GetxController {
     socketService.emitConnection();
 
     // Join the chat room (multiple variants — depending on backend)
+    print('Joining chat room for chatId: $currentChatId');
     socketService.socket.emit('join', {'chatId': currentChatId});
     socketService.socket.emit('joinChat', {'chatId': currentChatId});
     socketService.socket.emit('join_room', currentChatId);
@@ -257,6 +258,7 @@ class MessageController extends GetxController {
       if (fileUrl.isNotEmpty) "fileType": fileType,
     };
 
+    print('sendMessage payload: $messageData');
     // ────────────────────────────────────────────────
     // KEY FIX: Wait for server acknowledgment
     // ────────────────────────────────────────────────
