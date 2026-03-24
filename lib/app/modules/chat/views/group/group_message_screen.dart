@@ -91,7 +91,7 @@ class _GroupChatScreenState extends State<GroupChatScreen> {
               }
 
               return ListView.builder(
-                reverse: true,
+                reverse: false,
                 controller: ctrl.scrollController,
                 padding: EdgeInsets.all(10.r),
                 itemCount: ctrl.messages.length,

@@ -47,7 +47,6 @@ class _ChatScreenState extends State<ChatScreen> {
   final SocketService socketService = Get.find<SocketService>();
   final ConnectivityService connectivityService =
       Get.find<ConnectivityService>();
-  final ScrollController _scrollController = ScrollController();
   final SeenMessageController seenMessageController = SeenMessageController();
   
 
@@ -76,13 +75,13 @@ class _ChatScreenState extends State<ChatScreen> {
       _scrollToBottom(animated: false);
     });
 
-    _scrollController.addListener(_scrollListener);
+    ctrl.scrollController.addListener(_scrollListener);
   }
 
   void _scrollListener() {
-    if (_scrollController.hasClients) {
-      final maxScroll = _scrollController.position.maxScrollExtent;
-      final currentScroll = _scrollController.offset;
+    if (ctrl.scrollController.hasClients) {
+      final maxScroll = ctrl.scrollController.position.maxScrollExtent;
+      final currentScroll = ctrl.scrollController.offset;
       const threshold = 100.0;
       final isAtBottom = (maxScroll - currentScroll) <= threshold;
 
@@ -98,15 +97,17 @@ class _ChatScreenState extends State<ChatScreen> {
   }
 
   void _scrollToBottom({bool animated = true}) {
-    if (_scrollController.hasClients) {
+    if (ctrl.scrollController.hasClients) {
       if (animated) {
-        _scrollController.animateTo(
-          _scrollController.position.maxScrollExtent,
+        ctrl.scrollController.animateTo(
+          ctrl.scrollController.position.maxScrollExtent,
           duration: const Duration(milliseconds: 300),
           curve: Curves.easeOut,
         );
       } else {
-        _scrollController.jumpTo(_scrollController.position.maxScrollExtent);
+        ctrl.scrollController.jumpTo(
+          ctrl.scrollController.position.maxScrollExtent,
+        );
       }
       setState(() {
         _showNewMessageIndicator = false;
@@ -312,8 +313,7 @@ class _ChatScreenState extends State<ChatScreen> {
   void dispose() {
     // Re-enable popup for other screens.
     connectivityService.suppressDialog.value = false;
-    _scrollController.removeListener(_scrollListener);
-    _scrollController.dispose();
+    ctrl.scrollController.removeListener(_scrollListener);
     super.dispose();
   }
 
@@ -380,11 +380,10 @@ class _ChatScreenState extends State<ChatScreen> {
                     );
                   }
 
-                  final displayedMessages =
-                  ctrl.messages.toList().reversed.toList();
+                  final displayedMessages = ctrl.messages.toList();
 
                   return ListView.builder(
-                    controller: _scrollController,
+                    controller: ctrl.scrollController,
                     reverse: false,
                     padding: EdgeInsets.all(10.r),
                     itemCount: displayedMessages.length + 1, // +1 encryption notice

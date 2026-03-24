@@ -156,7 +156,16 @@ class MessageController extends GetxController {
         SocketMessageKeys.fileType: data['fileType'] ?? '',
       };
 
-      messages.insert(0, msg);
+      messages.add(msg);
+      messages.sort((a, b) {
+        final DateTime aTime =
+            DateTime.tryParse(a[SocketMessageKeys.createdAt] ?? '') ??
+                DateTime(1970);
+        final DateTime bTime =
+            DateTime.tryParse(b[SocketMessageKeys.createdAt] ?? '') ??
+                DateTime(1970);
+        return aTime.compareTo(bTime); // oldest -> newest
+      });
       _upsertChatListFromMessage(data);
       scrollToBottom();
       // Cache updated messages when realtime arrives.
@@ -218,12 +227,14 @@ class MessageController extends GetxController {
   }
 
   void scrollToBottom() {
-    if (!scrollController.hasClients) return;
-    scrollController.animateTo(
-      0,
-      duration: const Duration(milliseconds: 300),
-      curve: Curves.easeOut,
-    );
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!scrollController.hasClients) return;
+      scrollController.animateTo(
+        scrollController.position.maxScrollExtent,
+        duration: const Duration(milliseconds: 250),
+        curve: Curves.easeOut,
+      );
+    });
   }
 
   /// Main change is here — handling new chat creation via ack
@@ -338,7 +349,7 @@ class MessageController extends GetxController {
         messages.clear();
 
         if (model.data?.messages != null) {
-          for (final msg in model.data!.messages.reversed) {
+          for (final msg in model.data!.messages) {
             String senderName = 'Unknown';
             String? senderImage;
 
@@ -374,6 +385,15 @@ class MessageController extends GetxController {
             }
           }
         }
+        messages.sort((a, b) {
+          final DateTime aTime =
+              DateTime.tryParse(a[SocketMessageKeys.createdAt] ?? '') ??
+                  DateTime(1970);
+          final DateTime bTime =
+              DateTime.tryParse(b[SocketMessageKeys.createdAt] ?? '') ??
+                  DateTime(1970);
+          return aTime.compareTo(bTime); // oldest -> newest
+        });
         // Cache latest messages after API success.
         await ChatCacheService.saveMessages(
           chatId,

@@ -93,7 +93,7 @@ class _ClassChatScreenState extends State<ClassChatScreen> {
               }
 
               return ListView.builder(
-                reverse: true,
+                reverse: false,
                 controller: ctrl.scrollController,
                 padding: EdgeInsets.all(10.r),
                 itemCount: ctrl.messages.length,
