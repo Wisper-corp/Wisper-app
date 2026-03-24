@@ -5,6 +5,7 @@ import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:get/get.dart';
 import 'package:wisper/app/core/others/custom_size.dart';
 import 'package:wisper/app/core/others/get_storage.dart';
+import 'package:wisper/app/core/utils/connectivity_services.dart';
 import 'package:wisper/app/modules/profile/controller/recommendetion_controller.dart';
 import 'package:wisper/app/modules/profile/model/recommendation_model.dart';
 import 'package:wisper/app/modules/profile/views/create_recommendation.dart';
@@ -24,6 +25,8 @@ class RcommendationButtomSheet extends StatelessWidget {
   Widget build(BuildContext context) {
     final AllRecommendationController controller =
         Get.find<AllRecommendationController>();
+    final ConnectivityService connectivityService =
+        Get.find<ConnectivityService>();
 
     return ConstrainedBox(
       constraints: BoxConstraints(
@@ -60,6 +63,11 @@ class RcommendationButtomSheet extends StatelessWidget {
                   }
 
                   if (items.isEmpty) {
+                    if (!connectivityService.isOnline.value) {
+                      return const Center(
+                        child: CircularProgressIndicator(),
+                      );
+                    }
                     return const Center(
                       child: Text(
                         'No recommendations yet',

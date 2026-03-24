@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:get/get.dart';
 import 'package:wisper/app/core/utils/date_formatter.dart';
+import 'package:wisper/app/core/utils/connectivity_services.dart';
 import 'package:wisper/app/core/widgets/shimmer/gallery_post_shimmer.dart';
 import 'package:wisper/app/modules/post/controller/others_job_post_controller.dart';
 import 'package:wisper/app/modules/job/widgets/job_card.dart';
@@ -16,6 +17,8 @@ class OthersJobSection extends StatefulWidget {
 
 class _OthersJobSectionState extends State<OthersJobSection> {
   final OthersJobController controller = Get.put(OthersJobController());
+  final ConnectivityService connectivityService =
+      Get.find<ConnectivityService>();
 
   @override
   void initState() {
@@ -38,6 +41,9 @@ class _OthersJobSectionState extends State<OthersJobSection> {
         }
 
         if (controller.allJobData.isEmpty) {
+          if (!connectivityService.isOnline.value) {
+            return const Center(child: PostShimmerEffectWidget());
+          }
           return const Center(
             child: Text(
               'No posts yet',

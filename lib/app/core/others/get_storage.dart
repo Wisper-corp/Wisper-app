@@ -15,6 +15,10 @@ class StorageUtil {
   static const String userId = 'user-id'; 
   static const String userAuthId = 'user-auth-id'; 
   static const String userRole = 'user-role';
+  static const String cachedUserName = 'cached-user-name';
+  static const String cachedUserImage = 'cached-user-image';
+  static const String cachedUserTitle = 'cached-user-title';
+  static const String cachedUserRegion = 'cached-user-region';
   static const String otpToken = 'otp-token';
   static const String _fcmTokenKey = 'fcm_token';
   static const String _currentLocalKey = 'current_local';

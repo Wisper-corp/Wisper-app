@@ -69,6 +69,9 @@ class _ProfileScreenState extends State<ProfileScreen>
     super.initState();
     selectedIndex = 0;
     userRole = StorageUtil.getData(StorageUtil.userRole) ?? 'PERSON';
+    // Load cached image for offline display.
+    currentImagePath.value =
+        StorageUtil.getData(StorageUtil.cachedUserImage) ?? '';
     _updateProfileImage();
     _getProfileImage();
 
@@ -188,6 +191,8 @@ class _ProfileScreenState extends State<ProfileScreen>
             place.locality ?? place.subAdministrativeArea ?? 'Unknown city';
         String country = place.country ?? 'Unknown country';
         currentCityCountry.value = '$city, $country';
+        // Cache region (country) for settings offline display.
+        StorageUtil.saveData(StorageUtil.cachedUserRegion, country);
 
         print('................................................');
         print('Updated Lat: ${position.latitude}, Long: ${position.longitude}');
@@ -310,12 +315,17 @@ class _ProfileScreenState extends State<ProfileScreen>
           : null;
 
       final String displayName = userRole == 'PERSON'
-          ? (personData?.name ?? 'User')
-          : (businessData?.name ?? 'Company');
+          ? (personData?.name ??
+                (StorageUtil.getData(StorageUtil.cachedUserName) ?? 'User'))
+          : (businessData?.name ??
+                (StorageUtil.getData(StorageUtil.cachedUserName) ??
+                    'Company'));
 
       final String displayTitle = userRole == 'PERSON'
-          ? (personData?.title ?? '')
-          : (businessData?.industry ?? '');
+          ? (personData?.title ??
+                (StorageUtil.getData(StorageUtil.cachedUserTitle) ?? ''))
+          : (businessData?.industry ??
+                (StorageUtil.getData(StorageUtil.cachedUserTitle) ?? ''));
 
       final DateTime? createdAt = userRole == 'PERSON'
           ? personController.profileData?.auth?.createdAt

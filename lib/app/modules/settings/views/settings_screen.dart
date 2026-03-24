@@ -50,6 +50,12 @@ class _SettingsScreenState extends State<SettingsScreen> {
     var job = StorageUtil.getData(StorageUtil.userRole) == 'PERSON'
         ? profileController.profileData?.auth?.person?.title
         : businessController.buisnessData?.auth?.business?.industry;
+
+    // Offline fallback from cached storage.
+    profileImage =
+        profileImage ?? StorageUtil.getData(StorageUtil.cachedUserImage);
+    name = name ?? StorageUtil.getData(StorageUtil.cachedUserName);
+    job = job ?? StorageUtil.getData(StorageUtil.cachedUserTitle);
     return Scaffold(
       body: Padding(
         padding: const EdgeInsets.symmetric(horizontal: 20.0),
@@ -366,7 +372,11 @@ class _SettingsScreenState extends State<SettingsScreen> {
                         Row(
                           children: [
                             Text(
-                              'Bangladesh',
+                              (StorageUtil.getData(
+                                    StorageUtil.cachedUserRegion,
+                                  ) ??
+                                  'No Region')
+                                  .toString(),
                               style: TextStyle(
                                 fontSize: 12.sp,
                                 fontWeight: FontWeight.w600,

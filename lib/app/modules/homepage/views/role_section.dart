@@ -5,6 +5,7 @@ import 'package:get/get.dart';
 import 'package:wisper/app/core/others/get_storage.dart';
 import 'package:wisper/app/core/utils/show_over_loading.dart';
 import 'package:wisper/app/core/utils/snack_bar.dart';
+import 'package:wisper/app/core/utils/connectivity_services.dart';
 import 'package:wisper/app/core/widgets/shimmer/member_list_shimmer.dart';
 import 'package:wisper/app/modules/chat/controller/create_chat_controller.dart'
     show CreateChatController;
@@ -23,6 +24,8 @@ class RoleSection extends StatefulWidget {
 
 class _RoleSectionState extends State<RoleSection> {
   final AllRoleController allRoleController = Get.find<AllRoleController>();
+  final ConnectivityService connectivityService =
+      Get.find<ConnectivityService>();
   final AddRequestController addRequestController = Get.put(
     AddRequestController(),
   );
@@ -133,7 +136,11 @@ class _RoleSectionState extends State<RoleSection> {
       child: Obx(() {
         if (allRoleController.inProgress) {
           return MemberShimmerEffectWidget();
-        } else if (allRoleController.allRoleData!.isEmpty) {
+        } else if (allRoleController.allRoleData == null ||
+            allRoleController.allRoleData!.isEmpty) {
+          if (!connectivityService.isOnline.value) {
+            return MemberShimmerEffectWidget();
+          }
           return const Center(
             child: Text('No role found', style: TextStyle(fontSize: 12)),
           );

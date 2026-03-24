@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:wisper/app/core/others/get_storage.dart';
+import 'package:wisper/app/core/utils/connectivity_services.dart';
 import 'package:wisper/app/core/widgets/shimmer/member_list_shimmer.dart';
 import 'package:wisper/app/modules/calls/controller/all_call_controller.dart';
 import 'package:wisper/app/modules/calls/widget/call_list_Tile.dart';
@@ -16,6 +17,8 @@ class MissedCalls extends StatefulWidget {
 
 class _MissedCallsState extends State<MissedCalls> {
   final AllCallController allCallController = Get.put(AllCallController());
+  final ConnectivityService connectivityService =
+      Get.find<ConnectivityService>();
 
   @override
   void initState() {
@@ -47,6 +50,12 @@ class _MissedCallsState extends State<MissedCalls> {
       }).toList();
 
       if (missedCalls.isEmpty) {
+        if (!connectivityService.isOnline.value) {
+          return SizedBox(
+            height: Get.height / 2,
+            child: Center(child: MemberShimmerEffectWidget()),
+          );
+        }
         return const Center(
           child: Text(
             'No missed calls',

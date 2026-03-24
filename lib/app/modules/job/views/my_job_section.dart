@@ -5,6 +5,7 @@ import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:get/get.dart';
 import 'package:wisper/app/core/others/get_storage.dart';
 import 'package:wisper/app/core/utils/date_formatter.dart';
+import 'package:wisper/app/core/utils/connectivity_services.dart';
 import 'package:wisper/app/core/utils/show_over_loading.dart';
 import 'package:wisper/app/core/utils/snack_bar.dart';
 import 'package:wisper/app/core/widgets/common/custom_popup.dart';
@@ -26,6 +27,8 @@ class MyJobSection extends StatefulWidget {
 class _MyJobSectionState extends State<MyJobSection> {
   final MyFeedJobController controller = Get.find<MyFeedJobController>();
   final DeleteJobController deletePostController = DeleteJobController();
+  final ConnectivityService connectivityService =
+      Get.find<ConnectivityService>();
 
   @override
   void initState() {
@@ -85,6 +88,9 @@ class _MyJobSectionState extends State<MyJobSection> {
             }
 
             if (controller.allJobData.isEmpty) {
+              if (!connectivityService.isOnline.value) {
+                return PostShimmerEffectWidget();
+              }
               return Center(
                 child: Column(
                   mainAxisAlignment: MainAxisAlignment.center,

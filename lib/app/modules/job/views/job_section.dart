@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:wisper/app/core/utils/date_formatter.dart';
+import 'package:wisper/app/core/utils/connectivity_services.dart';
 import 'package:wisper/app/core/widgets/shimmer/gallery_post_shimmer.dart';
 import 'package:wisper/app/modules/job/controller/feed_job_controller.dart';
 import 'package:wisper/app/modules/job/widgets/job_card.dart';
@@ -16,6 +17,8 @@ class JobSection extends StatefulWidget {
 
 class _JobSectionState extends State<JobSection> {
   final AllFeedJobController controller = Get.put(AllFeedJobController());
+  final ConnectivityService connectivityService =
+      Get.find<ConnectivityService>();
 
   @override
   void initState() {
@@ -43,6 +46,9 @@ class _JobSectionState extends State<JobSection> {
       if (controller.inProgress) {
         return const Center(child: PostShimmerEffectWidget());
       } else if (controller.allJobData.isEmpty) {
+        if (!connectivityService.isOnline.value) {
+          return const Center(child: PostShimmerEffectWidget());
+        }
         return SizedBox(
           height: 500,
           child: const Center(

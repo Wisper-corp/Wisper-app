@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_html/flutter_html.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:get/get.dart';
+import 'package:wisper/app/core/utils/connectivity_services.dart';
 import 'package:wisper/app/modules/profile/controller/content_controller.dart';
 
 class ContentScreen extends StatefulWidget {
@@ -14,6 +15,8 @@ class ContentScreen extends StatefulWidget {
 
 class _ContentScreenState extends State<ContentScreen> {
   final ContentController contentController = Get.put(ContentController());
+  final ConnectivityService connectivityService =
+      Get.find<ConnectivityService>();
   @override
   void initState() {
     super.initState();
@@ -39,6 +42,10 @@ class _ContentScreenState extends State<ContentScreen> {
         if (contentController.inProgress) {
           return const Center(child: CircularProgressIndicator());
         } else {
+          if (!connectivityService.isOnline.value &&
+              contentController.contentData == null) {
+            return const Center(child: CircularProgressIndicator());
+          }
           var data = contentController.contentData;
           var updateData = widget.title == 'Privacy Policy'
               ? data?.privacyPolicy

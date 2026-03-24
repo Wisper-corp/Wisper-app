@@ -51,6 +51,24 @@ class BusinessController extends GetxController {
         _buisnessDetailsModel.value = BusinessModel.fromJson(
           response.responseData,
         );
+        // Cache basic business info for offline display.
+        try {
+          final business = _buisnessDetailsModel.value?.data?.auth?.business;
+          if (business != null) {
+            StorageUtil.saveData(
+              StorageUtil.cachedUserName,
+              business.name ?? '',
+            );
+            StorageUtil.saveData(
+              StorageUtil.cachedUserImage,
+              business.image ?? '',
+            );
+            StorageUtil.saveData(
+              StorageUtil.cachedUserTitle,
+              business.industry ?? '',
+            );
+          }
+        } catch (_) {}
 
         _inProgress.value = false;
         return true;

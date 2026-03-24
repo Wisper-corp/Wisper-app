@@ -3,6 +3,7 @@ import 'package:get/get.dart';
 import 'package:intl/intl.dart'; // ← add this for date formatting
 import 'package:wisper/app/core/config/theme/light_theme_colors.dart';
 import 'package:wisper/app/core/others/get_storage.dart';
+import 'package:wisper/app/core/utils/connectivity_services.dart';
 import 'package:wisper/app/core/widgets/shimmer/member_list_shimmer.dart';
 import 'package:wisper/app/modules/calls/controller/all_call_controller.dart';
 import 'package:wisper/app/modules/calls/widget/call_list_Tile.dart';
@@ -17,6 +18,8 @@ class AllCalls extends StatefulWidget {
 
 class _AllCallsState extends State<AllCalls> {
   final AllCallController allCallController = Get.put(AllCallController());
+  final ConnectivityService connectivityService =
+      Get.find<ConnectivityService>();
 
   @override
   void initState() {
@@ -37,6 +40,12 @@ class _AllCallsState extends State<AllCalls> {
       }
 
       if (allCallController.allCallsData?.isEmpty ?? true) {
+        if (!connectivityService.isOnline.value) {
+          return SizedBox(
+            height: Get.height / 2,
+            child: Center(child: MemberShimmerEffectWidget()),
+          );
+        }
         return const Center(
           child: Text(
             'No calls yet',

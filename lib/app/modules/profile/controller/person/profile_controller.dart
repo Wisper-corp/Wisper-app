@@ -55,6 +55,24 @@ class ProfileController extends GetxController {
         _profileDetailsModel.value = ProfileModel.fromJson(
           response.responseData,
         );
+        // Cache basic profile info for offline display.
+        try {
+          final person = _profileDetailsModel.value?.data?.auth?.person;
+          if (person != null) {
+            StorageUtil.saveData(
+              StorageUtil.cachedUserName,
+              person.name ?? '',
+            );
+            StorageUtil.saveData(
+              StorageUtil.cachedUserImage,
+              person.image ?? '',
+            );
+            StorageUtil.saveData(
+              StorageUtil.cachedUserTitle,
+              person.title ?? '',
+            );
+          }
+        } catch (_) {}
 
         _inProgress.value = false;
         return true;
