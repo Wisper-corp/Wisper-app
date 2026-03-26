@@ -487,6 +487,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
       title: "Logout?",
       message: "Are you sure you want to logout from your account?",
       onDelete: removeFcm,
+      deleteButtonText: "Logout",
     );
   }
 }

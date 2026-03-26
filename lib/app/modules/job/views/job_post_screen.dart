@@ -4,6 +4,7 @@ import 'package:get/get.dart';
 import 'package:wisper/app/core/others/custom_size.dart';
 import 'package:wisper/app/core/utils/show_over_loading.dart';
 import 'package:wisper/app/core/utils/snack_bar.dart';
+import 'package:wisper/app/core/utils/validator_service.dart';
 import 'package:wisper/app/core/widgets/common/custom_button.dart';
 import 'package:wisper/app/core/widgets/common/custom_text_filed.dart';
 import 'package:wisper/app/core/widgets/common/label.dart';
@@ -237,6 +238,7 @@ class _JobPostScreenState extends State<JobPostScreen> {
               SizedBox(
                 height: 140.h,
                 child: CustomTextField(
+                  validator: ValidatorService.validateSimpleField10Carecter,
                   controller: _descC,
                   maxLines: 8,
                   hintText: 'Describe the role...',
@@ -451,6 +453,7 @@ class _JobPostScreenState extends State<JobPostScreen> {
                 children: [
                   Expanded(
                     child: CustomTextField(
+                      validator: ValidatorService.validateSimpleField10Carecter,
                       controller: _reqC,
                       hintText: 'Add requirement',
                     ),
@@ -491,6 +494,7 @@ class _JobPostScreenState extends State<JobPostScreen> {
                 children: [
                   Expanded(
                     child: CustomTextField(
+                      validator: ValidatorService.validateSimpleField10Carecter,
                       controller: _resC,
                       hintText: 'Add responsibility',
                     ),

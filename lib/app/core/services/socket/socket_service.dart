@@ -12,7 +12,7 @@ class SocketService extends GetxController {
   late IO.Socket _socket;
 
   RxBool isConnected = false.obs;
-
+ 
   final _messageList = <Map<String, dynamic>>[].obs;
   final _socketFriendList = <Map<String, dynamic>>[].obs;
   final _notificationsList = <Map<String, dynamic>>[].obs;

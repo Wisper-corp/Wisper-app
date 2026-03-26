@@ -15,8 +15,9 @@ class FavoriteJobScreen extends StatefulWidget {
 
 class _FavoriteJobScreenState extends State<FavoriteJobScreen> {
   final FavoriteController favoriteController = Get.put(FavoriteController());
-  final ConnectivityService connectivityService =
-      Get.find<ConnectivityService>();
+  final ConnectivityService connectivityService = Get.put(
+    ConnectivityService(),
+  );
 
   @override
   void initState() {
@@ -24,7 +25,7 @@ class _FavoriteJobScreenState extends State<FavoriteJobScreen> {
     favoriteController.getAllFavorite();
   }
 
-  @override 
+  @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(

@@ -45,7 +45,7 @@ class _ClassInfoScreenState extends State<ClassInfoScreen> {
   );
 
   final AllConnectionController allConnectionController =
-      Get.find<AllConnectionController>();
+      Get.put(AllConnectionController());
 
   final ProfilePhotoController photoController =
       Get.find<ProfilePhotoController>();

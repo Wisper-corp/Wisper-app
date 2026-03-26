@@ -113,7 +113,7 @@ class _CommentScreenState extends State<CommentScreen> {
     });
   }
 
-  void _showDeleteComment(String commentId) {
+  void _showDeleteComment(String commentId) { 
     ConfirmationBottomSheet.show(
       context: context,
       title: "Delete Comment?",
@@ -183,8 +183,10 @@ class _CommentScreenState extends State<CommentScreen> {
                             }
                           },
                           child: CircleAvatar(
+                            backgroundColor: Colors.grey,
                             backgroundImage: NetworkImage(authorImage ?? ''),
                             radius: 20.r,
+                            child: authorImage == null ? const Icon(Icons.person) : null,
                           ),
                         ),
                         title: Text(

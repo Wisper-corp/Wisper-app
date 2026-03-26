@@ -154,7 +154,7 @@ class _RecruiterSignUpScreenState extends State<RecruiterSignUpScreen> {
                 ),
 
                 heightBox100,
-                heightBox50,
+                heightBox20,
 
                 RichText(
                   textAlign: TextAlign.center,
@@ -213,6 +213,8 @@ class _RecruiterSignUpScreenState extends State<RecruiterSignUpScreen> {
                     }
                   },
                 ),
+
+                heightBox16
               ],
             ),
           ),

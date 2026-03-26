@@ -21,8 +21,8 @@ class AllRoleController extends GetxController {
 
     Map<String, dynamic> params = {
       "limit": "9999",
-      "searchTerm": searchQuery,
-    };
+      "searchTerm": searchQuery ?? "",
+    }; 
     try {
       final NetworkResponse response = await Get.find<NetworkCaller>()
           .getRequest(

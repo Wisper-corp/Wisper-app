@@ -16,7 +16,7 @@ class AllConnectionController extends GetxController {
   final Rx<AllConnectionModel?> _allConnectionModel = Rx<AllConnectionModel?>(
     null,
   );
-  List<AllConnectionItemModel>? get allConnectionData =>
+  List<AllConnectionItemModel>? get allConnectionData => 
       _allConnectionModel.value!.data?.connections;
  
   // @override
@@ -27,7 +27,7 @@ class AllConnectionController extends GetxController {
 
   Future<bool> getAllConnection(String? status, String? recieverId) async {
     _inProgress.value = true;
-
+ 
     Map<String, dynamic> params = recieverId == ''
         ? {"status": status, "limit": 999}
         : {"status": status, "receiverId": recieverId, "limit": 999};

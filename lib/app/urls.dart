@@ -5,27 +5,25 @@ class Urls {
 
   // static const String _baseUrl = 'http://10.10.10.17:5000/api/v1';
   // static const String _baseUrl = 'https://wisper.up.railway.app/api/v1';
-//  static const String _baseUrl = 'https://cd234531fe15.ngrok-free.app/api/v1';
- // static const String socketUrl = 'https://cd234531fe15.ngrok-free.app';
+  //  static const String _baseUrl = 'https://cd234531fe15.ngrok-free.app/api/v1';
+  // static const String socketUrl = 'https://cd234531fe15.ngrok-free.app';
   static const String _baseUrl = 'http://72.244.153.29:5008/api/v1';
   static const String socketUrl = 'http://72.244.153.29:5008';
 
-  
-  
   // =========================================== Common ============================================== //
   static const String paymentUrl = '$_baseUrl/boosts/checkout-session';
-  static const String contentUrl = '$_baseUrl/legal'; 
-  
+  static const String contentUrl = '$_baseUrl/legal';
+
   // =========================================== Profile ============================================== //
   static const String personProfileUrl = '$_baseUrl/persons/profile';
   static const String businessProfileUrl = '$_baseUrl/businesses/profile';
   static const String personEditProfileUrl = '$_baseUrl/persons/profile';
   static const String businessEditProfileUrl = '$_baseUrl/businesses/profile';
   static const String personEditProfilePhotoUrl =
-      '$_baseUrl/persons/profile-image'; 
-  static const String businessEditProfilePhotoUrl = 
+      '$_baseUrl/persons/profile-image';
+  static const String businessEditProfilePhotoUrl =
       '$_baseUrl/businesses/profile-image';
-  
+
   // =========================================== Authentication ====================================== //
   static const String signUpUrlPerson = '$_baseUrl/auths/person/signup';
   static const String signUpUrlBussiness = '$_baseUrl/auths/business/signup';
@@ -49,15 +47,14 @@ class Urls {
   static const String boostPackaegesUrl = '$_baseUrl/boost-packages';
   static const String favoritesUrl = '$_baseUrl/favorites';
 
-   static String otherProfileById(String id) {
+  static String otherProfileById(String id) {
     return '$_baseUrl/persons/$id';
   }
 
   static String joinGroupById(String id) {
     return '$_baseUrl/groups/join/$id';
   }
- 
- 
+
   static String chatDataById(String id) {
     return '$_baseUrl/chats/files/$id';
   }
@@ -88,7 +85,7 @@ class Urls {
   static const String walletUrl = '$_baseUrl/payments';
   static const String allGroupUrl = '$_baseUrl/groups';
   static const String removeFcmToken = '$_baseUrl/auths/logout';
- 
+
   static String editPostId(String id) {
     return '$_baseUrl/posts/$id';
   }
@@ -102,7 +99,7 @@ class Urls {
   }
 
   static String otherUserPostById(String id) {
-    return '$_baseUrl/posts/user/$id'; 
+    return '$_baseUrl/posts/user/$id';
   }
 
   static String otherUserJobById(String id) {
@@ -122,13 +119,12 @@ class Urls {
   static const String callTokenUrl = '$_baseUrl/calls/token';
   static const String myCallUrl = '$_baseUrl/calls/my';
 
-
   // =========================================== Chat Block =========================================== //
   static const String createGroupUrl = '$_baseUrl/groups';
   static const String createClassUrl = '$_baseUrl/classes';
   static const String allChatsUrl = '$_baseUrl/chats/my';
   static const String createChatsUrl = '$_baseUrl/chats';
-  static const String blockChatUserUrl = '$_baseUrl/chats/block-participant'; 
+  static const String blockChatUserUrl = '$_baseUrl/chats/block-participant';
   static const String unblockChatUserUrl =
       '$_baseUrl/chats/unblock-participant';
   static const String muteChatUserUrl = '$_baseUrl/chats/mute';
@@ -139,7 +135,7 @@ class Urls {
     return '$_baseUrl/groups/$id';
   }
 
-    static String seenMessageById(String id) {
+  static String seenMessageById(String id) {
     return '$_baseUrl/messages/seen/$id';
   }
 
@@ -177,5 +173,5 @@ class Urls {
 
   static String messagesById(String id) {
     return '$_baseUrl/messages/$id';
-  } 
+  }
 }

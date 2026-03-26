@@ -88,7 +88,7 @@ class _CreateGroupClassScreenState extends State<CreateGroupClassScreen> {
               iconColor: Color.fromARGB(255, 255, 255, 255),
               title: 'Create New Class',
               subtitle: 'Start a new educational class',
-            ),
+            ), 
             heightBox30,
 
             Text(

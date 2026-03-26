@@ -21,7 +21,7 @@ class CreateGroupScreen extends StatefulWidget {
 
 class _CreateGroupScreenState extends State<CreateGroupScreen> {
   final AllConnectionController allConnectionController =
-      Get.find<AllConnectionController>();
+      Get.put(AllConnectionController());
 
   // শুধুমাত্র ID গুলো রাখবো এখানে
   final List<String> selectedMemberIds = [];
@@ -59,7 +59,7 @@ class _CreateGroupScreenState extends State<CreateGroupScreen> {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             heightBox40,
-            CreateHeader(
+            CreateHeader( 
               bgColor: const Color(0xff051B33),
               iconColor: const Color(0xff1F7DE9),
               title: 'Create Group',

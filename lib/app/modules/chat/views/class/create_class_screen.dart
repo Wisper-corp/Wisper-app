@@ -21,7 +21,7 @@ class CreateClassScreen extends StatefulWidget {
 
 class _CreateClassScreenState extends State<CreateClassScreen> {
   final AllConnectionController allConnectionController =
-      Get.find<AllConnectionController>();
+      Get.put(AllConnectionController());
 
   // শুধুমাত্র ID গুলো রাখবো এখানে
   final List<String> selectedMemberIds = [];

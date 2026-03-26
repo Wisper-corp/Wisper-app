@@ -178,7 +178,7 @@ class _MyPostSectionState extends State<MyPostSection> {
               views: post.views?.toString() ?? '0',
             ),
           );
-        }, 
+        },
       );
     });
   }
@@ -268,9 +268,9 @@ class ConfirmationBottomSheet extends StatelessWidget {
   static void show({
     required BuildContext context,
     String title = 'Delete?',
-    String message = 'Are you sure you want to delete?',
+    String? message,
     required VoidCallback onDelete,
-    String deleteButtonText = 'Delete',
+    String? deleteButtonText,
     String cancelButtonText = 'Discard',
   }) {
     showModalBottomSheet(
@@ -279,11 +279,11 @@ class ConfirmationBottomSheet extends StatelessWidget {
       isScrollControlled: true,
       builder: (context) => ConfirmationBottomSheet(
         title: title,
-        message: message,
+        message: message ?? 'Are you sure you want to delete?',
         onTap: onDelete,
-        deleteButtonText: deleteButtonText,
+        deleteButtonText: deleteButtonText ?? 'Delete',
         cancelButtonText: cancelButtonText,
       ),
     );
-  } 
+  }
 }
