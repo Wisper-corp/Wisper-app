@@ -318,8 +318,7 @@ class _ProfileScreenState extends State<ProfileScreen>
           ? (personData?.name ??
                 (StorageUtil.getData(StorageUtil.cachedUserName) ?? 'User'))
           : (businessData?.name ??
-                (StorageUtil.getData(StorageUtil.cachedUserName) ??
-                    'Company'));
+                (StorageUtil.getData(StorageUtil.cachedUserName) ?? 'Company'));
 
       final String displayTitle = userRole == 'PERSON'
           ? (personData?.title ??

@@ -120,7 +120,7 @@ class _IncomingCallDialogState extends State<IncomingCallDialog>
             ),
             const SizedBox(height: 36),
             Obx(() {
-              final callService = Get.find<CallService>();
+              final callService = Get.put(CallService());
               if (callService.isLoading.value) {
                 return const Column(
                   children: [

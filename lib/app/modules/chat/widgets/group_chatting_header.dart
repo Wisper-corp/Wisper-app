@@ -61,7 +61,7 @@ class _GroupChatHeaderState extends State<GroupChatHeader> {
   final CallController callController = CallController();
   final SocketService socketService = Get.find<SocketService>();
   final CallService callService = Get.isRegistered<CallService>()
-      ? Get.find<CallService>()
+      ? Get.put(CallService())
       : Get.put(CallService());
 
   @override

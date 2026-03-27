@@ -100,7 +100,7 @@ class SocketService extends GetxController {
     _socket.on('newMessage', _handleNewMessageForList);
 
     final callService = Get.isRegistered<CallService>()
-        ? Get.find<CallService>()
+        ? Get.put(CallService())
         : Get.put(CallService());
     callService.attachSocket(_socket);
     CallSocket.bind(_socket, callService);

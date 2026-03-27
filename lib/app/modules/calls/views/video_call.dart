@@ -64,7 +64,7 @@ class _VideoCallPageState extends State<VideoCallPage> {
 
   DateTime? _callStartTime;
   final SocketService socketService = Get.find<SocketService>();
-  final CallService callService = Get.isRegistered<CallService>() ? Get.find<CallService>() : Get.put(CallService());
+  final CallService callService = Get.isRegistered<CallService>() ? Get.put(CallService()) : Get.put(CallService());
   final CallController _callController = CallController();
   final GroupMembersController _groupMembersController =
       Get.put(GroupMembersController());
@@ -276,7 +276,7 @@ class _VideoCallPageState extends State<VideoCallPage> {
         final members = _groupMembersController.groupMemnersData ?? [];
         print('ðŸ‘¥ [VideoCall] members count: ${members.length}');
         _nameQueue
-          ..clear()
+          ..clear() 
           ..addAll(
             members
                 .where((m) => m.auth?.id != myId)

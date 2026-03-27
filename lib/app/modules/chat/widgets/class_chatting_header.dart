@@ -58,7 +58,7 @@ class _ClassChatHeaderState extends State<ClassChatHeader> {
   final MuteChatController muteChatController = MuteChatController();
   final CallController callController = CallController();
   final SocketService socketService = Get.find<SocketService>();
-  final CallService callService = Get.isRegistered<CallService>() ? Get.find<CallService>() : Get.put(CallService());
+  final CallService callService = Get.isRegistered<CallService>() ? Get.put(CallService()) : Get.put(CallService());
 
   @override
   void initState() {

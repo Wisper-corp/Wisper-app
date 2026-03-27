@@ -23,7 +23,7 @@ class _PendingCallBannerState extends State<PendingCallBanner> {
     super.initState();
     // CallService এর pendingCall listen করো
     final callService = Get.isRegistered<CallService>()
-        ? Get.find<CallService>()
+        ? Get.put(CallService())
         : Get.put(CallService());
 
     // If pendingCall was already set before this widget mounted, show it
@@ -62,7 +62,7 @@ class _PendingCallBannerState extends State<PendingCallBanner> {
 
   void _dismiss() {
     final callService = Get.isRegistered<CallService>()
-        ? Get.find<CallService>()
+        ? Get.put(CallService())
         : Get.put(CallService());
     callService.pendingCall.value = null;
   }

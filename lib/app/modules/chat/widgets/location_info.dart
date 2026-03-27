@@ -22,13 +22,16 @@ class LocationInfo extends StatelessWidget {
               height: 16.h,
               color: const Color(0xff7F8694),
             ),
-            widthBox4,
-            Text(
-              location ?? '',
-              style: TextStyle(
-                fontSize: 12.sp,
-                fontWeight: FontWeight.w400,
-                color: const Color(0xff7F8694),
+            widthBox8,
+            SizedBox(
+              width: MediaQuery.of(context).size.width * 0.42,
+              child: Text(
+                location ?? '',
+                style: TextStyle(
+                  fontSize: 12.sp,
+                  fontWeight: FontWeight.w400,
+                  color: const Color(0xff7F8694),
+                ),
               ),
             ),
           ],

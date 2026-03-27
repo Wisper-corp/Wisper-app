@@ -66,7 +66,7 @@ class _AudioCallPageState extends State<AudioCallPage> {
   DateTime? _callStartTime;
 
   final SocketService socketService = Get.find<SocketService>();
-  final CallService callService = Get.isRegistered<CallService>() ? Get.find<CallService>() : Get.put(CallService());
+  final CallService callService = Get.isRegistered<CallService>() ? Get.put(CallService()) : Get.put(CallService());
   final CallController _callController = CallController();
   final GroupMembersController _groupMembersController =
       Get.put(GroupMembersController());

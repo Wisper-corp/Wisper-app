@@ -38,7 +38,7 @@ class _SplashScreenState extends State<SplashScreen> with WidgetsBindingObserver
       print('Splash → App resumed → checking pending call dialog');
       try {
         final callService = Get.isRegistered<CallService>()
-            ? Get.find<CallService>()
+            ? Get.put(CallService())
             : Get.put(CallService());
         callService.checkAndShowPendingCallDialogIfNeeded();
       } catch (e) {
@@ -56,7 +56,7 @@ class _SplashScreenState extends State<SplashScreen> with WidgetsBindingObserver
     await Future.delayed(const Duration(milliseconds: 800));
     try {
       final callService = Get.isRegistered<CallService>()
-          ? Get.find<CallService>()
+          ? Get.put(CallService())
           : Get.put(CallService());
       callService.checkAndShowPendingCallDialogIfNeeded();
     } catch (e) {

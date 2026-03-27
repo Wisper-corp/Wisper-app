@@ -41,7 +41,7 @@ class _MainButtonNavbarScreenState extends State<MainButtonNavbarScreen>
   final ConnectivityService connectivityService =
       Get.find<ConnectivityService>();
   final CallService callService = Get.isRegistered<CallService>()
-      ? Get.find<CallService>()
+      ? Get.put(CallService())
       : Get.put(CallService());
 
   final AllFeedPostController allFeedPostController = Get.put(
