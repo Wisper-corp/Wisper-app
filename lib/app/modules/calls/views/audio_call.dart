@@ -60,7 +60,7 @@ class _AudioCallPageState extends State<AudioCallPage> {
   final List<int> _remoteUids = [];
 
   String engineLog = 'Initializing...';
-  bool callProgress = true;
+  bool callProgress = true; 
   bool _isLeavingCall = false;
 
   DateTime? _callStartTime;

@@ -71,7 +71,7 @@ class Urls {
     return '$_baseUrl/businesses/$id';
   }
 
-  static String recommendationById(String id) {
+  static String recommendationById(String id) { 
     return '$_baseUrl/recommendations/$id';
   }
 

@@ -1,5 +1,4 @@
-﻿
-import 'dart:async';
+﻿import 'dart:async';
 
 import 'package:audioplayers/audioplayers.dart';
 import 'package:flutter/material.dart';
@@ -69,7 +68,9 @@ class CallService extends GetxController {
           print('resumed state + pendingCall → dialog দেখানোর চেষ্টা করছি');
           checkAndShowPendingCallDialogIfNeeded();
         } else {
-          print('pendingCall সেট হয়েছে কিন্তু resumed নয় → resume হলে দেখাবে');
+          print(
+            'pendingCall সেট হয়েছে কিন্তু resumed নয় → resume হলে দেখাবে',
+          );
         }
       }
     });
@@ -127,6 +128,10 @@ class CallService extends GetxController {
     } else {
       await _showCallkitFromSocketData(normalized);
     }
+  }
+
+  void handlecallParticipantJoined(dynamic data) {
+    print('📞📞📞 callParticipantJoined: $data');
   }
 
   void handleCallDeclined(dynamic data) {
@@ -203,33 +208,37 @@ class CallService extends GetxController {
     final callType = callData['callType'] ?? 'AUDIO';
 
     if (callType == 'VIDEO') {
-      Get.to(() => VideoCallPage(
-            name: callData['callerName'] ?? '',
-            photoUrl: callData['callerImage'] ?? '',
-            chatId: '',
-            channelName: callData['channelName'] ?? '',
-            token: callData['token'] ?? '',
-            uuid: callData['uuid'] ?? 0,
-            callId: callData['callId'] ?? '',
-            groupId: callData['groupId'],
-            classId: callData['classId'],
-            isGroupCall: callData['isGroupCall'] == true,
-            callerName: callData['callerName'],
-          ));
+      Get.to(
+        () => VideoCallPage(
+          name: callData['callerName'] ?? '',
+          photoUrl: callData['callerImage'] ?? '',
+          chatId: '',
+          channelName: callData['channelName'] ?? '',
+          token: callData['token'] ?? '',
+          uuid: callData['uuid'] ?? 0,
+          callId: callData['callId'] ?? '',
+          groupId: callData['groupId'],
+          classId: callData['classId'],
+          isGroupCall: callData['isGroupCall'] == true,
+          callerName: callData['callerName'],
+        ),
+      );
     } else {
-      Get.to(() => AudioCallPage(
-            name: callData['callerName'] ?? '',
-            photoUrl: callData['callerImage'] ?? '',
-            chatId: '',
-            channelName: callData['channelName'] ?? '',
-            token: callData['token'] ?? '',
-            uuid: callData['uuid'] ?? 0,
-            callId: callData['callId'] ?? '',
-            groupId: callData['groupId'],
-            classId: callData['classId'],
-            isGroupCall: callData['isGroupCall'] == true,
-            callerName: callData['callerName'],
-          ));
+      Get.to(
+        () => AudioCallPage(
+          name: callData['callerName'] ?? '',
+          photoUrl: callData['callerImage'] ?? '',
+          chatId: '',
+          channelName: callData['channelName'] ?? '',
+          token: callData['token'] ?? '',
+          uuid: callData['uuid'] ?? 0,
+          callId: callData['callId'] ?? '',
+          groupId: callData['groupId'],
+          classId: callData['classId'],
+          isGroupCall: callData['isGroupCall'] == true,
+          callerName: callData['callerName'],
+        ),
+      );
     }
   }
 
@@ -257,13 +266,14 @@ class CallService extends GetxController {
         callerName: _incomingCall.value?['groupName'] != null
             ? _incomingCall.value!['groupName']
             : _incomingCall.value?['callerName'],
-        callerImage: _incomingCall.value?['groupName'] != null &&
+        callerImage:
+            _incomingCall.value?['groupName'] != null &&
                 _incomingCall.value?['groupImage'] == null
             ? 'group'
             : _incomingCall.value?['groupName'] != null &&
-                    _incomingCall.value?['groupImage'] != null
-                ? _incomingCall.value!['groupImage']
-                : _incomingCall.value?['callerImage'],
+                  _incomingCall.value?['groupImage'] != null
+            ? _incomingCall.value!['groupImage']
+            : _incomingCall.value?['callerImage'],
         onAccept: () => _handleAcceptCall(),
         onReject: () => _handleRejectCall(),
       ),
@@ -355,36 +365,39 @@ class CallService extends GetxController {
   ) async {
     final map = Map<String, dynamic>.from(data);
 
-    final mode = (map['mode'] ??
-            map['callMode'] ??
-            map['call_mode'] ??
-            '')
+    final mode = (map['mode'] ?? map['callMode'] ?? map['call_mode'] ?? '')
         .toString();
 
-    final groupId = (map['groupId'] ??
-            map['group_id'] ??
-            map['groupID'] ??
-            (map['group'] is Map ? map['group']['id'] : null) ??
-            (map['groupInfo'] is Map ? map['groupInfo']['id'] : null) ??
-            (map['community'] is Map ? map['community']['id'] : null))
-        ?.toString();
-    final classId = (map['classId'] ??
-            map['class_id'] ??
-            (map['class'] is Map ? map['class']['id'] : null))
-        ?.toString();
-    final className = map['className'] ??
+    final groupId =
+        (map['groupId'] ??
+                map['group_id'] ??
+                map['groupID'] ??
+                (map['group'] is Map ? map['group']['id'] : null) ??
+                (map['groupInfo'] is Map ? map['groupInfo']['id'] : null) ??
+                (map['community'] is Map ? map['community']['id'] : null))
+            ?.toString();
+    final classId =
+        (map['classId'] ??
+                map['class_id'] ??
+                (map['class'] is Map ? map['class']['id'] : null))
+            ?.toString();
+    final className =
+        map['className'] ??
         map['class_name'] ??
         (map['class'] is Map ? map['class']['name'] : null);
-    final classImage = map['classImage'] ??
+    final classImage =
+        map['classImage'] ??
         map['class_image'] ??
         (map['class'] is Map ? map['class']['image'] : null);
 
-    final groupName = map['groupName'] ??
+    final groupName =
+        map['groupName'] ??
         map['group_name'] ??
         (map['group'] is Map ? map['group']['name'] : null) ??
         (map['groupInfo'] is Map ? map['groupInfo']['name'] : null);
 
-    final groupImage = map['groupImage'] ??
+    final groupImage =
+        map['groupImage'] ??
         map['group_image'] ??
         (map['group'] is Map ? map['group']['image'] : null) ??
         (map['groupInfo'] is Map ? map['groupInfo']['image'] : null);
@@ -423,11 +436,11 @@ class CallService extends GetxController {
       } catch (_) {}
     }
 
-    final bool isGroup = (mode == 'GROUP' || mode == 'GROUP_CALL') ||
+    final bool isGroup =
+        (mode == 'GROUP' || mode == 'GROUP_CALL') ||
         (mode == 'CLASS' || mode == 'CLASS_CALL') ||
         (classId != null && classId.isNotEmpty) ||
-        (map['groupName'] != null &&
-            map['groupName'].toString().isNotEmpty) ||
+        (map['groupName'] != null && map['groupName'].toString().isNotEmpty) ||
         (map['groupImage'] != null && map['groupImage'].toString().isNotEmpty);
 
     if (isGroup) {
@@ -499,24 +512,22 @@ class CallService extends GetxController {
     final callId = (extra['call_id'] ?? body['id'] ?? '').toString();
     final channelName = (extra['channel_name'] ?? '').toString();
     final callType = (extra['call_type'] ?? 'AUDIO').toString();
-    final callerName =
-        (extra['caller_name'] ?? body['nameCaller'] ?? '').toString();
-    final callerImage =
-        (extra['caller_image'] ?? body['avatar'] ?? '').toString();
-    final groupId =
-        (extra['group_id'] ?? extra['groupId'] ?? '').toString();
-    final classId =
-        (extra['class_id'] ?? extra['classId'] ?? '').toString();
+    final callerName = (extra['caller_name'] ?? body['nameCaller'] ?? '')
+        .toString();
+    final callerImage = (extra['caller_image'] ?? body['avatar'] ?? '')
+        .toString();
+    final groupId = (extra['group_id'] ?? extra['groupId'] ?? '').toString();
+    final classId = (extra['class_id'] ?? extra['classId'] ?? '').toString();
     final bool isGroupCall =
         (extra['mode'] ?? '').toString() == 'GROUP' ||
         (extra['mode'] ?? '').toString() == 'GROUP_CALL' ||
         groupId.isNotEmpty ||
         classId.isNotEmpty ||
-        (extra['group_name'] ?? extra['groupName'] ?? '')
-            .toString()
-            .isNotEmpty;
+        (extra['group_name'] ?? extra['groupName'] ?? '').toString().isNotEmpty;
 
-    print('📞 Parsed → callId: $callId | channelName: $channelName | type: $callType');
+    print(
+      '📞 Parsed → callId: $callId | channelName: $channelName | type: $callType',
+    );
 
     if (callId.isEmpty || channelName.isEmpty) {
       print('❌ callId or channelName is empty — cannot proceed');
@@ -557,8 +568,14 @@ class CallService extends GetxController {
     }
 
     if (_socket?.connected == true) {
-      _socket!.emit('callAccepted', {'callId': callId});
-      print('✅ callAccepted emitted');
+      _socket!.emitWithAck(
+        'callAccept',
+        {'callId': callId},
+        ack: (response) {
+          print('callAccept ack: $response');
+        },
+      );
+      print('✅ callAccept emitted');
     }
 
     isLoading.value = false;
@@ -576,7 +593,9 @@ class CallService extends GetxController {
     _callkitHandled = false;
     _incomingCall.value = null;
 
-    print('🚀 Navigating to ${callType == 'VIDEO' ? 'Video' : 'Audio'}CallPage');
+    print(
+      '🚀 Navigating to ${callType == 'VIDEO' ? 'Video' : 'Audio'}CallPage',
+    );
     print('   room: $channelName');
     print('   token: $tokenToUse');
     print('   uuid: $uuidToUse');
@@ -611,34 +630,38 @@ class CallService extends GetxController {
     final callId = (extra['call_id'] ?? body['id'] ?? '').toString();
 
     if (_socket?.connected == true) {
-      _socket!.emitWithAck(
-        'callDecline',
-        {'callId': callId},
-        ack: (response) => print('callDecline ack: $response'),
-      );
+      _socket!.emitWithAck('callDecline', {
+        'callId': callId,
+      }, ack: (response) => print('callDecline ack: $response'));
     }
 
     _clearCallStates();
   }
 
-  Future<void> handleCallkitAcceptFromTerminated(Map<String, dynamic> body) async {
+  Future<void> handleCallkitAcceptFromTerminated(
+    Map<String, dynamic> body,
+  ) async {
     print('📞 Callkit accept from terminated state');
     await _handleCallkitAccept(body);
   }
 
   Future<void> _handleAcceptCall() async {
+    print('Pressed ✅ Accepting call');
     final roomId = _incomingCall.value?['roomId'];
     final callId = _incomingCall.value?['callId'];
     final type = _incomingCall.value?['type'];
-    final callerName = _incomingCall.value?['groupName'] ??
+    final callerName =
+        _incomingCall.value?['groupName'] ??
         _incomingCall.value?['callerName'] ??
         '';
-    final callerImage = _incomingCall.value?['groupImage'] ??
+    final callerImage =
+        _incomingCall.value?['groupImage'] ??
         _incomingCall.value?['callerImage'] ??
         '';
     final groupId = _incomingCall.value?['groupId'];
     final classId = _incomingCall.value?['classId'];
-    final bool isGroupCall = (_incomingCall.value?['mode'] == 'GROUP' ||
+    final bool isGroupCall =
+        (_incomingCall.value?['mode'] == 'GROUP' ||
         _incomingCall.value?['mode'] == 'GROUP_CALL' ||
         groupId != null ||
         classId != null ||
@@ -657,7 +680,13 @@ class CallService extends GetxController {
       await _stopIncomingRingtone();
       Get.back();
       if (_socket?.connected == true) {
-        _socket!.emit('callAccepted', {'callId': callId});
+        _socket!.emitWithAck(
+          'callAccept',
+          {'callId': callId},
+          ack: (response) {
+            print('callAccept ack: $response');
+          },
+        );
       }
       resetCallSignals();
 
@@ -711,11 +740,9 @@ class CallService extends GetxController {
     print('❌ Rejecting call. callId: $callId');
 
     if (_socket?.connected == true) {
-      _socket!.emitWithAck(
-        'callDecline',
-        {'callId': callId},
-        ack: (response) => print('callDecline ack: $response'),
-      );
+      _socket!.emitWithAck('callDecline', {
+        'callId': callId,
+      }, ack: (response) => print('callDecline ack: $response'));
     }
 
     _clearCallStates();
@@ -799,33 +826,37 @@ class CallService extends GetxController {
     StorageUtil.deleteData(StorageUtil.pendingCallKey);
 
     if (callType == 'VIDEO') {
-      Get.to(() => VideoCallPage(
-            name: callerName,
-            photoUrl: callerImage,
-            chatId: '',
-            channelName: channelName,
-            token: token,
-            uuid: uuid,
-            callId: callId,
-            groupId: groupId.isEmpty ? null : groupId,
-            classId: classId.isEmpty ? null : classId,
-            isGroupCall: isGroupCall,
-            callerName: callerName,
-          ));
+      Get.to(
+        () => VideoCallPage(
+          name: callerName,
+          photoUrl: callerImage,
+          chatId: '',
+          channelName: channelName,
+          token: token,
+          uuid: uuid,
+          callId: callId,
+          groupId: groupId.isEmpty ? null : groupId,
+          classId: classId.isEmpty ? null : classId,
+          isGroupCall: isGroupCall,
+          callerName: callerName,
+        ),
+      );
     } else {
-      Get.to(() => AudioCallPage(
-            name: callerName,
-            photoUrl: callerImage,
-            chatId: '',
-            channelName: channelName,
-            token: token,
-            uuid: uuid,
-            callId: callId,
-            groupId: groupId.isEmpty ? null : groupId,
-            classId: classId.isEmpty ? null : classId,
-            isGroupCall: isGroupCall,
-            callerName: callerName,
-          ));
+      Get.to(
+        () => AudioCallPage(
+          name: callerName,
+          photoUrl: callerImage,
+          chatId: '',
+          channelName: channelName,
+          token: token,
+          uuid: uuid,
+          callId: callId,
+          groupId: groupId.isEmpty ? null : groupId,
+          classId: classId.isEmpty ? null : classId,
+          isGroupCall: isGroupCall,
+          callerName: callerName,
+        ),
+      );
     }
   }
 

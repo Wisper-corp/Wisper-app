@@ -6,9 +6,10 @@ class CallSocket {
     socket.off('callIncoming');
     socket.off('callDeclined');
     socket.off('callEnded');
-    socket.off('callCanceled');
+    socket.off('callCanceled');  
 
     socket.on('callIncoming', callService.handleCallIncoming);
+    socket.on('callParticipantJoined', callService.handlecallParticipantJoined);
     socket.on('callDeclined', callService.handleCallDeclined);
     socket.on('callEnded', callService.handleCallEnded);
     socket.on('callCanceled', callService.handleCallCanceled);
