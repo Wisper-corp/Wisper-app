@@ -2,6 +2,7 @@
 
 import 'package:agora_rtc_engine/agora_rtc_engine.dart';
 import 'package:audioplayers/audioplayers.dart';
+import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:permission_handler/permission_handler.dart';
@@ -65,7 +66,7 @@ class _VideoCallPageState extends State<VideoCallPage> {
   DateTime? _callStartTime;
   final SocketService socketService = Get.find<SocketService>();
   final CallService callService = Get.isRegistered<CallService>()
-      ? Get.put(CallService())
+      ? Get.find<CallService>()
       : Get.put(CallService());
   final CallController _callController = CallController();
   final GroupMembersController _groupMembersController =
@@ -75,12 +76,18 @@ class _VideoCallPageState extends State<VideoCallPage> {
 
   Worker? _declinedWorker;
   Worker? _endedWorker;
+
+  // ✅ NEW: participantInfo change হলে UI rebuild করার জন্য worker
+  Worker? _participantInfoWorker;
+
   Timer? _noAnswerTimer;
   RxString time = '00:00'.obs;
   String _currentToken = '';
   bool _tokenRefreshing = false;
-  final Map<int, String> _uidToName = {};
-  final List<String> _nameQueue = [];
+
+  // ✅ REMOVED: _uidToName, _nameQueue — এখন callService.participantInfo use করবো
+  // fallback name এর জন্য শুধু widget.name রাখবো (1-to-1 call এর জন্য)
+
   bool _forceMultiParty = false;
   bool _callLogRetryDone = false;
 
@@ -89,6 +96,51 @@ class _VideoCallPageState extends State<VideoCallPage> {
       (widget.groupId ?? '').isNotEmpty || widget.isGroupCall;
   bool get _isClassCall => (widget.classId ?? '').isNotEmpty;
   bool get _isMultiParty => _isGroupCall || _isClassCall || _forceMultiParty;
+
+  // ✅ NEW: callService.participantInfo থেকে name এবং image নেওয়ার helper
+  String _nameForUid(int uid) {
+    final info = callService.participantInfo[uid];
+    if (info != null && (info['name'] ?? '').isNotEmpty) {
+      return info['name']!;
+    }
+    final incoming = _participantFromIncoming(uid);
+    if (incoming != null) {
+      final name = (incoming['name'] ?? incoming['nname'] ?? '').toString();
+      if (name.isNotEmpty) return name;
+    }
+    // Fallback: 1-to-1 call এ widget.name use করো
+    if (!_isMultiParty && widget.name.isNotEmpty) return widget.name;
+    return 'User';
+  }
+
+  String _imageForUid(int uid) {
+    final info = callService.participantInfo[uid];
+    if (info != null && (info['image'] ?? '').isNotEmpty) {
+      return info['image']!;
+    }
+    final incoming = _participantFromIncoming(uid);
+    if (incoming != null) {
+      final image = (incoming['image'] ?? '').toString();
+      if (image.isNotEmpty) return image;
+    }
+    return '';
+  }
+
+  Map? _participantFromIncoming(int uid) {
+    final incoming = callService.incomingCall.value;
+    if (incoming == null) return null;
+    final participants = incoming['participants'];
+    if (participants is! List) return null;
+    for (final p in participants) {
+      if (p is! Map) continue;
+      final rawUid = p['uid'];
+      final int? pUid = rawUid is int
+          ? rawUid
+          : int.tryParse(rawUid?.toString() ?? '');
+      if (pUid == uid) return p;
+    }
+    return null;
+  }
 
   @override
   void initState() {
@@ -111,13 +163,17 @@ class _VideoCallPageState extends State<VideoCallPage> {
       }
     });
 
+    // ✅ NEW: participantInfo update হলে UI rebuild করো (name/image দেখানোর জন্য)
+    _participantInfoWorker = ever(callService.participantInfo, (_) {
+      if (mounted) setState(() {});
+    });
+
     WidgetsBinding.instance.addPostFrameCallback((_) async {
       final ok = await _ensurePermissions();
       if (!ok) {
         if (mounted) Navigator.pop(context);
         return;
       }
-      _loadGroupMemberNames();
       joinCall();
     });
   }
@@ -206,286 +262,6 @@ class _VideoCallPageState extends State<VideoCallPage> {
     await initAgora();
   }
 
-  Future<void> _loadGroupMemberNames() async {
-    final classId = (widget.classId ?? '').trim();
-    if (classId.isNotEmpty) {
-      print('🔎 [VideoCall] classId for members: $classId');
-      final ok = await _classMembersController.getClassMembers(classId);
-      print('✅ [VideoCall] getClassMembers ok: $ok');
-      if (!ok) return;
-
-      final myId = StorageUtil.getData(StorageUtil.userId);
-      final members = _classMembersController.groupMemnersData ?? [];
-      print('👥 [VideoCall] class members count: ${members.length}');
-      _nameQueue
-        ..clear()
-        ..addAll(
-          members
-              .where((m) => m.auth?.id != myId)
-              .map((m) => m.auth?.person?.name ?? 'User')
-              .toList(),
-        );
-      print('🧾 [VideoCall] class nameQueue: $_nameQueue');
-      if (_nameQueue.isNotEmpty) _forceMultiParty = true;
-    } else {
-      var groupId = (widget.groupId ?? '').trim();
-      bool resolvedClassFromChats = false;
-      print('🔎 [VideoCall] groupId for members: $groupId');
-      if (groupId.isEmpty && widget.name.isNotEmpty) {
-        final ids = await _resolveChatIdsFromChatsByName(
-            widget.name, widget.callerName);
-        final resolvedClassId = ids['classId'] ?? '';
-        if (resolvedClassId.isNotEmpty) {
-          print('✅ [VideoCall] resolved classId from chats: $resolvedClassId');
-          final ok =
-              await _classMembersController.getClassMembers(resolvedClassId);
-          print('✅ [VideoCall] getClassMembers ok: $ok');
-          if (ok) {
-            final myId = StorageUtil.getData(StorageUtil.userId);
-            final members = _classMembersController.groupMemnersData ?? [];
-            print('👥 [VideoCall] class members count: ${members.length}');
-            _nameQueue
-              ..clear()
-              ..addAll(
-                members
-                    .where((m) => m.auth?.id != myId)
-                    .map((m) => m.auth?.person?.name ?? 'User')
-                    .toList(),
-              );
-            print('🧾 [VideoCall] class nameQueue: $_nameQueue');
-            if (_nameQueue.isNotEmpty) _forceMultiParty = true;
-          }
-          resolvedClassFromChats = true;
-        }
-
-        groupId = ids['groupId'] ?? '';
-        if (groupId.isNotEmpty) {
-          print('✅ [VideoCall] resolved groupId from chats: $groupId');
-        }
-      }
-      if (resolvedClassFromChats) {
-        // Skip group fetch if class was resolved
-      } else if (groupId.isEmpty) {
-        await _loadNamesFromCallLog();
-        return;
-      } else {
-        final ok = await _groupMembersController.getGroupMembers(groupId);
-        print('✅ [VideoCall] getGroupMembers ok: $ok');
-        if (!ok) return;
-
-        final myId = StorageUtil.getData(StorageUtil.userId);
-        final members = _groupMembersController.groupMemnersData ?? [];
-        print('👥 [VideoCall] members count: ${members.length}');
-        _nameQueue
-          ..clear()
-          ..addAll(
-            members
-                .where((m) => m.auth?.id != myId)
-                .map((m) => m.auth?.person?.name ?? 'User')
-                .toList(),
-          );
-        print('🧾 [VideoCall] nameQueue: $_nameQueue');
-        if (_nameQueue.isNotEmpty) _forceMultiParty = true;
-      }
-    }
-
-    for (final uid in _remoteUids) {
-      _assignNameForUid(uid);
-    }
-    if (_nameQueue.isEmpty) {
-      await _loadNamesFromCallLog();
-    }
-    if (mounted) setState(() {});
-  }
-
-  Future<Map<String, String>> _resolveChatIdsFromChatsByName(
-    String groupName,
-    String? callerName,
-  ) async {
-    String groupId = '';
-    String classId = '';
-    try {
-      final NetworkResponse response = await Get.find<NetworkCaller>()
-          .getRequest(
-        '${Urls.allChatsUrl}?limit=9999',
-        accessToken: StorageUtil.getData(StorageUtil.userAccessToken),
-      );
-      if (!response.isSuccess || response.responseData == null) {
-        return {'groupId': groupId, 'classId': classId};
-      }
-      final responseData = response.responseData;
-      if (responseData is! Map) {
-        return {'groupId': groupId, 'classId': classId};
-      }
-      final data = responseData['data'];
-      final chats = data is Map ? (data['chats'] as List? ?? []) : <dynamic>[];
-
-      final target = groupName.trim().toLowerCase();
-      final callerTarget = callerName?.trim().toLowerCase() ?? '';
-      final myId = StorageUtil.getData(StorageUtil.userId);
-      for (final item in chats) {
-        if (item is! Map) continue;
-        final type = (item['type'] ?? '').toString();
-
-        if (type == 'CLASS') {
-          final chatName = item['name']?.toString().trim().toLowerCase() ?? '';
-          if (chatName.isNotEmpty && chatName == target) {
-            final id = item['classId']?.toString();
-            if (id != null && id.isNotEmpty) {
-              classId = id;
-              break;
-            }
-          }
-        }
-
-        final group = item['group'];
-        if (group is Map) {
-          final name = group['name']?.toString().trim().toLowerCase();
-          if (name != null && name == target) {
-            final id = group['id']?.toString();
-            if (id != null && id.isNotEmpty) {
-              groupId = id;
-              break;
-            }
-          }
-        }
-
-        final community = item['community'];
-        if (community is Map) {
-          final name = community['name']?.toString().trim().toLowerCase();
-          if (name != null && name == target) {
-            final id = community['id']?.toString();
-            if (id != null && id.isNotEmpty) {
-              groupId = id;
-              break;
-            }
-          }
-        }
-
-        if (type == 'CLASS') {
-          final klass = item['class'];
-          if (klass is Map) {
-            final name = klass['name']?.toString().trim().toLowerCase();
-            if (name != null && name == target) {
-              final id = klass['id']?.toString();
-              if (id != null && id.isNotEmpty) {
-                classId = id;
-                break;
-              }
-            }
-          }
-        }
-
-        if ((groupId.isEmpty && classId.isEmpty) &&
-            callerTarget.isNotEmpty &&
-            (type == 'GROUP' || type == 'CLASS')) {
-          final participants = item['participants'] as List? ?? [];
-          bool hasCaller = false;
-          bool hasMe = false;
-          for (final p in participants) {
-            if (p is! Map) continue;
-            final auth = p['auth'];
-            if (auth is! Map) continue;
-            final authId = auth['id']?.toString();
-            if (authId != null && authId == myId) hasMe = true;
-            final person = auth['person'];
-            final name = person is Map
-                ? person['name']?.toString().trim().toLowerCase()
-                : '';
-            if (name != null && name == callerTarget) hasCaller = true;
-          }
-          if (hasCaller && hasMe) {
-            if (type == 'CLASS') {
-              final id = item['classId']?.toString();
-              if (id != null && id.isNotEmpty) {
-                classId = id;
-                break;
-              }
-            }
-            final id = item['groupId']?.toString();
-            if (id != null && id.isNotEmpty) {
-              groupId = id;
-              break;
-            }
-          }
-        }
-      }
-    } catch (e) {
-      print('❌ [VideoCall] resolve groupId failed: $e');
-    }
-    return {'groupId': groupId, 'classId': classId};
-  }
-
-  void _assignNameForUid(int uid) {
-    if (_uidToName.containsKey(uid)) return;
-    if (_nameQueue.isEmpty) return;
-    _uidToName[uid] = _nameQueue.removeAt(0);
-    print('🏷️ [VideoCall] assign uid $uid -> ${_uidToName[uid]}');
-  }
-
-  String _labelForUid(int uid, String fallback) {
-    return _uidToName[uid] ?? fallback;
-  }
-
-  String _fallbackLabel(int index, int uid) {
-    if (!_isMultiParty && index == 0 && widget.name.isNotEmpty) {
-      return widget.name;
-    }
-    return 'User ${index + 1}';
-  }
-
-  Future<void> _loadNamesFromCallLog() async {
-    if (widget.callId.isEmpty) return;
-    try {
-      final NetworkResponse response = await Get.find<NetworkCaller>()
-          .getRequest(
-        '${Urls.myCallUrl}?limit=99999',
-        accessToken: StorageUtil.getData(StorageUtil.userAccessToken),
-      );
-      if (!response.isSuccess || response.responseData == null) return;
-      final responseData = response.responseData;
-      if (responseData is! Map) return;
-      final data = responseData['data'];
-      final calls = data is Map ? (data['calls'] as List? ?? []) : <dynamic>[];
-      final match = calls.cast<Map?>().firstWhere(
-                (c) => c?['id'] == widget.callId,
-                orElse: () => null,
-              ) ??
-          {};
-      final participants = match['participants'] as List? ?? [];
-      if (participants.isEmpty) return;
-      if (participants.length > 1) _forceMultiParty = true;
-
-      final myId = StorageUtil.getData(StorageUtil.userId);
-      _nameQueue
-        ..clear()
-        ..addAll(
-          participants
-              .where((p) => p is Map && p['auth'] is Map)
-              .map((p) => p as Map)
-              .where((p) => p['auth']?['id'] != myId)
-              .map<String>((p) => p['auth']?['person']?['name'] ?? 'User')
-              .toList(),
-        );
-
-      for (final uid in _remoteUids) {
-        _assignNameForUid(uid);
-      }
-      if (_nameQueue.isNotEmpty) _forceMultiParty = true;
-      if (mounted) setState(() {});
-      print('🧾 [VideoCall] fallback nameQueue from call log: $_nameQueue');
-      if (_nameQueue.isEmpty && !_callLogRetryDone) {
-        _callLogRetryDone = true;
-        Future.delayed(const Duration(milliseconds: 1500), () async {
-          if (!mounted) return;
-          await _loadNamesFromCallLog();
-        });
-      }
-    } catch (e) {
-      print('❌ [VideoCall] fallback name load failed: $e');
-    }
-  }
-
   Future<void> initAgora() async {
     try {
       agoraEngine = createAgoraRtcEngine();
@@ -514,13 +290,24 @@ class _VideoCallPageState extends State<VideoCallPage> {
               setState(() {
                 if (!_remoteUids.contains(rUid)) {
                   _remoteUids.add(rUid);
-                  if (_nameQueue.isEmpty) {
-                    _loadNamesFromCallLog();
-                  } else {
-                    _assignNameForUid(rUid);
+                  // ✅ participantInfo-এ না থাকলে group/call log থেকে load করার চেষ্টা
+                  if (callService.participantInfo[rUid] == null) {
+                    _forceMultiParty = true;
                   }
                 }
               });
+              final keys = callService.participantInfo.keys.toList();
+              print('🔎 [VideoCall] onUserJoined uid=$rUid');
+              print('🔎 [VideoCall] participantInfo keys=$keys');
+              final incoming = callService.incomingCall.value;
+              if (incoming != null && incoming['participants'] is List) {
+                final list = incoming['participants'] as List;
+                final uids = list
+                    .map((p) => (p is Map ? p['uid'] : null))
+                    .where((v) => v != null)
+                    .toList();
+                print('🔎 [VideoCall] incoming participant uids=$uids');
+              }
               if (_remoteUids.length == 1) {
                 _callStartTime = DateTime.now();
                 startTimer();
@@ -535,7 +322,6 @@ class _VideoCallPageState extends State<VideoCallPage> {
             if (mounted) {
               setState(() {
                 _remoteUids.remove(rUid);
-                _uidToName.remove(rUid);
               });
               if (_remoteUids.isEmpty && !_isLeavingCall) {
                 socketService.socket.emitWithAck(
@@ -581,7 +367,6 @@ class _VideoCallPageState extends State<VideoCallPage> {
   Future<void> _refreshTokenAndRejoin() async {
     if (_tokenRefreshing) return;
     _tokenRefreshing = true;
-    print('🔁 Invalid token – refreshing...');
 
     final bool ok = await _callController.getToken(
       callId: widget.callId,
@@ -589,13 +374,11 @@ class _VideoCallPageState extends State<VideoCallPage> {
     );
 
     if (!ok) {
-      print('❌ Token refresh failed: ${_callController.errorMessage}');
       _tokenRefreshing = false;
       return;
     }
 
     _currentToken = _callController.token;
-    print('✅ Token refreshed – rejoining...');
 
     try {
       await agoraEngine.leaveChannel();
@@ -634,6 +417,8 @@ class _VideoCallPageState extends State<VideoCallPage> {
     _cancelNoAnswerTimer();
     _declinedWorker?.dispose();
     _endedWorker?.dispose();
+    // ✅ NEW: worker dispose
+    _participantInfoWorker?.dispose();
     callService.resetCallSignals();
     _player.dispose();
     agoraEngine.leaveChannel();
@@ -642,7 +427,7 @@ class _VideoCallPageState extends State<VideoCallPage> {
   }
 
   // ──────────────────────────────────────────────────────────────────
-  // VIDEO TILE
+  // VIDEO TILE — ✅ name label এখন participantInfo থেকে আসে
   // ──────────────────────────────────────────────────────────────────
   Widget _videoTile(int uid, {String? label, double? radius}) {
     return ClipRRect(
@@ -656,6 +441,7 @@ class _VideoCallPageState extends State<VideoCallPage> {
               canvas: VideoCanvas(uid: uid),
             ),
           ),
+          // ✅ Name label — bottom-left
           if (label != null)
             Positioned(
               bottom: 6,
@@ -684,7 +470,7 @@ class _VideoCallPageState extends State<VideoCallPage> {
   }
 
   // ──────────────────────────────────────────────────────────────────
-  // EMPTY TILE (filler for incomplete grid rows)
+  // EMPTY TILE
   // ──────────────────────────────────────────────────────────────────
   Widget _emptyTile() {
     return Container(
@@ -712,20 +498,15 @@ class _VideoCallPageState extends State<VideoCallPage> {
   }
 
   // ──────────────────────────────────────────────────────────────────
-  // LAYOUT: 2 users  →  User1 fullscreen + Me small overlay top-right
+  // LAYOUT: 2 users → User1 fullscreen + Me small overlay top-right
   // ──────────────────────────────────────────────────────────────────
   Widget _layout2User() {
+    final uid = _remoteUids[0];
     return Stack(
       children: [
-        // User1 fullscreen
         Positioned.fill(
-          child: _videoTile(
-            _remoteUids[0],
-            label: _labelForUid(_remoteUids[0], _fallbackLabel(0, _remoteUids[0])),
-            radius: 0,
-          ),
+          child: _videoTile(uid, label: _nameForUid(uid), radius: 0),
         ),
-        // Me – small overlay top-right
         Positioned(
           top: 20,
           right: 12,
@@ -735,7 +516,9 @@ class _VideoCallPageState extends State<VideoCallPage> {
             decoration: BoxDecoration(
               borderRadius: BorderRadius.circular(12),
               border: Border.all(color: Colors.white, width: 2),
-              boxShadow: const [BoxShadow(color: Colors.black45, blurRadius: 8)],
+              boxShadow: const [
+                BoxShadow(color: Colors.black45, blurRadius: 8)
+              ],
             ),
             child: ClipRRect(
               borderRadius: BorderRadius.circular(10),
@@ -748,44 +531,34 @@ class _VideoCallPageState extends State<VideoCallPage> {
   }
 
   // ──────────────────────────────────────────────────────────────────
-  // LAYOUT: 3 users  →  Top row: User1 | User2  /  Bottom: Me (full)
+  // LAYOUT: 3 users → Top: User1 | User2 / Bottom: Me (full)
   // ──────────────────────────────────────────────────────────────────
   Widget _layout3User() {
     return Column(
       children: [
-        // Top row – 2 remote users, equal width
         Expanded(
           child: Row(
             children: [
               Expanded(
-                child: _videoTile(
-                  _remoteUids[0],
-                  label: _labelForUid(_remoteUids[0], _fallbackLabel(0, _remoteUids[0])),
-                  radius: 0,
-                ),
+                child: _videoTile(_remoteUids[0],
+                    label: _nameForUid(_remoteUids[0]), radius: 0),
               ),
               const SizedBox(width: 2),
               Expanded(
-                child: _videoTile(
-                  _remoteUids[1],
-                  label: _labelForUid(_remoteUids[1], _fallbackLabel(1, _remoteUids[1])),
-                  radius: 0,
-                ),
+                child: _videoTile(_remoteUids[1],
+                    label: _nameForUid(_remoteUids[1]), radius: 0),
               ),
             ],
           ),
         ),
         const SizedBox(height: 2),
-        // Bottom row – Me, full width
-        Expanded(
-          child: _videoTile(0, label: 'Me', radius: 0),
-        ),
+        Expanded(child: _videoTile(0, label: 'Me', radius: 0)),
       ],
     );
   }
 
   // ──────────────────────────────────────────────────────────────────
-  // LAYOUT: 4 users  →  Top: User1 | User2  /  Bottom: User3 | Me
+  // LAYOUT: 4 users → Top: User1 | User2 / Bottom: User3 | Me
   // ──────────────────────────────────────────────────────────────────
   Widget _layout4User() {
     return Column(
@@ -794,19 +567,13 @@ class _VideoCallPageState extends State<VideoCallPage> {
           child: Row(
             children: [
               Expanded(
-                child: _videoTile(
-                  _remoteUids[0],
-                  label: _labelForUid(_remoteUids[0], _fallbackLabel(0, _remoteUids[0])),
-                  radius: 0,
-                ),
+                child: _videoTile(_remoteUids[0],
+                    label: _nameForUid(_remoteUids[0]), radius: 0),
               ),
               const SizedBox(width: 2),
               Expanded(
-                child: _videoTile(
-                  _remoteUids[1],
-                  label: _labelForUid(_remoteUids[1], _fallbackLabel(1, _remoteUids[1])),
-                  radius: 0,
-                ),
+                child: _videoTile(_remoteUids[1],
+                    label: _nameForUid(_remoteUids[1]), radius: 0),
               ),
             ],
           ),
@@ -816,16 +583,11 @@ class _VideoCallPageState extends State<VideoCallPage> {
           child: Row(
             children: [
               Expanded(
-                child: _videoTile(
-                  _remoteUids[2],
-                  label: _labelForUid(_remoteUids[2], _fallbackLabel(2, _remoteUids[2])),
-                  radius: 0,
-                ),
+                child: _videoTile(_remoteUids[2],
+                    label: _nameForUid(_remoteUids[2]), radius: 0),
               ),
               const SizedBox(width: 2),
-              Expanded(
-                child: _videoTile(0, label: 'Me', radius: 0),
-              ),
+              Expanded(child: _videoTile(0, label: 'Me', radius: 0)),
             ],
           ),
         ),
@@ -834,12 +596,11 @@ class _VideoCallPageState extends State<VideoCallPage> {
   }
 
   // ──────────────────────────────────────────────────────────────────
-  // LAYOUT: 5 users  →  2×2 grid (User1-4)  /  Bottom: Me (centered)
+  // LAYOUT: 5 users → 2×2 grid (User1-4) / Bottom: Me (centered)
   // ──────────────────────────────────────────────────────────────────
   Widget _layout5User() {
     return Column(
       children: [
-        // Top 2×2 grid
         Expanded(
           flex: 2,
           child: Column(
@@ -848,19 +609,13 @@ class _VideoCallPageState extends State<VideoCallPage> {
                 child: Row(
                   children: [
                     Expanded(
-                      child: _videoTile(
-                        _remoteUids[0],
-                        label: _labelForUid(_remoteUids[0], _fallbackLabel(0, _remoteUids[0])),
-                        radius: 0,
-                      ),
+                      child: _videoTile(_remoteUids[0],
+                          label: _nameForUid(_remoteUids[0]), radius: 0),
                     ),
                     const SizedBox(width: 2),
                     Expanded(
-                      child: _videoTile(
-                        _remoteUids[1],
-                        label: _labelForUid(_remoteUids[1], _fallbackLabel(1, _remoteUids[1])),
-                        radius: 0,
-                      ),
+                      child: _videoTile(_remoteUids[1],
+                          label: _nameForUid(_remoteUids[1]), radius: 0),
                     ),
                   ],
                 ),
@@ -870,19 +625,13 @@ class _VideoCallPageState extends State<VideoCallPage> {
                 child: Row(
                   children: [
                     Expanded(
-                      child: _videoTile(
-                        _remoteUids[2],
-                        label: _labelForUid(_remoteUids[2], _fallbackLabel(2, _remoteUids[2])),
-                        radius: 0,
-                      ),
+                      child: _videoTile(_remoteUids[2],
+                          label: _nameForUid(_remoteUids[2]), radius: 0),
                     ),
                     const SizedBox(width: 2),
                     Expanded(
-                      child: _videoTile(
-                        _remoteUids[3],
-                        label: _labelForUid(_remoteUids[3], _fallbackLabel(3, _remoteUids[3])),
-                        radius: 0,
-                      ),
+                      child: _videoTile(_remoteUids[3],
+                          label: _nameForUid(_remoteUids[3]), radius: 0),
                     ),
                   ],
                 ),
@@ -891,14 +640,11 @@ class _VideoCallPageState extends State<VideoCallPage> {
           ),
         ),
         const SizedBox(height: 2),
-        // Bottom: Me centered (half width)
         Expanded(
           child: Row(
             children: [
               const Expanded(child: SizedBox()),
-              Expanded(
-                child: _videoTile(0, label: 'Me', radius: 0),
-              ),
+              Expanded(child: _videoTile(0, label: 'Me', radius: 0)),
               const Expanded(child: SizedBox()),
             ],
           ),
@@ -908,12 +654,11 @@ class _VideoCallPageState extends State<VideoCallPage> {
   }
 
   // ──────────────────────────────────────────────────────────────────
-  // LAYOUT: 6 users  →  2×2 grid (User1-4)  /  Bottom: User5 | Me
+  // LAYOUT: 6 users → 2×2 grid (User1-4) / Bottom: User5 | Me
   // ──────────────────────────────────────────────────────────────────
   Widget _layout6User() {
     return Column(
       children: [
-        // Top 2×2 grid
         Expanded(
           flex: 2,
           child: Column(
@@ -922,19 +667,13 @@ class _VideoCallPageState extends State<VideoCallPage> {
                 child: Row(
                   children: [
                     Expanded(
-                      child: _videoTile(
-                        _remoteUids[0],
-                        label: _labelForUid(_remoteUids[0], _fallbackLabel(0, _remoteUids[0])),
-                        radius: 0,
-                      ),
+                      child: _videoTile(_remoteUids[0],
+                          label: _nameForUid(_remoteUids[0]), radius: 0),
                     ),
                     const SizedBox(width: 2),
                     Expanded(
-                      child: _videoTile(
-                        _remoteUids[1],
-                        label: _labelForUid(_remoteUids[1], _fallbackLabel(1, _remoteUids[1])),
-                        radius: 0,
-                      ),
+                      child: _videoTile(_remoteUids[1],
+                          label: _nameForUid(_remoteUids[1]), radius: 0),
                     ),
                   ],
                 ),
@@ -944,19 +683,13 @@ class _VideoCallPageState extends State<VideoCallPage> {
                 child: Row(
                   children: [
                     Expanded(
-                      child: _videoTile(
-                        _remoteUids[2],
-                        label: _labelForUid(_remoteUids[2], _fallbackLabel(2, _remoteUids[2])),
-                        radius: 0,
-                      ),
+                      child: _videoTile(_remoteUids[2],
+                          label: _nameForUid(_remoteUids[2]), radius: 0),
                     ),
                     const SizedBox(width: 2),
                     Expanded(
-                      child: _videoTile(
-                        _remoteUids[3],
-                        label: _labelForUid(_remoteUids[3], _fallbackLabel(3, _remoteUids[3])),
-                        radius: 0,
-                      ),
+                      child: _videoTile(_remoteUids[3],
+                          label: _nameForUid(_remoteUids[3]), radius: 0),
                     ),
                   ],
                 ),
@@ -965,21 +698,15 @@ class _VideoCallPageState extends State<VideoCallPage> {
           ),
         ),
         const SizedBox(height: 2),
-        // Bottom: User5 | Me
         Expanded(
           child: Row(
             children: [
               Expanded(
-                child: _videoTile(
-                  _remoteUids[4],
-                  label: _labelForUid(_remoteUids[4], _fallbackLabel(4, _remoteUids[4])),
-                  radius: 0,
-                ),
+                child: _videoTile(_remoteUids[4],
+                    label: _nameForUid(_remoteUids[4]), radius: 0),
               ),
               const SizedBox(width: 2),
-              Expanded(
-                child: _videoTile(0, label: 'Me', radius: 0),
-              ),
+              Expanded(child: _videoTile(0, label: 'Me', radius: 0)),
             ],
           ),
         ),
@@ -988,30 +715,20 @@ class _VideoCallPageState extends State<VideoCallPage> {
   }
 
   // ──────────────────────────────────────────────────────────────────
-  // LAYOUT: 7+ users  →  Auto 3-column scrollable grid, Me last cell
-  //
-  // Pattern:
-  //   7  users (6 remote) → 3 cols × 3 rows  (last row: User6 | Me | empty)
-  //   8  users (7 remote) → 3 cols × 3 rows  (last row: User6 | User7 | Me)
-  //   9  users (8 remote) → 3 cols × 3 rows  (full grid, Me bottom-right)
-  //   10 users (9 remote) → 3 cols × 4 rows  ...and so on
-  //
-  //  "Me" is always placed in the very last cell; empty filler cells
-  //  are inserted before "Me" to pad incomplete rows.
+  // LAYOUT: 7+ users → Auto 3-column scrollable grid, Me last cell
   // ──────────────────────────────────────────────────────────────────
   Widget _layoutManyUsers() {
     const int columns = 3;
     final int remoteCount = _remoteUids.length;
-    final int totalCount = remoteCount + 1; // remotes + me
+    final int totalCount = remoteCount + 1;
     final int rows = (totalCount / columns).ceil();
     final int totalCells = rows * columns;
     final int fillersNeeded = totalCells - totalCount;
 
-    // Build cell uid list: remotes … fillers (-1) … me (0)
     final List<int> allUids = [
       ..._remoteUids,
       for (int i = 0; i < fillersNeeded; i++) -1,
-      0, // Me – always last
+      0,
     ];
 
     return GridView.builder(
@@ -1027,32 +744,21 @@ class _VideoCallPageState extends State<VideoCallPage> {
         final uid = allUids[index];
         if (uid == -1) return _emptyTile();
         if (uid == 0) return _videoTile(0, label: 'Me', radius: 0);
-        final remoteIndex = _remoteUids.indexOf(uid);
-        return _videoTile(
-          uid,
-          label: _labelForUid(uid, _fallbackLabel(remoteIndex, uid)),
-          radius: 0,
-        );
+        return _videoTile(uid, label: _nameForUid(uid), radius: 0);
       },
     );
   }
 
-  // ──────────────────────────────────────────────────────────────────
-  // LAYOUT PICKER
-  // ──────────────────────────────────────────────────────────────────
   Widget _buildCallLayout() {
-    final int count = _remoteUids.length; // remote users only
-    if (count == 1) return _layout2User();   // 2 total: User1 + Me
-    if (count == 2) return _layout3User();   // 3 total
-    if (count == 3) return _layout4User();   // 4 total
-    if (count == 4) return _layout5User();   // 5 total
-    if (count == 5) return _layout6User();   // 6 total
-    return _layoutManyUsers();               // 7+ total → 3-col grid
+    final int count = _remoteUids.length;
+    if (count == 1) return _layout2User();
+    if (count == 2) return _layout3User();
+    if (count == 3) return _layout4User();
+    if (count == 4) return _layout5User();
+    if (count == 5) return _layout6User();
+    return _layoutManyUsers();
   }
 
-  // ──────────────────────────────────────────────────────────────────
-  // BUILD
-  // ──────────────────────────────────────────────────────────────────
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -1060,7 +766,7 @@ class _VideoCallPageState extends State<VideoCallPage> {
       body: Stack(
         children: [
           // ══════════════════════════════════════════════════════════
-          // WAITING SCREEN – shown before any remote user joins
+          // WAITING SCREEN
           // ══════════════════════════════════════════════════════════
           if (!hasRemoteUser)
             Positioned.fill(
@@ -1133,7 +839,6 @@ class _VideoCallPageState extends State<VideoCallPage> {
           // ACTIVE CALL LAYOUT
           // ══════════════════════════════════════════════════════════
           if (hasRemoteUser && !callProgress) ...[
-            // Video area (leaves room for bottom controls)
             Positioned(
               top: 0,
               left: 0,
@@ -1215,7 +920,6 @@ class _VideoCallPageState extends State<VideoCallPage> {
                               .muteLocalVideoStream(!_cameraEnabled);
                         },
                       ),
-                      // End call
                       GestureDetector(
                         onTap: () => _leaveAndPop(emitCallEnd: true),
                         child: Container(
@@ -1267,9 +971,6 @@ class _VideoCallPageState extends State<VideoCallPage> {
     );
   }
 
-  // ──────────────────────────────────────────────────────────────────
-  // CONTROL BUTTON
-  // ──────────────────────────────────────────────────────────────────
   Widget _controlBtn({
     required IconData icon,
     required bool active,

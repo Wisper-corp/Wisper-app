@@ -2,6 +2,7 @@
 
 import 'package:agora_rtc_engine/agora_rtc_engine.dart';
 import 'package:audioplayers/audioplayers.dart';
+import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:permission_handler/permission_handler.dart';
@@ -11,8 +12,6 @@ import 'package:wisper/app/core/services/socket/socket_service.dart';
 import 'package:wisper/app/modules/chat/controller/group/all_group_member_controller.dart';
 import 'package:wisper/app/modules/chat/controller/class/class_member_controller.dart';
 import 'package:wisper/app/core/others/get_storage.dart';
-import 'package:wisper/app/core/services/network_caller/network_caller.dart';
-import 'package:wisper/app/core/services/network_caller/network_response.dart';
 import 'package:wisper/app/urls.dart';
 
 class AudioCallPage extends StatefulWidget {
@@ -28,7 +27,7 @@ class AudioCallPage extends StatefulWidget {
   final String? classId;
   final bool isGroupCall;
   final String? callerName;
- 
+
   const AudioCallPage({
     super.key,
     required this.name,
@@ -54,19 +53,20 @@ class _AudioCallPageState extends State<AudioCallPage> {
   late RtcEngine agoraEngine;
   bool localUserJoined = false;
   bool _micEnabled = true;
-  bool _speakerEnabled = false; // ✅ শুরুতে speaker বন্ধ
+  bool _speakerEnabled = false;
 
-  // ✅ Single remoteUid এর বদলে list – group call support
   final List<int> _remoteUids = [];
 
   String engineLog = 'Initializing...';
-  bool callProgress = true; 
+  bool callProgress = true;
   bool _isLeavingCall = false;
 
   DateTime? _callStartTime;
 
   final SocketService socketService = Get.find<SocketService>();
-  final CallService callService = Get.isRegistered<CallService>() ? Get.put(CallService()) : Get.put(CallService());
+  final CallService callService = Get.isRegistered<CallService>()
+      ? Get.find<CallService>()
+      : Get.put(CallService());
   final CallController _callController = CallController();
   final GroupMembersController _groupMembersController =
       Get.put(GroupMembersController());
@@ -75,22 +75,68 @@ class _AudioCallPageState extends State<AudioCallPage> {
 
   Worker? _declinedWorker;
   Worker? _endedWorker;
+  // ✅ NEW: participantInfo update হলে UI rebuild করার worker
+  Worker? _participantInfoWorker;
 
   Timer? _noAnswerTimer;
   RxString time = '00:00'.obs;
   String _currentToken = '';
   bool _tokenRefreshing = false;
-  final Map<int, String> _uidToName = {};
-  final List<String> _nameQueue = [];
+
   bool _forceMultiParty = false;
   bool _callLogRetryDone = false;
 
-  // ✅ কেউ join করেছে কিনা
   bool get hasRemoteUser => _remoteUids.isNotEmpty;
   bool get _isGroupCall =>
       (widget.groupId ?? '').isNotEmpty || widget.isGroupCall;
   bool get _isClassCall => (widget.classId ?? '').isNotEmpty;
   bool get _isMultiParty => _isGroupCall || _isClassCall || _forceMultiParty;
+
+  // ✅ NEW: callService.participantInfo থেকে name পাওয়ার helper
+  String _nameForUid(int uid) {
+    final info = callService.participantInfo[uid];
+    if (info != null && (info['name'] ?? '').isNotEmpty) {
+      return info['name']!;
+    }
+    final incoming = _participantFromIncoming(uid);
+    if (incoming != null) {
+      final name = (incoming['name'] ?? incoming['nname'] ?? '').toString();
+      if (name.isNotEmpty) return name;
+    }
+    // Fallback: 1-to-1 call এ widget.name use করো
+    if (!_isMultiParty && widget.name.isNotEmpty) return widget.name;
+    return 'User';
+  }
+
+  // ✅ NEW: callService.participantInfo থেকে image পাওয়ার helper
+  String _imageForUid(int uid) {
+    final info = callService.participantInfo[uid];
+    if (info != null && (info['image'] ?? '').isNotEmpty) {
+      return info['image']!;
+    }
+    final incoming = _participantFromIncoming(uid);
+    if (incoming != null) {
+      final image = (incoming['image'] ?? '').toString();
+      if (image.isNotEmpty) return image;
+    }
+    return '';
+  }
+
+  Map? _participantFromIncoming(int uid) {
+    final incoming = callService.incomingCall.value;
+    if (incoming == null) return null;
+    final participants = incoming['participants'];
+    if (participants is! List) return null;
+    for (final p in participants) {
+      if (p is! Map) continue;
+      final rawUid = p['uid'];
+      final int? pUid = rawUid is int
+          ? rawUid
+          : int.tryParse(rawUid?.toString() ?? '');
+      if (pUid == uid) return p;
+    }
+    return null;
+  }
 
   @override
   void initState() {
@@ -101,21 +147,22 @@ class _AudioCallPageState extends State<AudioCallPage> {
     _player.setReleaseMode(ReleaseMode.loop);
 
     _declinedWorker = ever(callService.callDeclinedSignal, (bool value) {
-      print('👀 callDeclinedSignal changed: $value');
       if (value && mounted && !_isLeavingCall) {
-        print('🔵 Call declined – closing AudioCallPage');
         _cancelNoAnswerTimer();
         _leaveAndPop();
       }
     });
 
     _endedWorker = ever(callService.callEndedSignal, (bool value) {
-      print('👀 callEndedSignal changed: $value');
       if (value && mounted && !_isLeavingCall) {
-        print('🔵 Call ended – closing AudioCallPage');
         _cancelNoAnswerTimer();
         _leaveAndPop();
       }
+    });
+
+    // ✅ NEW: participantInfo update হলে UI rebuild
+    _participantInfoWorker = ever(callService.participantInfo, (_) {
+      if (mounted) setState(() {});
     });
 
     WidgetsBinding.instance.addPostFrameCallback((_) async {
@@ -124,7 +171,6 @@ class _AudioCallPageState extends State<AudioCallPage> {
         if (mounted) Navigator.pop(context);
         return;
       }
-      _loadGroupMemberNames();
       joinCall();
     });
   }
@@ -157,7 +203,6 @@ class _AudioCallPageState extends State<AudioCallPage> {
   void _startNoAnswerTimer() {
     _noAnswerTimer = Timer(const Duration(seconds: 30), () {
       if (!hasRemoteUser && mounted && !_isLeavingCall) {
-        print('⏰ No answer after 30s – auto cancelling call');
         socketService.socket.emit('callCancel', {'callId': widget.callId});
         _leaveAndPop();
       }
@@ -183,7 +228,6 @@ class _AudioCallPageState extends State<AudioCallPage> {
 
     if (emitCallEnd) {
       final duration = _getCallDuration();
-      print('📞 Emitting callEnd with duration: $duration seconds');
       socketService.socket.emitWithAck(
         'callEnd',
         {'callId': widget.callId, 'duration': duration},
@@ -221,286 +265,6 @@ class _AudioCallPageState extends State<AudioCallPage> {
     await initAgora();
   }
 
-  Future<void> _loadGroupMemberNames() async {
-    final classId = (widget.classId ?? '').trim();
-    if (classId.isNotEmpty) {
-      print('🔎 [AudioCall] classId for members: $classId');
-      final ok = await _classMembersController.getClassMembers(classId);
-      print('✅ [AudioCall] getClassMembers ok: $ok');
-      if (!ok) return;
-
-      final myId = StorageUtil.getData(StorageUtil.userId);
-      final members = _classMembersController.groupMemnersData ?? [];
-      print('👥 [AudioCall] class members count: ${members.length}');
-      _nameQueue
-        ..clear()
-        ..addAll(
-          members
-              .where((m) => m.auth?.id != myId)
-              .map((m) => m.auth?.person?.name ?? 'User')
-              .toList(),
-        );
-      print('🧾 [AudioCall] class nameQueue: $_nameQueue');
-      if (_nameQueue.isNotEmpty) _forceMultiParty = true;
-    } else {
-      var groupId = (widget.groupId ?? '').trim();
-      bool resolvedClassFromChats = false;
-      print('🔎 [AudioCall] groupId for members: $groupId');
-      if (groupId.isEmpty && widget.name.isNotEmpty) {
-        final ids =
-            await _resolveChatIdsFromChatsByName(widget.name, widget.callerName);
-        final resolvedClassId = ids['classId'] ?? '';
-        if (resolvedClassId.isNotEmpty) {
-          print('✅ [AudioCall] resolved classId from chats: $resolvedClassId');
-          final ok = await _classMembersController.getClassMembers(
-            resolvedClassId,
-          );
-          print('✅ [AudioCall] getClassMembers ok: $ok');
-          if (ok) {
-            final myId = StorageUtil.getData(StorageUtil.userId);
-            final members = _classMembersController.groupMemnersData ?? [];
-            print('👥 [AudioCall] class members count: ${members.length}');
-            _nameQueue
-              ..clear()
-              ..addAll(
-                members
-                    .where((m) => m.auth?.id != myId)
-                    .map((m) => m.auth?.person?.name ?? 'User')
-                    .toList(),
-              );
-            print('🧾 [AudioCall] class nameQueue: $_nameQueue');
-            if (_nameQueue.isNotEmpty) _forceMultiParty = true;
-          }
-          resolvedClassFromChats = true;
-        }
-
-        groupId = ids['groupId'] ?? '';
-        if (groupId.isNotEmpty) {
-          print('✅ [AudioCall] resolved groupId from chats: $groupId');
-        }
-      }
-      if (resolvedClassFromChats) {
-        // Skip group fetch if class was resolved
-      } else if (groupId.isEmpty) {
-        await _loadNamesFromCallLog();
-        return;
-      } else {
-        final ok = await _groupMembersController.getGroupMembers(groupId);
-        print('✅ [AudioCall] getGroupMembers ok: $ok');
-        if (!ok) return;
-
-        final myId = StorageUtil.getData(StorageUtil.userId);
-        final members = _groupMembersController.groupMemnersData ?? [];
-        print('👥 [AudioCall] members count: ${members.length}');
-        _nameQueue
-          ..clear()
-          ..addAll(
-            members
-                .where((m) => m.auth?.id != myId)
-                .map((m) => m.auth?.person?.name ?? 'User')
-                .toList(),
-          );
-        print('🧾 [AudioCall] nameQueue: $_nameQueue');
-        if (_nameQueue.isNotEmpty) _forceMultiParty = true;
-      }
-    }
-
-    // Assign names to already-joined uids (if any)
-    for (final uid in _remoteUids) {
-      _assignNameForUid(uid);
-    }
-    if (_nameQueue.isEmpty) {
-      await _loadNamesFromCallLog();
-    }
-    if (mounted) setState(() {});
-  }
-
-  Future<Map<String, String>> _resolveChatIdsFromChatsByName(
-    String groupName,
-    String? callerName,
-  ) async {
-    String groupId = '';
-    String classId = '';
-    try {
-      final NetworkResponse response = await Get.find<NetworkCaller>()
-          .getRequest(
-            '${Urls.allChatsUrl}?limit=9999',
-            accessToken: StorageUtil.getData(StorageUtil.userAccessToken),
-          );
-      if (!response.isSuccess || response.responseData == null) {
-        return {'groupId': groupId, 'classId': classId};
-      }
-      final responseData = response.responseData;
-      if (responseData is! Map) {
-        return {'groupId': groupId, 'classId': classId};
-      }
-      final data = responseData['data'];
-      final chats = data is Map ? (data['chats'] as List? ?? []) : <dynamic>[];
-
-      final target = groupName.trim().toLowerCase();
-      final callerTarget = callerName?.trim().toLowerCase() ?? '';
-      final myId = StorageUtil.getData(StorageUtil.userId);
-      for (final item in chats) {
-        if (item is! Map) continue;
-        final type = (item['type'] ?? '').toString();
-
-        // CLASS by classId in chat list + name match (from item.name)
-        if (type == 'CLASS') {
-          final chatName =
-              item['name']?.toString().trim().toLowerCase() ?? '';
-          if (chatName.isNotEmpty && chatName == target) {
-            final id = item['classId']?.toString();
-            if (id != null && id.isNotEmpty) {
-              classId = id;
-              break;
-            }
-          }
-        }
-
-        // GROUP
-        final group = item['group'];
-        if (group is Map) {
-          final name = group['name']?.toString().trim().toLowerCase();
-          if (name != null && name == target) {
-            final id = group['id']?.toString();
-            if (id != null && id.isNotEmpty) {
-              groupId = id;
-              break;
-            }
-          }
-        }
-
-        // COMMUNITY (some APIs use community for group)
-        final community = item['community'];
-        if (community is Map) {
-          final name = community['name']?.toString().trim().toLowerCase();
-          if (name != null && name == target) {
-            final id = community['id']?.toString();
-            if (id != null && id.isNotEmpty) {
-              groupId = id;
-              break;
-            }
-          }
-        }
-
-        // CLASS
-        if (type == 'CLASS') {
-          final klass = item['class'];
-          if (klass is Map) {
-            final name = klass['name']?.toString().trim().toLowerCase();
-            if (name != null && name == target) {
-              final id = klass['id']?.toString();
-              if (id != null && id.isNotEmpty) {
-                classId = id;
-                break;
-              }
-            }
-          }
-        }
-
-        // Fallback: match by participants when name match fails
-        if ((groupId.isEmpty && classId.isEmpty) &&
-            callerTarget.isNotEmpty &&
-            (type == 'GROUP' || type == 'CLASS')) {
-          final participants = item['participants'] as List? ?? [];
-          bool hasCaller = false;
-          bool hasMe = false;
-          for (final p in participants) {
-            if (p is! Map) continue;
-            final auth = p['auth'];
-            if (auth is! Map) continue;
-            final authId = auth['id']?.toString();
-            if (authId != null && authId == myId) hasMe = true;
-            final person = auth['person'];
-            final name =
-                person is Map ? person['name']?.toString().trim().toLowerCase() : '';
-            if (name != null && name == callerTarget) hasCaller = true;
-          }
-          if (hasCaller && hasMe) {
-            if (type == 'CLASS') {
-              final id = item['classId']?.toString();
-              if (id != null && id.isNotEmpty) {
-                classId = id;
-                break;
-              }
-            }
-            final id = item['groupId']?.toString();
-            if (id != null && id.isNotEmpty) {
-              groupId = id;
-              break;
-            }
-          }
-        }
-      }
-    } catch (e) {
-      print('❌ [AudioCall] resolve groupId failed: $e');
-    }
-    return {'groupId': groupId, 'classId': classId};
-  }
-
-  void _assignNameForUid(int uid) {
-    if (_uidToName.containsKey(uid)) return;
-    if (_nameQueue.isEmpty) return;
-    _uidToName[uid] = _nameQueue.removeAt(0);
-    print('🏷️ [AudioCall] assign uid $uid -> ${_uidToName[uid]}');
-  }
-
-  String _labelForUid(int uid) {
-    return _uidToName[uid] ?? 'User $uid';
-  }
-
-  Future<void> _loadNamesFromCallLog() async {
-    if (widget.callId.isEmpty) return;
-    try {
-      final NetworkResponse response = await Get.find<NetworkCaller>()
-          .getRequest(
-            '${Urls.myCallUrl}?limit=99999',
-            accessToken: StorageUtil.getData(StorageUtil.userAccessToken),
-          );
-      if (!response.isSuccess || response.responseData == null) return;
-      final responseData = response.responseData;
-      if (responseData is! Map) return;
-      final data = responseData['data'];
-      final calls = data is Map ? (data['calls'] as List? ?? []) : <dynamic>[];
-      final match = calls.cast<Map?>().firstWhere(
-            (c) => c?['id'] == widget.callId,
-            orElse: () => null,
-          ) ??
-          {};
-      final participants = match['participants'] as List? ?? [];
-      if (participants.isEmpty) return;
-      if (participants.length > 1) _forceMultiParty = true;
-
-      final myId = StorageUtil.getData(StorageUtil.userId);
-      _nameQueue
-        ..clear()
-        ..addAll(
-          participants
-              .where((p) => p is Map && p['auth'] is Map)
-              .map((p) => p as Map)
-              .where((p) => p['auth']?['id'] != myId)
-              .map<String>((p) => p['auth']?['person']?['name'] ?? 'User')
-              .toList(),
-        );
-
-      for (final uid in _remoteUids) {
-        _assignNameForUid(uid);
-      }
-      if (_nameQueue.isNotEmpty) _forceMultiParty = true;
-      if (mounted) setState(() {});
-      print('🧾 [AudioCall] fallback nameQueue from call log: $_nameQueue');
-      if (_nameQueue.isEmpty && !_callLogRetryDone) {
-        _callLogRetryDone = true;
-        Future.delayed(const Duration(milliseconds: 1500), () async {
-          if (!mounted) return;
-          await _loadNamesFromCallLog();
-        });
-      }
-    } catch (e) {
-      print('❌ [AudioCall] fallback name load failed: $e');
-    }
-  }
-
   Future<void> initAgora() async {
     try {
       agoraEngine = createAgoraRtcEngine();
@@ -523,53 +287,54 @@ class _AudioCallPageState extends State<AudioCallPage> {
                 localUserJoined = true;
                 engineLog = 'Connected to channel';
               });
-              // ✅ Channel join এর পরে speaker বন্ধ রাখো
               agoraEngine.setEnableSpeakerphone(false);
               _startNoAnswerTimer();
             }
-            print('✅ Joined audio channel');
           },
           onUserJoined: (RtcConnection connection, int rUid, int elapsed) {
             if (mounted) {
               _cancelNoAnswerTimer();
               stopRingtone();
               setState(() {
-                // ✅ List এ add করো – duplicate check সহ
                 if (!_remoteUids.contains(rUid)) {
                   _remoteUids.add(rUid);
-                  if (_nameQueue.isEmpty) {
-                    _loadNamesFromCallLog();
-                  } else {
-                    _assignNameForUid(rUid);
+                  // ✅ group call হলে forceMultiParty set করো
+                  if (callService.participantInfo[rUid] == null) {
+                    _forceMultiParty = true;
                   }
                 }
                 engineLog = 'Remote user joined: $rUid';
               });
-              // ✅ প্রথম user join করলে timer শুরু করো
+              final keys = callService.participantInfo.keys.toList();
+              print('🔎 [AudioCall] onUserJoined uid=$rUid');
+              print('🔎 [AudioCall] participantInfo keys=$keys');
+              final incoming = callService.incomingCall.value;
+              if (incoming != null && incoming['participants'] is List) {
+                final list = incoming['participants'] as List;
+                final uids = list
+                    .map((p) => (p is Map ? p['uid'] : null))
+                    .where((v) => v != null)
+                    .toList();
+                print('🔎 [AudioCall] incoming participant uids=$uids');
+              }
               if (_remoteUids.length == 1) {
                 _callStartTime = DateTime.now();
                 startTimer();
               }
             }
-            print('✅ Remote user joined: $rUid | Total: ${_remoteUids.length}');
           },
           onUserOffline: (
             RtcConnection connection,
             int rUid,
             UserOfflineReasonType reason,
           ) {
-            print('onUserOffline: $rUid, reason: $reason');
             if (mounted) {
               setState(() {
-                // ✅ List থেকে remove করো
                 _remoteUids.remove(rUid);
-                _uidToName.remove(rUid);
               });
 
-              // ✅ সবাই চলে গেলে call শেষ করো
               if (_remoteUids.isEmpty && !_isLeavingCall) {
                 final duration = _getCallDuration();
-                print('📞 All remote users left. Duration: $duration seconds');
                 socketService.socket.emitWithAck(
                   'callEnd',
                   {'callId': widget.callId, 'duration': duration},
@@ -591,7 +356,6 @@ class _AudioCallPageState extends State<AudioCallPage> {
                 engineLog = 'Connection: ${state.name}';
               });
             }
-            print('📶 Connection: ${state.name} - ${reason.name}');
           },
           onError: (ErrorCodeType err, String msg) {
             if (mounted) {
@@ -599,8 +363,6 @@ class _AudioCallPageState extends State<AudioCallPage> {
                 engineLog = 'Error: ${err.name}';
               });
             }
-            print('❌ Error: ${err.name} - $msg');
-
             if (err == ErrorCodeType.errInvalidToken) {
               _refreshTokenAndRejoin();
             }
@@ -624,22 +386,18 @@ class _AudioCallPageState extends State<AudioCallPage> {
           autoSubscribeAudio: true,
         ),
       );
-
-      print('✅ Join channel request sent');
     } catch (e) {
       if (mounted) {
         setState(() {
           engineLog = 'Error: $e';
         });
       }
-      print('❌ Error: $e');
     }
   }
 
   Future<void> _refreshTokenAndRejoin() async {
     if (_tokenRefreshing) return;
     _tokenRefreshing = true;
-    print('🔄 Invalid token – refreshing...');
 
     final bool ok = await _callController.getToken(
       callId: widget.callId,
@@ -647,13 +405,11 @@ class _AudioCallPageState extends State<AudioCallPage> {
     );
 
     if (!ok) {
-      print('❌ Token refresh failed: ${_callController.errorMessage}');
       _tokenRefreshing = false;
       return;
     }
 
     _currentToken = _callController.token;
-    print('✅ Token refreshed – rejoining...');
 
     try {
       await agoraEngine.leaveChannel();
@@ -678,6 +434,8 @@ class _AudioCallPageState extends State<AudioCallPage> {
     _cancelNoAnswerTimer();
     _declinedWorker?.dispose();
     _endedWorker?.dispose();
+    // ✅ NEW: worker dispose
+    _participantInfoWorker?.dispose();
     callService.resetCallSignals();
     _player.dispose();
     agoraEngine.leaveChannel();
@@ -685,31 +443,43 @@ class _AudioCallPageState extends State<AudioCallPage> {
     super.dispose();
   }
 
-  // ✅ Group audio call – participants list UI
+  // ✅ UPDATED: participantInfo থেকে name এবং image দেখায়
   Widget _buildParticipantsList() {
     final count = _remoteUids.length;
 
+    // কেউ join করেনি — waiting screen
     if (count == 0) {
-      // কেউ আসেনি – শুধু waiting UI
       return Column(
         mainAxisSize: MainAxisSize.min,
         children: [
-          CircleAvatar(
+          // ✅ Caller image দেখাও (1-to-1 call)
+          _buildAvatar(
+            imageUrl: widget.photoUrl,
+            label: widget.name,
             radius: 60,
-            backgroundImage: widget.photoUrl.isNotEmpty
-                ? NetworkImage(widget.photoUrl)
-                : null,
-            child: widget.photoUrl.isEmpty
-                ? const Icon(Icons.person, size: 60)
-                : null,
           ),
           const SizedBox(height: 20),
-          const Text('Calling...'),
+          Text(
+            widget.name.isNotEmpty ? widget.name : 'Calling...',
+            style: const TextStyle(
+              fontSize: 20,
+              fontWeight: FontWeight.w600,
+              color: Colors.black87,
+            ),
+          ),
+          const SizedBox(height: 8),
+          Text(
+            'Calling...',
+            style: TextStyle(
+              fontSize: 14,
+              color: Colors.black.withOpacity(0.4),
+            ),
+          ),
         ],
       );
     }
 
-    // ✅ ১+ জন – সবার avatar grid দেখাও
+    // ✅ Call চলছে — timer + participants grid
     return Column(
       mainAxisSize: MainAxisSize.min,
       children: [
@@ -724,8 +494,8 @@ class _AudioCallPageState extends State<AudioCallPage> {
             ),
           ),
         ),
-        const SizedBox(height: 24),
-        // ✅ Participant count badge
+        const SizedBox(height: 16),
+        // Participant count badge
         Container(
           padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
           decoration: BoxDecoration(
@@ -733,7 +503,7 @@ class _AudioCallPageState extends State<AudioCallPage> {
             borderRadius: BorderRadius.circular(20),
           ),
           child: Text(
-            '${count + 1} participants', // remote + local
+            '${count + 1} participants',
             style: TextStyle(
               color: Colors.blue.shade800,
               fontWeight: FontWeight.w600,
@@ -741,46 +511,114 @@ class _AudioCallPageState extends State<AudioCallPage> {
           ),
         ),
         const SizedBox(height: 24),
-        // ✅ Remote participants avatars
+        // ✅ Participants avatars — name + image সহ
         Wrap(
-          spacing: 16,
-          runSpacing: 16,
+          spacing: 20,
+          runSpacing: 20,
           alignment: WrapAlignment.center,
           children: [
-            // Local user
-            _buildAvatarTile(label: 'You', isLocal: true),
-            // Remote users
-            ..._remoteUids.asMap().entries.map(
-              (entry) {
-                final idx = entry.key;
-                final uid = entry.value;
-                final label = (!_isMultiParty &&
-                        idx == 0 &&
-                        widget.name.isNotEmpty)
-                    ? widget.name
-                    : _labelForUid(uid);
-                return _buildAvatarTile(label: label, isLocal: false);
-              },
+            // Local user (Me)
+            _buildAvatarTileWithLabel(
+              imageUrl: '',
+              label: 'Me',
+              isLocal: true,
             ),
+            // Remote users — participantInfo থেকে name + image
+            ..._remoteUids.map((uid) {
+              final name = _nameForUid(uid);
+              final image = _imageForUid(uid);
+              return _buildAvatarTileWithLabel(
+                imageUrl: image,
+                label: name,
+                isLocal: false,
+              );
+            }),
           ],
         ),
       ],
     );
   }
 
-  Widget _buildAvatarTile({required String label, required bool isLocal}) {
+  // ✅ Avatar circle — network image সহ, fallback person icon
+  Widget _buildAvatar({
+    required String imageUrl,
+    required String label,
+    double radius = 36,
+    Color? bgColor,
+  }) {
+    if (imageUrl.isNotEmpty) {
+      return CircleAvatar(
+        radius: radius,
+        backgroundColor: bgColor ?? Colors.blue.shade100,
+        child: ClipOval(
+          child: CachedNetworkImage(
+            imageUrl: imageUrl,
+            width: radius * 2,
+            height: radius * 2,
+            fit: BoxFit.cover,
+            placeholder: (_, __) => Icon(
+              Icons.person,
+              size: radius,
+              color: Colors.white70,
+            ),
+            errorWidget: (_, __, ___) => Icon(
+              Icons.person,
+              size: radius,
+              color: Colors.white70,
+            ),
+          ),
+        ),
+      );
+    }
+    return CircleAvatar(
+      radius: radius,
+      backgroundColor: bgColor ?? Colors.blue.shade300,
+      child: Icon(Icons.person, size: radius, color: Colors.white),
+    );
+  }
+
+  // ✅ Avatar tile with name label below — audio call participant card
+  Widget _buildAvatarTileWithLabel({
+    required String imageUrl,
+    required String label,
+    required bool isLocal,
+  }) {
     return Column(
       mainAxisSize: MainAxisSize.min,
       children: [
-        CircleAvatar(
-          radius: 36,
-          backgroundColor: isLocal
-              ? Colors.blue.shade300
-              : Colors.green.shade300,
-          child: Icon(
-            Icons.person,
-            size: 36,
-            color: Colors.white,
+        // Avatar ring color: blue for local, green for remote
+        Container(
+          padding: const EdgeInsets.all(3),
+          decoration: BoxDecoration(
+            shape: BoxShape.circle,
+            border: Border.all(
+              color: isLocal
+                  ? Colors.blue.shade400
+                  : Colors.green.shade400,
+              width: 2,
+            ),
+          ),
+          child: _buildAvatar(
+            imageUrl: imageUrl,
+            label: label,
+            radius: 36,
+            bgColor: isLocal ? Colors.blue.shade300 : Colors.green.shade300,
+          ),
+        ),
+        const SizedBox(height: 6),
+        // Name label
+        SizedBox(
+          width: 80,
+          child: Text(
+            label,
+            textAlign: TextAlign.center,
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+            style: const TextStyle(
+              fontSize: 12,
+              fontWeight: FontWeight.w500,
+              color: Colors.black87,
+            ),
           ),
         ),
       ],
@@ -805,7 +643,7 @@ class _AudioCallPageState extends State<AudioCallPage> {
         ),
         child: Stack(
           children: [
-            // ✅ Center content – participants
+            // Center content — participants
             Positioned(
               top: 140,
               left: 0,
@@ -816,7 +654,7 @@ class _AudioCallPageState extends State<AudioCallPage> {
               ),
             ),
 
-            // End call button – waiting screen (কেউ আসেনি)
+            // End call — waiting screen
             if (!hasRemoteUser)
               Positioned(
                 bottom: 60,
@@ -841,7 +679,7 @@ class _AudioCallPageState extends State<AudioCallPage> {
                 ),
               ),
 
-            // Controls – call চলাকালীন
+            // Controls — call চলাকালীন
             if (hasRemoteUser)
               Positioned(
                 bottom: 60,
@@ -854,13 +692,13 @@ class _AudioCallPageState extends State<AudioCallPage> {
                       // Mic toggle
                       CircleAvatar(
                         radius: 30,
-                        backgroundColor: _micEnabled
-                            ? Colors.black26
-                            : Colors.red,
+                        backgroundColor:
+                            _micEnabled ? Colors.black26 : Colors.red,
                         child: IconButton(
                           onPressed: () async {
                             setState(() => _micEnabled = !_micEnabled);
-                            await agoraEngine.muteLocalAudioStream(!_micEnabled);
+                            await agoraEngine
+                                .muteLocalAudioStream(!_micEnabled);
                           },
                           icon: Icon(
                             _micEnabled ? Icons.mic : Icons.mic_off,
@@ -870,9 +708,7 @@ class _AudioCallPageState extends State<AudioCallPage> {
                       ),
                       const SizedBox(width: 32),
 
-                      // ✅ Speaker toggle
-                      // Off → background: black26, icon: white (earpiece mode)
-                      // On  → background: white,  icon: black  (loud speaker mode)
+                      // Speaker toggle
                       CircleAvatar(
                         radius: 30,
                         backgroundColor: _speakerEnabled
@@ -880,10 +716,10 @@ class _AudioCallPageState extends State<AudioCallPage> {
                             : Colors.black26,
                         child: IconButton(
                           onPressed: () async {
-                            setState(() => _speakerEnabled = !_speakerEnabled);
-                            await agoraEngine.setEnableSpeakerphone(
-                              _speakerEnabled,
-                            );
+                            setState(
+                                () => _speakerEnabled = !_speakerEnabled);
+                            await agoraEngine
+                                .setEnableSpeakerphone(_speakerEnabled);
                           },
                           icon: Icon(
                             _speakerEnabled

@@ -6,13 +6,18 @@ class CallSocket {
     socket.off('callIncoming');
     socket.off('callDeclined');
     socket.off('callEnded');
-    socket.off('callCanceled');  
+    socket.off('callCanceled');
+    // ✅ NEW: participant join event
+    socket.off('callParticipantJoined');
+    socket.off('callParticipantsAccepted');
 
     socket.on('callIncoming', callService.handleCallIncoming);
-    socket.on('callParticipantJoined', callService.handlecallParticipantJoined);
     socket.on('callDeclined', callService.handleCallDeclined);
     socket.on('callEnded', callService.handleCallEnded);
     socket.on('callCanceled', callService.handleCallCanceled);
+    // ✅ NEW: participant join event bind
+    socket.on('callParticipantJoined', callService.handleParticipantJoined);
+    socket.on('callParticipantsAccepted', callService.handleParticipantsAccepted);
   }
 
   static void unbind(IO.Socket socket) {
@@ -20,5 +25,8 @@ class CallSocket {
     socket.off('callDeclined');
     socket.off('callEnded');
     socket.off('callCanceled');
+    // ✅ NEW
+    socket.off('callParticipantJoined');
+    socket.off('callParticipantsAccepted');
   }
 }
