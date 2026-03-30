@@ -291,7 +291,7 @@ class CallService extends GetxController {
             isGroupCall: callData['isGroupCall'] == true,
             callerName: callData['callerName'],
           ));
-    } else {
+    } else { 
       Get.to(() => AudioCallPage(
             name: callData['callerName'] ?? '',
             photoUrl: callData['callerImage'] ?? '',
@@ -696,7 +696,7 @@ class CallService extends GetxController {
     await _handleCallkitAccept(body);
   }
 
-  Future<void> _handleAcceptCall() async {
+  Future<void> _handleAcceptCall() async { 
     print('Pressed accept button. ✅ Accepting call');
     final roomId = _incomingCall.value?['roomId'];
     final callId = _incomingCall.value?['callId'];
@@ -828,7 +828,7 @@ class CallService extends GetxController {
     print('⚠️ Socket not connected after 5s');
   }
 
-  Future<void> _navigateToCallPageDirectFromData(
+  Future<void> _navigateToCallPageDirectFromData( 
     Map<String, dynamic> data,
   ) async {
     final callType = (data['callType'] ?? 'AUDIO').toString();

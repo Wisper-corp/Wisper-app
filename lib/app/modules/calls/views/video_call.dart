@@ -299,6 +299,7 @@ class _VideoCallPageState extends State<VideoCallPage> {
               final keys = callService.participantInfo.keys.toList();
               print('🔎 [VideoCall] onUserJoined uid=$rUid');
               print('🔎 [VideoCall] participantInfo keys=$keys');
+              print('🔎 [VideoCall] uid match in participantInfo: ${keys.contains(rUid)}');
               final incoming = callService.incomingCall.value;
               if (incoming != null && incoming['participants'] is List) {
                 final list = incoming['participants'] as List;
@@ -307,12 +308,29 @@ class _VideoCallPageState extends State<VideoCallPage> {
                     .where((v) => v != null)
                     .toList();
                 print('🔎 [VideoCall] incoming participant uids=$uids');
+                print('🔎 [VideoCall] uid match in incoming list: ${uids.contains(rUid)}');
+                for (final p in list) {
+                  if (p is! Map) continue;
+                  final rawUid = p['uid'];
+                  final int? pUid = rawUid is int
+                      ? rawUid
+                      : int.tryParse(rawUid?.toString() ?? '');
+                  if (pUid == rUid) {
+                    print('✅ [VideoCall] matched participant: $p');
+                    break;
+                  }
+                }
               }
               if (_remoteUids.length == 1) {
                 _callStartTime = DateTime.now();
                 startTimer();
               }
             }
+            // ✅ Participant info আসতে একটু delay — তারপর UI refresh
+            Future.delayed(const Duration(milliseconds: 300), () {
+              if (!mounted) return;
+              setState(() {});
+            });
           },
           onUserOffline: (
             RtcConnection connection,

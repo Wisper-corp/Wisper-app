@@ -8,7 +8,7 @@ class CallController extends GetxController {
   final RxBool _inProgress = false.obs;
   bool get inProgress => _inProgress.value;
  
-  final RxString _errorMessage = ''.obs;
+  final RxString _errorMessage = ''.obs;  
   String get errorMessage => _errorMessage.value; 
 
   final RxString _callId = ''.obs;

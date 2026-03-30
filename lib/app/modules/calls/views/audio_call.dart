@@ -308,6 +308,7 @@ class _AudioCallPageState extends State<AudioCallPage> {
               final keys = callService.participantInfo.keys.toList();
               print('🔎 [AudioCall] onUserJoined uid=$rUid');
               print('🔎 [AudioCall] participantInfo keys=$keys');
+              print('🔎 [AudioCall] uid match in participantInfo: ${keys.contains(rUid)}');
               final incoming = callService.incomingCall.value;
               if (incoming != null && incoming['participants'] is List) {
                 final list = incoming['participants'] as List;
@@ -316,12 +317,29 @@ class _AudioCallPageState extends State<AudioCallPage> {
                     .where((v) => v != null)
                     .toList();
                 print('🔎 [AudioCall] incoming participant uids=$uids');
+                print('🔎 [AudioCall] uid match in incoming list: ${uids.contains(rUid)}');
+                for (final p in list) {
+                  if (p is! Map) continue;
+                  final rawUid = p['uid'];
+                  final int? pUid = rawUid is int
+                      ? rawUid
+                      : int.tryParse(rawUid?.toString() ?? '');
+                  if (pUid == rUid) {
+                    print('✅ [AudioCall] matched participant: $p');
+                    break;
+                  }
+                }
               }
               if (_remoteUids.length == 1) {
                 _callStartTime = DateTime.now();
                 startTimer();
               }
             }
+            // ✅ Participant info আসতে একটু delay — তারপর UI refresh
+            Future.delayed(const Duration(milliseconds: 300), () {
+              if (!mounted) return;
+              setState(() {});
+            });
           },
           onUserOffline: (
             RtcConnection connection,
