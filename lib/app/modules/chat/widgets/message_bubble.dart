@@ -9,6 +9,9 @@ import 'package:wisper/app/core/others/custom_size.dart';
 import 'package:wisper/app/core/utils/snack_bar.dart';
 import 'package:wisper/app/core/utils/video_player.dart';
 import 'package:wisper/app/core/widgets/common/circle_icon.dart';
+import 'package:wisper/app/modules/chat/model/message_keys.dart';
+import 'package:wisper/app/modules/profile/views/business/others_business_screen.dart';
+import 'package:wisper/app/modules/profile/views/person/others_person_screen.dart';
 import 'package:wisper/gen/assets.gen.dart';
 
 class MessageBubble extends StatelessWidget {
@@ -136,6 +139,26 @@ class MessageBubble extends StatelessWidget {
     );
   }
 
+  void _openSenderProfile() {
+    if (isMe) return;
+    final senderId = (message[SocketMessageKeys.senderId] ?? '')
+        .toString()
+        .trim();
+    if (senderId.isEmpty) return;
+
+    final senderType = (message[SocketMessageKeys.senderType] ?? 'PERSON')
+        .toString()
+        .toUpperCase();
+
+    if (senderType == 'BUSINESS') {
+      print('Sender type: $senderType');
+      Get.to(() => OthersBusinessScreen(userId: senderId));
+    } else {
+      print('Sender type: $senderType');
+      Get.to(() => OthersPersonScreen(userId: senderId));
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final String safeFileUrl = _isValidRemoteUrl(fileUrl) ? fileUrl : '';
@@ -257,20 +280,25 @@ class MessageBubble extends StatelessWidget {
             : CrossAxisAlignment.start,
         children: [
           if (!isMe)
-            CircleAvatar(
-              radius: 16.r,
-              backgroundImage: senderImage != null && senderImage!.isNotEmpty
-                  ? NetworkImage(senderImage!)
-                  : null,
-              child: senderImage == null || senderImage!.isEmpty
-                  ? Text(
-                      senderName.isNotEmpty ? senderName[0].toUpperCase() : '?',
-                      style: TextStyle(
-                        fontSize: 14.sp,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    )
-                  : null,
+            GestureDetector(
+              onTap: _openSenderProfile,
+              child: CircleAvatar(
+                radius: 16.r,
+                backgroundImage: senderImage != null && senderImage!.isNotEmpty
+                    ? NetworkImage(senderImage!)
+                    : null,
+                child: senderImage == null || senderImage!.isEmpty
+                    ? Text(
+                        senderName.isNotEmpty
+                            ? senderName[0].toUpperCase()
+                            : '?',
+                        style: TextStyle(
+                          fontSize: 14.sp,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      )
+                    : null,
+              ),
             ),
           if (!isMe) widthBox8 else widthBox10,
 

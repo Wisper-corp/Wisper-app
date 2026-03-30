@@ -129,15 +129,28 @@ class MessageController extends GetxController {
 
       String senderName = 'Unknown';
       String? senderImage;
+      String senderType = 'PERSON';
 
       if (data['sender'] != null) {
         final sender = data['sender'];
         if (sender['person'] != null) {
           senderName = sender['person']['name'] ?? 'Unknown';
           senderImage = sender['person']['image'];
+          senderType = 'PERSON';
         } else if (sender['business'] != null) {
           senderName = sender['business']['name'] ?? 'Unknown';
           senderImage = sender['business']['image'];
+          senderType = 'BUSINESS';
+        }
+      } else {
+        final rawType = (data['senderType'] ??
+                data['sender_role'] ??
+                data['senderRole'] ??
+                data['role'])
+            ?.toString()
+            .toUpperCase();
+        if (rawType == 'BUSINESS') {
+          senderType = 'BUSINESS';
         }
       }
 
@@ -149,6 +162,7 @@ class MessageController extends GetxController {
             data['sender']?['id'] ?? data['senderId'] ?? '',
         SocketMessageKeys.senderName: senderName,
         SocketMessageKeys.senderImage: senderImage,
+        SocketMessageKeys.senderType: senderType,
         SocketMessageKeys.chat: msgChatId,
         SocketMessageKeys.createdAt: (data['createdAt'] ?? DateTime.now())
             .toString(),
@@ -352,14 +366,17 @@ class MessageController extends GetxController {
           for (final msg in model.data!.messages) {
             String senderName = 'Unknown';
             String? senderImage;
+            String senderType = 'PERSON';
 
             if (msg.sender != null) {
               if (msg.sender!.person != null) {
                 senderName = msg.sender!.person!.name ?? 'Unknown';
                 senderImage = msg.sender!.person!.image;
+                senderType = 'PERSON';
               } else if (msg.sender!.business != null) {
                 senderName = msg.sender!.business!.name ?? 'Unknown';
                 senderImage = msg.sender!.business!.image;
+                senderType = 'BUSINESS';
               }
             }
 
@@ -372,6 +389,7 @@ class MessageController extends GetxController {
               SocketMessageKeys.senderId: msg.sender?.id ?? "",
               SocketMessageKeys.senderName: senderName,
               SocketMessageKeys.senderImage: senderImage,
+              SocketMessageKeys.senderType: senderType,
               SocketMessageKeys.chat: msg.chatId ?? "",
               SocketMessageKeys.createdAt:
                   msg.createdAt?.toIso8601String() ??

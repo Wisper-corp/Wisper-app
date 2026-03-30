@@ -5,10 +5,10 @@ class Urls {
 
   // static const String _baseUrl = 'http://10.10.10.17:5000/api/v1';
   // static const String _baseUrl = 'https://wisper.up.railway.app/api/v1';
-   static const String _baseUrl = 'https://38a4-103-159-73-129.ngrok-free.app/api/v1';
-  static const String socketUrl = 'https://38a4-103-159-73-129.ngrok-free.app';
-  //static const String _baseUrl = 'http://72.244.153.29:5008/api/v1';
-  //static const String socketUrl = 'http://72.244.153.29:5008';
+  //  static const String _baseUrl = 'https://38a4-103-159-73-129.ngrok-free.app/api/v1';
+  // static const String socketUrl = 'https://38a4-103-159-73-129.ngrok-free.app';
+  static const String _baseUrl = 'http://72.244.153.29:5008/api/v1';
+  static const String socketUrl = 'http://72.244.153.29:5008';
 
   // =========================================== Common ============================================== //
   static const String paymentUrl = '$_baseUrl/boosts/checkout-session';
