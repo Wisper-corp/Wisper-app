@@ -5,6 +5,8 @@ import 'package:wisper/app/core/utils/connectivity_services.dart';
 import 'package:wisper/app/core/widgets/shimmer/member_list_shimmer.dart';
 import 'package:wisper/app/modules/calls/controller/all_call_controller.dart';
 import 'package:wisper/app/modules/calls/widget/call_list_Tile.dart';
+import 'package:wisper/app/modules/profile/views/business/others_business_screen.dart';
+import 'package:wisper/app/modules/profile/views/person/others_person_screen.dart';
 import 'package:wisper/gen/assets.gen.dart';
 import 'package:intl/intl.dart';
 
@@ -57,7 +59,7 @@ class _MissedCallsState extends State<MissedCalls> {
           );
         }
         return SizedBox(
-           height: Get.height / 2,
+          height: Get.height / 2,
           child: const Center(
             child: Text(
               'No missed calls',
@@ -96,12 +98,27 @@ class _MissedCallsState extends State<MissedCalls> {
 
             return Padding(
               padding: const EdgeInsets.symmetric(vertical: 6, horizontal: 12),
-              child: CallListTile(
-                imagePath: displayImage ?? Assets.images.image.keyName,
-                name: displayName,
-                time: timeStr,
-                callType: 'Missed',
-                callTypeColor: Colors.red,
+              child: GestureDetector(
+                onTap: () {
+                  otherParticipant.auth?.person != null
+                      ? Get.to(
+                          OthersPersonScreen(
+                            userId: otherParticipant.auth!.id ?? '',
+                          ),
+                        )
+                      : Get.to(
+                          OthersBusinessScreen(
+                            userId: otherParticipant.auth?.id ?? '',
+                          ),
+                        );
+                },
+                child: CallListTile(
+                  imagePath: displayImage ?? Assets.images.image.keyName,
+                  name: displayName,
+                  time: timeStr,
+                  callType: 'Missed',
+                  callTypeColor: Colors.red,
+                ),
               ),
             );
           },

@@ -347,7 +347,7 @@ class _GalleryPostScreenState extends State<GalleryPostScreen> {
                         Text(
                           _selectedPrivacy == 'EVERYONE'
                               ? 'Everyone'
-                              : 'Only me',
+                              : 'Followers',
                           style: TextStyle(
                             fontSize: 14.sp,
                             fontWeight: FontWeight.w400,

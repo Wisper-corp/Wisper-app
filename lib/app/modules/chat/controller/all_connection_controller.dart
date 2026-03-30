@@ -16,8 +16,8 @@ class AllConnectionController extends GetxController {
   final Rx<AllConnectionModel?> _allConnectionModel = Rx<AllConnectionModel?>(
     null,
   );
-  List<AllConnectionItemModel>? get allConnectionData => 
-      _allConnectionModel.value!.data?.connections;
+  List<AllConnectionItemModel>? get allConnectionData =>
+      _allConnectionModel.value?.data?.connections;
  
   // @override
   // void onInit() {

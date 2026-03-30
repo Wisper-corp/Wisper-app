@@ -36,7 +36,7 @@ class LocationInfo extends StatelessWidget {
             ),
           ],
         ),
-        widthBox10,
+        
         isDate!
             ? Row(
                 children: [
@@ -46,12 +46,15 @@ class LocationInfo extends StatelessWidget {
                     color: const Color(0xff7F8694),
                   ),
                   widthBox4,
-                  Text(
-                    'Created $date',
-                    style: TextStyle(
-                      fontSize: 12.sp,
-                      fontWeight: FontWeight.w400,
-                      color: const Color(0xff7F8694),
+                  SizedBox(
+                    width: MediaQuery.of(context).size.width * 0.20,
+                    child: Text(
+                      'Created $date',
+                      style: TextStyle(
+                        fontSize: 12.sp,
+                        fontWeight: FontWeight.w400,
+                        color: const Color(0xff7F8694),
+                      ),
                     ),
                   ),
                 ],

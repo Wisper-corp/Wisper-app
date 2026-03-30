@@ -88,7 +88,7 @@ class _CreateGroupClassScreenState extends State<CreateGroupClassScreen> {
               iconColor: Color.fromARGB(255, 255, 255, 255),
               title: 'Create New Class',
               subtitle: 'Start a new educational class',
-            ), 
+            ),
             heightBox30,
 
             Text(
@@ -146,12 +146,16 @@ class _CreateGroupClassScreenState extends State<CreateGroupClassScreen> {
                   itemCount: filteredList.length,
                   itemBuilder: (context, index) {
                     final connection = filteredList[index];
-                    final name = connection.partner?.person?.name ?? 'Unknown';
-                    final title = connection.partner?.person?.title ?? '';
+                    final name = connection.partner?.person != null
+                        ? connection.partner?.person?.name
+                        : connection.partner?.business?.name ?? '';
+                    final title = connection.partner?.person != null
+                        ? connection.partner?.person?.title
+                        : connection.partner?.business?.industry ?? '';
 
                     final imagePath = connection.partner?.person != null
                         ? connection.partner?.person?.image
-                        : connection.partner!.business?.image;
+                        : connection.partner?.business?.image;
                     '';
 
                     bool isPerson = connection.partner?.person != null
@@ -162,8 +166,8 @@ class _CreateGroupClassScreenState extends State<CreateGroupClassScreen> {
                       padding: const EdgeInsets.symmetric(vertical: 6.0),
                       child: ContactWidget(
                         imagePath: imagePath ?? '',
-                        title: name,
-                        subtitle: title,
+                        title: name ?? '',
+                        subtitle: title ?? '',
                         onTap: () {
                           isPerson == true
                               ? Get.to(

@@ -20,8 +20,9 @@ class CreateGroupScreen extends StatefulWidget {
 }
 
 class _CreateGroupScreenState extends State<CreateGroupScreen> {
-  final AllConnectionController allConnectionController =
-      Get.put(AllConnectionController());
+  final AllConnectionController allConnectionController = Get.put(
+    AllConnectionController(),
+  );
 
   // শুধুমাত্র ID গুলো রাখবো এখানে
   final List<String> selectedMemberIds = [];
@@ -59,7 +60,7 @@ class _CreateGroupScreenState extends State<CreateGroupScreen> {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             heightBox40,
-            CreateHeader( 
+            CreateHeader(
               bgColor: const Color(0xff051B33),
               iconColor: const Color(0xff1F7DE9),
               title: 'Create Group',
@@ -129,14 +130,20 @@ class _CreateGroupScreenState extends State<CreateGroupScreen> {
                               itemCount: selectedMemberIds.length,
                               itemBuilder: (context, index) {
                                 final selectedId = selectedMemberIds[index];
-
-                                final connection = allConnectionController
-                                    .allConnectionData!
-                                    .firstWhere(
-                                      (c) =>
-                                          (c.partner?.id ?? '').toString() ==
-                                          selectedId,
-                                    );
+                                final connections =
+                                    allConnectionController.allConnectionData ??
+                                        [];
+                                dynamic connection;
+                                for (final c in connections) {
+                                  if ((c.partner?.id ?? '').toString() ==
+                                      selectedId) {
+                                    connection = c;
+                                    break;
+                                  }
+                                }
+                                if (connection == null) {
+                                  return const SizedBox.shrink();
+                                }
 
                                 return Padding(
                                   padding: const EdgeInsets.symmetric(
@@ -149,9 +156,11 @@ class _CreateGroupScreenState extends State<CreateGroupScreen> {
                                               ''
                                         : connection.partner?.business?.image ??
                                               '',
-                                    name:
-                                        connection.partner?.person?.name ??
-                                        'Unknown',
+                                    name: connection.partner?.person != null
+                                        ? connection.partner?.person?.name ??
+                                              ''
+                                        : connection.partner?.business?.name ??
+                                              '',
                                     onTap: () {
                                       setState(() {
                                         selectedMemberIds.removeAt(index);
@@ -174,16 +183,20 @@ class _CreateGroupScreenState extends State<CreateGroupScreen> {
               child: Obx(() {
                 if (allConnectionController.inProgress) {
                   return const Center(child: CircularProgressIndicator());
-                } else if (allConnectionController.allConnectionData!.isEmpty) {
+                }
+
+                final connections =
+                    allConnectionController.allConnectionData ?? [];
+                if (connections.isEmpty) {
                   return const Center(child: Text('No connection found'));
                 } else {
                   final query = searchQuery.value;
                   final filteredList = query.isEmpty
-                      ? allConnectionController.allConnectionData!
-                      : allConnectionController.allConnectionData!.where((
-                          data,
-                        ) {
-                          final name = data.partner?.person?.name ?? '';
+                      ? connections
+                      : connections.where((data) {
+                          final name = data.partner?.person?.name ??
+                              data.partner?.business?.name ??
+                              '';
                           return name.toLowerCase().contains(query);
                         }).toList();
 
@@ -214,9 +227,15 @@ class _CreateGroupScreenState extends State<CreateGroupScreen> {
                               });
                             },
                           ),
-                          imagePath: data.partner?.person?.image ?? '',
-                          title: data.partner?.person?.name ?? '',
-                          subtitle: data.partner?.person?.title ?? '',
+                          imagePath: data.partner?.person?.image ??
+                              data.partner?.business?.image ??
+                              '',
+                          title: data.partner?.person?.name ??
+                              data.partner?.business?.name ??
+                              '',
+                          subtitle: data.partner?.person?.title ??
+                              data.partner?.business?.industry ??
+                              '',
                           onTap: () {
                             setState(() {
                               if (isSelected) {

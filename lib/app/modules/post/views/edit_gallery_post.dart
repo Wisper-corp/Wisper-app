@@ -207,7 +207,7 @@ class _EditGalleryPostScreenState extends State<EditGalleryPostScreen> {
                               Text(
                                 _selectedPrivacy == 'EVERYONE'
                                     ? 'Everyone can comment'
-                                    : 'Only me',
+                                    : 'Followers',
                                 style: TextStyle(
                                   color: LightThemeColors.blueColor,
                                   fontSize: 15.sp,

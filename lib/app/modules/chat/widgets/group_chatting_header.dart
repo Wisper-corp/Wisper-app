@@ -262,7 +262,7 @@ class _GroupChatHeaderState extends State<GroupChatHeader> {
   void _showDeleteConversation() {
     ConfirmationBottomSheet.show(
       context: context,
-      title: "Delete Conversation?",
+      title: "Leave Group?",
       message:
           "This conversation will be permanently removed.\nThis action cannot be undone.",
       onDelete: deleteChat,
@@ -327,7 +327,7 @@ class _GroupChatHeaderState extends State<GroupChatHeader> {
             ),
             widthBox10,
             Text(
-              'Delete Conversation',
+              'Leave Group',
               style: TextStyle(
                 fontSize: 12.sp,
                 fontWeight: FontWeight.w400,

@@ -229,8 +229,9 @@ class _OthersBusinessScreenState extends State<OthersBusinessScreen> {
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
                     CircleIconWidget(
-                      imagePath: Assets.images.call.keyName,
-                      onTap: () {},
+                      imagePath: Assets.images.unselectedChat.keyName,
+                      onTap: () =>
+                          createChat(business?.id, business?.name, business?.image),
                       radius: 15,
                       color: LightThemeColors.blueColor,
                       iconColor: Colors.white,

@@ -4,6 +4,7 @@ import 'package:get/get.dart';
 import 'package:wisper/app/core/others/custom_size.dart';
 import 'package:wisper/app/core/widgets/common/circle_icon.dart';
 import 'package:wisper/app/core/widgets/common/line_widget.dart';
+import 'package:wisper/app/modules/chat/controller/message_controller.dart';
 import 'package:wisper/app/modules/chat/views/group/group_message_screen.dart';
 import 'package:wisper/app/modules/homepage/views/community_section.dart';
 import 'package:wisper/app/modules/homepage/views/role_section.dart';
@@ -30,6 +31,13 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   int selectedIndex = 0;
+
+  Future<void> _refreshGeneralChat() async {
+    if (!Get.isRegistered<MessageController>()) return;
+    final ctrl = Get.find<MessageController>();
+    await ctrl.setupChat(chatId: _generalChatId);
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -231,7 +239,7 @@ class _HomeScreenState extends State<HomeScreen> {
 
             heightBox14,
             selectedIndex == 0
-                ? (_generalChatId.isEmpty || _generalGroupId.isEmpty)
+                ? (_generalChatId.isEmpty || _generalGroupId.isEmpty) 
                     ? const Center(
                         child: Text(
                           'General Chat is not configured',
@@ -239,16 +247,19 @@ class _HomeScreenState extends State<HomeScreen> {
                         ),
                       )
                     : Expanded(
-                        child: GroupChatScreen(
-                          isGeneralChat: true,
-                          chatId: _generalChatId,
-                          groupId: _generalGroupId,
-                          groupName: 'General Chat',
-                          groupImage: '',
+                        child: RefreshIndicator(
+                          onRefresh: _refreshGeneralChat,
+                          child: GroupChatScreen(
+                            isGeneralChat: true,
+                            chatId: _generalChatId,
+                            groupId: _generalGroupId,
+                            groupName: 'General Chat',
+                            groupImage: '',
+                          ),
                         ),
                       )
                 : Container(),
-            selectedIndex == 1 ? PostSection() : Container(),
+            selectedIndex == 1 ? Expanded(child: PostSection()) : Container(),
             selectedIndex == 2 ? JobSection() : Container(),
             selectedIndex == 3 ? RoleSection() : Container(),
             selectedIndex == 4 ? CommunitySection() : Container(),

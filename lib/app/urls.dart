@@ -13,7 +13,7 @@ class Urls {
   // =========================================== Common ============================================== //
   static const String paymentUrl = '$_baseUrl/boosts/checkout-session';
   static const String contentUrl = '$_baseUrl/legal';
-
+   
   // =========================================== Profile ============================================== //
   static const String personProfileUrl = '$_baseUrl/persons/profile';
   static const String businessProfileUrl = '$_baseUrl/businesses/profile';

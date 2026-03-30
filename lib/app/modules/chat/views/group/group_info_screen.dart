@@ -44,8 +44,9 @@ class _GroupInfoScreenState extends State<GroupInfoScreen> {
   final GroupMembersController groupMembersController =
       Get.find<GroupMembersController>();
 
-  final AllConnectionController allConnectionController =
-      Get.put(AllConnectionController());
+  final AllConnectionController allConnectionController = Get.put(
+    AllConnectionController(),
+  );
 
   final ProfilePhotoController photoController =
       Get.find<ProfilePhotoController>();
@@ -88,6 +89,7 @@ class _GroupInfoScreenState extends State<GroupInfoScreen> {
         AllConnectionController(),
       );
       await allConnectionController.getAllConnection('ACCEPTED', '');
+      await groupMembersController.getGroupMembers(groupId);
       setState(() {});
       showSnackBarMessage(context, 'Added successfully', false);
     } else {
@@ -260,7 +262,7 @@ class _GroupInfoScreenState extends State<GroupInfoScreen> {
                     ),
                     widthBox50,
                     widthBox50,
-                    
+
                     GestureDetector(
                       onTap: () {
                         setState(() {
@@ -280,8 +282,7 @@ class _GroupInfoScreenState extends State<GroupInfoScreen> {
                 heightBox10,
 
                 if (selectedIndex == 0) MediaInfo(chatId: widget.chatId),
-                if (selectedIndex == 1)  DocInfoSection(chatId: widget.chatId,),
-                
+                if (selectedIndex == 1) DocInfoSection(chatId: widget.chatId),
               ],
             ),
           );
@@ -301,9 +302,20 @@ class _GroupInfoScreenState extends State<GroupInfoScreen> {
             if (groupInfoController.inProgress) {
               return const Center(child: CircularProgressIndicator());
             } else {
+              final members = groupMembersController.groupMemnersData ?? [];
               return ListView.builder(
-                itemCount: groupMembersController.groupMemnersData!.length,
+                itemCount: members.length,
                 itemBuilder: (context, index) {
+                  final member = members[index];
+                  final bool isPerson = member.auth?.person != null;
+                  final business =
+                      member.auth?.business is Map ? member.auth?.business : null;
+                  final String name = isPerson
+                      ? (member.auth?.person?.name ?? '')
+                      : (business?['name']?.toString() ?? '');
+                  final String imageUrl = isPerson
+                      ? (member.auth?.person?.image ?? '')
+                      : (business?['image']?.toString() ?? '');
                   return Padding(
                     padding: const EdgeInsets.symmetric(
                       vertical: 6.0,
@@ -314,30 +326,27 @@ class _GroupInfoScreenState extends State<GroupInfoScreen> {
                         widthBox10,
                         CircleAvatar(
                           radius: 18.r,
-                          backgroundImage: AssetImage(
-                            Assets.images.image.keyName,
-                          ),
+                          backgroundImage:
+                              imageUrl.isNotEmpty ? NetworkImage(imageUrl) : null,
+                          backgroundColor: Colors.grey,
+                          child: imageUrl.isEmpty
+                              ? Text(
+                                  name.isNotEmpty ? name[0] : '?',
+                                  style: TextStyle(
+                                    fontSize: 12.sp,
+                                    fontWeight: FontWeight.w600,
+                                  ),
+                                )
+                              : null,
                         ),
                         widthBox10,
                         Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            Text(
-                              groupMembersController
-                                      .groupMemnersData![index]
-                                      .auth!
-                                      .person
-                                      ?.name ??
-                                  '',
-                            ),
+                            Text(name),
                             heightBox4,
                             Text(
-                              groupMembersController
-                                          .groupMemnersData![index]
-                                          .role ==
-                                      'ADMIN'
-                                  ? 'Admin'
-                                  : 'Member',
+                              member.role == 'ADMIN' ? 'Admin' : 'Member',
                               style: TextStyle(
                                 fontSize: 10.sp,
                                 color: const Color.fromARGB(255, 255, 255, 255),
@@ -369,15 +378,14 @@ class _GroupInfoScreenState extends State<GroupInfoScreen> {
               return const Center(child: CircularProgressIndicator());
             } else {
               // Step 1: Existing member user IDs collect করি
-              final Set<String?> existingMemberIds = groupMembersController
-                  .groupMemnersData!
-                  .map(
-                    (member) => member.auth?.id,
-                  ) // <--- যদি path অন্য হয় তাহলে change করো
+              final members = groupMembersController.groupMemnersData ?? [];
+              final Set<String?> existingMemberIds = members
+                  .map((member) => member.auth?.id)
                   .toSet();
 
-              final filteredConnections = allConnectionController
-                  .allConnectionData!
+              final connections =
+                  allConnectionController.allConnectionData ?? [];
+              final filteredConnections = connections
                   .where(
                     (connection) =>
                         !existingMemberIds.contains(connection.partner?.id),
@@ -400,6 +408,17 @@ class _GroupInfoScreenState extends State<GroupInfoScreen> {
                   final connection =
                       filteredConnections[index]; // filtered item
 
+                  final bool isPerson = connection.partner?.person != null;
+                  final name = isPerson
+                      ? connection.partner?.person?.name
+                      : connection.partner?.business?.name;
+                  final title = isPerson
+                      ? connection.partner?.person?.title
+                      : connection.partner?.business?.industry;
+                  final imageUrl = isPerson
+                      ? connection.partner?.person?.image
+                      : connection.partner?.business?.image;
+
                   return Padding(
                     padding: const EdgeInsets.symmetric(
                       vertical: 6.0,
@@ -411,19 +430,21 @@ class _GroupInfoScreenState extends State<GroupInfoScreen> {
                         Row(
                           children: [
                             CircleAvatar(
+                              backgroundColor: Colors.grey,
                               radius: 18.r,
-                              backgroundImage: AssetImage(
-                                Assets.images.image.keyName,
-                              ),
+                              backgroundImage: NetworkImage(imageUrl ?? ''),
+                              child: imageUrl == null
+                                  ? Icon(Icons.person)
+                                  : null,
                             ),
                             widthBox10,
                             Column(
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
-                                Text(connection.partner?.person?.name ?? ''),
+                                Text(name ?? ''),
                                 heightBox4,
                                 Text(
-                                  connection.partner?.person?.title ?? '',
+                                  title ?? '',
                                   style: const TextStyle(
                                     fontSize: 10,
                                     color: Color.fromARGB(255, 255, 255, 255),
@@ -435,7 +456,7 @@ class _GroupInfoScreenState extends State<GroupInfoScreen> {
                         ),
                         SizedBox(
                           width: 100.w,
-                          height: 30.h, 
+                          height: 30.h,
                           child: CustomElevatedButton(
                             title: 'Add Member',
                             textSize: 10.sp,

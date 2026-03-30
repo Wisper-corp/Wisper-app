@@ -7,7 +7,7 @@ import 'package:wisper/app/core/widgets/shimmer/gallery_post_shimmer.dart';
 import 'package:wisper/app/modules/post/controller/feed_post_controller.dart';
 import 'package:wisper/app/modules/post/views/comment_screen.dart';
 import 'package:wisper/app/modules/post/widgets/post_card.dart';
-
+ 
 class PostSection extends StatefulWidget {
   const PostSection({super.key});
 
@@ -29,32 +29,57 @@ class _PostSectionState extends State<PostSection> {
     });
   }
 
+  Future<void> _refreshPosts() async {
+    controller.resetPagination();
+    while (controller.inProgress) {
+      await Future.delayed(const Duration(milliseconds: 100));
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
-    return Expanded(
-      // Expanded Obx এর বাইরে → সমস্যা সমাধান!
+    return RefreshIndicator(
+      onRefresh: _refreshPosts,
       child: Obx(() {
-        // লোডিং স্টেট
+        // Loading state
         if (controller.inProgress) {
-          return const Center(child: PostShimmerEffectWidget());
-        }
-
-        // খালি লিস্ট
-        if (controller.allPostData.isEmpty) {
-          // Offline হলে shimmer দেখাও (No posts yet দেখাবে না)
-          if (!connectivityService.isOnline.value) {
-            return const Center(child: PostShimmerEffectWidget());
-          }
-          return const Center(
-            child: Text(
-              'No posts yet',
-              style: TextStyle(color: Colors.white70, fontSize: 16),
-            ),
+          return ListView(
+            physics: const AlwaysScrollableScrollPhysics(),
+            children: const [
+              SizedBox(height: 120),
+              Center(child: PostShimmerEffectWidget()),
+            ],
           );
         }
 
-        // মূল পোস্ট লিস্ট
+        // Empty list
+        if (controller.allPostData.isEmpty) {
+          if (!connectivityService.isOnline.value) {
+            return ListView(
+              physics: const AlwaysScrollableScrollPhysics(),
+              children: const [
+                SizedBox(height: 120),
+                Center(child: PostShimmerEffectWidget()),
+              ],
+            );
+          }
+          return ListView(
+            physics: const AlwaysScrollableScrollPhysics(),
+            children: const [
+              SizedBox(height: 120),
+              Center(
+                child: Text(
+                  'No posts yet',
+                  style: TextStyle(color: Colors.white70, fontSize: 16),
+                ),
+              ),
+            ],
+          );
+        }
+
+        // Main post list
         return ListView.builder(
+          physics: const AlwaysScrollableScrollPhysics(),
           padding: EdgeInsets.zero,
           itemCount: controller.allPostData.length,
           itemBuilder: (context, index) {

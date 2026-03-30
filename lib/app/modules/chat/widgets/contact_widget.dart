@@ -29,8 +29,21 @@ class ContactWidget extends StatelessWidget {
             children: [
               CircleAvatar(
                 radius: 18,
-                backgroundImage: NetworkImage(imagePath),
+                backgroundImage: imagePath.isNotEmpty
+                    ? NetworkImage(imagePath)
+                    : null,
                 backgroundColor: Colors.grey,
+                child: imagePath.isEmpty
+                    ? Text(
+                        title.isNotEmpty
+                            ? title[0]
+                            : '?',
+                        style: TextStyle(
+                          fontSize: 16.sp,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      )
+                    : null,
               ),
               widthBox10,
               Column(

@@ -31,7 +31,17 @@ class MemberWidget extends StatelessWidget {
             CircleAvatar(
               backgroundColor: Colors.grey,
               radius: 8.5.r,
-              backgroundImage: NetworkImage(imagePath),
+              backgroundImage:
+                  imagePath.isNotEmpty ? NetworkImage(imagePath) : null,
+              child: imagePath.isEmpty
+                  ? Text(
+                      name.isNotEmpty ? name[0] : '?',
+                      style: TextStyle(
+                        fontSize: 10.sp,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    )
+                  : null,
             ),
             widthBox4,
             Text(

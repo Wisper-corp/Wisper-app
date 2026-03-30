@@ -33,7 +33,7 @@ class OthersPersonScreen extends StatefulWidget {
   final String userId;
   const OthersPersonScreen({super.key, required this.userId});
 
-  @override
+  @override 
   State<OthersPersonScreen> createState() => _OthersPersonScreenState();
 }
 
