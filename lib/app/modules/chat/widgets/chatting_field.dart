@@ -29,23 +29,41 @@ class _ChattingFieldWidgetState extends State<ChattingFieldWidget> {
   final AttachmentPickerHelper _attachmentPickerHelper = AttachmentPickerHelper();
 
   late FocusNode _focusNode;
+  late TextEditingController _controller;
 
   @override
   void initState() {
     super.initState();
     _focusNode = FocusNode();
-    widget.controller.addListener(_updateSendButton);
+    _controller = widget.controller;
+    _controller.addListener(_updateSendButton);
     ever(fileDecodeController.imageUrlRx, (_) => _updateSendButton());
   }
 
   void _updateSendButton() {
-    widget.isSendEnabled.value = widget.controller.text.trim().isNotEmpty ||
-        fileDecodeController.imageUrl.isNotEmpty;
+    if (!mounted) return;
+    try {
+      widget.isSendEnabled.value =
+          _controller.text.trim().isNotEmpty || fileDecodeController.imageUrl.isNotEmpty;
+    } catch (_) {
+      // Controller might be disposed by parent during a rebuild; ignore.
+    }
+  }
+
+  @override
+  void didUpdateWidget(covariant ChattingFieldWidget oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.controller != widget.controller) {
+      oldWidget.controller.removeListener(_updateSendButton);
+      _controller = widget.controller;
+      _controller.addListener(_updateSendButton);
+      _updateSendButton();
+    }
   }
 
   @override
   void dispose() {
-    widget.controller.removeListener(_updateSendButton);
+    _controller.removeListener(_updateSendButton);
     _focusNode.dispose();
     super.dispose();
   }
@@ -95,7 +113,7 @@ class _ChattingFieldWidgetState extends State<ChattingFieldWidget> {
             children: [
               // Text field – always visible at bottom
               TextFormField(
-                controller: widget.controller,
+                controller: _controller,
                 focusNode: _focusNode,
                 minLines: 1,
                 maxLines: 5,

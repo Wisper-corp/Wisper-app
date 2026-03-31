@@ -8,13 +8,13 @@ import 'package:wisper/app/urls.dart';
 
 class ClassInfoController extends GetxController {
   final RxBool _inProgress = false.obs;
-  bool get inProgress => _inProgress.value;
+  bool get inProgress => _inProgress.value; 
 
   final RxString _errorMessage = ''.obs;
   String get errorMessage => _errorMessage.value;
 
   final Rx<GroupInfoModel?> _groupInfoModel = Rx<GroupInfoModel?>(null);
-  Data? get groupInfoData => _groupInfoModel.value?.data;
+  GroupInfoData? get groupInfoData => _groupInfoModel.value?.data;
 
   Future<bool> getClassInfo(String? classId) async {
     _inProgress.value = true;

@@ -125,6 +125,7 @@ class Urls {
   static const String allChatsUrl = '$_baseUrl/chats/my';
   static const String createChatsUrl = '$_baseUrl/chats';
   static const String blockChatUserUrl = '$_baseUrl/chats/block-participant';
+  static const String removePerticipantUrl = '$_baseUrl/chats/remove-participant';
   static const String unblockChatUserUrl =
       '$_baseUrl/chats/unblock-participant';
   static const String muteChatUserUrl = '$_baseUrl/chats/mute';
@@ -165,6 +166,14 @@ class Urls {
 
   static String addMembersById(String id) {
     return '$_baseUrl/groups/$id';
+  }
+
+   static String addClassMembersById(String id) {
+    return '$_baseUrl/classes/$id';
+  }
+
+  static String removeMembersById(String id) {
+    return '$_baseUrl/chats/remove-participant/$id';
   }
 
   static String deleteGroupById(String id) {

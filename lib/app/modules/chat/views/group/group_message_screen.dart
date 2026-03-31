@@ -35,10 +35,13 @@ class GroupChatScreen extends StatefulWidget {
 
 class _GroupChatScreenState extends State<GroupChatScreen> {
   // ✅ Use Get.find — controller was already created & loaded in ChatListScreen
-  final MessageController ctrl = Get.put(MessageController());
+  final MessageController ctrl = Get.isRegistered<MessageController>()
+      ? Get.find<MessageController>()
+      : Get.put(MessageController());
   final SeenMessageController seenMessageController = SeenMessageController();
   final ConnectivityService connectivityService =
       Get.find<ConnectivityService>();
+  bool _didInitialScroll = false;
 
   @override
   void initState() {
@@ -88,6 +91,13 @@ class _GroupChatScreenState extends State<GroupChatScreen> {
                     member: '5',
                   ),
                 );
+              }
+
+              if (!_didInitialScroll) {
+                _didInitialScroll = true;
+                WidgetsBinding.instance.addPostFrameCallback((_) {
+                  ctrl.scrollToBottom();
+                });
               }
 
               return ListView.builder(

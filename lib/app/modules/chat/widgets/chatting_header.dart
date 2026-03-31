@@ -490,7 +490,7 @@ class _ChatHeaderState extends State<ChatHeader> {
       backgroundColor: Colors.black,
       builder: (BuildContext sheetContext) {
         return Container(
-          height: MediaQuery.of(sheetContext).size.height * 0.32,
+          height: MediaQuery.of(sheetContext).size.height * 0.36,
           padding: const EdgeInsets.all(20.0),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,

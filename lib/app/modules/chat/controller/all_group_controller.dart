@@ -4,14 +4,13 @@ import 'package:wisper/app/core/services/network_caller/network_caller.dart';
 import 'package:wisper/app/core/services/network_caller/network_response.dart';
 import 'package:wisper/app/modules/authentication/views/sign_in_screen.dart';
 import 'package:wisper/app/modules/chat/model/all_group_model.dart';
-import 'package:wisper/app/modules/homepage/model/role_model.dart';
 import 'package:wisper/app/urls.dart';
 
 class AllGroupController extends GetxController {
   final RxBool _inProgress = false.obs;
   bool get inProgress => _inProgress.value;
 
-  final RxString _errorMessage = ''.obs;
+  final RxString _errorMessage = ''.obs; 
   String get errorMessage => _errorMessage.value;
 
   final Rx<AllGroupModel?> _allGroupModel = Rx<AllGroupModel?>(null);
@@ -21,7 +20,7 @@ class AllGroupController extends GetxController {
   Future<bool> getAllGroup() async {
     _inProgress.value = true;
 
-    Map<String, dynamic> params = {"limit": "9999"};
+    Map<String, dynamic> params = {"limit": "9999", "isPrivate": false};
     try {
       final NetworkResponse response = await Get.find<NetworkCaller>()
           .getRequest(

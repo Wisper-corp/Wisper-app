@@ -119,10 +119,9 @@ class _ChatSectionState extends State<ChatSection> {
             return MemberListTile(
               isOnline: false,
               onTap: () async {
-                if (Get.isRegistered<MessageController>()) {
-                  await Get.delete<MessageController>(force: true);
-                }
-                final MessageController msgCtrl = Get.put(MessageController());
+                final MessageController msgCtrl = Get.isRegistered<MessageController>()
+                    ? Get.find<MessageController>()
+                    : Get.put(MessageController());
                 await msgCtrl.setupChat(chatId: chatId);
 
                 if (type == 'GROUP') {

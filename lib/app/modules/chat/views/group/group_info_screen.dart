@@ -2,6 +2,7 @@
 
 import 'dart:io';
 
+import 'package:crash_safe_image/crash_safe_image.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:get/get.dart';
@@ -14,15 +15,17 @@ import 'package:wisper/app/core/widgets/common/circle_icon.dart';
 import 'package:wisper/app/core/widgets/common/custom_button.dart';
 import 'package:wisper/app/core/widgets/common/custom_popup.dart';
 import 'package:wisper/app/core/widgets/common/line_widget.dart';
+import 'package:wisper/app/core/others/get_storage.dart';
 import 'package:wisper/app/modules/chat/controller/group/add_group_member.dart';
 import 'package:wisper/app/modules/chat/controller/all_connection_controller.dart';
 import 'package:wisper/app/modules/chat/controller/group/all_group_member_controller.dart';
 import 'package:wisper/app/modules/chat/controller/group/group_info_controller.dart';
+import 'package:wisper/app/modules/chat/model/group_members_model.dart';
 import 'package:wisper/app/modules/chat/views/group/edit_group_screen.dart';
 import 'package:wisper/app/modules/chat/views/link_info.dart';
 import 'package:wisper/app/modules/chat/views/media_info.dart';
-import 'package:wisper/app/modules/chat/widgets/location_info.dart';
 import 'package:wisper/app/modules/chat/widgets/select_option_widget.dart';
+import 'package:wisper/app/modules/post/views/my_post_section.dart';
 import 'package:wisper/app/modules/profile/controller/upload_photo_controller.dart';
 import 'package:wisper/app/modules/profile/widget/info_card.dart';
 import 'package:wisper/gen/assets.gen.dart';
@@ -51,7 +54,7 @@ class _GroupInfoScreenState extends State<GroupInfoScreen> {
   final ProfilePhotoController photoController =
       Get.find<ProfilePhotoController>();
 
-  final AddMemberController addMemberController = AddMemberController();
+  final GroupMemberController memberController = GroupMemberController();
   final RxString currentImagePath = ''.obs;
   @override
   void initState() {
@@ -79,7 +82,7 @@ class _GroupInfoScreenState extends State<GroupInfoScreen> {
     String? memberId,
     String? groupId,
   ) async {
-    final bool isSuccess = await addMemberController.addRequest(
+    final bool isSuccess = await memberController.addRequest(
       groupId: groupId,
       memberId: memberId,
     );
@@ -93,8 +96,53 @@ class _GroupInfoScreenState extends State<GroupInfoScreen> {
       setState(() {});
       showSnackBarMessage(context, 'Added successfully', false);
     } else {
-      showSnackBarMessage(context, addMemberController.errorMessage, true);
+      showSnackBarMessage(context, memberController.errorMessage, true);
     }
+  }
+
+  void removeMember(String? memberId, String? groupId) {
+    showLoadingOverLay(
+      asyncFunction: () async =>
+          await performRemoveMember(context, memberId, groupId),
+      msg: 'Please wait...',
+    );
+  }
+
+  Future<void> performRemoveMember(
+    BuildContext context,
+    String? memberId,
+    String? groupId,
+  ) async {
+    final bool isSuccess = await memberController.removeRequest(
+      chatId: widget.chatId,
+      memberId: memberId,
+    );
+
+    if (isSuccess) {
+      final AllConnectionController allConnectionController = Get.put(
+        AllConnectionController(),
+      );
+      await allConnectionController.getAllConnection('ACCEPTED', '');
+      await groupMembersController.getGroupMembers(groupId);
+      setState(() {});
+      showSnackBarMessage(context, 'Removed successfully', false);
+      Navigator.pop(context);
+    } else {
+      showSnackBarMessage(context, memberController.errorMessage, true);
+    }
+  }
+
+  void _showRemoveMember(String? memberId, String? groupId) {
+    ConfirmationBottomSheet.show(
+      context: context,
+      title: "Remove Member?",
+      deleteButtonText: "Remove",
+      message:
+          "This member will be permanently removed.\nThis action cannot be undone",
+      onDelete: () {
+        removeMember(memberId, groupId);
+      },
+    );
   }
 
   Future<void> _getProfileImage() async {
@@ -144,8 +192,24 @@ class _GroupInfoScreenState extends State<GroupInfoScreen> {
           return const Center(child: CircularProgressIndicator());
         } else {
           DateFormatter dateFormatter = DateFormatter(
-            groupInfoController.groupInfoData!.createdAt!,
+            groupInfoController.groupInfoData?.createdAt ?? DateTime.now(),
           );
+          final members = groupMembersController.groupMemnersData ?? [];
+          final myAuthId =
+              StorageUtil.getData(StorageUtil.userAuthId)?.toString() ?? '';
+          final myUserId =
+              StorageUtil.getData(StorageUtil.userId)?.toString() ?? '';
+          GroupMembersItemModel? myMember;
+          for (final m in members) {
+            final authId = (m.auth?.id ?? '');
+            if (authId == myAuthId || authId == myUserId) {
+              myMember = m;
+              break;
+            }
+          }
+          final isCurrentUserAdmin =
+              myMember != null && (myMember.role?.toUpperCase() == 'ADMIN');
+
           return Padding(
             padding: const EdgeInsets.symmetric(horizontal: 20.0),
             child: Column(
@@ -208,39 +272,74 @@ class _GroupInfoScreenState extends State<GroupInfoScreen> {
 
                   showMember: _showMemberInfo,
                   title: groupInfoController.groupInfoData?.name ?? '',
-                  memberInfo: 'Group • 3 members',
+                  memberInfo:
+                      'Group • ${groupInfoController.groupInfoData!.chat!.count?.participants ?? 0} members',
 
                   child: Row(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
-                      SizedBox(
-                        height: 31.h,
-                        width: 116.w,
-                        child: CustomElevatedButton(
-                          textSize: 12,
-                          title: 'Share Profile',
-                          onPress: () {},
-                          borderRadius: 50,
-                        ),
-                      ),
-                      widthBox10,
-                      SizedBox(
-                        height: 31.h,
-                        width: 116.w,
-                        child: CustomElevatedButton(
-                          textSize: 12,
-                          title: 'Add Members',
-                          onPress: () {
-                            _showConnectionInfo(widget.groupId);
-                          },
-                          borderRadius: 50,
-                        ),
-                      ),
+                      // SizedBox(
+                      //   height: 31.h,
+                      //   width: 116.w,
+                      //   child: CustomElevatedButton(
+                      //     textSize: 12,
+                      //     title: 'Share Profile',
+                      //     onPress: () {},
+                      //     borderRadius: 50,
+                      //   ),
+                      // ),
+                      // widthBox10,
+                      (groupInfoController.groupInfoData?.allowInvitation ==
+                                  true ||
+                              isCurrentUserAdmin)
+                          ? SizedBox(
+                              height: 31.h,
+                              width: 116.w,
+                              child: CustomElevatedButton(
+                                textSize: 12,
+                                title: 'Add Members',
+                                onPress: () {
+                                  _showConnectionInfo(widget.groupId);
+                                },
+                                borderRadius: 50,
+                              ),
+                            )
+                          : Opacity(
+                              opacity: 0.5,
+                              child: SizedBox(
+                                height: 31.h,
+                                width: 116.w,
+                                child: CustomElevatedButton(
+                                  textSize: 12,
+                                  title: 'Add Members',
+                                  onPress: () {},
+                                  borderRadius: 50,
+                                ),
+                              ),
+                            ),
                     ],
                   ),
                 ),
-                heightBox20,
-                LocationInfo(date: dateFormatter.getFullDateFormat()),
+                heightBox4,
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    CrashSafeImage(
+                      Assets.images.calendar.keyName,
+                      height: 16.h,
+                      color: const Color(0xff7F8694),
+                    ),
+                    widthBox4,
+                    Text(
+                      'Created ${dateFormatter.getFullDateFormat()}',
+                      style: TextStyle(
+                        fontSize: 12.sp,
+                        fontWeight: FontWeight.w400,
+                        color: const Color(0xff7F8694),
+                      ),
+                    ),
+                  ],
+                ),
                 heightBox20,
                 StraightLiner(height: 0.4, color: const Color(0xff454545)),
                 heightBox10,
@@ -303,13 +402,28 @@ class _GroupInfoScreenState extends State<GroupInfoScreen> {
               return const Center(child: CircularProgressIndicator());
             } else {
               final members = groupMembersController.groupMemnersData ?? [];
+              final myAuthId =
+                  StorageUtil.getData(StorageUtil.userAuthId)?.toString() ?? '';
+              final myUserId =
+                  StorageUtil.getData(StorageUtil.userId)?.toString() ?? '';
+              GroupMembersItemModel? myMember;
+              for (final m in members) {
+                final authId = (m.auth?.id ?? '');
+                if (authId == myAuthId || authId == myUserId) {
+                  myMember = m;
+                  break;
+                }
+              }
+              final isCurrentUserAdmin =
+                  myMember != null && (myMember.role?.toUpperCase() == 'ADMIN');
               return ListView.builder(
                 itemCount: members.length,
                 itemBuilder: (context, index) {
                   final member = members[index];
                   final bool isPerson = member.auth?.person != null;
-                  final business =
-                      member.auth?.business is Map ? member.auth?.business : null;
+                  final business = member.auth?.business is Map
+                      ? member.auth?.business
+                      : null;
                   final String name = isPerson
                       ? (member.auth?.person?.name ?? '')
                       : (business?['name']?.toString() ?? '');
@@ -322,38 +436,65 @@ class _GroupInfoScreenState extends State<GroupInfoScreen> {
                       horizontal: 20,
                     ),
                     child: Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
-                        widthBox10,
-                        CircleAvatar(
-                          radius: 18.r,
-                          backgroundImage:
-                              imageUrl.isNotEmpty ? NetworkImage(imageUrl) : null,
-                          backgroundColor: Colors.grey,
-                          child: imageUrl.isEmpty
-                              ? Text(
-                                  name.isNotEmpty ? name[0] : '?',
-                                  style: TextStyle(
-                                    fontSize: 12.sp,
-                                    fontWeight: FontWeight.w600,
-                                  ),
-                                )
-                              : null,
-                        ),
-                        widthBox10,
-                        Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
+                        Row(
                           children: [
-                            Text(name),
-                            heightBox4,
-                            Text(
-                              member.role == 'ADMIN' ? 'Admin' : 'Member',
-                              style: TextStyle(
-                                fontSize: 10.sp,
-                                color: const Color.fromARGB(255, 255, 255, 255),
-                              ),
+                            widthBox10,
+                            CircleAvatar(
+                              radius: 18.r,
+                              backgroundImage: imageUrl.isNotEmpty
+                                  ? NetworkImage(imageUrl)
+                                  : null,
+                              backgroundColor: Colors.grey,
+                              child: imageUrl.isEmpty
+                                  ? Text(
+                                      name.isNotEmpty ? name[0] : '?',
+                                      style: TextStyle(
+                                        fontSize: 12.sp,
+                                        fontWeight: FontWeight.w600,
+                                      ),
+                                    )
+                                  : null,
+                            ),
+                            widthBox10,
+                            Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(name),
+                                heightBox4,
+                                Text(
+                                  member.role == 'ADMIN' ? 'Admin' : 'Member',
+                                  style: TextStyle(
+                                    fontSize: 10.sp,
+                                    color: const Color.fromARGB(
+                                      255,
+                                      255,
+                                      255,
+                                      255,
+                                    ),
+                                  ),
+                                ),
+                              ],
                             ),
                           ],
                         ),
+
+                        isCurrentUserAdmin &&
+                                member.role != 'ADMIN' &&
+                                (member.auth?.id ?? '') != myAuthId &&
+                                (member.auth?.id ?? '') != myUserId
+                            ? CustomElevatedButton(
+                                height: 30.h,
+                                width: 100.w,
+                                textSize: 10,
+                                color: Colors.red,
+                                title: 'Remove',
+                                onPress: () {
+                                  _showRemoveMember(member.id, widget.groupId);
+                                },
+                              )
+                            : Container(),
                       ],
                     ),
                   );

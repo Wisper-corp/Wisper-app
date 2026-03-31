@@ -88,7 +88,7 @@ class _HomeScreenState extends State<HomeScreen> {
                       children: [
                         Text(
                           'General Chat',
-                          style: TextStyle(
+                          style: TextStyle( 
                             fontFamily: "Segoe UI",
                             fontSize: 15.sp,
                             fontWeight: FontWeight.w600,

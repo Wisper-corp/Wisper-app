@@ -18,7 +18,7 @@ class AllGroupModel {
     }
 
 }
-
+ 
 class Data {
     Data({
         required this.meta,

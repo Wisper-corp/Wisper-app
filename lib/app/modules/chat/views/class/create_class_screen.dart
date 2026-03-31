@@ -157,8 +157,11 @@ class _CreateClassScreenState extends State<CreateClassScreen> {
                                         : connection.partner?.business?.image ??
                                               '',
                                     name:
-                                        connection.partner?.person?.name ??
-                                        'Unknown',
+                                         connection.partner?.person != null
+                                        ? connection.partner?.person?.name ??
+                                              ''
+                                        : connection.partner?.business?.name ??
+                                              '',
                                     onTap: () {
                                       setState(() {
                                         selectedMemberIds.removeAt(index);

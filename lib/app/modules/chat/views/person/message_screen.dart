@@ -38,7 +38,9 @@ class ChatScreen extends StatefulWidget {
 
 class _ChatScreenState extends State<ChatScreen> {
   // ✅ Use Get.find — controller was pre-loaded in ChatListScreen before navigation
-  final MessageController ctrl = Get.put(MessageController());
+  final MessageController ctrl = Get.isRegistered<MessageController>()
+      ? Get.find<MessageController>()
+      : Get.put(MessageController());
   final CreateChatController createChatController =
       Get.put(CreateChatController());
   final AllChatsController allChatsController =
