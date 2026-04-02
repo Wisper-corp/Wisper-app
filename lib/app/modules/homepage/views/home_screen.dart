@@ -4,9 +4,7 @@ import 'package:get/get.dart';
 import 'package:wisper/app/core/others/custom_size.dart';
 import 'package:wisper/app/core/widgets/common/circle_icon.dart';
 import 'package:wisper/app/core/widgets/common/line_widget.dart';
-import 'package:wisper/app/modules/chat/controller/message_controller.dart';
 import 'package:wisper/app/modules/chat/views/group/group_message_screen.dart';
-import 'package:wisper/app/modules/homepage/views/community_section.dart';
 import 'package:wisper/app/modules/homepage/views/role_section.dart';
 import 'package:wisper/app/modules/job/views/job_section.dart';
 import 'package:wisper/app/modules/post/views/post_section.dart';
@@ -25,17 +23,11 @@ class _HomeScreenState extends State<HomeScreen> {
   static const String _generalChatId = '56cbc5ab-78ed-4ec7-9847-0120558f9c62';
   static const String _generalGroupId = '56cbc5ab-78ed-4ec7-9847-01205585862';
 
+  int selectedIndex = 0;
+
   @override
   void initState() {
     super.initState();
-  }
-
-  int selectedIndex = 0;
-
-  Future<void> _refreshGeneralChat() async {
-    if (!Get.isRegistered<MessageController>()) return;
-    final ctrl = Get.find<MessageController>();
-    await ctrl.setupChat(chatId: _generalChatId);
   }
 
   @override
@@ -78,193 +70,92 @@ class _HomeScreenState extends State<HomeScreen> {
               child: ListView(
                 scrollDirection: Axis.horizontal,
                 children: [
-                  GestureDetector(
-                    onTap: () {
-                      setState(() {
-                        selectedIndex = 0;
-                      });
-                    },
-                    child: Column(
-                      children: [
-                        Text(
-                          'General Chat',
-                          style: TextStyle( 
-                            fontFamily: "Segoe UI",
-                            fontSize: 15.sp,
-                            fontWeight: FontWeight.w600,
-                            color: selectedIndex == 0
-                                ? Colors.white
-                                : Color(0xff93A4B0),
-                          ),
-                        ),
-                        heightBox4,
-                        Container(
-                          height: 2.h,
-                          width: 90.w,
-                          color: selectedIndex == 0
-                              ? Colors.blue
-                              : Colors.transparent,
-                        ),
-                      ],
-                    ),
-                  ),
+                  _buildTab('General Chat', 0, 90.w),
                   widthBox20,
-                  GestureDetector(
-                    onTap: () {
-                      setState(() {
-                        selectedIndex = 1;
-                      });
-                    },
-                    child: Column(
-                      children: [
-                        Text(
-                          'Posts',
-                          style: TextStyle(
-                            fontFamily: "Segoe UI",
-                            fontSize: 14.sp,
-                            fontWeight: FontWeight.w600,
-                            color: selectedIndex == 1
-                                ? Colors.white
-                                : Color(0xff93A4B0),
-                          ),
-                        ),
-                        heightBox4,
-                        Container(
-                          height: 2.h,
-                          width: 40.w,
-                          color: selectedIndex == 1
-                              ? Colors.blue
-                              : Colors.transparent,
-                        ),
-                      ],
-                    ),
-                  ),
+                  widthBox10,
+                  _buildTab('Posts', 1, 40.w),
                   widthBox20,
-                  GestureDetector(
-                    onTap: () {
-                      setState(() {
-                        selectedIndex = 2;
-                      });
-                    },
-                    child: Column(
-                      children: [
-                        Text(
-                          'Jobs',
-                          style: TextStyle(
-                            fontFamily: "Segoe UI",
-                            fontSize: 14.sp,
-                            fontWeight: FontWeight.w600,
-                            color: selectedIndex == 2
-                                ? Colors.white
-                                : Color(0xff93A4B0),
-                          ),
-                        ),
-                        heightBox4,
-                        Container(
-                          height: 2.h,
-                          width: 40.w,
-                          color: selectedIndex == 2
-                              ? Colors.blue
-                              : Colors.transparent,
-                        ),
-                      ],
-                    ),
-                  ),
+                  widthBox10,
+                  _buildTab('Jobs', 2, 40.w),
                   widthBox20,
-                  GestureDetector(
-                    onTap: () {
-                      setState(() {
-                        selectedIndex = 3;
-                      });
-                    },
-                    child: Column(
-                      children: [
-                        Text(
-                          'Role',
-                          style: TextStyle(
-                            fontFamily: "Segoe UI",
-                            fontSize: 14.sp,
-                            fontWeight: FontWeight.w600,
-                            color: selectedIndex == 3
-                                ? Colors.white
-                                : Color(0xff93A4B0),
-                          ),
-                        ),
-                        heightBox4,
-                        Container(
-                          height: 2.h,
-                          width: 40.w,
-                          color: selectedIndex == 3
-                              ? Colors.blue
-                              : Colors.transparent,
-                        ),
-                      ],
-                    ),
-                  ),
-                  widthBox20,
-                  GestureDetector(
-                    onTap: () {
-                      setState(() {
-                        selectedIndex = 4;
-                      });
-                    },
-                    child: Column(
-                      children: [
-                        Text(
-                          'Community',
-                          style: TextStyle(
-                            fontFamily: "Segoe UI",
-                            fontSize: 14.sp,
-                            fontWeight: FontWeight.w600,
-                            color: selectedIndex == 4
-                                ? Colors.white
-                                : Color(0xff93A4B0),
-                          ),
-                        ),
-                        heightBox4,
-                        Container(
-                          height: 2.h,
-                          width: 78.w,
-                          color: selectedIndex == 4
-                              ? Colors.blue
-                              : Colors.transparent,
-                        ),
-                      ],
-                    ),
-                  ),
+                  widthBox10,
+                  _buildTab('Role', 3, 40.w),
+                  // widthBox20, 
+                  // _buildTab('Community', 4, 78.w),
                 ],
               ),
             ),
-            StraightLiner(height: 0.4, color: Color(0xff454545)),
-
+            StraightLiner(height: 0.4, color: const Color(0xff454545)),
             heightBox14,
-            selectedIndex == 0
-                ? (_generalChatId.isEmpty || _generalGroupId.isEmpty) 
-                    ? const Center(
-                        child: Text(
-                          'General Chat is not configured',
-                          style: TextStyle(color: Colors.white70),
-                        ),
-                      )
-                    : Expanded(
-                        child: RefreshIndicator(
-                          onRefresh: _refreshGeneralChat,
-                          child: GroupChatScreen(
+
+            Expanded(
+              child: IndexedStack(
+                index: selectedIndex,
+                children: [
+                  // Tab 0: General Chat
+                  SizedBox.expand(
+                    child: (_generalChatId.isEmpty || _generalGroupId.isEmpty)
+                        ? const Center(
+                            child: Text(
+                              'General Chat is not configured',
+                              style: TextStyle(color: Colors.white70),
+                            ),
+                          )
+                        : GroupChatScreen(
                             isGeneralChat: true,
                             chatId: _generalChatId,
                             groupId: _generalGroupId,
                             groupName: 'General Chat',
                             groupImage: '',
                           ),
-                        ),
-                      )
-                : Container(),
-            selectedIndex == 1 ? Expanded(child: PostSection()) : Container(),
-            selectedIndex == 2 ? JobSection() : Container(),
-            selectedIndex == 3 ? RoleSection() : Container(),
-            selectedIndex == 4 ? CommunitySection() : Container(),
+                  ),
+
+                  // Tab 1: Posts
+                  const SizedBox.expand(child: PostSection()),
+
+                  // Tab 2: Jobs
+                  const SizedBox.expand(child: JobSection()),
+
+                  // Tab 3: Role
+                  const SizedBox.expand(child: RoleSection()),
+
+                  // // Tab 4: Community
+                  // const SizedBox.expand(child: CommunitySection()),
+                ],
+              ),
+            ),
           ],
         ),
+      ),
+    );
+  }
+
+  Widget _buildTab(String label, int index, double underlineWidth) {
+    final isSelected = selectedIndex == index;
+    return GestureDetector(
+      onTap: () {
+        setState(() {
+          selectedIndex = index;
+        });
+      },
+      child: Column(
+        children: [
+          Text(
+            label,
+            style: TextStyle(
+              fontFamily: "Segoe UI",
+              fontSize: index == 0 ? 15.sp : 14.sp,
+              fontWeight: FontWeight.w600,
+              color: isSelected ? Colors.white : const Color(0xff93A4B0),
+            ),
+          ),
+          heightBox4,
+          Container(
+            height: 2.h,
+            width: underlineWidth,
+            color: isSelected ? Colors.blue : Colors.transparent,
+          ),
+        ],
       ),
     );
   }

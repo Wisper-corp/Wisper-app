@@ -1,4 +1,3 @@
-// ChatScreen with WhatsApp-like message animation
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:get/get.dart';
@@ -16,9 +15,9 @@ import 'package:wisper/app/modules/chat/widgets/message_bubble.dart';
 
 class ChatScreen extends StatefulWidget {
   final String? receiverId;
-  final String? receiverName; 
+  final String? receiverName;
   final String? receiverImage;
-  final String? chatId; 
+  final String? chatId;
   final bool? isPerson;
   final bool? isOnline;
 
@@ -37,23 +36,25 @@ class ChatScreen extends StatefulWidget {
 }
 
 class _ChatScreenState extends State<ChatScreen> {
-  // ✅ Use Get.find — controller was pre-loaded in ChatListScreen before navigation
   final MessageController ctrl = Get.isRegistered<MessageController>()
       ? Get.find<MessageController>()
       : Get.put(MessageController());
   final CreateChatController createChatController =
       Get.put(CreateChatController());
-  final AllChatsController allChatsController =
-      Get.put(AllChatsController());
+  final AllChatsController allChatsController = Get.put(AllChatsController());
   final SocketService socketService = Get.find<SocketService>();
   final ConnectivityService connectivityService =
       Get.find<ConnectivityService>();
   final SeenMessageController seenMessageController = SeenMessageController();
-  
+
+  // ✅ নিজস্ব ScrollController — ctrl এর টা নয়
+  final ScrollController _scrollController = ScrollController();
 
   bool _showNewMessageIndicator = false;
   bool _isAtBottom = true;
   int _previousMessageCount = 0;
+  int _initialMessageCount = 0;
+  bool _initialScrollDone = false;
   String? _lastDateSeparator;
   String? _chatId;
   Worker? _messagesWorker;
@@ -61,10 +62,8 @@ class _ChatScreenState extends State<ChatScreen> {
   @override
   void initState() {
     super.initState();
-    // Suppress blocking no-internet popup while in chat screen.
     connectivityService.suppressDialog.value = true;
 
-    // ✅ Only mark as seen — setupChat already ran before navigation
     WidgetsBinding.instance.addPostFrameCallback((_) {
       _chatId = widget.chatId;
       if (_chatId != null && _chatId!.isNotEmpty) {
@@ -73,11 +72,20 @@ class _ChatScreenState extends State<ChatScreen> {
           ctrl.setupChat(chatId: _chatId);
         }
       }
+
       _previousMessageCount = ctrl.messages.length;
-      _scrollToBottom(animated: false);
+      _initialMessageCount = ctrl.messages.length;
+
+      if (ctrl.messages.isNotEmpty) {
+        _initialScrollDone = true;
+        _initialMessageCount = ctrl.messages.length;
+        _previousMessageCount = ctrl.messages.length;
+        _scrollToBottom(animated: false);
+      }
     });
 
-    ctrl.scrollController.addListener(_scrollListener);
+    _scrollController.addListener(_scrollListener);
+
     _messagesWorker = ever(ctrl.messages, (_) {
       if (!mounted) return;
       _handleNewMessages();
@@ -85,39 +93,43 @@ class _ChatScreenState extends State<ChatScreen> {
   }
 
   void _scrollListener() {
-    if (ctrl.scrollController.hasClients) {
-      final maxScroll = ctrl.scrollController.position.maxScrollExtent;
-      final currentScroll = ctrl.scrollController.offset;
-      const threshold = 100.0;
-      final isAtBottom = (maxScroll - currentScroll) <= threshold;
+    if (!_scrollController.hasClients) return;
+    if (_scrollController.positions.length != 1) return; // ✅ safety check
 
-      if (isAtBottom != _isAtBottom) {
-        setState(() {
-          _isAtBottom = isAtBottom;
-          if (isAtBottom && _showNewMessageIndicator) {
-            _showNewMessageIndicator = false;
-          }
-        });
-      }
+    final maxScroll = _scrollController.position.maxScrollExtent;
+    final currentScroll = _scrollController.offset;
+    const threshold = 100.0;
+    final isAtBottom = (maxScroll - currentScroll) <= threshold;
+
+    if (isAtBottom != _isAtBottom) {
+      setState(() {
+        _isAtBottom = isAtBottom;
+        if (isAtBottom && _showNewMessageIndicator) {
+          _showNewMessageIndicator = false;
+        }
+      });
     }
   }
 
   void _scrollToBottom({bool animated = true}) {
-    if (ctrl.scrollController.hasClients) {
-      if (animated) {
-        ctrl.scrollController.animateTo(
-          ctrl.scrollController.position.maxScrollExtent,
-          duration: const Duration(milliseconds: 300),
-          curve: Curves.easeOut,
-        );
-      } else {
-        ctrl.scrollController.jumpTo(
-          ctrl.scrollController.position.maxScrollExtent,
-        );
-      }
-      setState(() {
-        _showNewMessageIndicator = false;
-      });
+    // ✅ positions.length == 1 চেক — এটাই মূল fix
+    if (!_scrollController.hasClients) return;
+    if (_scrollController.positions.length != 1) return;
+
+    if (animated) {
+      _scrollController.animateTo(
+        _scrollController.position.maxScrollExtent,
+        duration: const Duration(milliseconds: 300),
+        curve: Curves.easeOut,
+      );
+    } else {
+      _scrollController.jumpTo(
+        _scrollController.position.maxScrollExtent,
+      );
+    }
+
+    if (mounted) {
+      setState(() => _showNewMessageIndicator = false);
     }
   }
 
@@ -134,13 +146,9 @@ class _ChatScreenState extends State<ChatScreen> {
     if (createdId.isEmpty) return false;
 
     if (!mounted) return false;
-    setState(() {
-      _chatId = createdId;
-    });
+    setState(() => _chatId = createdId);
 
-    // Initialize message socket/list for the new chat
     await ctrl.setupChat(chatId: _chatId);
-    // Refresh chat list so new conversation appears immediately
     await allChatsController.getAllChats();
     return true;
   }
@@ -154,7 +162,7 @@ class _ChatScreenState extends State<ChatScreen> {
     _ensureChatListEntry();
     ctrl.sendMessage(_chatId ?? '');
     Future.delayed(const Duration(milliseconds: 100), () {
-      _scrollToBottom();
+      if (mounted) _scrollToBottom();
     });
   }
 
@@ -205,26 +213,44 @@ class _ChatScreenState extends State<ChatScreen> {
   void _handleNewMessages() {
     final currentCount = ctrl.messages.length;
 
+    if (!_initialScrollDone && currentCount > 0) {
+      _initialScrollDone = true;
+      _initialMessageCount = currentCount;
+      _previousMessageCount = currentCount;
+      Future.delayed(const Duration(milliseconds: 150), () {
+        if (mounted) _scrollToBottom(animated: false);
+      });
+      return;
+    }
+
     if (currentCount < _previousMessageCount) {
       _previousMessageCount = currentCount;
       if (mounted && _showNewMessageIndicator) {
-        setState(() {
-          _showNewMessageIndicator = false;
-        });
+        setState(() => _showNewMessageIndicator = false);
       }
       return;
     }
 
     if (currentCount > _previousMessageCount) {
-      if (_isAtBottom) {
+      final lastMsg = ctrl.messages.isNotEmpty ? ctrl.messages.last : null;
+      final isMyMessage =
+          lastMsg != null &&
+          lastMsg[SocketMessageKeys.senderId] == ctrl.userAuthId;
+
+      if (isMyMessage) {
+        Future.delayed(const Duration(milliseconds: 100), () {
+          if (mounted) _scrollToBottom();
+        });
+      } else if (_isAtBottom) {
         Future.delayed(const Duration(milliseconds: 50), () {
-          _scrollToBottom();
+          if (mounted) _scrollToBottom();
         });
       } else {
-        setState(() {
-          _showNewMessageIndicator = true;
-        });
+        if (mounted) {
+          setState(() => _showNewMessageIndicator = true);
+        }
       }
+
       _previousMessageCount = currentCount;
     }
   }
@@ -251,15 +277,15 @@ class _ChatScreenState extends State<ChatScreen> {
   }
 
   bool _shouldShowDateSeparator(
-      int index,
-      List<Map<String, dynamic>> messages,
-      ) {
+    int index,
+    List<Map<String, dynamic>> messages,
+  ) {
     if (messages.isEmpty || index >= messages.length) return false;
 
     final currentMsg = messages[index];
     final currentDate =
         DateTime.tryParse(currentMsg[SocketMessageKeys.createdAt]) ??
-            DateTime.now();
+        DateTime.now();
 
     if (index == 0) {
       _lastDateSeparator = _getDateSeparatorText(currentDate);
@@ -269,7 +295,7 @@ class _ChatScreenState extends State<ChatScreen> {
     final prevMsg = messages[index - 1];
     final prevDate =
         DateTime.tryParse(prevMsg[SocketMessageKeys.createdAt]) ??
-            DateTime.now();
+        DateTime.now();
 
     final currentSeparator = _getDateSeparatorText(currentDate);
     final prevSeparator = _getDateSeparatorText(prevDate);
@@ -327,9 +353,9 @@ class _ChatScreenState extends State<ChatScreen> {
 
   @override
   void dispose() {
-    // Re-enable popup for other screens.
     connectivityService.suppressDialog.value = false;
-    ctrl.scrollController.removeListener(_scrollListener);
+    _scrollController.removeListener(_scrollListener);
+    _scrollController.dispose(); // ✅ নিজেরটা dispose করতে হবে
     _messagesWorker?.dispose();
     super.dispose();
   }
@@ -390,10 +416,10 @@ class _ChatScreenState extends State<ChatScreen> {
                   final displayedMessages = ctrl.messages.toList();
 
                   return ListView.builder(
-                    controller: ctrl.scrollController,
+                    controller: _scrollController, // ✅ নিজস্ব controller
                     reverse: false,
                     padding: EdgeInsets.all(10.r),
-                    itemCount: displayedMessages.length + 1, // +1 encryption notice
+                    itemCount: displayedMessages.length + 1,
                     itemBuilder: (context, index) {
                       if (index == 0) return _buildEncryptionNotice();
 
@@ -412,9 +438,7 @@ class _ChatScreenState extends State<ChatScreen> {
                         displayedMessages,
                       );
 
-                      // New messages are those beyond the initial loaded count
-                      final isNewMessage = messageIndex >=
-                          (displayedMessages.length - _previousMessageCount);
+                      final isNewMessage = messageIndex >= _initialMessageCount;
 
                       return Column(
                         children: [
@@ -449,11 +473,10 @@ class _ChatScreenState extends State<ChatScreen> {
                             ),
                         ],
                       );
-                    }, 
+                    },
                   );
                 }),
 
-                // WhatsApp-style new message indicator
                 if (_showNewMessageIndicator)
                   Positioned(
                     bottom: 70.h,
@@ -524,7 +547,6 @@ class _ChatScreenState extends State<ChatScreen> {
   }
 }
 
-// Animated wrapper for new incoming messages
 class AnimatedMessageBubble extends StatefulWidget {
   final Map<String, dynamic> message;
   final bool isMe;
@@ -573,16 +595,15 @@ class _AnimatedMessageBubbleState extends State<AnimatedMessageBubble>
       ),
     );
 
-    _slideAnimation =
-        Tween<Offset>(
-          begin: const Offset(0.0, 0.5),
-          end: Offset.zero,
-        ).animate(
-          CurvedAnimation(
-            parent: _controller,
-            curve: const Interval(0.0, 1.0, curve: Curves.easeOut),
-          ),
-        );
+    _slideAnimation = Tween<Offset>(
+      begin: const Offset(0.0, 0.5),
+      end: Offset.zero,
+    ).animate(
+      CurvedAnimation(
+        parent: _controller,
+        curve: const Interval(0.0, 1.0, curve: Curves.easeOut),
+      ),
+    );
 
     Future.delayed(const Duration(milliseconds: 50), () {
       if (mounted) _controller.forward();

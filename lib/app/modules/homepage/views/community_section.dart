@@ -69,45 +69,43 @@ class _CommunitySectionState extends State<CommunitySection> {
 
   @override
   Widget build(BuildContext context) {
-    return Expanded(
-      child: Obx(() {
-        if (controller.inProgress) {
-          return const Center(child: CircularProgressIndicator());
-        }
+    return Obx(() {
+      if (controller.inProgress) {
+        return const Center(child: CircularProgressIndicator());
+      }
 
-        if (controller.allGroupData == null ||
-            controller.allGroupData!.isEmpty) {
-          return Center(
-            child: Text(
-              'No communities yet',
-              style: TextStyle(color: Colors.white70, fontSize: 12.sp),
-            ),
-          );
-        }
-        var groupData = controller.allGroupData;
-        return ListView.builder(
-          padding: const EdgeInsets.symmetric(horizontal: 10),
-          itemCount: groupData?.length,
-          itemBuilder: (context, index) {
-            final item = groupData?[index];
-
-            return MemberListTile(
-              isOnline: false, // usually no "online" for group/class
-              onTap: () {
-                joinGroup(item?.id, item?.name, item?.image);
-              },
-
-              isGroup: true,
-              isClass: false,
-              imagePath: item?.image ?? '',
-              name: item?.name ?? '',
-              message: '',
-              time: '',
-              unreadMessageCount: '',
-            );
-          },
+      if (controller.allGroupData == null ||
+          controller.allGroupData!.isEmpty) {
+        return Center(
+          child: Text(
+            'No communities yet',
+            style: TextStyle(color: Colors.white70, fontSize: 12.sp),
+          ),
         );
-      }),
-    );
+      }
+      var groupData = controller.allGroupData;
+      return ListView.builder(
+        padding: const EdgeInsets.symmetric(horizontal: 10),
+        itemCount: groupData?.length,
+        itemBuilder: (context, index) {
+          final item = groupData?[index];
+
+          return MemberListTile(
+            isOnline: false, // usually no "online" for group/class
+            onTap: () {
+              joinGroup(item?.id, item?.name, item?.image);
+            },
+
+            isGroup: true,
+            isClass: false,
+            imagePath: item?.image ?? '',
+            name: item?.name ?? '',
+            message: '',
+            time: '',
+            unreadMessageCount: '',
+          );
+        },
+      );
+    });
   }
 }

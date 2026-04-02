@@ -58,39 +58,37 @@ class _JobSectionState extends State<JobSection> {
       } else {
         print('Length: ${controller.allJobData.length}');
 
-        return Expanded(
-          child: ListView.builder(
-            padding: EdgeInsets.all(0),
-            itemCount: controller.allJobData.length,
+        return ListView.builder(
+          padding: EdgeInsets.all(0),
+          itemCount: controller.allJobData.length,
 
-            itemBuilder: (context, index) {
-              var date = controller.allJobData[index].createdAt;
-              final DateFormatter formattedTime = DateFormatter(date!);
-              return Padding(
-                padding: const EdgeInsets.symmetric(vertical: 8.0),
-                child: JobCard(
-                  postId: controller.allJobData[index].id,
-                  ownerImage:
-                      controller.allJobData[index].author!.business?.image ??
-                      '',
-                  ownerName:
-                      controller.allJobData[index].author!.business?.name ?? '',
-                  ownerDesignation:
-                      controller.allJobData[index].author!.business?.industry ??
-                      '',
-                  jobTitle: controller.allJobData[index].title ?? '',
-                  salary: controller.allJobData[index].salary.toString(),
-                  location: controller.allJobData[index].location ?? 'Not Mentioned',
-                  jobType: controller.allJobData[index].type ?? '',
-                  jobDescription:
-                      controller.allJobData[index].description ?? '',
-                  shiftType:
-                      controller.allJobData[index].compensationType ?? '',
-                  date: formattedTime.getRelativeTimeFormat(),
-                ),
-              );
-            },
-          ),
+          itemBuilder: (context, index) {
+            var date = controller.allJobData[index].createdAt;
+            final DateFormatter formattedTime = DateFormatter(date!);
+            return Padding(
+              padding: const EdgeInsets.symmetric(vertical: 8.0),
+              child: JobCard(
+                postId: controller.allJobData[index].id,
+                ownerImage:
+                    controller.allJobData[index].author!.business?.image ??
+                    '',
+                ownerName:
+                    controller.allJobData[index].author!.business?.name ?? '',
+                ownerDesignation:
+                    controller.allJobData[index].author!.business?.industry ??
+                    '',
+                jobTitle: controller.allJobData[index].title ?? '',
+                salary: controller.allJobData[index].salary.toString(),
+                location: controller.allJobData[index].location ?? 'Not Mentioned',
+                jobType: controller.allJobData[index].type ?? '',
+                jobDescription:
+                    controller.allJobData[index].description ?? '',
+                shiftType:
+                    controller.allJobData[index].compensationType ?? '',
+                date: formattedTime.getRelativeTimeFormat(),
+              ),
+            );
+          },
         );
       }
     });

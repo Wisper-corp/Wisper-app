@@ -132,71 +132,69 @@ class _RoleSectionState extends State<RoleSection> {
 
   @override
   Widget build(BuildContext context) {
-    return Expanded(
-      child: Obx(() {
-        if (allRoleController.inProgress) {
+    return Obx(() {
+      if (allRoleController.inProgress) {
+        return MemberShimmerEffectWidget();
+      } else if (allRoleController.allRoleData == null ||
+          allRoleController.allRoleData!.isEmpty) {
+        if (!connectivityService.isOnline.value) {
           return MemberShimmerEffectWidget();
-        } else if (allRoleController.allRoleData == null ||
-            allRoleController.allRoleData!.isEmpty) {
-          if (!connectivityService.isOnline.value) {
-            return MemberShimmerEffectWidget();
-          }
-          return const Center(
-            child: Text('No role found', style: TextStyle(fontSize: 12)),
-          );
-        } else {
-          var data = allRoleController.allRoleData;
-          return ListView.builder(
-            padding: EdgeInsets.all(0),
-            itemCount: data!.length,
-            itemBuilder: (context, index) {
-              var status = data[index].connectionStatus;
-              print(
-                'id ${data[index].id} and my id ${StorageUtil.getData(StorageUtil.userId)}',
-              );
-              print('status $status for ${data[index].person?.name}');
-              var id =
-                  data[index].id == StorageUtil.getData(StorageUtil.userId);
-              return status == 'ACCEPTED' || status == 'PENDING'
-                  ? Container()
-                  : status == 'REJECTED' || status == 'REQUEST_RECEIVED'
-                  ? Container()
-                  : id == true
-                  ? Container()
-                  : Padding(
-                      padding: const EdgeInsets.symmetric(vertical: 8.0),
-                      child: RoleCard(
-                        isEnable: status == 'REQUEST_SENT' ? false : true,
-                        status: status == 'REQUEST_SENT'
-                            ? 'Pending'
-                            : status == 'NOT_CONNECTED'
-                            ? '+ Add'
-                            : 'N/A',
-                        title: data[index].person?.name ?? 'N/A',
-                        post: data[index].count?.posts ?? 0,
-                        imagePath: data[index].person?.image ?? '',
-                        recommendations:
-                            data[index].count?.receivedRecommendations ?? 0,
-                        messagesOnTap: () {
-                          createChat(
-                            data[index].id,
-                            data[index].person?.name,
-                            data[index].person?.image,
-                          );
-                        },
-                        addOnTap: () {
-                          status == 'NOT_CONNECTED'
-                              ? addRequest(data[index].id)
-                              : null;
-                        },
-                        role: data[index].person?.title ?? 'N/A',
-                        id: data[index].id ?? 'N/A',
-                      ),
-                    );
-            },
-          );
         }
-      }),
-    );
+        return const Center(
+          child: Text('No role found', style: TextStyle(fontSize: 12)),
+        );
+      } else {
+        var data = allRoleController.allRoleData;
+        return ListView.builder(
+          padding: EdgeInsets.all(0),
+          itemCount: data!.length,
+          itemBuilder: (context, index) {
+            var status = data[index].connectionStatus;
+            print(
+              'id ${data[index].id} and my id ${StorageUtil.getData(StorageUtil.userId)}',
+            );
+            print('status $status for ${data[index].person?.name}');
+            var id =
+                data[index].id == StorageUtil.getData(StorageUtil.userId);
+            return status == 'ACCEPTED' || status == 'PENDING'
+                ? Container()
+                : status == 'REJECTED' || status == 'REQUEST_RECEIVED'
+                ? Container()
+                : id == true
+                ? Container()
+                : Padding(
+                    padding: const EdgeInsets.symmetric(vertical: 8.0),
+                    child: RoleCard(
+                      isEnable: status == 'REQUEST_SENT' ? false : true,
+                      status: status == 'REQUEST_SENT'
+                          ? 'Pending'
+                          : status == 'NOT_CONNECTED'
+                          ? '+ Add'
+                          : 'N/A',
+                      title: data[index].person?.name ?? 'N/A',
+                      post: data[index].count?.posts ?? 0,
+                      imagePath: data[index].person?.image ?? '',
+                      recommendations:
+                          data[index].count?.receivedRecommendations ?? 0,
+                      messagesOnTap: () {
+                        createChat(
+                          data[index].id,
+                          data[index].person?.name,
+                          data[index].person?.image,
+                        );
+                      },
+                      addOnTap: () {
+                        status == 'NOT_CONNECTED'
+                            ? addRequest(data[index].id)
+                            : null;
+                      },
+                      role: data[index].person?.title ?? 'N/A',
+                      id: data[index].id ?? 'N/A',
+                    ),
+                  );
+          },
+        );
+      }
+    });
   }
 }
