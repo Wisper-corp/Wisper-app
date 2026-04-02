@@ -116,9 +116,7 @@ class _AllCallsState extends State<AllCalls> {
                         );
                 },
                 child: CallListTile(
-                  imagePath:
-                      displayImage ??
-                      Assets.images.image.keyName, // fallback image
+                  imagePath: displayImage ?? '', // fallback image
                   name: call.mode == 'GROUP' ? displayName : displayName,
                   time: timeStr,
                   callType: callType,

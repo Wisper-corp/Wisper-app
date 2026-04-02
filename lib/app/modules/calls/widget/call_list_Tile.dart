@@ -1,4 +1,3 @@
-
 import 'package:crash_safe_image/crash_safe_image.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
@@ -32,7 +31,11 @@ class CallListTile extends StatelessWidget {
             children: [
               CircleAvatar(
                 radius: 21.r,
+                backgroundColor: Colors.grey,
                 backgroundImage: NetworkImage(imagePath),
+                child: imagePath.isEmpty || imagePath == ""
+                    ? Icon(Icons.person, size: 30.sp)
+                    : null,
               ),
               widthBox10,
               Column(
@@ -74,7 +77,11 @@ class CallListTile extends StatelessWidget {
                 ),
               ),
               widthBox12,
-              Icon(Icons.info_outline, size: 16, color: LightThemeColors.themeGreyColor),
+              Icon(
+                Icons.info_outline,
+                size: 16,
+                color: LightThemeColors.themeGreyColor,
+              ),
             ],
           ),
         ],

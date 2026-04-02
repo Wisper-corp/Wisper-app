@@ -56,6 +56,7 @@ class _ChatScreenState extends State<ChatScreen> {
   int _previousMessageCount = 0;
   String? _lastDateSeparator;
   String? _chatId;
+  Worker? _messagesWorker;
 
   @override
   void initState() {
@@ -77,6 +78,10 @@ class _ChatScreenState extends State<ChatScreen> {
     });
 
     ctrl.scrollController.addListener(_scrollListener);
+    _messagesWorker = ever(ctrl.messages, (_) {
+      if (!mounted) return;
+      _handleNewMessages();
+    });
   }
 
   void _scrollListener() {
@@ -200,6 +205,16 @@ class _ChatScreenState extends State<ChatScreen> {
   void _handleNewMessages() {
     final currentCount = ctrl.messages.length;
 
+    if (currentCount < _previousMessageCount) {
+      _previousMessageCount = currentCount;
+      if (mounted && _showNewMessageIndicator) {
+        setState(() {
+          _showNewMessageIndicator = false;
+        });
+      }
+      return;
+    }
+
     if (currentCount > _previousMessageCount) {
       if (_isAtBottom) {
         Future.delayed(const Duration(milliseconds: 50), () {
@@ -315,6 +330,7 @@ class _ChatScreenState extends State<ChatScreen> {
     // Re-enable popup for other screens.
     connectivityService.suppressDialog.value = false;
     ctrl.scrollController.removeListener(_scrollListener);
+    _messagesWorker?.dispose();
     super.dispose();
   }
 
@@ -338,12 +354,6 @@ class _ChatScreenState extends State<ChatScreen> {
             child: Stack(
               children: [
                 Obx(() {
-                  WidgetsBinding.instance.addPostFrameCallback((_) {
-                    if (ctrl.messages.isNotEmpty) {
-                      _handleNewMessages();
-                    }
-                  });
-
                   if (ctrl.messages.isEmpty) {
                     return Column(
                       children: [

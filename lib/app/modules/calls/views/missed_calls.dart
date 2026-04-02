@@ -18,7 +18,7 @@ class MissedCalls extends StatefulWidget {
 }
 
 class _MissedCallsState extends State<MissedCalls> {
-  final AllCallController allCallController = Get.put(AllCallController());
+  final AllCallController allCallController = Get.put(AllCallController()); 
   final ConnectivityService connectivityService =
       Get.find<ConnectivityService>();
 
@@ -113,7 +113,7 @@ class _MissedCallsState extends State<MissedCalls> {
                         );
                 },
                 child: CallListTile(
-                  imagePath: displayImage ?? Assets.images.image.keyName,
+                  imagePath: displayImage ?? '',
                   name: displayName,
                   time: timeStr,
                   callType: 'Missed',

@@ -54,6 +54,7 @@ class _VideoCallPageState extends State<VideoCallPage> {
 
   late RtcEngine agoraEngine;
   final List<int> _remoteUids = [];
+  final Set<int> _remoteVideoMuted = {};
 
   bool localUserJoined = false;
   bool _micEnabled = true;
@@ -340,6 +341,7 @@ class _VideoCallPageState extends State<VideoCallPage> {
             if (mounted) {
               setState(() {
                 _remoteUids.remove(rUid);
+                _remoteVideoMuted.remove(rUid);
               });
               if (_remoteUids.isEmpty && !_isLeavingCall) {
                 socketService.socket.emitWithAck(
@@ -353,6 +355,25 @@ class _VideoCallPageState extends State<VideoCallPage> {
           },
           onConnectionStateChanged: (c, state, reason) {
             if (mounted) setState(() {});
+          },
+          onRemoteVideoStateChanged: (
+            RtcConnection connection,
+            int rUid,
+            RemoteVideoState state,
+            RemoteVideoStateReason reason,
+            int elapsed,
+          ) {
+            if (!mounted) return;
+            final bool muted =
+                state == RemoteVideoState.remoteVideoStateStopped ||
+                state == RemoteVideoState.remoteVideoStateFrozen;
+            setState(() {
+              if (muted) {
+                _remoteVideoMuted.add(rUid);
+              } else {
+                _remoteVideoMuted.remove(rUid);
+              }
+            });
           },
           onError: (err, msg) {
             if (mounted) setState(() {});
@@ -448,17 +469,104 @@ class _VideoCallPageState extends State<VideoCallPage> {
   // VIDEO TILE — ✅ name label এখন participantInfo থেকে আসে
   // ──────────────────────────────────────────────────────────────────
   Widget _videoTile(int uid, {String? label, double? radius}) {
+    final bool isLocal = uid == 0;
+    final bool showLocalAvatar = isLocal && !_cameraEnabled;
+    final bool showRemoteAvatar =
+        !isLocal && _remoteVideoMuted.contains(uid);
+    final String localName =
+        StorageUtil.getData(StorageUtil.cachedUserName)?.toString() ?? 'Me';
+    final String localImage =
+        StorageUtil.getData(StorageUtil.cachedUserImage)?.toString() ?? '';
+    final String remoteName = _nameForUid(uid);
+    final String remoteImage = _imageForUid(uid);
+
     return ClipRRect(
       borderRadius: BorderRadius.circular(radius ?? 16),
       child: Stack(
         fit: StackFit.expand,
         children: [
-          AgoraVideoView(
-            controller: VideoViewController(
-              rtcEngine: agoraEngine,
-              canvas: VideoCanvas(uid: uid),
+          if (showLocalAvatar)
+            Container(
+              color: const Color(0xff1B1B1B),
+              child: Center(
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    CircleAvatar(
+                      radius: 36,
+                      backgroundColor: Colors.white12,
+                      backgroundImage:
+                          localImage.isNotEmpty ? NetworkImage(localImage) : null,
+                      child: localImage.isEmpty
+                          ? Text(
+                              localName.isNotEmpty ? localName[0] : 'M',
+                              style: const TextStyle(
+                                color: Colors.white,
+                                fontSize: 20,
+                                fontWeight: FontWeight.w600,
+                              ),
+                            )
+                          : null,
+                    ),
+                    const SizedBox(height: 8),
+                    Text(
+                      localName.isNotEmpty ? localName : 'Me',
+                      style: const TextStyle(
+                        color: Colors.white70,
+                        fontSize: 12,
+                        fontWeight: FontWeight.w500,
+                      ),
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                  ],
+                ),
+              ),
+            )
+          else if (showRemoteAvatar)
+            Container(
+              color: const Color(0xff1B1B1B),
+              child: Center(
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    CircleAvatar(
+                      radius: 36,
+                      backgroundColor: Colors.white12,
+                      backgroundImage: remoteImage.isNotEmpty
+                          ? NetworkImage(remoteImage)
+                          : null,
+                      child: remoteImage.isEmpty
+                          ? Text(
+                              remoteName.isNotEmpty ? remoteName[0] : 'U',
+                              style: const TextStyle(
+                                color: Colors.white,
+                                fontSize: 20,
+                                fontWeight: FontWeight.w600,
+                              ),
+                            )
+                          : null,
+                    ),
+                    const SizedBox(height: 8),
+                    Text(
+                      remoteName.isNotEmpty ? remoteName : 'User',
+                      style: const TextStyle(
+                        color: Colors.white70,
+                        fontSize: 12,
+                        fontWeight: FontWeight.w500,
+                      ),
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                  ],
+                ),
+              ),
+            )
+          else
+            AgoraVideoView(
+              controller: VideoViewController(
+                rtcEngine: agoraEngine,
+                canvas: VideoCanvas(uid: uid),
+              ),
             ),
-          ),
           // ✅ Name label — bottom-left
           if (label != null)
             Positioned(
