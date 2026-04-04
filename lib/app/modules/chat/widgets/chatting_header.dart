@@ -60,6 +60,29 @@ class _ChatHeaderState extends State<ChatHeader> {
   final CallController callController = CallController();
   final SocketService socketService = Get.find<SocketService>();
 
+  bool _isValidImagePath(String? path) {
+    if (path == null) return false;
+    final trimmed = path.trim();
+    if (trimmed.isEmpty) return false;
+    final lowered = trimmed.toLowerCase();
+    return lowered != 'null' && lowered != 'undefined';
+  }
+
+  bool _isAssetPath(String path) {
+    final trimmed = path.trim();
+    return trimmed.startsWith('assets/') || trimmed.startsWith('packages/');
+  }
+
+  String _initialsFromName(String value) {
+    final trimmed = value.trim();
+    if (trimmed.isEmpty) return '?';
+    final parts = trimmed.split(RegExp(r'\s+'));
+    if (parts.length == 1) return parts.first[0].toUpperCase();
+    final first = parts[0].isNotEmpty ? parts[0][0] : '';
+    final second = parts[1].isNotEmpty ? parts[1][0] : '';
+    return (first + second).toUpperCase();
+  }
+
   void getRoomId(String? type, String? medium) {
     showLoadingOverLay(
       asyncFunction: () async => await performRoomId(context, type, medium),
@@ -409,19 +432,32 @@ class _ChatHeaderState extends State<ChatHeader> {
                         radius: 13,
                       ),
                       widthBox10,
-                      (widget.image == null || widget.image!.isEmpty)
+                      !_isValidImagePath(widget.image)
                           ? CircleAvatar(
                               radius: 20,
                               backgroundColor: Colors.grey.shade800,
-                              child: CrashSafeImage(
-                                Assets.images.image.keyName,
-                                color: Colors.white70,
-                                height: 20.h,
+                              child: Text(
+                                _initialsFromName(widget.name ?? ''),
+                                style: TextStyle(
+                                  color: Colors.white,
+                                  fontSize: 12.sp,
+                                  fontWeight: FontWeight.w600,
+                                ),
                               ),
                             )
                           : CircleAvatar(
-                              backgroundImage: NetworkImage(widget.image!),
                               radius: 20,
+                              backgroundColor: Colors.transparent,
+                              backgroundImage:
+                                  _isAssetPath(widget.image ?? '')
+                                      ? null
+                                      : NetworkImage(widget.image!),
+                              child: _isAssetPath(widget.image ?? '')
+                                  ? CrashSafeImage(
+                                      widget.image!,
+                                      height: 20.h,
+                                    )
+                                  : null,
                             ),
                       widthBox10,
                       Column(

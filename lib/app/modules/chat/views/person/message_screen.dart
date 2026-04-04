@@ -39,8 +39,9 @@ class _ChatScreenState extends State<ChatScreen> {
   final MessageController ctrl = Get.isRegistered<MessageController>()
       ? Get.find<MessageController>()
       : Get.put(MessageController());
-  final CreateChatController createChatController =
-      Get.put(CreateChatController());
+  final CreateChatController createChatController = Get.put(
+    CreateChatController(),
+  );
   final AllChatsController allChatsController = Get.put(AllChatsController());
   final SocketService socketService = Get.find<SocketService>();
   final ConnectivityService connectivityService =
@@ -123,9 +124,7 @@ class _ChatScreenState extends State<ChatScreen> {
         curve: Curves.easeOut,
       );
     } else {
-      _scrollController.jumpTo(
-        _scrollController.position.maxScrollExtent,
-      );
+      _scrollController.jumpTo(_scrollController.position.maxScrollExtent);
     }
 
     if (mounted) {
@@ -269,8 +268,18 @@ class _ChatScreenState extends State<ChatScreen> {
       return 'Yesterday';
     } else {
       const monthNames = [
-        'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun',
-        'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec',
+        'Jan',
+        'Feb',
+        'Mar',
+        'Apr',
+        'May',
+        'Jun',
+        'Jul',
+        'Aug',
+        'Sep',
+        'Oct',
+        'Nov',
+        'Dec',
       ];
       return '${date.day} ${monthNames[date.month - 1]} ${date.year}';
     }
@@ -330,9 +339,9 @@ class _ChatScreenState extends State<ChatScreen> {
     );
   }
 
-  Widget _buildEncryptionNotice() {
+  Widget _buildEncryptionNotice({EdgeInsets? margin}) {
     return Container(
-      margin: EdgeInsets.only(bottom: 16.h),
+      margin: margin ?? EdgeInsets.only(bottom: 16.h),
       padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 12.h),
       child: Column(
         children: [
@@ -381,35 +390,35 @@ class _ChatScreenState extends State<ChatScreen> {
               children: [
                 Obx(() {
                   if (ctrl.messages.isEmpty) {
-                    return Column(
-                      children: [
-                        Expanded(
-                          child: Center(
-                            child: Column(
-                              mainAxisAlignment: MainAxisAlignment.center,
-                              children: [
-                                Text(
-                                  "No messages yet",
-                                  style: TextStyle(
-                                    fontSize: 16.sp,
-                                    color: Colors.grey,
-                                    fontWeight: FontWeight.w500,
-                                  ),
-                                ),
-                                SizedBox(height: 8.h),
-                                Text(
-                                  "Start the conversation!",
-                                  style: TextStyle(
-                                    fontSize: 12.sp,
-                                    color: Colors.grey,
-                                  ),
-                                ),
-                              ],
+                    return SingleChildScrollView(
+                      child: Column(
+                        mainAxisSize: MainAxisSize.max,
+                        children: [
+                          _buildEncryptionNotice(
+                            margin: EdgeInsets.only(top: 4.h),
+                          ),
+                          SizedBox(
+                            height: MediaQuery.of(context).size.height * 0.28,
+                          ),
+                          Text(
+                            "No messages yet",
+                            style: TextStyle(
+                              fontSize: 16.sp,
+                              color: Colors.grey,
+                              fontWeight: FontWeight.w500,
                             ),
                           ),
-                        ),
-                        _buildEncryptionNotice(),
-                      ],
+                          SizedBox(height: 8.h),
+                          Text(
+                            "Start the conversation!",
+                            style: TextStyle(
+                              fontSize: 12.sp,
+                              color: Colors.grey,
+                            ),
+                          ),
+                          
+                        ],
+                      ),
                     );
                   }
 
@@ -537,10 +546,7 @@ class _ChatScreenState extends State<ChatScreen> {
             ),
           ),
 
-          MessageInputBar(
-            controller: ctrl.textController,
-            onSend: _handleSend,
-          ),
+          MessageInputBar(controller: ctrl.textController, onSend: _handleSend),
         ],
       ),
     );
@@ -595,15 +601,13 @@ class _AnimatedMessageBubbleState extends State<AnimatedMessageBubble>
       ),
     );
 
-    _slideAnimation = Tween<Offset>(
-      begin: const Offset(0.0, 0.5),
-      end: Offset.zero,
-    ).animate(
-      CurvedAnimation(
-        parent: _controller,
-        curve: const Interval(0.0, 1.0, curve: Curves.easeOut),
-      ),
-    );
+    _slideAnimation =
+        Tween<Offset>(begin: const Offset(0.0, 0.5), end: Offset.zero).animate(
+          CurvedAnimation(
+            parent: _controller,
+            curve: const Interval(0.0, 1.0, curve: Curves.easeOut),
+          ),
+        );
 
     Future.delayed(const Duration(milliseconds: 50), () {
       if (mounted) _controller.forward();

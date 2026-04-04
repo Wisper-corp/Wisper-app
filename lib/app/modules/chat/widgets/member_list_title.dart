@@ -29,18 +29,42 @@ class MemberListTile extends StatelessWidget {
     required this.isOnline,
   });
 
+  bool _isValidImagePath(String path) {
+    final trimmed = path.trim();
+    if (trimmed.isEmpty) return false;
+    final lowered = trimmed.toLowerCase();
+    return lowered != 'null' && lowered != 'undefined';
+  }
+
+  bool _isAssetPath(String path) {
+    final trimmed = path.trim();
+    return trimmed.startsWith('assets/') || trimmed.startsWith('packages/');
+  }
+
+  String _initialsFromName(String value) {
+    final trimmed = value.trim();
+    if (trimmed.isEmpty) return '?';
+    final parts = trimmed.split(RegExp(r'\s+'));
+    if (parts.length == 1) return parts.first[0].toUpperCase();
+    final first = parts[0].isNotEmpty ? parts[0][0] : '';
+    final second = parts[1].isNotEmpty ? parts[1][0] : '';
+    return (first + second).toUpperCase();
+  }
+
   @override
   Widget build(BuildContext context) {
     final int unreadCount = int.tryParse(unreadMessageCount) ?? 0;
+    final bool hasImage = _isValidImagePath(imagePath);
+    final bool isAsset = _isAssetPath(imagePath);
 
     return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 4),
+      padding: const EdgeInsets.symmetric(vertical: 2),
       child: InkWell(
         onTap: onTap,
         child: Padding(
-          padding: const EdgeInsets.all(8.0),
+          padding: const EdgeInsets.symmetric(horizontal: 8.0, vertical: 6.0),
           child: Row(
-            crossAxisAlignment: CrossAxisAlignment.start,
+            crossAxisAlignment: CrossAxisAlignment.center,
             children: [
               // Profile Image
               Stack(
@@ -53,34 +77,51 @@ class MemberListTile extends StatelessWidget {
                         : isClass
                         ? const Color(0xff102B19)
                         : Colors.grey.shade800,
-                    child: isGroup && imagePath.isEmpty
+                    child: isGroup && !hasImage
                         ? CrashSafeImage(
                             Assets.images.userGroup.keyName,
                             color: const Color(0xff1F7DE9),
                             height: 26.h,
                           )
-                        : isGroup && imagePath.isNotEmpty
+                        : isGroup && hasImage
                         ? CircleAvatar(
                             radius: 25.r,
-                            backgroundImage: NetworkImage(imagePath),
+                            backgroundImage:
+                                isAsset ? null : NetworkImage(imagePath),
                             backgroundColor: Colors.transparent,
+                            child: isAsset
+                                ? CrashSafeImage(
+                                    imagePath,
+                                    height: 28.h,
+                                  )
+                                : null,
                           )
-                        : isClass && imagePath.isEmpty
+                        : isClass && !hasImage
                         ? CrashSafeImage(
                             Assets.images.education.keyName,
                             color: const Color(0xff11AE46),
                             height: 22.h,
                           )
-                        : imagePath.isEmpty
-                        ? CrashSafeImage(
-                            Assets.images.image.keyName,
-                            color: Colors.white70,
-                            height: 26.h,
+                        : !hasImage
+                        ? Text(
+                            _initialsFromName(name),
+                            style: TextStyle(
+                              color: Colors.white,
+                              fontSize: 16.sp,
+                              fontWeight: FontWeight.w600,
+                            ),
                           )
                         : CircleAvatar(
                             radius: 25.r,
-                            backgroundImage: NetworkImage(imagePath),
+                            backgroundImage:
+                                isAsset ? null : NetworkImage(imagePath),
                             backgroundColor: Colors.transparent,
+                            child: isAsset
+                                ? CrashSafeImage(
+                                    imagePath,
+                                    height: 28.h,
+                                  )
+                                : null,
                           ),
                   ),
 
@@ -179,7 +220,7 @@ class MemberListTile extends StatelessWidget {
                         ),
                       ],
                     ),
-                    const SizedBox(height: 12),
+                    const SizedBox(height: 6),
                     Container(height: 0.5, color: Colors.grey.withOpacity(0.5)),
                   ],
                 ),
