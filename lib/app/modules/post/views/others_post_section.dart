@@ -75,7 +75,7 @@ class _OthersPostSectionState extends State<OthersPostSection> {
                 },
                 ownerId: post.author?.id ?? '',
                 trailing: const Text(
-                  'Sponsor',
+                  '',
                   style: TextStyle(
                     fontWeight: FontWeight.w400,
                     fontSize: 12,

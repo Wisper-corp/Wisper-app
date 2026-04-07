@@ -33,7 +33,7 @@ class OthersPersonScreen extends StatefulWidget {
   final String userId;
   const OthersPersonScreen({super.key, required this.userId});
 
-  @override 
+  @override
   State<OthersPersonScreen> createState() => _OthersPersonScreenState();
 }
 
@@ -161,7 +161,7 @@ class _OthersPersonScreenState extends State<OthersPersonScreen> {
       showSnackBarMessage(context, addRequestController.errorMessage, true);
     }
   }
-  
+
   void changeStatus(String userId, String status) {
     showLoadingOverLay(
       asyncFunction: () async => await performSubmit(context, userId, status),
@@ -224,7 +224,7 @@ class _OthersPersonScreenState extends State<OthersPersonScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold( 
+    return Scaffold(
       body: Padding(
         padding: EdgeInsets.symmetric(horizontal: 20.w),
         child: Column(
@@ -253,7 +253,7 @@ class _OthersPersonScreenState extends State<OthersPersonScreen> {
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
                     CircleIconWidget(
-                      imagePath: Assets.images.unselectedChat.keyName,
+                      imagePath: Assets.images.messenger.keyName,
                       onTap: () =>
                           createChat(person?.id, person?.name, person?.image),
                       radius: 15,
@@ -261,7 +261,6 @@ class _OthersPersonScreenState extends State<OthersPersonScreen> {
                       iconColor: Colors.white,
                     ),
                     SizedBox(width: 10.w),
-
                     // নিজের প্রোফাইল হলে কোনো বাটন দেখাবে না
                     if (controller.othersProfileData?.auth?.id ==
                         StorageUtil.getData(StorageUtil.userId))
@@ -320,14 +319,14 @@ class _OthersPersonScreenState extends State<OthersPersonScreen> {
                                   null
                               ? LightThemeColors.blueColor
                               : LightThemeColors.themeGreyColor,
-                          textSize: 12,
+                          textSize: 11,
                           title:
                               controller
                                       .othersProfileData!
-                                      .connection 
+                                      .connection
                                       ?.status ==
                                   'ACCEPTED'
-                              ? 'Added'
+                              ? 'Contact added'
                               : controller
                                         .othersProfileData!
                                         .connection
@@ -346,7 +345,7 @@ class _OthersPersonScreenState extends State<OthersPersonScreen> {
                                         ?.status ==
                                     'BLOCKED'
                               ? 'Blocked'
-                              : 'Add',
+                              : 'Add contact',
                           onPress:
                               controller
                                       .othersProfileData!
@@ -359,7 +358,7 @@ class _OthersPersonScreenState extends State<OthersPersonScreen> {
                                         .connection
                                         ?.status ==
                                     null
-                              ? addRequest
+                              ? addRequest 
                               : null,
                           borderRadius: 50,
                         ),
@@ -399,10 +398,14 @@ class _OthersPersonScreenState extends State<OthersPersonScreen> {
                   : DateFormatter(DateTime.now());
 
               return LocationInfo(
-                date: dateFormatter.getShortDateFormat(),
+                date: dateFormatter.getFullDateFormat(),
                 location:
-                    controller.othersProfileData?.auth?.person?.address ??
-                    'No Location',
+                    controller.othersProfileData?.auth!.person?.address == ""
+                    ? 'No Location'
+                    : controller.othersProfileData?.auth!.person?.address !=
+                          null
+                    ? controller.othersProfileData?.auth!.person?.address ?? ''
+                    : 'No Location',
               );
             }),
 

@@ -12,7 +12,7 @@ import 'package:wisper/app/modules/chat/model/all_chats_model.dart';
 import 'package:wisper/app/urls.dart';
 
 class AllChatsController extends GetxController {
-  final SocketService socketService = Get.find<SocketService>();
+  final SocketService socketService = Get.find<SocketService>(); 
 
   final RxBool inProgress = false.obs;
   final RxString errorMessage = ''.obs;
@@ -45,6 +45,101 @@ class AllChatsController extends GetxController {
     socketService.socket.on('newMessage', _handleNewMessageForList);
   }
 
+  String _normalizeFileType(dynamic value) {
+    final String normalized = (value ?? '').toString().trim();
+    return normalized.isEmpty ? '' : normalized.toUpperCase();
+  }
+
+  String _fileTypeLabel(String fileType) {
+    switch (fileType) {
+      case 'IMAGE':
+        return 'Photo';
+      case 'VIDEO':
+        return 'Video';
+      case 'AUDIO':
+        return 'Audio';
+      default:
+        return 'File';
+    }
+  }
+
+  bool _shouldUseFilename(String fileType) {
+    switch (fileType) {
+      case 'DOC':
+      case 'DOCX':
+      case 'PDF':
+      case 'XLS':
+      case 'XLSX':
+      case 'PPT':
+      case 'PPTX':
+      case 'TXT':
+        return true;
+      default:
+        return false;
+    }
+  }
+
+  String _extractFileName(dynamic file) {
+    if (file == null) return '';
+    String url = '';
+    if (file is String) {
+      url = file.trim();
+    } else if (file is List && file.isNotEmpty) {
+      url = file.first.toString().trim();
+    } else {
+      url = file.toString().trim();
+    }
+    if (url.isEmpty) return '';
+    final uri = Uri.tryParse(url);
+    if (uri != null && uri.pathSegments.isNotEmpty) {
+      return uri.pathSegments.last;
+    }
+    if (url.contains('/')) {
+      return url.split('/').last;
+    }
+    return url;
+  }
+
+  bool _isFromMe(dynamic senderId) {
+    final String id = (senderId ?? '').toString();
+    if (id.isEmpty) return false;
+    return id == myAuthId;
+  }
+
+  String _applySenderPrefix(String message, bool isFromMe) {
+    if (!isFromMe) return message;
+    if (message.isEmpty || message == 'No messages') return message;
+    return 'You: $message';
+  }
+
+  String _resolveLastMessage({
+    required String text,
+    required String fileType,
+    dynamic file,
+    required bool isFromMe,
+  }) {
+    final String trimmedText = text.trim();
+    if (trimmedText.isNotEmpty) {
+      return _applySenderPrefix(trimmedText, isFromMe);
+    }
+
+    final String normalizedFileType = _normalizeFileType(fileType);
+    if (normalizedFileType.isNotEmpty) {
+      if (_shouldUseFilename(normalizedFileType)) {
+        final fileName = _extractFileName(file);
+        if (fileName.isNotEmpty) {
+          return _applySenderPrefix(fileName, isFromMe);
+        }
+      }
+      return _applySenderPrefix(_fileTypeLabel(normalizedFileType), isFromMe);
+    }
+
+    final String fileValue = (file ?? '').toString().trim();
+    if (fileValue.isNotEmpty) return _applySenderPrefix('File', isFromMe);
+
+    return _applySenderPrefix('No messages', isFromMe);
+  }
+
   void _handleNewMessageForList(dynamic data) {
     print('📨 newMessage in AllChatsController');
     try {
@@ -57,17 +152,23 @@ class AllChatsController extends GetxController {
 
       final String text = (data['text'] ?? '').toString();
       final dynamic file = data['file'];
-      final String lastMessage = text.isNotEmpty
-          ? text
-          : (file == null || file.toString().isEmpty)
-              ? '📎 file'
-              : '📷 photo';
+      final String fileType = _normalizeFileType(data['fileType']);
+      final dynamic senderId =
+          data['sender']?['id'] ?? data['senderId'] ?? data['sender_id'];
+      final bool isFromMe = _isFromMe(senderId);
+      final String lastMessage = _resolveLastMessage(
+        text: text,
+        fileType: fileType,
+        file: file,
+        isFromMe: isFromMe,
+      );
       final String createdAt =
           (data['createdAt'] ?? DateTime.now().toIso8601String()).toString();
 
       if (index != -1) {
         socketService.socketFriendList[index]
           ..['lastMessage'] = lastMessage
+          ..['fileType'] = fileType
           ..['latestMessageAt'] = createdAt;
         _sortSocketList();
       } else {
@@ -106,11 +207,27 @@ class AllChatsController extends GetxController {
         if (chatId.isEmpty) continue;
 
         final String type = chat['type'] ?? 'INDIVIDUAL';
+        final Map<String, dynamic>? latestMessage =
+            (chat['messages'] is List && (chat['messages'] as List).isNotEmpty)
+                ? (chat['messages'] as List).first as Map<String, dynamic>
+                : null;
+        final String fileType = _normalizeFileType(
+          chat['fileType'] ?? latestMessage?['fileType'],
+        );
 
-        final String lastMessage =
-            chat['messages'] != null && (chat['messages'] as List).isNotEmpty
-                ? (chat['messages'].first['text'] ?? '')
-                : 'No messages';
+        final String messageText = (latestMessage?['text'] ?? '').toString();
+        final dynamic file = latestMessage?['file'];
+        final dynamic senderId =
+            latestMessage?['sender']?['id'] ??
+            latestMessage?['senderId'] ??
+            latestMessage?['sender_id'];
+        final bool isFromMe = _isFromMe(senderId);
+        final String lastMessage = _resolveLastMessage(
+          text: messageText,
+          fileType: fileType,
+          file: file,
+          isFromMe: isFromMe,
+        );
 
         final String latestMessageAt = chat['latestMessageAt'] ?? '';
         final int unreadCount = chat['_count']?['messages'] ?? 0;
@@ -140,7 +257,8 @@ class AllChatsController extends GetxController {
 
         if (index != -1) {
           socketService.socketFriendList[index]
-            ..['lastMessage'] = lastMessage == '' ? '📷 photo' : lastMessage
+            ..['fileType'] = fileType
+            ..['lastMessage'] = lastMessage
             ..['latestMessageAt'] = latestMessageAt
             ..['unreadMessageCount'] = unreadCount;
 
@@ -180,6 +298,19 @@ class AllChatsController extends GetxController {
 
         for (final chat in model.data?.chats ?? []) {
           final String type = chat.type ?? 'INDIVIDUAL';
+          final Message? latestMessage =
+              chat.messages.isNotEmpty ? chat.messages.first : null;
+          final String fileType =
+              _normalizeFileType(latestMessage?.fileType ?? '');
+          final bool isFromMe = _isFromMe(latestMessage?.sender?.id);
+          final String lastMessage = latestMessage != null
+              ? _resolveLastMessage(
+                  text: latestMessage.text ?? '',
+                  fileType: fileType,
+                  file: latestMessage.file,
+                  isFromMe: isFromMe,
+                )
+              : 'No message yet';
 
           final otherParticipant = chat.participants.firstWhere(
             (p) => p.auth?.id != StorageUtil.getData(StorageUtil.userId),
@@ -215,10 +346,9 @@ class AllChatsController extends GetxController {
           socketService.socketFriendList.add({
             "id": chat.id ?? '',
             "type": type,
+            "fileType": fileType,
             "latestMessageAt": chat.latestMessageAt?.toIso8601String() ?? '',
-            "lastMessage": chat.messages.isNotEmpty
-                ? chat.messages.first.text ?? '📁 file'
-                : 'No message yet',
+            "lastMessage": lastMessage,
             "unreadMessageCount": chat.count?.messages ?? 0,
             "group": chat.group != null
                 ? {"name": chat.group?.name, "image": chat.group?.image}
@@ -289,3 +419,6 @@ class AllChatsController extends GetxController {
     _sortSocketList();
   }
 }
+
+
+

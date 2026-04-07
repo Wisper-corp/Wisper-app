@@ -31,6 +31,16 @@ class MyInfoCard extends StatelessWidget {
                 radius: 18.r,
                 backgroundColor: Colors.grey.shade800,
                 backgroundImage: NetworkImage(imagePath),
+                child: Text(
+                  name.isNotEmpty
+                      ? '${name[0].toUpperCase()}${name.length > 1 ? name[1].toUpperCase() : ''}'
+                      : '',
+                  style: TextStyle(
+                    fontSize: 16.sp,
+                    fontWeight: FontWeight.w400,
+                    color: Colors.white,
+                  ),
+                ),
               ),
               widthBox8,
               Column(

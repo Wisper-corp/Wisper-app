@@ -15,51 +15,62 @@ class LocationInfo extends StatelessWidget {
     return Row(
       mainAxisAlignment: MainAxisAlignment.center,
       children: [
-        Row(
-          children: [
-            CrashSafeImage(
-              Assets.images.location.keyName,
-              height: 16.h,
-              color: const Color(0xff7F8694),
-            ),
-            widthBox8,
-            SizedBox(
-              width: MediaQuery.of(context).size.width * 0.42,
-              child: Text(
-                location ?? '',
-                style: TextStyle(
-                  fontSize: 12.sp,
-                  fontWeight: FontWeight.w400,
-                  color: const Color(0xff7F8694),
-                ),
+        Flexible(
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              CrashSafeImage(
+                Assets.images.location.keyName,
+                height: 16.h,
+                color: const Color(0xff7F8694),
               ),
-            ),
-          ],
-        ),
-        
-        isDate!
-            ? Row(
-                children: [
-                  CrashSafeImage(
-                    Assets.images.calendar.keyName,
-                    height: 16.h,
+              widthBox8,
+              Expanded(
+                child: Text(
+                  location ?? '',
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  softWrap: false,
+                  style: TextStyle(
+                    fontSize: 10.sp,
+                    fontWeight: FontWeight.w400,
                     color: const Color(0xff7F8694),
                   ),
-                  widthBox4,
-                  SizedBox(
-                    width: MediaQuery.of(context).size.width * 0.20,
-                    child: Text(
-                      'Created $date',
-                      style: TextStyle(
-                        fontSize: 12.sp,
-                        fontWeight: FontWeight.w400,
-                        color: const Color(0xff7F8694),
-                      ),
+                ),
+              ),
+            ],
+          ),
+        ),
+        // SizedBox(width: MediaQuery.of(context).size.width * 0.05),
+        if (isDate == true)
+          Flexible(
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                CrashSafeImage(
+                  Assets.images.calendar.keyName,
+                  height: 16.h,
+                  color: const Color(0xff7F8694),
+                ),
+                widthBox4,
+                Expanded(
+                  child: Text(
+                    'Joined $date',
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    softWrap: false,
+                    style: TextStyle(
+                      fontSize: 10.sp,
+                      fontWeight: FontWeight.w400,
+                      color: const Color(0xff7F8694),
                     ),
                   ),
-                ],
-              )
-            : Container(),
+                ),
+              ],
+            ),
+          )
+        else
+          const SizedBox.shrink(),
       ],
     );
   }

@@ -4,6 +4,7 @@
 
 import 'dart:async'; // ← নতুন যোগ করা (StreamSubscription-এর জন্য)
 import 'dart:io';
+import 'dart:math';
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:get/get.dart';
@@ -27,6 +28,8 @@ import 'package:wisper/app/modules/post/controller/feed_post_controller.dart';
 import 'package:wisper/app/modules/post/controller/my_post_controller.dart';
 import 'package:wisper/app/modules/post/views/my_post_section.dart';
 import 'package:wisper/app/modules/profile/controller/buisness/buisness_controller.dart';
+import 'package:wisper/app/modules/profile/controller/buisness/edit_buisness_profile_controller.dart';
+import 'package:wisper/app/modules/profile/controller/person/edit_person_profile_controller.dart';
 import 'package:wisper/app/modules/profile/controller/person/profile_controller.dart';
 import 'package:wisper/app/modules/profile/controller/recommendetion_controller.dart';
 import 'package:wisper/app/modules/profile/controller/upload_photo_controller.dart';
@@ -49,6 +52,13 @@ class _ProfileScreenState extends State<ProfileScreen>
     with WidgetsBindingObserver {
   int selectedIndex = 0;
 
+  final EditBusinessProfileController editBusinessProfileController = Get.put(
+    EditBusinessProfileController(),
+  );
+
+  final EditPersonProfileController editPersonProfileController = Get.put(
+    EditPersonProfileController(),
+  );
   final ProfileController personController = Get.put(ProfileController());
   final BusinessController businessController = Get.put(BusinessController());
   final ProfilePhotoController photoController =
@@ -187,8 +197,7 @@ class _ProfileScreenState extends State<ProfileScreen>
 
       if (placemarks.isNotEmpty) {
         Placemark place = placemarks[0];
-        String city =
-            place.locality ?? place.subAdministrativeArea ?? 'Unknown city';
+        String city = place.administrativeArea ?? 'Unknown city';
         String country = place.country ?? 'Unknown country';
         currentCityCountry.value = '$city, $country';
         // Cache region (country) for settings offline display.
@@ -197,6 +206,18 @@ class _ProfileScreenState extends State<ProfileScreen>
         print('................................................');
         print('Updated Lat: ${position.latitude}, Long: ${position.longitude}');
         print('Current city: $city, country: $country');
+        print(
+          'Locality: ${place.locality}, subLocality: ${place.subLocality}, country: $country , administrativeArea: ${place.administrativeArea}, subAdministrativeArea: ${place.subAdministrativeArea}, postalCode: ${place.postalCode}, isoCountryCode: ${place.isoCountryCode}',
+        );
+
+        StorageUtil.getData(StorageUtil.userRole) == 'BUSINESS'
+            ? editBusinessProfileController.updateAddress(
+                address: '$city, $country',
+              )
+            : editPersonProfileController.updateAddress(
+                address: '$city, $country',
+              );
+        // Cache the full location for offline use (optional)
       } else {
         currentCityCountry.value = 'Location not available';
       }
@@ -207,7 +228,7 @@ class _ProfileScreenState extends State<ProfileScreen>
 
   // বাকি সব ফাংশন একই রাখা (_getProfileImage, _updateProfileImage, _onImagePicked, ইত্যাদি)
   Future<void> _getProfileImage() async {
-    print('Called get image');
+    print('Called get image'); 
     await personController.getMyProfile();
     await businessController.getMyProfile();
     if (userRole == 'PERSON') {
@@ -233,11 +254,8 @@ class _ProfileScreenState extends State<ProfileScreen>
       imageUrl = businessController.buisnessData?.auth?.business?.image;
     }
 
-    currentImagePath.value = imageUrl?.isNotEmpty == true
-        ? imageUrl!
-        : (userRole == 'PERSON'
-              ? Assets.images.person.keyName
-              : Assets.images.person.keyName);
+    // Keep empty when no image so InfoCard can show initials.
+    currentImagePath.value = imageUrl?.isNotEmpty == true ? imageUrl! : '';
   }
 
   void _onImagePicked(File imageFile) async {
@@ -493,7 +511,7 @@ class _ProfileScreenState extends State<ProfileScreen>
               Obx(
                 () => LocationInfo(
                   location: currentCityCountry.value,
-                  date: dateFormatter.getShortDateFormat(),
+                  date: dateFormatter.getFullDateFormat(),
                 ),
               ),
 

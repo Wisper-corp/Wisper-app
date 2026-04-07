@@ -240,6 +240,95 @@ class MessageController extends GetxController {
     return "";
   }
 
+  String _normalizeFileType(dynamic value) {
+    final String normalized = (value ?? '').toString().trim();
+    return normalized.isEmpty ? '' : normalized.toUpperCase();
+  }
+
+  bool _shouldUseFilename(String fileType) {
+    switch (fileType) {
+      case 'DOC':
+      case 'DOCX':
+      case 'PDF':
+      case 'XLS':
+      case 'XLSX':
+      case 'PPT':
+      case 'PPTX':
+      case 'TXT':
+        return true;
+      default:
+        return false;
+    }
+  }
+
+  String _extractFileName(dynamic file) {
+    if (file == null) return '';
+    String url = '';
+    if (file is String) {
+      url = file.trim();
+    } else if (file is List && file.isNotEmpty) {
+      url = file.first.toString().trim();
+    } else {
+      url = file.toString().trim();
+    }
+    if (url.isEmpty) return '';
+    final uri = Uri.tryParse(url);
+    if (uri != null && uri.pathSegments.isNotEmpty) {
+      return uri.pathSegments.last;
+    }
+    if (url.contains('/')) {
+      return url.split('/').last;
+    }
+    return url;
+  }
+
+  String _fileTypeLabel(String fileType) {
+    switch (fileType) {
+      case 'IMAGE':
+        return 'Photo';
+      case 'VIDEO':
+        return 'Video';
+      case 'AUDIO':
+        return 'Audio';
+      default:
+        return 'File';
+    }
+  }
+
+  String _applySenderPrefix(String message, bool isFromMe) {
+    if (!isFromMe) return message;
+    if (message.isEmpty || message == 'No messages') return message;
+    return 'You: $message';
+  }
+
+  String _resolveLastMessage({
+    required String text,
+    required String fileType,
+    dynamic file,
+    required bool isFromMe,
+  }) {
+    final String trimmedText = text.trim();
+    if (trimmedText.isNotEmpty) {
+      return _applySenderPrefix(trimmedText, isFromMe);
+    }
+
+    final String normalizedFileType = _normalizeFileType(fileType);
+    if (normalizedFileType.isNotEmpty) {
+      if (_shouldUseFilename(normalizedFileType)) {
+        final fileName = _extractFileName(file);
+        if (fileName.isNotEmpty) {
+          return _applySenderPrefix(fileName, isFromMe);
+        }
+      }
+      return _applySenderPrefix(_fileTypeLabel(normalizedFileType), isFromMe);
+    }
+
+    final String fileValue = (file ?? '').toString().trim();
+    if (fileValue.isNotEmpty) return _applySenderPrefix('File', isFromMe);
+
+    return _applySenderPrefix('No messages', isFromMe);
+  }
+
   void scrollToBottom() {
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (!scrollController.hasClients) return;
@@ -454,11 +543,16 @@ class MessageController extends GetxController {
 
       final String text = (data['text'] ?? '').toString();
       final dynamic file = data['file'];
-      final String lastMessage = text.isNotEmpty
-          ? text
-          : (file == null || file.toString().isEmpty)
-              ? '📎 file'
-              : '📷 photo';
+      final String fileType = _normalizeFileType(data['fileType']);
+      final dynamic senderId =
+          data['sender']?['id'] ?? data['senderId'] ?? data['sender_id'];
+      final bool isFromMe = senderId?.toString() == userAuthId;
+      final String lastMessage = _resolveLastMessage(
+        text: text,
+        fileType: fileType,
+        file: file,
+        isFromMe: isFromMe,
+      );
 
       final String createdAt =
           (data['createdAt'] ?? DateTime.now().toIso8601String()).toString();
@@ -466,6 +560,7 @@ class MessageController extends GetxController {
       if (index != -1) {
         socketService.socketFriendList[index]
           ..['lastMessage'] = lastMessage
+          ..['fileType'] = fileType
           ..['latestMessageAt'] = createdAt;
         _sortSocketList();
         return;

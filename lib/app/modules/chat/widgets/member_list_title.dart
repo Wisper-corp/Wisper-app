@@ -12,6 +12,7 @@ class MemberListTile extends StatelessWidget {
   final String imagePath;
   final String name;
   final String message;
+  final String fileType;
   final String time;
   final String unreadMessageCount;
   final bool isOnline;
@@ -23,6 +24,7 @@ class MemberListTile extends StatelessWidget {
     required this.imagePath,
     required this.name,
     required this.message,
+    this.fileType = '',
     required this.time,
     required this.unreadMessageCount,
     required this.isClass,
@@ -51,11 +53,26 @@ class MemberListTile extends StatelessWidget {
     return (first + second).toUpperCase();
   }
 
+  IconData _fileTypeIcon(String type) {
+    switch (type) {
+      case 'IMAGE':
+        return Icons.image_outlined;
+      case 'VIDEO':
+        return Icons.videocam_outlined;
+      case 'AUDIO':
+        return Icons.audiotrack_outlined;
+      default:
+        return Icons.insert_drive_file_outlined;
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final int unreadCount = int.tryParse(unreadMessageCount) ?? 0;
     final bool hasImage = _isValidImagePath(imagePath);
     final bool isAsset = _isAssetPath(imagePath);
+    final String normalizedFileType = fileType.trim().toUpperCase();
+    final bool showFileIcon = normalizedFileType.isNotEmpty;
 
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 2),
@@ -200,15 +217,29 @@ class MemberListTile extends StatelessWidget {
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
                         Expanded(
-                          child: Text(
-                            message,
-                            style: TextStyle(
-                              fontSize: 12.sp,
-                              fontWeight: FontWeight.w400,
-                              color: const Color(0xff98A2B3),
-                            ),
-                            overflow: TextOverflow.ellipsis,
-                            maxLines: 1,
+                          child: Row(
+                            children: [
+                              if (showFileIcon) ...[
+                                Icon(
+                                  _fileTypeIcon(normalizedFileType),
+                                  size: 14.sp,
+                                  color: const Color(0xff98A2B3),
+                                ),
+                                const SizedBox(width: 4),
+                              ],
+                              Expanded(
+                                child: Text(
+                                  message,
+                                  style: TextStyle(
+                                    fontSize: 12.sp,
+                                    fontWeight: FontWeight.w400,
+                                    color: const Color(0xff98A2B3),
+                                  ),
+                                  overflow: TextOverflow.ellipsis,
+                                  maxLines: 1,
+                                ),
+                              ),
+                            ],
                           ),
                         ),
                         Text(

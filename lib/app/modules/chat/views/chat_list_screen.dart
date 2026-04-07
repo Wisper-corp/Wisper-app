@@ -55,6 +55,7 @@ class _ChatListScreenState extends State<ChatListScreen> {
   Future<void> _navigateToChat(Map<String, dynamic> item) async {
     final String chatId = item['id'] ?? '';
     final String type = item['type'] ?? 'INDIVIDUAL';
+    
  
     final MessageController msgCtrl = Get.isRegistered<MessageController>()
         ? Get.find<MessageController>()
@@ -156,6 +157,7 @@ class _ChatListScreenState extends State<ChatListScreen> {
             final String groupImage = _mapVal(item['group'], 'image');
             final String classImage = _mapVal(item['chatClass'], 'image');
             final String lastMessage = item['lastMessage'] ?? 'No messages yet';
+            final String fileType = item['fileType'] ?? '';
             final String timeStr = item['latestMessageAt'] ?? '';
             final DateTime time = DateTime.tryParse(timeStr) ?? DateTime.now();
             final String formattedTime = DateFormatter(
@@ -175,6 +177,7 @@ class _ChatListScreenState extends State<ChatListScreen> {
                   : image,
               name: name,
               message: lastMessage,
+              fileType: fileType,
               time: formattedTime,
               unreadMessageCount: unread > 0 ? unread.toString() : '',
             );

@@ -24,7 +24,7 @@ class RcommendationButtomSheet extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final AllRecommendationController controller =
-        Get.find<AllRecommendationController>();
+        Get.put(AllRecommendationController());
     final ConnectivityService connectivityService =
         Get.find<ConnectivityService>();
 

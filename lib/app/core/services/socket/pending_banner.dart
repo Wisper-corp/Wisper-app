@@ -34,7 +34,7 @@ class _PendingCallBannerState extends State<PendingCallBanner> {
         _dismiss();
       });
     }
-
+    
     _pendingWorker = ever(callService.pendingCall, (callData) {
       if (mounted) {
         setState(() {

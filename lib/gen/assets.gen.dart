@@ -181,6 +181,10 @@ class $AssetsImagesGen {
   AssetGenImage get markDouble =>
       const AssetGenImage('assets/images/mark_double.png');
 
+  /// File path: assets/images/messenger.png
+  AssetGenImage get messenger =>
+      const AssetGenImage('assets/images/messenger.png');
+
   /// File path: assets/images/mic.png
   AssetGenImage get mic => const AssetGenImage('assets/images/mic.png');
 
@@ -337,6 +341,7 @@ class $AssetsImagesGen {
     mark,
     mark02,
     markDouble,
+    messenger,
     mic,
     mobile,
     moreHor,
@@ -374,7 +379,12 @@ class $AssetsImagesGen {
 class Assets {
   const Assets._();
 
+  static const String incomingCallRingtone = 'assets/IncomingCallRingtone.mp3';
   static const $AssetsImagesGen images = $AssetsImagesGen();
+  static const String ringtone = 'assets/ringtone.mp3';
+
+  /// List of all assets
+  static List<String> get values => [incomingCallRingtone, ringtone];
 }
 
 class AssetGenImage {

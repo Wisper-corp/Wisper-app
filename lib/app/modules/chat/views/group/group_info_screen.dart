@@ -327,7 +327,7 @@ class _GroupInfoScreenState extends State<GroupInfoScreen> {
                     CrashSafeImage(
                       Assets.images.calendar.keyName,
                       height: 16.h,
-                      color: const Color(0xff7F8694),
+                      color: const Color(0xff7F8694), 
                     ),
                     widthBox4,
                     Text(

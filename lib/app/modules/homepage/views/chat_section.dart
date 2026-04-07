@@ -107,6 +107,7 @@ class _ChatSectionState extends State<ChatSection> {
             }
 
             final String lastMessage = item['lastMessage'] ?? 'No messages yet';
+            final String fileType = item['fileType'] ?? '';
             final String timeStr = item['latestMessageAt'] ?? '';
             final DateTime time = DateTime.tryParse(timeStr) ?? DateTime.now();
             final String groupImage = item['group']?['image'] ?? '';
@@ -155,6 +156,7 @@ class _ChatSectionState extends State<ChatSection> {
                   : image,
               name: name,
               message: lastMessage,
+              fileType: fileType,
               time: formattedTime,
               unreadMessageCount: unread > 0 ? unread.toString() : '',
             );

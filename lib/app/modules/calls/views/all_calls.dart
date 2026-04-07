@@ -9,7 +9,6 @@ import 'package:wisper/app/modules/calls/controller/all_call_controller.dart';
 import 'package:wisper/app/modules/calls/widget/call_list_Tile.dart';
 import 'package:wisper/app/modules/profile/views/business/others_business_screen.dart';
 import 'package:wisper/app/modules/profile/views/person/others_person_screen.dart';
-import 'package:wisper/gen/assets.gen.dart';
 
 class AllCalls extends StatefulWidget {
   const AllCalls({super.key});

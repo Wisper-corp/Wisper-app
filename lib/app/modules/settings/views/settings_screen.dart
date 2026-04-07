@@ -368,7 +368,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                             widthBox8,
                             CrashSafeImage(
                               Assets.images.arrowForwoard.keyName,
-                              height: 16.h,
+                              height: 16.h, 
                               width: 16.w,
                               color: LightThemeColors.themeGreyColor,
                             ),

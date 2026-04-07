@@ -229,7 +229,7 @@ class _OthersBusinessScreenState extends State<OthersBusinessScreen> {
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
                     CircleIconWidget(
-                      imagePath: Assets.images.unselectedChat.keyName,
+                      imagePath: Assets.images.messenger.keyName,
                       onTap: () =>
                           createChat(business?.id, business?.name, business?.image),
                       radius: 15,
@@ -282,11 +282,11 @@ class _OthersBusinessScreenState extends State<OthersBusinessScreen> {
                               controller.profileData!.connection?.status == null
                               ? LightThemeColors.blueColor
                               : LightThemeColors.themeGreyColor,
-                          textSize: 12,
+                          textSize: 11,
                           title:
                               controller.profileData!.connection?.status ==
                                   'ACCEPTED'
-                              ? 'Added'
+                              ? 'Contact added'
                               : controller.profileData!.connection?.status ==
                                     'PENDING'
                               ? 'Pending'
@@ -296,7 +296,7 @@ class _OthersBusinessScreenState extends State<OthersBusinessScreen> {
                               : controller.profileData!.connection?.status ==
                                     'BLOCKED'
                               ? 'Blocked'
-                              : 'Add',
+                              : 'Add contact',
                           onPress:
                               controller.profileData!.connection?.status ==
                                   'ACCEPTED'
@@ -314,7 +314,7 @@ class _OthersBusinessScreenState extends State<OthersBusinessScreen> {
               SizedBox(height: 10.h),
               LocationInfo(
                 location: business?.address ?? 'No Address',
-                date: dateFormatter.getShortDateFormat(),
+                date: dateFormatter.getFullDateFormat(),
               ),
               SizedBox(height: 20.h),
               const StraightLiner(height: 0.4, color: Color(0xff454545)),

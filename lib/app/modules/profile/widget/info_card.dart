@@ -1,4 +1,4 @@
-import 'dart:io';
+﻿import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:get/get.dart';
@@ -39,6 +39,20 @@ class InfoCard extends StatelessWidget {
     this.isShowNotification,
   });
 
+  String _getInitials(String name) {
+    final trimmed = name.trim();
+    if (trimmed.isEmpty) return 'US';
+    final parts = trimmed.split(RegExp(r'\s+')).where((p) => p.isNotEmpty);
+    if (parts.isEmpty) return 'US';
+    if (parts.length == 1) {
+      final word = parts.first;
+      return word.substring(0, word.length >= 2 ? 2 : 1).toUpperCase();
+    }
+    final first = parts.first;
+    final second = parts.elementAt(1);
+    return '${first[0]}${second[0]}'.toUpperCase();
+  }
+
   // Helper to safely determine the correct ImageProvider and whether it's default
   ({ImageProvider provider, bool isDefault}) _getImageInfo(
     String path,
@@ -70,7 +84,10 @@ class InfoCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final String defaultAsset = Assets.images.person.keyName;
-    final imageInfo = _getImageInfo(imagePath, defaultAsset);
+    final bool showInitials = imagePath.trim().isEmpty;
+    final imageInfo = showInitials
+        ? (provider: AssetImage(defaultAsset), isDefault: true)
+        : _getImageInfo(imagePath, defaultAsset);
 
     return Container(
       width: double.infinity,
@@ -105,17 +122,27 @@ class InfoCard extends StatelessWidget {
                       CircleAvatar(
                         radius: 40.r,
                         backgroundColor: Colors.grey.shade800,
-                        child: Padding(
-                          // যদি ডিফল্ট অ্যাসেট হয়, তাহলে padding যোগ করা হবে
-                          padding: EdgeInsets.all(
-                            imageInfo.isDefault ? 12.0.r : 0.0,
-                          ),
-                          child: CircleAvatar(
-                            radius: 40.r,
-                            backgroundImage: imageInfo.provider,
-                            backgroundColor: Colors.transparent,
-                          ),
-                        ),
+                        child: showInitials
+                            ? Text(
+                                _getInitials(title),
+                                style: TextStyle(
+                                  color: Colors.white,
+                                  fontSize: 20.sp,
+                                  fontWeight: FontWeight.w700,
+                                  letterSpacing: 1,
+                                ),
+                              )
+                            : Padding(
+                                // যদি ডিফল্ট অ্যাসেট হয়, তাহলে padding যোগ করা হবে
+                                padding: EdgeInsets.all(
+                                  imageInfo.isDefault ? 12.0.r : 0.0,
+                                ),
+                                child: CircleAvatar(
+                                  radius: 40.r,
+                                  backgroundImage: imageInfo.provider,
+                                  backgroundColor: Colors.transparent,
+                                ),
+                              ),
                       ),
                       if (isEditImage == true)
                         Positioned(
