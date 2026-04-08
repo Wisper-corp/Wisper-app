@@ -20,6 +20,10 @@ class FileDecodeController extends GetxController {
   // **Reactive RxString getter for ever()**
   RxString get imageUrlRx => _url;
 
+  final RxString _localPath = ''.obs;
+  String get localPath => _localPath.value;
+  RxString get localPathRx => _localPath;
+
   final RxString _currentFileType = ''.obs;
   String get currentFileType => _currentFileType.value;
 
@@ -27,6 +31,7 @@ class FileDecodeController extends GetxController {
 
   void clearAll() {
     _url.value = '';
+    _localPath.value = '';
     _currentFileType.value = '';
     _errorMessage.value = '';
     _inProgress.value = false;
@@ -50,6 +55,7 @@ class FileDecodeController extends GetxController {
     required String errorPrefix,
   }) async {
     _currentFileType.value = type;
+    _localPath.value = file?.path ?? '';
     _inProgress.value = true;
 
     try {

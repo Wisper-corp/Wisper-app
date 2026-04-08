@@ -142,11 +142,41 @@ class _ChattingFieldWidgetState extends State<ChattingFieldWidget> {
                 bottom: 56, // ≈ text field height + small overlap
                 child: Obx(() {
                   if (fileDecodeController.inProgress) {
+                    final localPath = fileDecodeController.localPath;
+                    final isImage = fileDecodeController.currentFileType == 'IMAGE';
+                    if (isImage && localPath.isNotEmpty) {
+                      return _buildPreviewContainer(
+                        child: Stack(
+                          children: [
+                            ClipRRect(
+                              borderRadius: BorderRadius.circular(12),
+                              child: Image.file(
+                                File(localPath),
+                                width: 80,
+                                height: 80,
+                                fit: BoxFit.cover,
+                                errorBuilder: (_, __, ___) =>
+                                    const Icon(Icons.broken_image),
+                              ),
+                            ),
+                            const SizedBox(
+                              width: 80,
+                              height: 80,
+                              child: Center(
+                                child: CircularProgressIndicator(strokeWidth: 3),
+                              ),
+                            ),
+                          ],
+                        ),
+                      );
+                    }
                     return _buildPreviewContainer(
                       child: const SizedBox(
                         width: 80,
                         height: 80,
-                        child: Center(child: CircularProgressIndicator(strokeWidth: 3)),
+                        child: Center(
+                          child: CircularProgressIndicator(strokeWidth: 3),
+                        ),
                       ),
                     );
                   }
