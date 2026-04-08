@@ -11,7 +11,7 @@ class SignInController extends GetxController {
     // Support common claim names
     final candidates = [
       decodedToken['id'],
-      decodedToken['authId'],
+      decodedToken['authId'], 
       decodedToken['userId'],
       decodedToken['sub'],
     ];

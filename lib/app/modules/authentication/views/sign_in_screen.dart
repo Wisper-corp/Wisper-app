@@ -173,7 +173,7 @@ class _SignInScreenState extends State<SignInScreen> {
                       ),
                     ),
                   ),
-                ),
+                ), 
                 heightBox100,
                 Column(
                   crossAxisAlignment: CrossAxisAlignment.center,
