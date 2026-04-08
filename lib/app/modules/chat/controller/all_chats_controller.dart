@@ -402,6 +402,27 @@ class AllChatsController extends GetxController {
     socketService.socketFriendList.refresh();
   }
 
+  Future<void> markChatAsRead(String chatId) async {
+    if (chatId.isEmpty) return;
+    final int index = socketService.socketFriendList.indexWhere(
+      (element) => element['id'] == chatId,
+    );
+    if (index == -1) return;
+
+    if ((socketService.socketFriendList[index]['unreadMessageCount'] ?? 0) == 0)
+      return;
+
+    socketService.socketFriendList[index]['unreadMessageCount'] = 0;
+    socketService.socketFriendList.refresh();
+
+    // Keep cache in sync so list doesn't revert when reloaded offline.
+    await ChatCacheService.saveChats(
+      socketService.socketFriendList
+          .map((e) => Map<String, dynamic>.from(e))
+          .toList(),
+    );
+  }
+
   @override
   void onClose() {
     socketService.socket.off('chatList', _handleIncomingChat);

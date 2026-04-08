@@ -86,6 +86,7 @@ dependencies:
   audioplayers: ^6.6.0
   flutter_local_notifications: ^18.0.0
   flutter_callkit_incoming: ^3.0.0
+  flutter_randomcolor: ^1.0.18
 
 
 dev_dependencies:

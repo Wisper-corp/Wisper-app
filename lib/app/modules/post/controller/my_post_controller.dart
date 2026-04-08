@@ -116,4 +116,25 @@ class MyFeedPostController extends GetxController {
     _allPostList.clear();
     update();
   }
+
+  void setPostCommentCount({required String postId, required int count}) {
+    if (postId.isEmpty) return;
+    final int index = _allPostList.indexWhere((p) => p.id == postId);
+    if (index == -1) return;
+
+    final post = _allPostList[index];
+    final updated = FeedPostItemModel(
+      id: post.id,
+      caption: post.caption,
+      images: post.images,
+      views: post.views,
+      createdAt: post.createdAt,
+      commentAccess: post.commentAccess,
+      author: post.author,
+      count: Count(comment: count),
+    );
+
+    _allPostList[index] = updated;
+    update();
+  }
 }

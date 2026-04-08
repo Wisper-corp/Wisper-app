@@ -12,7 +12,7 @@ class ChatShimmerEffectWidget extends StatelessWidget {
     double height = MediaQuery.of(context).size.height;
     return Shimmer.fromColors(
       baseColor: const Color.fromARGB(255, 48, 46, 46),
-      highlightColor: Colors.grey.shade400,
+      highlightColor:const Color.fromARGB(255, 48, 46, 46),
       child: SizedBox(
         height: height,
         child: SingleChildScrollView(

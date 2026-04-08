@@ -151,6 +151,7 @@ class _MyPostSectionState extends State<MyPostSection> {
                   Get.to(() => CommentScreen(postId: post.id!));
                 }
               },
+              commentCount: post.count?.comment ?? 0,
               isComment: true,
               ownerId: post.author?.id ?? '',
               trailing: GestureDetector(

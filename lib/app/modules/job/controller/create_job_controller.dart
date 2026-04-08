@@ -12,7 +12,7 @@ class CreateJobController extends GetxController {
   String get errorMessage => _errorMessage.value;
 
   Future<bool> createJob({
-    String? locationType,
+    String? locationType, 
     String? title,
     String? description,
     String? type, // FULL_TIME, PART_TIME, CONTRACT

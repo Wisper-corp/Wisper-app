@@ -1,5 +1,6 @@
 ﻿import 'dart:io';
 import 'package:flutter/material.dart';
+import 'package:flutter_randomcolor/flutter_randomcolor.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:get/get.dart';
 import 'package:get/get_core/src/get_main.dart';
@@ -83,6 +84,9 @@ class InfoCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    Color widgetColor = RandomColor.getColorObject(
+      Options(colorType: ColorType.blue, luminosity: Luminosity.light),
+    );
     final String defaultAsset = Assets.images.person.keyName;
     final bool showInitials = imagePath.trim().isEmpty;
     final imageInfo = showInitials
@@ -140,7 +144,7 @@ class InfoCard extends StatelessWidget {
                                 child: CircleAvatar(
                                   radius: 40.r,
                                   backgroundImage: imageInfo.provider,
-                                  backgroundColor: Colors.transparent,
+                                  backgroundColor: widgetColor,
                                 ),
                               ),
                       ),

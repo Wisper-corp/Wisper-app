@@ -57,6 +57,7 @@ class FeedPostItemModel {
     required this.createdAt,
     required this.commentAccess,
     required this.author,
+    required this.count,
   });
 
   final String? id;
@@ -66,6 +67,7 @@ class FeedPostItemModel {
   final DateTime? createdAt;
   final String? commentAccess;
   final Author? author;
+  final Count? count;
 
   factory FeedPostItemModel.fromJson(Map<String, dynamic> json) {
     return FeedPostItemModel(
@@ -78,6 +80,7 @@ class FeedPostItemModel {
       createdAt: DateTime.tryParse(json["createdAt"] ?? ""),
       commentAccess: json["commentAccess"],
       author: json["author"] == null ? null : Author.fromJson(json["author"]),
+      count: json["_count"] == null ? null : Count.fromJson(json["_count"]),
     );
   }
 }
@@ -143,5 +146,15 @@ class Business {
       industry: json["industry"],
       image: json["image"],
     );
+  }
+}
+
+class Count {
+  Count({required this.comment});
+
+  final int? comment;
+
+  factory Count.fromJson(Map<String, dynamic> json) {
+    return Count(comment: json["comment"]);
   }
 }

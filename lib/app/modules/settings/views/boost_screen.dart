@@ -5,6 +5,9 @@ import 'package:wisper/app/core/config/theme/light_theme_colors.dart';
 import 'package:wisper/app/core/others/custom_size.dart';
 import 'package:wisper/app/core/utils/show_over_loading.dart';
 import 'package:wisper/app/core/widgets/common/custom_button.dart';
+import 'package:wisper/app/modules/post/controller/feed_post_controller.dart';
+import 'package:wisper/app/modules/post/controller/my_post_controller.dart';
+import 'package:wisper/app/modules/post/controller/others_post_controller.dart';
 import 'package:wisper/app/modules/post/model/feed_post_model.dart';
 import 'package:wisper/app/modules/post/widgets/post_card.dart';
 import 'package:wisper/app/modules/payment/controller/payment_services.dart';
@@ -24,6 +27,18 @@ class _BoostScreenState extends State<BoostScreen> {
   );
 
   final PaymentService paymentService = PaymentService();
+  final AllFeedPostController? allFeedPostController =
+      Get.isRegistered<AllFeedPostController>()
+          ? Get.find<AllFeedPostController>()
+          : null;
+  final MyFeedPostController? myFeedPostController =
+      Get.isRegistered<MyFeedPostController>()
+          ? Get.find<MyFeedPostController>()
+          : null;
+  final OthersFeedPostController? othersFeedPostController =
+      Get.isRegistered<OthersFeedPostController>()
+          ? Get.find<OthersFeedPostController>()
+          : null;
 
   var packageId;
   bool isSelected = false;
@@ -48,6 +63,47 @@ class _BoostScreenState extends State<BoostScreen> {
     String targetIndustry,
   ) async {
     await paymentService.payment(context, packageId, postId, targetIndustry);
+  }
+
+  int _resolveCommentCount() {
+    final postId = widget.feedPostItemModel.id ?? '';
+    if (postId.isNotEmpty) {
+      if (allFeedPostController != null) {
+        for (final p in allFeedPostController!.allPostData) {
+          if (p.id == postId) return p.count?.comment ?? 0;
+        }
+      }
+      if (myFeedPostController != null) {
+        for (final p in myFeedPostController!.allPostData) {
+          if (p.id == postId) return p.count?.comment ?? 0;
+        }
+      }
+      if (othersFeedPostController != null) {
+        for (final p in othersFeedPostController!.allPostData) {
+          if (p.id == postId) return p.count?.comment ?? 0;
+        }
+      }
+    }
+    return widget.feedPostItemModel.count?.comment ?? 0;
+  }
+
+  Widget _buildPostCard() {
+    return PostCard(
+      isPerson: widget.feedPostItemModel.author?.person != null,
+      isComment: true,
+      onTapComment: () {},
+      trailing: Container(),
+      commentCount: _resolveCommentCount(),
+      ownerName: widget.feedPostItemModel.author?.person?.name,
+      ownerImage: widget.feedPostItemModel.author?.person?.image,
+      ownerProfession: widget.feedPostItemModel.author?.person?.title,
+      postDescription: widget.feedPostItemModel.caption,
+      postTime: widget.feedPostItemModel.createdAt.toString(),
+      views: widget.feedPostItemModel.views.toString(),
+      postImage: widget.feedPostItemModel.images.isNotEmpty
+          ? widget.feedPostItemModel.images
+          : [],
+    );
   }
 
   @override
@@ -92,20 +148,20 @@ class _BoostScreenState extends State<BoostScreen> {
               ],
             ),
             heightBox12,
-            PostCard(
-              isPerson: widget.feedPostItemModel.author?.person != null,
-              isComment: true,
-              onTapComment: () {},
-              trailing: Container(),
-              ownerName: widget.feedPostItemModel.author?.person?.name,
-              ownerImage: widget.feedPostItemModel.author?.person?.image,
-              ownerProfession: widget.feedPostItemModel.author?.person?.title,
-              postDescription: widget.feedPostItemModel.caption,
-              postTime: widget.feedPostItemModel.createdAt.toString(),
-              views: widget.feedPostItemModel.views.toString(),
-              postImage: widget.feedPostItemModel.images.isNotEmpty
-                  ? widget.feedPostItemModel.images : [],
-            ),
+            if (allFeedPostController != null)
+              GetBuilder<AllFeedPostController>(
+                builder: (_) => _buildPostCard(),
+              )
+            else if (myFeedPostController != null)
+              GetBuilder<MyFeedPostController>(
+                builder: (_) => _buildPostCard(),
+              )
+            else if (othersFeedPostController != null)
+              GetBuilder<OthersFeedPostController>(
+                builder: (_) => _buildPostCard(),
+              )
+            else
+              _buildPostCard(),
             heightBox20,
             Text(
               'Select a package',

@@ -7,12 +7,12 @@ class PostShimmerEffectWidget extends StatelessWidget {
   const PostShimmerEffectWidget({super.key});
 
   @override
-  Widget build(BuildContext context) { 
+  Widget build(BuildContext context) {
     double width = MediaQuery.of(context).size.width;
     double height = MediaQuery.of(context).size.height;
     return Shimmer.fromColors(
-      baseColor: const Color.fromARGB(255, 8, 6, 6),
-      highlightColor: Colors.grey[100]!,
+      baseColor: const Color.fromARGB(255, 48, 46, 46),
+      highlightColor: const Color.fromARGB(255, 48, 46, 46),
       child: SizedBox(
         height: height - 250,
         child: SingleChildScrollView(

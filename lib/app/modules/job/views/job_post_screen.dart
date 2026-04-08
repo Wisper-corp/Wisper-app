@@ -267,6 +267,15 @@ class _JobPostScreenState extends State<JobPostScreen> {
               ),
               heightBox16,
 
+              // Location
+              const Label(label: 'Location'),
+              heightBox6,
+              CustomTextField(
+                controller: _locationC,
+                hintText: 'Enter location',
+              ),
+              heightBox16,
+
               // Experience Level
               const Label(label: 'Experience Level'),
               heightBox6,

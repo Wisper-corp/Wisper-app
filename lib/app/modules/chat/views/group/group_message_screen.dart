@@ -5,6 +5,7 @@ import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:get/get.dart';
 import 'package:wisper/app/core/utils/date_formatter.dart';
 import 'package:wisper/app/core/utils/connectivity_services.dart';
+import 'package:wisper/app/modules/chat/controller/all_chats_controller.dart';
 import 'package:wisper/app/modules/chat/controller/message_controller.dart';
 import 'package:wisper/app/modules/chat/controller/seen_message_controller.dart';
 import 'package:wisper/app/modules/chat/model/message_keys.dart';
@@ -62,9 +63,12 @@ class _GroupChatScreenState extends State<GroupChatScreen> {
         ? Get.find<MessageController>(tag: _controllerTag)
         : Get.put(MessageController(), tag: _controllerTag);
 
-    WidgetsBinding.instance.addPostFrameCallback((_) {
+    WidgetsBinding.instance.addPostFrameCallback((_) async {
       if (widget.chatId != null && widget.chatId!.isNotEmpty) {
-        seenMessageController.seenMessage(widget.chatId!);
+        final seenOk = await seenMessageController.seenMessage(widget.chatId!);
+        if (seenOk && Get.isRegistered<AllChatsController>()) {
+          await Get.find<AllChatsController>().markChatAsRead(widget.chatId!);
+        }
         if (ctrl.currentChatId != widget.chatId) {
           ctrl.setupChat(chatId: widget.chatId);
         }

@@ -7,7 +7,7 @@ import 'package:wisper/app/core/widgets/shimmer/gallery_post_shimmer.dart';
 import 'package:wisper/app/modules/post/controller/feed_post_controller.dart';
 import 'package:wisper/app/modules/post/views/comment_screen.dart';
 import 'package:wisper/app/modules/post/widgets/post_card.dart';
- 
+
 class PostSection extends StatefulWidget {
   const PostSection({super.key});
 
@@ -46,7 +46,7 @@ class _PostSectionState extends State<PostSection> {
           return ListView(
             physics: const AlwaysScrollableScrollPhysics(),
             children: const [
-              SizedBox(height: 120),
+              // SizedBox(height: 120),
               Center(child: PostShimmerEffectWidget()),
             ],
           );
@@ -58,7 +58,7 @@ class _PostSectionState extends State<PostSection> {
             return ListView(
               physics: const AlwaysScrollableScrollPhysics(),
               children: const [
-                SizedBox(height: 120),
+                // SizedBox(height: 120),
                 Center(child: PostShimmerEffectWidget()),
               ],
             );
@@ -95,6 +95,7 @@ class _PostSectionState extends State<PostSection> {
                 onTapComment: () {
                   Get.to(CommentScreen(postId: post.id ?? ''));
                 },
+                commentCount: post.count?.comment ?? 0,
                 isComment: false,
                 ownerId: post.author?.id ?? '',
                 trailing: const Text(

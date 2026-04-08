@@ -48,7 +48,7 @@ class _ChatScreenState extends State<ChatScreen> {
       Get.find<ConnectivityService>();
   final SeenMessageController seenMessageController = SeenMessageController();
 
-  // ? ?????? ScrollController — ctrl ?? ?? ???
+  // ? ?????? ScrollController ï¿½ ctrl ?? ?? ???
   final ScrollController _scrollController = ScrollController();
 
   bool _showNewMessageIndicator = false;
@@ -65,10 +65,13 @@ class _ChatScreenState extends State<ChatScreen> {
     super.initState();
     connectivityService.suppressDialog.value = true;
 
-    WidgetsBinding.instance.addPostFrameCallback((_) {
+    WidgetsBinding.instance.addPostFrameCallback((_) async {
       _chatId = widget.chatId;
       if (_chatId != null && _chatId!.isNotEmpty) {
-        seenMessageController.seenMessage(_chatId!);
+        final seenOk = await seenMessageController.seenMessage(_chatId!);
+        if (seenOk) {
+          await allChatsController.markChatAsRead(_chatId!);
+        }
         if (ctrl.currentChatId != _chatId) {
           ctrl.setupChat(chatId: _chatId);
         }
@@ -113,7 +116,7 @@ class _ChatScreenState extends State<ChatScreen> {
   }
 
   void _scrollToBottom({bool animated = true}) {
-    // ? positions.length == 1 ??? — ???? ??? fix
+    // ? positions.length == 1 ??? ï¿½ ???? ??? fix
     if (!_scrollController.hasClients) return;
     if (_scrollController.positions.length != 1) return;
 
@@ -418,7 +421,6 @@ class _ChatScreenState extends State<ChatScreen> {
                               color: Colors.grey,
                             ),
                           ),
-                          
                         ],
                       ),
                     );
@@ -642,4 +644,3 @@ class _AnimatedMessageBubbleState extends State<AnimatedMessageBubble>
     );
   }
 }
-

@@ -12,15 +12,16 @@ import 'package:wisper/app/modules/profile/views/person/others_person_screen.dar
 class PostCard extends StatelessWidget {
   final Widget trailing;
   final String? ownerId;
-  final bool? isPerson;  
+  final bool? isPerson;
   final String? ownerName;
-  final String? ownerImage; 
+  final String? ownerImage;
   final String? ownerProfession;
-  final List<String>? postImage;        // লিস্ট
+  final List<String>? postImage; // লিস্ট
   final String? postDescription;
   final String? postTime;
   final String? views;
   final bool? isComment;
+  final int? commentCount;
   final VoidCallback onTapComment;
 
   const PostCard({
@@ -37,6 +38,7 @@ class PostCard extends StatelessWidget {
     this.isComment = false,
     required this.onTapComment,
     this.isPerson = true,
+    this.commentCount,
   });
 
   @override
@@ -84,7 +86,8 @@ class PostCard extends StatelessWidget {
                           fontSize: 14,
                         ),
                       ),
-                      if (ownerProfession != null && ownerProfession!.isNotEmpty)
+                      if (ownerProfession != null &&
+                          ownerProfession!.isNotEmpty)
                         Text(
                           ownerProfession!,
                           style: TextStyle(
@@ -139,13 +142,25 @@ class PostCard extends StatelessWidget {
                 children: [
                   GestureDetector(
                     onTap: onTapComment,
-                    child: Text(
-                      'Comments',
-                      style: TextStyle(
-                        fontWeight: FontWeight.w400,
-                        fontSize: 10,
-                        color: LightThemeColors.themeGreyColor,
-                      ),
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.start,
+                      crossAxisAlignment: CrossAxisAlignment.end,
+                      children: [
+                        Icon(
+                          Icons.comment,
+                          size: 14,
+                          color: LightThemeColors.themeGreyColor,
+                        ),
+                        widthBox4,
+                        Text(
+                          ' ${commentCount ?? 0} Comments',
+                          style: TextStyle(
+                            fontWeight: FontWeight.w400,
+                            fontSize: 10,
+                            color: LightThemeColors.themeGreyColor,
+                          ),
+                        ),
+                      ],
                     ),
                   ),
                   Text(

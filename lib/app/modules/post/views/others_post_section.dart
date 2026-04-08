@@ -73,6 +73,7 @@ class _OthersPostSectionState extends State<OthersPostSection> {
                 onTapComment: () {
                    Get.to(CommentScreen(postId: post.id ?? ''));
                 },
+                commentCount: post.count?.comment ?? 0,
                 ownerId: post.author?.id ?? '',
                 trailing: const Text(
                   '',
