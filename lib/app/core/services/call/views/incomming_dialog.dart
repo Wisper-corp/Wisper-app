@@ -2,6 +2,7 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:wisper/app/core/services/call/controller/call_services.dart'; 
+import 'package:wisper/app/core/utils/initials.dart';
 import 'package:wisper/app/core/widgets/common/circle_icon.dart';
 import 'package:wisper/gen/assets.gen.dart';
 
@@ -87,10 +88,13 @@ class _IncomingCallDialogState extends State<IncomingCallDialog>
                             ? NetworkImage(widget.callerImage)
                             : null,
                         child: widget.callerImage.isEmpty
-                            ? const Icon(
-                                Icons.person,
-                                size: 45,
-                                color: Colors.white70,
+                            ? Text(
+                                initialsFromName(widget.callerName),
+                                style: const TextStyle(
+                                  color: Colors.white70,
+                                  fontSize: 20,
+                                  fontWeight: FontWeight.w600,
+                                ),
                               )
                             : null,
                       ),

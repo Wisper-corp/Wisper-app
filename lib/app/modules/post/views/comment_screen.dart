@@ -3,6 +3,7 @@ import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:get/get.dart';
 import 'package:wisper/app/core/others/custom_size.dart';
 import 'package:wisper/app/core/others/get_storage.dart';
+import 'package:wisper/app/core/utils/initials.dart';
 import 'package:wisper/app/core/utils/show_over_loading.dart';
 import 'package:wisper/app/core/utils/snack_bar.dart';
 import 'package:wisper/app/core/widgets/common/custom_text_filed.dart';
@@ -205,9 +206,20 @@ class _CommentScreenState extends State<CommentScreen> {
                           },
                           child: CircleAvatar(
                             backgroundColor: Colors.grey,
-                            backgroundImage: NetworkImage(authorImage ?? ''),
+                            backgroundImage: (authorImage ?? '').isNotEmpty
+                                ? NetworkImage(authorImage!)
+                                : null,
                             radius: 20.r,
-                            child: authorImage == null ? const Icon(Icons.person) : null,
+                            child: (authorImage == null || authorImage!.isEmpty)
+                                ? Text(
+                                    initialsFromName(authorName),
+                                    style: TextStyle(
+                                      color: Colors.white,
+                                      fontSize: 10.sp,
+                                      fontWeight: FontWeight.w600,
+                                    ),
+                                  )
+                                : null,
                           ),
                         ),
                         title: Text(

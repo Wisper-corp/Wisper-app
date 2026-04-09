@@ -6,6 +6,7 @@ import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:permission_handler/permission_handler.dart';
+import 'package:wisper/app/core/utils/initials.dart';
 import 'package:wisper/app/modules/calls/controller/call_controller.dart';
 import 'package:wisper/app/core/services/call/controller/call_services.dart';
 import 'package:wisper/app/core/services/socket/socket_service.dart';
@@ -27,7 +28,7 @@ class AudioCallPage extends StatefulWidget {
   final String? classId;
   final bool isGroupCall;
   final String? callerName;
-
+ 
   const AudioCallPage({
     super.key,
     required this.name,
@@ -574,15 +575,25 @@ class _AudioCallPageState extends State<AudioCallPage> {
             width: radius * 2,
             height: radius * 2,
             fit: BoxFit.cover,
-            placeholder: (_, __) => Icon(
-              Icons.person,
-              size: radius,
-              color: Colors.white70,
+            placeholder: (_, __) => Center(
+              child: Text(
+                initialsFromName(label),
+                style: TextStyle(
+                  color: Colors.white70,
+                  fontSize: radius * 0.5,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
             ),
-            errorWidget: (_, __, ___) => Icon(
-              Icons.person,
-              size: radius,
-              color: Colors.white70,
+            errorWidget: (_, __, ___) => Center(
+              child: Text(
+                initialsFromName(label),
+                style: TextStyle(
+                  color: Colors.white70,
+                  fontSize: radius * 0.5,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
             ),
           ),
         ),
@@ -591,7 +602,14 @@ class _AudioCallPageState extends State<AudioCallPage> {
     return CircleAvatar(
       radius: radius,
       backgroundColor: bgColor ?? Colors.blue.shade300,
-      child: Icon(Icons.person, size: radius, color: Colors.white),
+      child: Text(
+        initialsFromName(label),
+        style: TextStyle(
+          color: Colors.white,
+          fontSize: radius * 0.55,
+          fontWeight: FontWeight.w600,
+        ),
+      ),
     );
   }
 

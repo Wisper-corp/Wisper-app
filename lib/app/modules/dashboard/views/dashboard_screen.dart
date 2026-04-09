@@ -8,6 +8,7 @@ import 'package:wisper/app/core/services/call/controller/call_services.dart';
 import 'package:wisper/app/core/services/call/views/pending_banner.dart';
 import 'package:wisper/app/core/services/socket/socket_service.dart';
 import 'package:wisper/app/core/utils/connectivity_services.dart';
+import 'package:wisper/app/core/utils/initials.dart';
 import 'package:wisper/app/modules/calls/views/call_screen.dart';
 import 'package:wisper/app/modules/chat/views/chat_list_screen.dart';
 import 'package:wisper/app/modules/homepage/controller/all_role_controller.dart';
@@ -125,6 +126,19 @@ class _MainButtonNavbarScreenState extends State<MainButtonNavbarScreen>
     return url;
   }
 
+  String _getProfileName() {
+    final role = StorageUtil.getData(StorageUtil.userRole);
+    String? name;
+
+    if (role == 'PERSON') {
+      name = profileController.profileData?.auth?.person?.name;
+    } else {
+      name = businessController.buisnessData?.auth?.business?.name;
+    }
+
+    return name ?? '';
+  }
+
   @override
   Widget build(BuildContext context) {
     // ── PendingCallBanner দিয়ে পুরো screen wrap করো ──
@@ -225,6 +239,7 @@ class _MainButtonNavbarScreenState extends State<MainButtonNavbarScreen>
   Widget _buildProfileNavItem({required int index}) {
     final bool isSelected = selectedKey == index;
     final String imageUrl = _getProfileImageUrl();
+    final String profileName = _getProfileName();
 
     return GestureDetector(
       onTap: () {
@@ -244,7 +259,14 @@ class _MainButtonNavbarScreenState extends State<MainButtonNavbarScreen>
                   ? NetworkImage(imageUrl) as ImageProvider
                   : null,
               child: imageUrl.isEmpty
-                  ? Icon(Icons.person, size: 18.r, color: Colors.white70)
+                  ? Text(
+                      initialsFromName(profileName),
+                      style: TextStyle(
+                        color: Colors.white70,
+                        fontSize: 10.r,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    )
                   : null,
             ),
             SizedBox(height: 4.h),

@@ -2,6 +2,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:wisper/app/core/services/call/controller/call_services.dart';
+import 'package:wisper/app/core/utils/initials.dart';
 import 'package:wisper/app/modules/calls/views/audio_call.dart';
 import 'package:wisper/app/modules/calls/views/video_call.dart';
 
@@ -134,7 +135,15 @@ class _PendingCallBannerState extends State<PendingCallBanner> {
                               : null,
                       backgroundColor: const Color(0xFF4CAF50),
                       child: (_currentCallData!['callerImage'] ?? '').isEmpty
-                          ? const Icon(Icons.person, color: Colors.white)
+                          ? Text(
+                              initialsFromName(
+                                _currentCallData!['callerName']?.toString(),
+                              ),
+                              style: const TextStyle(
+                                color: Colors.white,
+                                fontWeight: FontWeight.w600,
+                              ),
+                            )
                           : null,
                     ),
                     const SizedBox(width: 12),

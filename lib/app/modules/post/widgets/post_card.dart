@@ -5,6 +5,7 @@ import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:get/get.dart';
 import 'package:wisper/app/core/config/theme/light_theme_colors.dart';
 import 'package:wisper/app/core/others/custom_size.dart';
+import 'package:wisper/app/core/utils/initials.dart';
 import 'package:wisper/app/core/widgets/common/image_container_widget.dart'; // নতুনটা
 import 'package:wisper/app/modules/profile/views/business/others_business_screen.dart';
 import 'package:wisper/app/modules/profile/views/person/others_person_screen.dart';
@@ -63,7 +64,14 @@ class PostCard extends StatelessWidget {
                 ? NetworkImage(ownerImage!)
                 : null,
             child: ownerImage == null || ownerImage!.isEmpty
-                ? Icon(Icons.person, color: Colors.white, size: 20.r)
+                ? Text(
+                    initialsFromName(ownerName),
+                    style: TextStyle(
+                      color: Colors.white,
+                      fontSize: 10.r,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  )
                 : null,
           ),
         ),

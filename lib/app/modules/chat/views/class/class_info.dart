@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:get/get.dart';
 import 'package:wisper/app/core/others/custom_size.dart';
+import 'package:wisper/app/core/utils/initials.dart';
 import 'package:wisper/app/core/utils/date_formatter.dart';
 import 'package:wisper/app/core/utils/image_picker.dart';
 import 'package:wisper/app/core/utils/show_over_loading.dart';
@@ -568,7 +569,13 @@ class _ClassInfoScreenState extends State<ClassInfoScreen> {
                                   : null,
                               backgroundColor: Colors.grey,
                               child: (imageUrl == null || imageUrl.isEmpty)
-                                  ? const Icon(Icons.person)
+                                  ? Text(
+                                      initialsFromName(name),
+                                      style: const TextStyle(
+                                        color: Colors.white,
+                                        fontWeight: FontWeight.w600,
+                                      ),
+                                    )
                                   : null,
                             ),
                             widthBox10,

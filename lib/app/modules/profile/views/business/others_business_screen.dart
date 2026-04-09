@@ -221,7 +221,7 @@ class _OthersBusinessScreenState extends State<OthersBusinessScreen> {
                 isEditImage: false,
                 isTrailing: false,
                 trailingOnTap: () {},
-                imagePath: business?.image ?? Assets.images.person.keyName,
+                imagePath: business?.image ?? '',
                 editOnTap: () {},
                 title: business?.name ?? 'No Name',
                 memberInfo: business?.industry ?? 'No Industry',

@@ -6,6 +6,7 @@ import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:get/get.dart';
 import 'package:wisper/app/core/config/theme/light_theme_colors.dart';
 import 'package:wisper/app/core/others/custom_size.dart';
+import 'package:wisper/app/core/utils/initials.dart';
 import 'package:wisper/app/core/others/get_storage.dart';
 import 'package:wisper/app/core/utils/show_over_loading.dart';
 import 'package:wisper/app/core/utils/snack_bar.dart';
@@ -202,7 +203,13 @@ class _ResumePostScreenState extends State<ResumePostScreen> {
                             ? NetworkImage(userImageUrl.value)
                             : null,
                         child: userImageUrl.value.isEmpty
-                            ? const Icon(Icons.person, color: Colors.white)
+                            ? Text(
+                                initialsFromName(userName.value),
+                                style: const TextStyle(
+                                  color: Colors.white,
+                                  fontWeight: FontWeight.w600,
+                                ),
+                              )
                             : null,
                       ),
                       widthBox8,

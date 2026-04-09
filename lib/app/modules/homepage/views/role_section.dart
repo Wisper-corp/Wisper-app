@@ -75,6 +75,7 @@ class _RoleSectionState extends State<RoleSection> {
           if (onError != null) {
             onError(errorMsg);
           } else {
+            
             showSnackBarMessage(context, errorMsg, true);
           }
         }

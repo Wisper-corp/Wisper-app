@@ -138,7 +138,7 @@ class _ChatHeaderState extends State<ChatHeader> {
       socketService.socket.emit('callInvite', {
         "callId": callId,
         "token": callController.token, 
-        "groupName": null,
+        "groupName": null, 
       });
 
       if (type == 'VIDEO') {

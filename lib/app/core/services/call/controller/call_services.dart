@@ -680,7 +680,7 @@ class CallService extends GetxController {
   Future<void> _handleAcceptCall() async { 
     print('Pressed accept button. ✅ Accepting call');
     final roomId = _incomingCall.value?['roomId'];
-    final callId = _incomingCall.value?['callId'];
+    final callId = _incomingCall.value?['callId']; 
     final type = _incomingCall.value?['type'];
     final callerName = _incomingCall.value?['groupName'] ??
         _incomingCall.value?['callerName'] ??

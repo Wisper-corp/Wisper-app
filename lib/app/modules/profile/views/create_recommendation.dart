@@ -4,6 +4,7 @@ import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:get/get.dart';
 import 'package:wisper/app/core/others/custom_size.dart';
 import 'package:wisper/app/core/others/get_storage.dart';
+import 'package:wisper/app/core/utils/initials.dart';
 import 'package:wisper/app/core/utils/show_over_loading.dart';
 import 'package:wisper/app/core/utils/snack_bar.dart';
 import 'package:wisper/app/core/widgets/common/custom_button.dart';
@@ -210,10 +211,13 @@ class _CreateReviewSheetState extends State<CreateReviewSheet> {
                                 ? NetworkImage(userImageUrl.value)
                                 : null,
                             child: userImageUrl.value.isEmpty
-                                ? Icon(
-                                    Icons.person,
-                                    size: 24.sp,
-                                    color: Colors.white70,
+                                ? Text(
+                                    initialsFromName(userName.value),
+                                    style: TextStyle(
+                                      color: Colors.white70,
+                                      fontSize: 12.sp,
+                                      fontWeight: FontWeight.w600,
+                                    ),
                                   )
                                 : null,
                           ),
