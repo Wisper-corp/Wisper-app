@@ -18,7 +18,7 @@ import 'package:wisper/app/modules/profile/controller/person/profile_controller.
 import 'package:wisper/gen/assets.gen.dart';
 import 'package:file_picker/file_picker.dart';
 
-class ResumePostScreen extends StatefulWidget {
+ class ResumePostScreen extends StatefulWidget {
   const ResumePostScreen({super.key});
 
   @override
@@ -30,8 +30,8 @@ class _ResumePostScreenState extends State<ResumePostScreen> {
   final FilePickerHelper _filePickerHelper = FilePickerHelper();
   final CreateResumeController createPostController = CreateResumeController();
 
-  final ProfileController profileController = Get.find<ProfileController>();
-  final BusinessController businessController = Get.find<BusinessController>();
+  final ProfileController profileController = Get.put(ProfileController());
+  final BusinessController businessController = Get.put(BusinessController());
 
   // Role-based user info observables
   final RxBool isLoading = true.obs;

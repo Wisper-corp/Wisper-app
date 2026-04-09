@@ -6,7 +6,7 @@ class CallSocket {
     socket.off('callIncoming');
     socket.off('callDeclined');
     socket.off('callEnded');
-    socket.off('callCanceled');
+    socket.off('callCanceled'); 
     // ✅ NEW: participant join event
     socket.off('callParticipantJoined');
     socket.off('callParticipantsAccepted');

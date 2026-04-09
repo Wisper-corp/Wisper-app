@@ -17,6 +17,7 @@ import 'package:wisper/app/modules/chat/controller/group/group_info_controller.d
 class CallService extends GetxController {
   final AudioPlayer _incomingRingPlayer = AudioPlayer();
 
+  // ============================== Observable State ============================== //
   RxBool isLoading = false.obs;
   final Rxn<Map<String, dynamic>> _incomingCall = Rxn<Map<String, dynamic>>();
   final Rxn<Map<String, dynamic>> pendingCall = Rxn<Map<String, dynamic>>();
@@ -29,6 +30,7 @@ class CallService extends GetxController {
   final RxMap<int, Map<String, String>> participantInfo =
       <int, Map<String, String>>{}.obs;
 
+  // ============================== Internal ============================== //
   IO.Socket? _socket;
   CallController? _callController;
 
@@ -40,6 +42,7 @@ class CallService extends GetxController {
   Rxn<Map<String, dynamic>> get incomingCall => _incomingCall;
   CallController get callController => _callController!;
 
+  // ============================== Lifecycle ============================== //
   void attachSocket(IO.Socket socket) {
     _socket = socket;
   } 
@@ -80,6 +83,7 @@ class CallService extends GetxController {
     _setupCallkitListeners();
   }
 
+  // ============================== Participant Info ============================== //
   // ✅ NEW: callParticipantJoined socket event handler
   void handleParticipantJoined(dynamic data) {
     print('📞📞📞 callParticipantJoined: $data');
@@ -148,7 +152,8 @@ class CallService extends GetxController {
     participantInfo.clear();
   }
 
-  void handleCallIncoming(dynamic data) async {
+  // ============================== Incoming Call Flow ============================== //
+  void handleCallIncoming(dynamic data) async { 
     print('📞 Incoming call: $data');
     final normalized = await _normalizeCallDataAsync(
       data is Map<String, dynamic> ? data : Map<String, dynamic>.from(data),
@@ -230,6 +235,7 @@ class CallService extends GetxController {
     );
   }
 
+  // ============================== Pending Call (CallKit → App) ============================== //
   void checkAndShowPendingCallDialogIfNeeded() {
     print('checkAndShowPendingCallDialogIfNeeded() কল হয়েছে');
 
@@ -275,39 +281,10 @@ class CallService extends GetxController {
     print('Accept করা হয়েছে (pending dialog থেকে)');
     _clearCallStates();
 
-    final callType = callData['callType'] ?? 'AUDIO';
-
-    if (callType == 'VIDEO') {
-      Get.to(() => VideoCallPage(
-            name: callData['callerName'] ?? '',
-            photoUrl: callData['callerImage'] ?? '',
-            chatId: '',
-            channelName: callData['channelName'] ?? '',
-            token: callData['token'] ?? '',
-            uuid: callData['uuid'] ?? 0,
-            callId: callData['callId'] ?? '',
-            groupId: callData['groupId'],
-            classId: callData['classId'],
-            isGroupCall: callData['isGroupCall'] == true,
-            callerName: callData['callerName'],
-          ));
-    } else { 
-      Get.to(() => AudioCallPage(
-            name: callData['callerName'] ?? '',
-            photoUrl: callData['callerImage'] ?? '',
-            chatId: '',
-            channelName: callData['channelName'] ?? '',
-            token: callData['token'] ?? '',
-            uuid: callData['uuid'] ?? 0,
-            callId: callData['callId'] ?? '',
-            groupId: callData['groupId'],
-            classId: callData['classId'],
-            isGroupCall: callData['isGroupCall'] == true,
-            callerName: callData['callerName'],
-          ));
-    }
+    _pushCallPageFromMap(callData, normalizeEmptyIds: false);
   }
 
+  // ============================== Dialogs & UI ============================== //
   void _clearCallStates() {
     print('Clearing all call states');
     pendingCall.value = null;
@@ -347,12 +324,13 @@ class CallService extends GetxController {
     );
   }
 
+  // ============================== CallKit ============================== //
   Future<void> _showCallkitFromSocketData(Map<String, dynamic> data) async {
     if (_callkitShowing) {
       print('⚠️ Callkit already showing — skipping');
       return;
     }
-
+ 
     final callKey = _getCallKey(data);
     if (callKey.isNotEmpty && _callkitShownKeys.contains(callKey)) {
       print('⚠️ Callkit already shown for $callKey — skipping');
@@ -427,6 +405,7 @@ class CallService extends GetxController {
     print('📞 Callkit shown: $callerName | callId: $callId | roomId: $roomId');
   }
 
+  // ============================== Normalization ============================== //
   Future<Map<String, dynamic>> _normalizeCallDataAsync(
     Map<String, dynamic> data,
   ) async {
@@ -517,6 +496,7 @@ class CallService extends GetxController {
     return roomId;
   }
 
+  // ============================== CallKit Events ============================== //
   void _setupCallkitListeners() {
     FlutterCallkitIncoming.onEvent.listen((CallEvent? event) async {
       if (event == null) return;
@@ -696,6 +676,7 @@ class CallService extends GetxController {
     await _handleCallkitAccept(body);
   }
 
+  // ============================== In-App Accept/Reject ============================== //
   Future<void> _handleAcceptCall() async { 
     print('Pressed accept button. ✅ Accepting call');
     final roomId = _incomingCall.value?['roomId'];
@@ -794,6 +775,7 @@ class CallService extends GetxController {
     _clearCallStates();
   }
 
+  // ============================== Ringtone ============================== //
   Future<void> _startIncomingRingtone() async {
     try {
       await _incomingRingPlayer.play(AssetSource('IncomingCallRingtone.mp3'));
@@ -817,6 +799,7 @@ class CallService extends GetxController {
     callEndedSignal.value = false;
   }
 
+  // ============================== Helpers ============================== //
   Future<void> _waitForSocketConnection() async {
     if (_socket == null) return;
     if (_socket!.connected) return;
@@ -826,6 +809,60 @@ class CallService extends GetxController {
       if (_socket!.connected) return;
     }
     print('⚠️ Socket not connected after 5s');
+  }
+
+  // Common navigation helper for both pending + direct call flows
+  void _pushCallPageFromMap(
+    Map<String, dynamic> data, {
+    bool normalizeEmptyIds = true,
+  }) {
+    final callType = (data['callType'] ?? 'AUDIO').toString();
+    final callerName = (data['callerName'] ?? '').toString();
+    final callerImage = (data['callerImage'] ?? '').toString();
+    final channelName = (data['channelName'] ?? '').toString();
+    final token = (data['token'] ?? '').toString();
+    final uuid = data['uuid'] is int ? data['uuid'] as int : 0;
+    final callId = (data['callId'] ?? '').toString();
+    final bool isGroupCall = data['isGroupCall'] == true;
+
+    dynamic groupIdValue = data['groupId'];
+    dynamic classIdValue = data['classId'];
+    if (normalizeEmptyIds) {
+      final groupId = (data['groupId'] ?? '').toString();
+      final classId = (data['classId'] ?? '').toString();
+      groupIdValue = groupId.isEmpty ? null : groupId;
+      classIdValue = classId.isEmpty ? null : classId;
+    }
+
+    if (callType == 'VIDEO') {
+      Get.to(() => VideoCallPage(
+            name: callerName,
+            photoUrl: callerImage,
+            chatId: '',
+            channelName: channelName,
+            token: token,
+            uuid: uuid,
+            callId: callId,
+            groupId: groupIdValue,
+            classId: classIdValue,
+            isGroupCall: isGroupCall,
+            callerName: callerName,
+          ));
+    } else {
+      Get.to(() => AudioCallPage(
+            name: callerName,
+            photoUrl: callerImage,
+            chatId: '',
+            channelName: channelName,
+            token: token,
+            uuid: uuid,
+            callId: callId,
+            groupId: groupIdValue,
+            classId: classIdValue,
+            isGroupCall: isGroupCall,
+            callerName: callerName,
+          ));
+    }
   }
 
   Future<void> _navigateToCallPageDirectFromData( 
@@ -871,35 +908,18 @@ class CallService extends GetxController {
     pendingCall.value = null;
     StorageUtil.deleteData(StorageUtil.pendingCallKey);
 
-    if (callType == 'VIDEO') {
-      Get.to(() => VideoCallPage(
-            name: callerName,
-            photoUrl: callerImage,
-            chatId: '',
-            channelName: channelName,
-            token: token,
-            uuid: uuid,
-            callId: callId,
-            groupId: groupId.isEmpty ? null : groupId,
-            classId: classId.isEmpty ? null : classId,
-            isGroupCall: isGroupCall,
-            callerName: callerName,
-          ));
-    } else {
-      Get.to(() => AudioCallPage(
-            name: callerName,
-            photoUrl: callerImage,
-            chatId: '',
-            channelName: channelName,
-            token: token,
-            uuid: uuid,
-            callId: callId,
-            groupId: groupId.isEmpty ? null : groupId,
-            classId: classId.isEmpty ? null : classId,
-            isGroupCall: isGroupCall,
-            callerName: callerName,
-          ));
-    }
+    _pushCallPageFromMap({
+      'callType': callType,
+      'callerName': callerName,
+      'callerImage': callerImage,
+      'channelName': channelName,
+      'token': token,
+      'uuid': uuid,
+      'callId': callId,
+      'groupId': groupId,
+      'classId': classId,
+      'isGroupCall': isGroupCall,
+    });
   }
 
   @override

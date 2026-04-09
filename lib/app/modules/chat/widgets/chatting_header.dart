@@ -32,7 +32,7 @@ class ChatHeader extends StatefulWidget {
   final String? memberId;
   final String? chatId;
   final bool? isPerson;
-
+  
   const ChatHeader({
     super.key,
     this.name,
