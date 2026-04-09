@@ -7,7 +7,7 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:wisper/app/modules/calls/controller/call_controller.dart';
-import 'package:wisper/app/core/services/socket/call_services.dart';
+import 'package:wisper/app/core/services/call/controller/call_services.dart';
 import 'package:wisper/app/core/services/socket/socket_service.dart';
 import 'package:wisper/app/modules/chat/controller/group/all_group_member_controller.dart';
 import 'package:wisper/app/modules/chat/controller/class/class_member_controller.dart';

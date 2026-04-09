@@ -8,7 +8,7 @@ import 'package:flutter_callkit_incoming/flutter_callkit_incoming.dart';
 import 'package:get/get.dart';
 import 'package:socket_io_client/socket_io_client.dart' as IO;
 import 'package:wisper/app/core/others/get_storage.dart';
-import 'package:wisper/app/core/services/socket/incomming_dialog.dart';
+import 'package:wisper/app/core/services/call/views/incomming_dialog.dart';
 import 'package:wisper/app/modules/calls/controller/call_controller.dart';
 import 'package:wisper/app/modules/calls/views/audio_call.dart';
 import 'package:wisper/app/modules/calls/views/video_call.dart';
@@ -42,7 +42,7 @@ class CallService extends GetxController {
 
   void attachSocket(IO.Socket socket) {
     _socket = socket;
-  }
+  } 
 
   @override
   void onInit() {

@@ -9,7 +9,7 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:wisper/app/core/others/custom_size.dart';
 import 'package:wisper/app/core/others/get_storage.dart';
 import 'package:wisper/app/core/services/socket/socket_service.dart';
-import 'package:wisper/app/core/services/socket/call_services.dart';
+import 'package:wisper/app/core/services/call/controller/call_services.dart';
 import 'package:wisper/app/core/utils/show_over_loading.dart';
 import 'package:wisper/app/core/utils/snack_bar.dart';
 import 'package:wisper/app/core/widgets/common/circle_icon.dart';

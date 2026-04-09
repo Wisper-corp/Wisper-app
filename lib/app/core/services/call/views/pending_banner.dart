@@ -1,7 +1,7 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
-import 'package:wisper/app/core/services/socket/call_services.dart';
+import 'package:wisper/app/core/services/call/controller/call_services.dart';
 import 'package:wisper/app/modules/calls/views/audio_call.dart';
 import 'package:wisper/app/modules/calls/views/video_call.dart';
 

@@ -3,8 +3,8 @@
 import 'package:get/get.dart';
 import 'package:socket_io_client/socket_io_client.dart' as IO;
 import 'package:wisper/app/core/others/get_storage.dart';
-import 'package:wisper/app/core/services/socket/call_services.dart';
-import 'package:wisper/app/core/services/socket/call_socket.dart';
+import 'package:wisper/app/core/services/call/controller/call_services.dart';
+import 'package:wisper/app/core/services/call/controller/call_socket.dart';
 import 'package:wisper/app/modules/chat/controller/all_chats_controller.dart';
 import 'package:wisper/app/urls.dart';
 

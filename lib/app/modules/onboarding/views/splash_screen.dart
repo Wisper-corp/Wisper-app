@@ -6,7 +6,7 @@ import 'package:permission_handler/permission_handler.dart';
 import 'package:wisper/app/core/config/theme/light_theme_colors.dart';
 import 'package:wisper/app/core/others/get_storage.dart';
 import 'package:wisper/app/core/services/others/deeplink_services.dart';
-import 'package:wisper/app/core/services/socket/call_services.dart';
+import 'package:wisper/app/core/services/call/controller/call_services.dart';
 import 'package:wisper/app/core/services/socket/socket_service.dart';
 import 'package:wisper/app/core/utils/connectivity_services.dart';
 import 'package:wisper/app/core/utils/no_inter_screen.dart';

@@ -1,14 +1,14 @@
 
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
-import 'package:wisper/app/core/services/socket/call_services.dart';
+import 'package:wisper/app/core/services/call/controller/call_services.dart';
 import 'package:wisper/app/core/widgets/common/circle_icon.dart';
 import 'package:wisper/gen/assets.gen.dart';
 
 class IncomingCallDialog extends StatefulWidget {
   final String callerName;
   final String callerImage;
-  final VoidCallback onAccept;
+  final VoidCallback onAccept; 
   final VoidCallback onReject; 
   final bool isGroup;
 

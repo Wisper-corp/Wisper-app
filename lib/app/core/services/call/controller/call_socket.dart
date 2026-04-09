@@ -1,5 +1,5 @@
 ﻿import 'package:socket_io_client/socket_io_client.dart' as IO;
-import 'package:wisper/app/core/services/socket/call_services.dart';
+import 'package:wisper/app/core/services/call/controller/call_services.dart';
 
 class CallSocket {
   static void bind(IO.Socket socket, CallService callService) {
