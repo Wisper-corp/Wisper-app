@@ -5,6 +5,7 @@ import 'package:wisper/app/core/others/custom_size.dart';
 import 'package:wisper/app/core/widgets/common/circle_icon.dart';
 import 'package:wisper/app/core/widgets/common/line_widget.dart';
 import 'package:wisper/app/modules/chat/views/group/group_message_screen.dart';
+import 'package:wisper/app/modules/homepage/views/community_section.dart';
 import 'package:wisper/app/modules/homepage/views/role_section.dart';
 import 'package:wisper/app/modules/job/views/job_section.dart';
 import 'package:wisper/app/modules/post/views/post_section.dart';
@@ -19,7 +20,6 @@ class HomeScreen extends StatefulWidget {
 }
 
 class _HomeScreenState extends State<HomeScreen> {
-
   static const String _generalChatId = '56cbc5ab-78ed-4ec7-9847-0120558f9c62';
   static const String _generalGroupId = '56cbc5ab-78ed-4ec7-9847-01205585862';
 
@@ -72,16 +72,16 @@ class _HomeScreenState extends State<HomeScreen> {
                 children: [
                   _buildTab('General Chat', 0, 90.w),
                   widthBox20,
-                  widthBox10,
+
                   _buildTab('Posts', 1, 40.w),
                   widthBox20,
-                  widthBox10,
+
                   _buildTab('Jobs', 2, 40.w),
                   widthBox20,
-                  widthBox10,
+
                   _buildTab('Role', 3, 40.w),
-                  // widthBox20, 
-                  // _buildTab('Community', 4, 78.w),
+                  widthBox20,
+                  _buildTab('Community', 4, 78.w),
                 ],
               ),
             ),
@@ -119,8 +119,8 @@ class _HomeScreenState extends State<HomeScreen> {
                   // Tab 3: Role
                   const SizedBox.expand(child: RoleSection()),
 
-                  // // Tab 4: Community
-                  // const SizedBox.expand(child: CommunitySection()),
+                  // Tab 4: Community
+                  const SizedBox.expand(child: CommunitySection()),
                 ],
               ),
             ),

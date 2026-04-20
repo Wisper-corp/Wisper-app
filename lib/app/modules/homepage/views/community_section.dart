@@ -3,8 +3,10 @@ import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:get/get.dart';
 import 'package:wisper/app/core/utils/show_over_loading.dart';
 import 'package:wisper/app/core/utils/snack_bar.dart';
+import 'package:wisper/app/modules/chat/controller/all_community_controller.dart';
 import 'package:wisper/app/modules/chat/controller/all_group_controller.dart';
 import 'package:wisper/app/modules/chat/views/group/group_message_screen.dart';
+import 'package:wisper/app/modules/chat/widgets/communities_list_title.dart';
 import 'package:wisper/app/modules/chat/widgets/member_list_title.dart';
 import 'package:wisper/app/modules/homepage/controller/join_group_controller.dart';
 
@@ -16,7 +18,7 @@ class CommunitySection extends StatefulWidget {
 }
 
 class _CommunitySectionState extends State<CommunitySection> {
-  final AllGroupController controller = Get.put(AllGroupController());
+  final CommunityController controller = Get.put(CommunityController());
   final JoinGroupController joinGroupController = JoinGroupController();
 
   @override
@@ -24,7 +26,7 @@ class _CommunitySectionState extends State<CommunitySection> {
     super.initState();
 
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      controller.getAllGroup(); // Initial load
+      controller.getCommunities(); // Initial load
     });
   }
 
@@ -74,8 +76,8 @@ class _CommunitySectionState extends State<CommunitySection> {
         return const Center(child: CircularProgressIndicator());
       }
 
-      if (controller.allGroupData == null ||
-          controller.allGroupData!.isEmpty) {
+      if (controller.communitiesData == null ||
+          controller.communitiesData!.isEmpty) {
         return Center(
           child: Text(
             'No communities yet',
@@ -83,26 +85,24 @@ class _CommunitySectionState extends State<CommunitySection> {
           ),
         );
       }
-      var groupData = controller.allGroupData;
+      var groupData = controller.communitiesData;
       return ListView.builder(
         padding: const EdgeInsets.symmetric(horizontal: 10),
         itemCount: groupData?.length,
         itemBuilder: (context, index) {
           final item = groupData?[index];
-
-          return MemberListTile(
-            isOnline: false, // usually no "online" for group/class
+          return CommunitiesListTile(
+            memberCount: item?.memberCount ?? 0,
+            membersImage: [],
+            isOnline: false,
             onTap: () {
               joinGroup(item?.id, item?.name, item?.image);
             },
-
             isGroup: true,
-            isClass: false,
             imagePath: item?.image ?? '',
             name: item?.name ?? '',
             message: '',
             time: '',
-            unreadMessageCount: '',
           );
         },
       );

@@ -13,7 +13,7 @@ class Urls {
   // =========================================== Common ============================================== //
   static const String paymentUrl = '$_baseUrl/boosts/checkout-session';
   static const String contentUrl = '$_baseUrl/legal';
-   
+
   // =========================================== Profile ============================================== //
   static const String personProfileUrl = '$_baseUrl/persons/profile';
   static const String businessProfileUrl = '$_baseUrl/businesses/profile';
@@ -71,7 +71,7 @@ class Urls {
     return '$_baseUrl/businesses/$id';
   }
 
-  static String recommendationById(String id) { 
+  static String recommendationById(String id) {
     return '$_baseUrl/recommendations/$id';
   }
 
@@ -84,6 +84,8 @@ class Urls {
   static const String roleUrl = '$_baseUrl/persons/roles';
   static const String walletUrl = '$_baseUrl/payments';
   static const String allGroupUrl = '$_baseUrl/groups';
+  static const String allCommunityUrl = '$_baseUrl/groups/public';
+
   static const String removeFcmToken = '$_baseUrl/auths/logout';
 
   static String editPostId(String id) {
@@ -108,7 +110,7 @@ class Urls {
 
   static String singleJobById(String id) {
     return '$_baseUrl/jobs/$id';
-  } 
+  }
 
   static String deleteNotificationById(String id) {
     return '$_baseUrl/notifications/$id';
@@ -125,7 +127,8 @@ class Urls {
   static const String allChatsUrl = '$_baseUrl/chats/my';
   static const String createChatsUrl = '$_baseUrl/chats';
   static const String blockChatUserUrl = '$_baseUrl/chats/block-participant';
-  static const String removePerticipantUrl = '$_baseUrl/chats/remove-participant';
+  static const String removePerticipantUrl =
+      '$_baseUrl/chats/remove-participant';
   static const String unblockChatUserUrl =
       '$_baseUrl/chats/unblock-participant';
   static const String muteChatUserUrl = '$_baseUrl/chats/mute';
@@ -168,7 +171,7 @@ class Urls {
     return '$_baseUrl/groups/$id';
   }
 
-   static String addClassMembersById(String id) {
+  static String addClassMembersById(String id) {
     return '$_baseUrl/classes/$id';
   }
 
