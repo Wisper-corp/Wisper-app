@@ -72,9 +72,9 @@ class _MainButtonNavbarScreenState extends State<MainButtonNavbarScreen>
     super.initState();
     selectedKey = widget.initialIndex;
     WidgetsBinding.instance.addObserver(this);
-    _initializeData();
 
     WidgetsBinding.instance.addPostFrameCallback((_) {
+      _initializeData();
       socketService.onInit();
       callService.checkAndShowPendingCallDialogIfNeeded();
       connectivityService.suppressDialog.value = selectedKey == 3;
@@ -106,7 +106,7 @@ class _MainButtonNavbarScreenState extends State<MainButtonNavbarScreen>
       allFeedPostController.getAllPost(),
       myFeedJobController.getJobs(),
       myFeedPostController.getAllPost(),
-      allRoleController.getAllRole(''),
+      allRoleController.getAllRole('', null),
       businessController.getMyProfile(),
       profileController.getMyProfile(),
     ]);

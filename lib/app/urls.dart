@@ -77,10 +77,12 @@ class Urls {
 
   // =========================================== Home Block ========================================== //
   static const String feedPostUrl = '$_baseUrl/posts/feed';
+  static const String communityPostUrl = '$_baseUrl/posts';
   static const String myFeedPostUrl = '$_baseUrl/posts/all';
   static const String postUrl = '$_baseUrl/posts';
   static const String resumePostUrl = '$_baseUrl/resumes';
   static const String feedJobUrl = '$_baseUrl/jobs';
+  static const String communityJobUrl = '$_baseUrl/jobs/group';
   static const String roleUrl = '$_baseUrl/persons/roles';
   static const String walletUrl = '$_baseUrl/payments';
   static const String allGroupUrl = '$_baseUrl/groups';

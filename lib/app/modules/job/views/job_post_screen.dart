@@ -13,7 +13,8 @@ import 'package:wisper/app/modules/job/controller/feed_job_controller.dart';
 import 'package:wisper/app/modules/job/controller/my_job_controller.dart';
 
 class JobPostScreen extends StatefulWidget {
-  const JobPostScreen({super.key});
+  final String? groupId;
+  const JobPostScreen({super.key, this.groupId});
 
   @override
   State<JobPostScreen> createState() => _JobPostScreenState();
@@ -118,6 +119,7 @@ class _JobPostScreenState extends State<JobPostScreen> {
 
   Future<void> performCreateJob(BuildContext context) async {
     final bool isSuccess = await createJobController.createJob(
+      groupId: widget.groupId,
       applicationLink: _linkC.text.trim(),
       title: _titleC.text.trim(),
       description: _descC.text.trim(),

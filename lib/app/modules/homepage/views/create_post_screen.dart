@@ -10,22 +10,26 @@ import 'package:wisper/app/modules/post/widgets/post_option_card.dart';
 import 'package:wisper/gen/assets.gen.dart';
 
 class CreatePostScreen extends StatefulWidget {
-  const CreatePostScreen({super.key});
+  final String? groupId;
+
+  const CreatePostScreen({super.key, this.groupId});
 
   @override
   State<CreatePostScreen> createState() => _CreatePostScreenState();
 }
- 
+
 class _CreatePostScreenState extends State<CreatePostScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       body: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 20.0),
+        padding: EdgeInsets.symmetric(
+          horizontal: widget.groupId == null ? 20.0 : 00.0,
+        ),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.center,
           children: [
-            heightBox70,
+            widget.groupId == null ? heightBox70 : const SizedBox(),
             Text(
               "Create Post",
               style: TextStyle(fontSize: 18.sp, fontWeight: FontWeight.w600),
@@ -42,7 +46,7 @@ class _CreatePostScreenState extends State<CreatePostScreen> {
             heightBox30,
             PostOptionCard(
               onTap: () {
-                Get.to(GalleryPostScreen());
+                Get.to(GalleryPostScreen(groupId: widget.groupId));
               },
               imagePath: Assets.images.gallery02.keyName,
               color: Color(0xffD0DFFF),
@@ -55,7 +59,7 @@ class _CreatePostScreenState extends State<CreatePostScreen> {
             StorageUtil.getData(StorageUtil.userRole) != "PERSON"
                 ? PostOptionCard(
                     onTap: () {
-                      Get.to(JobPostScreen());
+                      Get.to(JobPostScreen(groupId: widget.groupId));
                     },
                     imagePath: Assets.images.file.keyName,
                     color: Color(0xffDBFFE8),
@@ -65,7 +69,8 @@ class _CreatePostScreenState extends State<CreatePostScreen> {
                   )
                 : const SizedBox(),
             heightBox12,
-            StorageUtil.getData(StorageUtil.userRole) == "PERSON"
+            StorageUtil.getData(StorageUtil.userRole) == "PERSON" &&
+                    widget.groupId == null
                 ? PostOptionCard(
                     onTap: () {
                       Get.to(ResumePostScreen());

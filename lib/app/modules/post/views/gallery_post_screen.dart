@@ -23,7 +23,8 @@ import 'package:wisper/app/modules/profile/controller/person/profile_controller.
 import 'package:wisper/gen/assets.gen.dart';
 
 class GalleryPostScreen extends StatefulWidget {
-  const GalleryPostScreen({super.key});
+  final String? groupId;
+  const GalleryPostScreen({super.key, this.groupId});
 
   @override
   State<GalleryPostScreen> createState() => _GalleryPostScreenState();
@@ -102,6 +103,7 @@ class _GalleryPostScreenState extends State<GalleryPostScreen> {
 
   Future<void> performCreatePost() async {
     final bool isSuccess = await createPostController.createPost(
+      groupId: widget.groupId,
       description: _captionCtrl.text.trim(),
       images: _selectedImages,
       privacy: _selectedPrivacy,
@@ -140,7 +142,7 @@ class _GalleryPostScreenState extends State<GalleryPostScreen> {
       isLoading.value = businessController.inProgress;
     }
   }
- 
+
   @override
   void initState() {
     super.initState();

@@ -11,11 +11,12 @@ import 'package:wisper/app/urls.dart';
 class CreatePostController extends GetxController {
   final RxBool _inProgress = false.obs;
   bool get inProgress => _inProgress.value;
- 
+
   final RxString _errorMessage = ''.obs;
   String get errorMessage => _errorMessage.value;
 
   Future<bool> createPost({
+    String? groupId,
     String? privacy,
     String? description,
     List<File>? images,
@@ -24,6 +25,7 @@ class CreatePostController extends GetxController {
 
     try {
       Map<String, dynamic> body = {
+        "groupId": groupId ?? '',
         "caption": description,
         "commentAccess": privacy,
       };

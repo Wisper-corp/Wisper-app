@@ -9,6 +9,7 @@ import 'package:wisper/app/modules/chat/controller/all_chats_controller.dart';
 import 'package:wisper/app/modules/chat/controller/message_controller.dart';
 import 'package:wisper/app/modules/chat/controller/seen_message_controller.dart';
 import 'package:wisper/app/modules/chat/model/message_keys.dart';
+import 'package:wisper/app/modules/chat/views/class/class_message_screen.dart';
 import 'package:wisper/app/modules/chat/views/person/message_input_bar.dart';
 import 'package:wisper/app/modules/chat/widgets/empty_group_card.dart';
 import 'package:wisper/app/modules/chat/widgets/group_chatting_header.dart';
@@ -463,97 +464,6 @@ class _GroupChatScreenState extends State<GroupChatScreen> {
             },
           ),
         ],
-      ),
-    );
-  }
-}
-
-// ✅ Animated wrapper — নতুন message এ slide + fade animation
-class AnimatedMessageBubble extends StatefulWidget {
-  final Map<String, dynamic> message;
-  final bool isMe;
-  final String fileUrl;
-  final String fileType;
-  final String senderName;
-  final String? senderImage;
-  final String time;
-  final bool isGroupChat;
-
-  const AnimatedMessageBubble({
-    super.key,
-    required this.message,
-    required this.isMe,
-    required this.fileUrl,
-    required this.fileType,
-    required this.senderName,
-    this.senderImage,
-    required this.time,
-    this.isGroupChat = false,
-  });
-
-  @override
-  State<AnimatedMessageBubble> createState() => _AnimatedMessageBubbleState();
-}
-
-class _AnimatedMessageBubbleState extends State<AnimatedMessageBubble>
-    with SingleTickerProviderStateMixin {
-  late AnimationController _controller;
-  late Animation<double> _opacityAnimation;
-  late Animation<Offset> _slideAnimation;
-
-  @override
-  void initState() {
-    super.initState();
-
-    _controller = AnimationController(
-      duration: const Duration(milliseconds: 400),
-      vsync: this,
-    );
-
-    _opacityAnimation = Tween<double>(begin: 0.0, end: 1.0).animate(
-      CurvedAnimation(
-        parent: _controller,
-        curve: const Interval(0.0, 0.6, curve: Curves.easeOut),
-      ),
-    );
-
-    _slideAnimation = Tween<Offset>(
-      begin: const Offset(0.0, 0.5),
-      end: Offset.zero,
-    ).animate(
-      CurvedAnimation(
-        parent: _controller,
-        curve: const Interval(0.0, 1.0, curve: Curves.easeOut),
-      ),
-    );
-
-    Future.delayed(const Duration(milliseconds: 50), () {
-      if (mounted) _controller.forward();
-    });
-  }
-
-  @override
-  void dispose() {
-    _controller.dispose();
-    super.dispose();
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return SlideTransition(
-      position: _slideAnimation,
-      child: FadeTransition(
-        opacity: _opacityAnimation,
-        child: MessageBubble(
-          message: widget.message,
-          isMe: widget.isMe,
-          fileUrl: widget.fileUrl,
-          fileType: widget.fileType,
-          senderName: widget.senderName,
-          senderImage: widget.senderImage,
-          time: widget.time,
-          isGroupChat: widget.isGroupChat,
-        ),
       ),
     );
   }

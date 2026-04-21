@@ -9,14 +9,15 @@ import 'package:wisper/app/modules/post/views/comment_screen.dart';
 import 'package:wisper/app/modules/post/widgets/post_card.dart';
 
 class PostSection extends StatefulWidget {
-  const PostSection({super.key});
+  final String? groupId;
+  const PostSection({super.key, this.groupId});
 
   @override
   State<PostSection> createState() => _PostSectionState();
 }
 
 class _PostSectionState extends State<PostSection> {
-  final AllFeedPostController controller = Get.find<AllFeedPostController>();
+  final AllFeedPostController controller = Get.put(AllFeedPostController());
   final ConnectivityService connectivityService =
       Get.find<ConnectivityService>();
 
@@ -25,12 +26,12 @@ class _PostSectionState extends State<PostSection> {
     super.initState();
 
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      controller.getAllPost();
+      controller.resetPagination(groupId: widget.groupId);
     });
   }
 
   Future<void> _refreshPosts() async {
-    controller.resetPagination();
+    controller.resetPagination(groupId: widget.groupId);
     while (controller.inProgress) {
       await Future.delayed(const Duration(milliseconds: 100));
     }

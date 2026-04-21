@@ -45,16 +45,81 @@ class CommunitiesListTile extends StatelessWidget {
     final trimmed = value.trim();
     if (trimmed.isEmpty) return '?';
     final parts = trimmed.split(RegExp(r'\s+'));
-    if (parts.length == 1) return parts.first[0].toUpperCase();
+    if (parts.length == 1) {
+      final word = parts.first;
+      return word.length == 1
+          ? word.toUpperCase()
+          : '${word[0]}${word[word.length - 1]}'.toUpperCase();
+    }
     final first = parts[0].isNotEmpty ? parts[0][0] : '';
-    final second = parts[1].isNotEmpty ? parts[1][0] : '';
-    return (first + second).toUpperCase();
+    final last = parts.last.isNotEmpty ? parts.last[0] : '';
+    return (first + last).toUpperCase();
+  }
+
+  Widget _buildMemberImageAvatar(String imagePath, String fallbackText) {
+    if (!_isValidImagePath(imagePath)) {
+      return CircleAvatar(
+        radius: 9.r,
+        backgroundColor: const Color(0xff1A2732),
+        child: Text(
+          _initialsFromName(fallbackText),
+          style: TextStyle(
+            color: Colors.white,
+            fontSize: 8.sp,
+            fontWeight: FontWeight.w600,
+          ),
+        ),
+      );
+    }
+
+    final bool isAsset = _isAssetPath(imagePath);
+
+    return CircleAvatar(
+      radius: 9.r,
+      backgroundColor: const Color(0xff1A2732),
+      child: CircleAvatar(
+        radius: 8.r,
+        backgroundImage: isAsset ? null : NetworkImage(imagePath),
+        backgroundColor: const Color(0xff1A2732),
+        child: isAsset
+            ? ClipOval(
+                child: CrashSafeImage(
+                  imagePath,
+                  height: 16.h,
+                  width: 16.w,
+                  fit: BoxFit.cover,
+                ),
+              )
+            : null,
+      ),
+    );
+  }
+
+  Widget _buildMembersPreview(List<String> images) {
+    final String fallbackText = name;
+    return SizedBox(
+      width: (images.length * 12.w) + 8.w,
+      height: 18.h,
+      child: Stack(
+        children: [
+          for (int i = 0; i < images.length; i++)
+            Positioned(
+              left: i * 12.w,
+              child: _buildMemberImageAvatar(images[i], fallbackText),
+            ),
+        ],
+      ),
+    );
   }
 
   @override
   Widget build(BuildContext context) {
     final bool hasImage = _isValidImagePath(imagePath);
     final bool isAsset = _isAssetPath(imagePath);
+    final List<String> previewMembers = membersImage
+        .map((e) => e.trim())
+        .take(3)
+        .toList();
 
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 2),
@@ -64,6 +129,7 @@ class CommunitiesListTile extends StatelessWidget {
           padding: const EdgeInsets.symmetric(horizontal: 8.0, vertical: 6.0),
           child: Row(
             crossAxisAlignment: CrossAxisAlignment.center,
+
             children: [
               // Profile Image
               Stack(
@@ -136,20 +202,17 @@ class CommunitiesListTile extends StatelessWidget {
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
+                  mainAxisSize: MainAxisSize.min,
+                  mainAxisAlignment: MainAxisAlignment.center,
                   children: [
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        Text(
-                          name,
-                          style: TextStyle(
-                            fontSize: 14.sp,
-                            fontWeight: FontWeight.w600,
-                            color: Colors.white,
-                          ),
-                          overflow: TextOverflow.ellipsis,
-                        ),
-                      ],
+                    Text(
+                      name,
+                      style: TextStyle(
+                        fontSize: 14.sp,
+                        fontWeight: FontWeight.w600,
+                        color: Colors.white,
+                      ),
+                      overflow: TextOverflow.ellipsis,
                     ),
                     // const SizedBox(height: 4),
                     Text(
@@ -162,37 +225,15 @@ class CommunitiesListTile extends StatelessWidget {
                       overflow: TextOverflow.ellipsis,
                       maxLines: 1,
                     ),
+                    previewMembers.isNotEmpty
+                        ? const SizedBox(height: 4)
+                        : const SizedBox(),
 
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        Expanded(
-                          child: Row(
-                            children: [
-                              Expanded(
-                                child: Text(
-                                  message,
-                                  style: TextStyle(
-                                    fontSize: 12.sp,
-                                    fontWeight: FontWeight.w400,
-                                    color: const Color(0xff98A2B3),
-                                  ),
-                                  overflow: TextOverflow.ellipsis,
-                                  maxLines: 1,
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-                        Text(
-                          time,
-                          style: TextStyle(
-                            fontSize: 10.sp,
-                            color: const Color.fromARGB(255, 207, 208, 209),
-                          ),
-                        ),
-                      ],
-                    ),
+                    if (previewMembers.isNotEmpty) ...[
+                      SizedBox(width: 8.w),
+                      _buildMembersPreview(previewMembers),
+                    ],
+
                     const SizedBox(height: 6),
                     Container(height: 0.5, color: Colors.grey.withOpacity(0.5)),
                   ],

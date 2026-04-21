@@ -15,9 +15,10 @@ import 'package:wisper/app/modules/homepage/controller/all_role_controller.dart'
 import 'package:wisper/app/modules/homepage/widget/role_card.dart';
 
 class RoleSection extends StatefulWidget {
-  const RoleSection({super.key, this.searchQuery});
+  const RoleSection({super.key, this.searchQuery, this.groupId});
   final String? searchQuery;
- 
+  final String? groupId;
+
   @override
   State<RoleSection> createState() => _RoleSectionState();
 }
@@ -36,7 +37,8 @@ class _RoleSectionState extends State<RoleSection> {
   @override
   void initState() {
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      allRoleController.getAllRole(widget.searchQuery);
+      allRoleController.getAllRole(widget.searchQuery, widget.groupId);
+
     });
 
     super.initState();
@@ -46,7 +48,7 @@ class _RoleSectionState extends State<RoleSection> {
   void didUpdateWidget(covariant RoleSection oldWidget) {
     super.didUpdateWidget(oldWidget);
     if (widget.searchQuery != oldWidget.searchQuery) {
-      allRoleController.getAllRole(widget.searchQuery);
+      allRoleController.getAllRole(widget.searchQuery, null);
     }
   }
 
@@ -75,7 +77,6 @@ class _RoleSectionState extends State<RoleSection> {
           if (onError != null) {
             onError(errorMsg);
           } else {
-            
             showSnackBarMessage(context, errorMsg, true);
           }
         }
@@ -91,7 +92,7 @@ class _RoleSectionState extends State<RoleSection> {
       loadingMessage: 'Please wait...',
       action: () => addRequestController.addRequest(receiverId: receiverId),
       onSuccess: () async {
-        await allRoleController.getAllRole('');
+        await allRoleController.getAllRole('', null);
         showSnackBarMessage(context, 'Request sent successfully', false);
       },
       onError: (error) {
@@ -155,8 +156,7 @@ class _RoleSectionState extends State<RoleSection> {
               'id ${data[index].id} and my id ${StorageUtil.getData(StorageUtil.userId)}',
             );
             print('status $status for ${data[index].person?.name}');
-            var id =
-                data[index].id == StorageUtil.getData(StorageUtil.userId);
+            var id = data[index].id == StorageUtil.getData(StorageUtil.userId);
             return status == 'ACCEPTED' || status == 'PENDING'
                 ? Container()
                 : status == 'REJECTED' || status == 'REQUEST_RECEIVED'

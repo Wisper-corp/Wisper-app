@@ -9,30 +9,34 @@ import 'package:wisper/app/urls.dart';
 class AllRoleController extends GetxController {
   final RxBool _inProgress = false.obs;
   bool get inProgress => _inProgress.value;
- 
+
   final RxString _errorMessage = ''.obs;
   String get errorMessage => _errorMessage.value;
- 
+
   final Rx<RolesModel?> _allRoleModel = Rx<RolesModel?>(null);
   List<RoleItemModel>? get allRoleData => _allRoleModel.value?.data?.roles;
 
-  Future<bool> getAllRole(String? searchQuery) async {
+  Future<bool> getAllRole(String? searchQuery, String? groupId) async {
     _inProgress.value = true;
+
+    var url = groupId == null
+        ? Urls.roleUrl
+        : '${Urls.roleUrl}/group/$groupId';
 
     Map<String, dynamic> params = {
       "limit": "9999",
       "searchTerm": searchQuery ?? "",
-    }; 
+    };
     try {
       final NetworkResponse response = await Get.find<NetworkCaller>()
           .getRequest(
-            Urls.roleUrl,
+            url,
             queryParams: params,
             accessToken: StorageUtil.getData(StorageUtil.userAccessToken),
           );
 
       if (response.isSuccess && response.responseData != null) {
-        _errorMessage.value = ''; 
+        _errorMessage.value = '';
 
         _allRoleModel.value = RolesModel.fromJson(response.responseData);
         _inProgress.value = false;

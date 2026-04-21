@@ -6,7 +6,7 @@ import 'package:wisper/app/modules/authentication/views/sign_in_screen.dart';
 import 'package:wisper/app/modules/post/model/feed_post_model.dart';
 import 'package:wisper/app/urls.dart';
 
-class AllFeedPostController extends GetxController {
+class AllFeedPostController extends GetxController { 
   final NetworkCaller networkCaller = Get.find<NetworkCaller>();
 
   final RxBool _inProgress = false.obs;
@@ -19,7 +19,7 @@ class AllFeedPostController extends GetxController {
   RxList<FeedPostItemModel> get allPostData => _allPostList;
 
   final int _limit = 2000;
-  int page = 0; 
+  int page = 0;
   int? lastPage;
 
   // Category filter
@@ -27,11 +27,13 @@ class AllFeedPostController extends GetxController {
   String get selectedCategoryId => _selectedCategoryId.value;
   set selectedCategoryId(String value) {
     _selectedCategoryId.value = value;
-    resetPagination(); // Reset and fetch data when category changes
+    resetPagination(
+      categoryId: value,
+    ); // Reset and fetch data when category changes
     update(); // Ensure UI updates
   }
 
-  Future<bool> getAllPost({String? categoryId}) async {
+  Future<bool> getAllPost({String? categoryId, String? groupId}) async {
     if (_inProgress.value) {
       print('Fetch already in progress, skipping');
       return false;
@@ -60,8 +62,12 @@ class AllFeedPostController extends GetxController {
 
       print('Fetching assets with params: $queryParams');
 
+      var url = groupId == null
+          ? Urls.feedPostUrl
+          : "${Urls.communityPostUrl}/group/$groupId";
+
       final NetworkResponse response = await networkCaller.getRequest(
-        Urls.feedPostUrl,
+        url,
         queryParams: queryParams,
         accessToken: StorageUtil.getData(StorageUtil.userAccessToken),
       );
@@ -104,12 +110,13 @@ class AllFeedPostController extends GetxController {
     }
   }
 
-  void resetPagination() {
+  void resetPagination({String? categoryId, String? groupId}) {
     page = 0; // Reset to 0 so first call uses page 1
     lastPage = null;
     _allPostList.clear();
-    print('Pagination reset, fetching with categoryId: $_selectedCategoryId');
-    getAllPost(categoryId: _selectedCategoryId.value);
+    final String effectiveCategoryId = categoryId ?? _selectedCategoryId.value;
+    print('Pagination reset, fetching with categoryId: $effectiveCategoryId');
+    getAllPost(categoryId: effectiveCategoryId, groupId: groupId);
   }
 
   void setPostCommentCount({required String postId, required int count}) {

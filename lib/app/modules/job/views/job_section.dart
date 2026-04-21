@@ -9,10 +9,11 @@ import 'package:wisper/app/modules/job/widgets/job_card.dart';
 class JobSection extends StatefulWidget {
   final String? searchQuery;
   final String? jobType;
-  const JobSection({super.key, this.searchQuery, this.jobType});
+  final String? groupId;
+  const JobSection({super.key, this.searchQuery, this.jobType, this.groupId});
 
-  @override 
-  State<JobSection> createState() => _JobSectionState(); 
+  @override
+  State<JobSection> createState() => _JobSectionState();
 }
 
 class _JobSectionState extends State<JobSection> {
@@ -27,7 +28,10 @@ class _JobSectionState extends State<JobSection> {
       if (widget.searchQuery != null || widget.searchQuery != '') {
         controller.resetPagination();
       }
-      controller.getJobs(searchQuery: widget.searchQuery);
+      controller.getJobs(
+        searchQuery: widget.searchQuery,
+        groupId: widget.groupId,
+      );
     });
   }
 
@@ -52,7 +56,7 @@ class _JobSectionState extends State<JobSection> {
         return SizedBox(
           height: 500,
           child: const Center(
-            child: Text('Not available', style: TextStyle(fontSize: 12)), 
+            child: Text('Not available', style: TextStyle(fontSize: 12)),
           ),
         );
       } else {
@@ -70,8 +74,7 @@ class _JobSectionState extends State<JobSection> {
               child: JobCard(
                 postId: controller.allJobData[index].id,
                 ownerImage:
-                    controller.allJobData[index].author!.business?.image ??
-                    '',
+                    controller.allJobData[index].author!.business?.image ?? '',
                 ownerName:
                     controller.allJobData[index].author!.business?.name ?? '',
                 ownerDesignation:
@@ -79,12 +82,11 @@ class _JobSectionState extends State<JobSection> {
                     '',
                 jobTitle: controller.allJobData[index].title ?? '',
                 salary: controller.allJobData[index].salary.toString(),
-                location: controller.allJobData[index].location ?? 'Not Mentioned',
+                location:
+                    controller.allJobData[index].location ?? 'Not Mentioned',
                 jobType: controller.allJobData[index].type ?? '',
-                jobDescription:
-                    controller.allJobData[index].description ?? '',
-                shiftType:
-                    controller.allJobData[index].compensationType ?? '',
+                jobDescription: controller.allJobData[index].description ?? '',
+                shiftType: controller.allJobData[index].compensationType ?? '',
                 date: formattedTime.getRelativeTimeFormat(),
               ),
             );
