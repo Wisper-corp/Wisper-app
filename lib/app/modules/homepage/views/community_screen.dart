@@ -7,13 +7,13 @@ import 'package:wisper/app/core/utils/show_over_loading.dart';
 import 'package:wisper/app/core/utils/snack_bar.dart';
 import 'package:wisper/app/core/widgets/common/circle_icon.dart';
 import 'package:wisper/app/core/widgets/common/custom_button.dart';
+import 'package:wisper/app/core/widgets/common/custom_text_filed.dart';
 import 'package:wisper/app/core/widgets/common/line_widget.dart';
 import 'package:wisper/app/modules/chat/controller/all_community_controller.dart';
 import 'package:wisper/app/modules/chat/controller/all_group_controller.dart';
 import 'package:wisper/app/modules/chat/views/group/group_info_screen.dart';
 import 'package:wisper/app/modules/chat/views/group/group_message_screen.dart';
 import 'package:wisper/app/modules/homepage/controller/join_group_controller.dart';
-import 'package:wisper/app/modules/homepage/views/create_post_screen.dart';
 import 'package:wisper/app/modules/homepage/views/role_section.dart';
 import 'package:wisper/app/modules/job/views/job_section.dart';
 import 'package:wisper/app/modules/post/views/post_section.dart';
@@ -43,12 +43,12 @@ class CommunityScreen extends StatefulWidget {
 
 class _CommunityScreenState extends State<CommunityScreen> {
   final JoinGroupController joinGroupController = JoinGroupController();
+  final TextEditingController _memberSearchController = TextEditingController();
 
   int selectedIndex = 0;
   int _postSectionVersion = 0;
   int _jobSectionVersion = 0;
   int _roleSectionVersion = 0;
-  int _uploadSectionVersion = 0;
   late bool _hasJoined;
   String _chatId = '';
 
@@ -140,6 +140,12 @@ class _CommunityScreenState extends State<CommunityScreen> {
     super.initState();
     _hasJoined = widget.hasJoined ?? false;
     _chatId = widget.chatId ?? '';
+  }
+
+  @override
+  void dispose() {
+    _memberSearchController.dispose();
+    super.dispose();
   }
 
   void joinGroup(String? groupId, String? groupName, String? groupImage) {
@@ -257,22 +263,30 @@ class _CommunityScreenState extends State<CommunityScreen> {
                 children: [
                   _buildTab('General Chat', 0, 90.w),
                   widthBox20,
+                  widthBox10,
 
                   _buildTab('Posts', 1, 40.w),
                   widthBox20,
+                  widthBox10,
 
                   _buildTab('Jobs', 2, 40.w),
                   widthBox20,
+                  widthBox10,
 
-                  _buildTab('Role', 3, 40.w),
-
-                  widthBox20,
-
-                  _buildTab('Upload', 4, 50.w),
+                  _buildTab('Members', 3, 60.w),
                 ],
               ),
             ),
             StraightLiner(height: 0.4, color: const Color(0xff454545)),
+
+            if (selectedIndex == 3) heightBox12,
+            if (selectedIndex == 3)
+              CustomTextField(
+                hintText: 'Search roles...',
+                controller: _memberSearchController,
+                onChanged: (value) => setState(() {}),
+              ),
+            if (selectedIndex == 3) heightBox12,
 
             // heightBox14,
             Expanded(
@@ -341,14 +355,7 @@ class _CommunityScreenState extends State<CommunityScreen> {
                   SizedBox.expand(
                     child: RoleSection(
                       key: ValueKey('role_section_$_roleSectionVersion'),
-                      groupId: widget.groupId,
-                    ),
-                  ),
-
-                  // Tab 4: Upload
-                  SizedBox.expand(
-                    child: CreatePostScreen(
-                      key: ValueKey('upload_section_$_uploadSectionVersion'),
+                      searchQuery: _memberSearchController.text.trim(),
                       groupId: widget.groupId,
                     ),
                   ),
@@ -374,8 +381,6 @@ class _CommunityScreenState extends State<CommunityScreen> {
           }
           if (index == 3) {
             _roleSectionVersion++;
-          } else if (index == 4) {
-            _uploadSectionVersion++;
           }
           selectedIndex = index;
         });

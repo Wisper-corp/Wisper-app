@@ -20,7 +20,7 @@ class RoleSection extends StatefulWidget {
   final String? groupId;
 
   @override
-  State<RoleSection> createState() => _RoleSectionState();
+  State<RoleSection> createState() => _RoleSectionState(); 
 }
 
 class _RoleSectionState extends State<RoleSection> {
@@ -47,8 +47,9 @@ class _RoleSectionState extends State<RoleSection> {
   @override
   void didUpdateWidget(covariant RoleSection oldWidget) {
     super.didUpdateWidget(oldWidget);
-    if (widget.searchQuery != oldWidget.searchQuery) {
-      allRoleController.getAllRole(widget.searchQuery, null);
+    if (widget.searchQuery != oldWidget.searchQuery ||
+        widget.groupId != oldWidget.groupId) {
+      allRoleController.getAllRole(widget.searchQuery, widget.groupId);
     }
   }
 
@@ -92,7 +93,7 @@ class _RoleSectionState extends State<RoleSection> {
       loadingMessage: 'Please wait...',
       action: () => addRequestController.addRequest(receiverId: receiverId),
       onSuccess: () async {
-        await allRoleController.getAllRole('', null);
+        await allRoleController.getAllRole('', widget.groupId);
         showSnackBarMessage(context, 'Request sent successfully', false);
       },
       onError: (error) {

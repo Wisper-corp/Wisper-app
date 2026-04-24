@@ -148,7 +148,11 @@ class _JobPostScreenState extends State<JobPostScreen> {
       myFeedJobController.resetPagination();
 
       await myFeedJobController.getJobs();
-      await allFeedJobController.getJobs();
+      if (widget.groupId != null) {
+        await allFeedJobController.getJobs(groupId: widget.groupId);
+      } else {
+        await allFeedJobController.getJobs();
+      }
 
       if (context.mounted) {
         Navigator.pop(context);
