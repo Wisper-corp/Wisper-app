@@ -54,9 +54,9 @@ class _JobSectionState extends State<JobSection> {
           return const Center(child: PostShimmerEffectWidget());
         }
         return SizedBox(
-          height: 500,
+          height: MediaQuery.of(context).size.height / 3,
           child: const Center(
-            child: Text('Not available', style: TextStyle(fontSize: 12)),
+            child: Text('No Job Found', style: TextStyle(fontSize: 12)),
           ),
         );
       } else {

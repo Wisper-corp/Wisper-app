@@ -50,7 +50,7 @@ class _OthersPostSectionState extends State<OthersPostSection> {
           return const Center(
             child: Text(
               'No posts yet',
-              style: TextStyle(color: Colors.white70, fontSize: 16),
+              style: TextStyle(color: Colors.white70, fontSize: 12),
             ),
           );
         }

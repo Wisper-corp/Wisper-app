@@ -47,7 +47,7 @@ class _OthersJobSectionState extends State<OthersJobSection> {
           return const Center(
             child: Text(
               'No posts yet',
-              style: TextStyle(color: Colors.white70, fontSize: 16),
+              style: TextStyle(color: Colors.white70, fontSize: 12),
             ),
           );
         }

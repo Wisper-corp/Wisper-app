@@ -5,16 +5,19 @@ import 'package:crash_safe_image/crash_safe_image.dart';
 import 'package:wisper/app/core/others/custom_size.dart';
 import 'package:wisper/app/core/utils/show_over_loading.dart';
 import 'package:wisper/app/core/utils/snack_bar.dart';
+import 'package:wisper/app/core/widgets/common/circle_icon.dart';
+import 'package:wisper/app/core/widgets/common/custom_button.dart';
 import 'package:wisper/app/core/widgets/common/line_widget.dart';
 import 'package:wisper/app/modules/chat/controller/all_community_controller.dart';
 import 'package:wisper/app/modules/chat/controller/all_group_controller.dart';
+import 'package:wisper/app/modules/chat/views/group/group_info_screen.dart';
 import 'package:wisper/app/modules/chat/views/group/group_message_screen.dart';
 import 'package:wisper/app/modules/homepage/controller/join_group_controller.dart';
 import 'package:wisper/app/modules/homepage/views/create_post_screen.dart';
 import 'package:wisper/app/modules/homepage/views/role_section.dart';
 import 'package:wisper/app/modules/job/views/job_section.dart';
 import 'package:wisper/app/modules/post/views/post_section.dart';
-
+import 'package:wisper/gen/assets.gen.dart';
 
 class CommunityScreen extends StatefulWidget {
   final String? chatId;
@@ -190,26 +193,56 @@ class _CommunityScreenState extends State<CommunityScreen> {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             heightBox40,
-            Text(
-              widget.groupName ?? '',
-              style: TextStyle(
-                fontFamily: "Segoe UI",
-                fontSize: 20.sp,
-                fontWeight: FontWeight.w800,
-              ),
-            ),
-
-            // heightBox4,
             Row(
               children: [
-                if (previewMembers.isNotEmpty) _buildMembersPreview(previewMembers),
-                if (previewMembers.isNotEmpty) SizedBox(width: 8.w),
-                Text(
-                  '${widget.memberCount ?? 0} members',
-                  style: TextStyle(
-                    fontFamily: "Segoe UI",
-                    fontSize: 12.sp,
-                    fontWeight: FontWeight.w400,
+                CircleIconWidget(
+                  iconRadius: 18,
+                  color: Colors.black,
+                  imagePath: Assets.images.arrowBack.keyName,
+                  onTap: () {
+                    Navigator.pop(context);
+                  },
+                ),
+                widthBox8,
+                GestureDetector(
+                  onTap: () {
+                    Get.to(
+                      GroupInfoScreen(
+                        groupId: widget.groupId,
+                        chatId: widget.chatId ?? '',
+                      ),
+                    );
+                  },
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Text(
+                        widget.groupName ?? '',
+                        style: TextStyle(
+                          fontFamily: "Segoe UI",
+                          fontSize: 20.sp,
+                          fontWeight: FontWeight.w800,
+                        ),
+                      ),
+
+                      // heightBox4,
+                      Row(
+                        children: [
+                          if (previewMembers.isNotEmpty)
+                            _buildMembersPreview(previewMembers),
+                          if (previewMembers.isNotEmpty) SizedBox(width: 8.w),
+                          Text(
+                            '${widget.memberCount ?? 0} members',
+                            style: TextStyle(
+                              fontFamily: "Segoe UI",
+                              fontSize: 12.sp,
+                              fontWeight: FontWeight.w400,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ],
                   ),
                 ),
               ],
@@ -240,8 +273,8 @@ class _CommunityScreenState extends State<CommunityScreen> {
               ),
             ),
             StraightLiner(height: 0.4, color: const Color(0xff454545)),
-            heightBox14,
 
+            // heightBox14,
             Expanded(
               child: IndexedStack(
                 index: selectedIndex,
@@ -258,15 +291,16 @@ class _CommunityScreenState extends State<CommunityScreen> {
                                   style: TextStyle(color: Colors.white70),
                                 ),
                                 SizedBox(height: 12.h),
-                                ElevatedButton(
-                                  onPressed: () {
-                                    joinGroup(
-                                      widget.groupId,
-                                      widget.groupName,
-                                      '',
-                                    );
-                                  },
-                                  child: const Text('Join Group'),
+                                CustomElevatedButton(
+                                  height: 40.h,
+                                  width: 130.w,
+                                  title: 'Join Now',
+                                  textSize: 12.sp,
+                                  onPress: () => joinGroup(
+                                    widget.groupId,
+                                    widget.groupName,
+                                    '',
+                                  ),
                                 ),
                               ],
                             ),

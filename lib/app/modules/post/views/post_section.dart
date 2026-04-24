@@ -21,7 +21,7 @@ class _PostSectionState extends State<PostSection> {
   final ConnectivityService connectivityService =
       Get.find<ConnectivityService>();
 
-  @override
+  @override 
   void initState() {
     super.initState();
 
@@ -66,12 +66,12 @@ class _PostSectionState extends State<PostSection> {
           }
           return ListView(
             physics: const AlwaysScrollableScrollPhysics(),
-            children: const [
-              SizedBox(height: 120),
+            children:  [
+              SizedBox(height: MediaQuery.of(context).size.height / 3.5),
               Center(
                 child: Text(
                   'No posts yet',
-                  style: TextStyle(color: Colors.white70, fontSize: 16),
+                  style: TextStyle(color: Colors.white70, fontSize: 12),
                 ),
               ),
             ],
