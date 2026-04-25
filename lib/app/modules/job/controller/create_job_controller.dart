@@ -14,7 +14,7 @@ class CreateJobController extends GetxController {
   Future<bool> createJob({
     String? groupId,
     String? locationType,
-    String? title,
+    String? title, 
     String? description,
     String? type, // FULL_TIME, PART_TIME, CONTRACT
     String? experienceLevel, // ENTRY_LEVEL, JUNIOR, MID_LEVEL, SENIOR

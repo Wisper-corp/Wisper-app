@@ -34,7 +34,7 @@ class _CreatePostScreenState extends State<CreatePostScreen> {
               "Create Post",
               style: TextStyle(fontSize: 18.sp, fontWeight: FontWeight.w600),
             ),
-            Text(
+            Text( 
               "What would you like to share today?",
               style: TextStyle(
                 fontSize: 13.sp,

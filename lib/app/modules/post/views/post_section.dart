@@ -1,11 +1,14 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:wisper/app/core/config/theme/light_theme_colors.dart';
+import 'package:wisper/app/core/others/custom_size.dart';
 import 'package:wisper/app/core/utils/date_formatter.dart';
 import 'package:wisper/app/core/utils/connectivity_services.dart';
+import 'package:wisper/app/core/widgets/common/custom_button.dart';
 import 'package:wisper/app/core/widgets/shimmer/gallery_post_shimmer.dart';
 import 'package:wisper/app/modules/post/controller/feed_post_controller.dart';
 import 'package:wisper/app/modules/post/views/comment_screen.dart';
+import 'package:wisper/app/modules/post/views/gallery_post_screen.dart';
 import 'package:wisper/app/modules/post/widgets/post_card.dart';
 
 class PostSection extends StatefulWidget {
@@ -21,7 +24,7 @@ class _PostSectionState extends State<PostSection> {
   final ConnectivityService connectivityService =
       Get.find<ConnectivityService>();
 
-  @override 
+  @override
   void initState() {
     super.initState();
 
@@ -66,7 +69,7 @@ class _PostSectionState extends State<PostSection> {
           }
           return ListView(
             physics: const AlwaysScrollableScrollPhysics(),
-            children:  [
+            children: [
               SizedBox(height: MediaQuery.of(context).size.height / 3.5),
               Center(
                 child: Text(
@@ -79,50 +82,72 @@ class _PostSectionState extends State<PostSection> {
         }
 
         // Main post list
-        return ListView.builder(
-          physics: const AlwaysScrollableScrollPhysics(),
-          padding: EdgeInsets.zero,
-          itemCount: controller.allPostData.length,
-          itemBuilder: (context, index) {
-            final post = controller.allPostData[index];
-            final formattedTime = DateFormatter(
-              post.createdAt!,
-            ).getRelativeTimeFormat();
+        return Column(
+          mainAxisSize: MainAxisSize.max,
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            Expanded(
+              child: ListView.builder(
+                physics: const AlwaysScrollableScrollPhysics(),
+                padding: EdgeInsets.zero,
+                itemCount: controller.allPostData.length,
+                itemBuilder: (context, index) {
+                  final post = controller.allPostData[index];
+                  final formattedTime = DateFormatter(
+                    post.createdAt!,
+                  ).getRelativeTimeFormat();
 
-            return Padding(
-              padding: const EdgeInsets.symmetric(vertical: 8.0),
-              child: PostCard(
-                isPerson: post.author?.person != null,
-                onTapComment: () {
-                  Get.to(CommentScreen(postId: post.id ?? ''));
+                  return Padding(
+                    padding: const EdgeInsets.symmetric(vertical: 8.0),
+                    child: PostCard(
+                      isPerson: post.author?.person != null,
+                      onTapComment: () {
+                        Get.to(CommentScreen(postId: post.id ?? ''));
+                      },
+                      commentCount: post.count?.comment ?? 0,
+                      isComment: false,
+                      ownerId: post.author?.id ?? '',
+                      trailing: const Text(
+                        '',
+                        style: TextStyle(
+                          fontWeight: FontWeight.w400,
+                          fontSize: 12,
+                          color: LightThemeColors.themeGreyColor,
+                        ),
+                      ),
+                      ownerName: post.author?.person != null
+                          ? post.author?.person?.name ?? 'Unknown User'
+                          : post.author?.business?.name ?? 'Unknown Business',
+                      ownerImage: post.author?.person != null
+                          ? post.author?.person?.image ?? ''
+                          : post.author?.business?.image ?? '',
+                      ownerProfession: post.author?.person != null
+                          ? post.author?.person?.title ?? 'Professional'
+                          : post.author?.business?.name ?? 'Business',
+                      postImage: post.images.isNotEmpty ? post.images : [],
+                      postDescription: post.caption ?? '',
+                      postTime: formattedTime,
+                      views: post.views.toString(),
+                    ),
+                  );
                 },
-                commentCount: post.count?.comment ?? 0,
-                isComment: false,
-                ownerId: post.author?.id ?? '',
-                trailing: const Text(
-                  '',
-                  style: TextStyle(
-                    fontWeight: FontWeight.w400,
-                    fontSize: 12,
-                    color: LightThemeColors.themeGreyColor,
-                  ),
-                ),
-                ownerName: post.author?.person != null
-                    ? post.author?.person?.name ?? 'Unknown User'
-                    : post.author?.business?.name ?? 'Unknown Business',
-                ownerImage: post.author?.person != null
-                    ? post.author?.person?.image ?? ''
-                    : post.author?.business?.image ?? '',
-                ownerProfession: post.author?.person != null
-                    ? post.author?.person?.title ?? 'Professional'
-                    : post.author?.business?.name ?? 'Business',
-                postImage: post.images.isNotEmpty ? post.images : [],
-                postDescription: post.caption ?? '',
-                postTime: formattedTime,
-                views: post.views.toString(),
               ),
-            );
-          },
+            ),
+
+            // heightBox10,
+            widget.groupId != null
+                ? CustomElevatedButton(
+                    textSize: 12,
+                    borderRadius: 30,
+                    height: 40,
+                    title: 'Create Post',
+                    onPress: () {
+                      Get.to(GalleryPostScreen(groupId: widget.groupId));
+                    },
+                  )
+                : const SizedBox(),
+            widget.groupId != null ? heightBox16 : const SizedBox(),
+          ],
         );
       }),
     );

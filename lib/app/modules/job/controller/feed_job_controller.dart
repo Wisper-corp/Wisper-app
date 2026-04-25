@@ -12,7 +12,7 @@ class AllFeedJobController extends GetxController {
   bool get inProgress => _inProgress.value;
 
   final RxString _errorMessage = ''.obs;
-  String get errorMessage => _errorMessage.value;
+  String get errorMessage => _errorMessage.value; 
 
   final RxList<FeedJobItemModel> _allJobList = <FeedJobItemModel>[].obs;
   List<FeedJobItemModel> get allJobData => _allJobList;
