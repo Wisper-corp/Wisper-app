@@ -178,6 +178,7 @@ class _CommunityScreenState extends State<CommunityScreen> {
       showSnackBarMessage(context, joinGroupController.errorMessage, true);
     }
   }
+  
 
   @override
   Widget build(BuildContext context) {
