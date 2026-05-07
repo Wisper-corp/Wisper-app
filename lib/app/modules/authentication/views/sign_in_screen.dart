@@ -21,13 +21,13 @@ import 'package:wisper/app/modules/profile/controller/buisness/buisness_controll
 import 'package:wisper/app/modules/profile/controller/person/profile_controller.dart';
 import 'package:wisper/gen/assets.gen.dart';
 
-class SignInScreen extends StatefulWidget { 
+class SignInScreen extends StatefulWidget {
   const SignInScreen({super.key});
 
   @override
   State<SignInScreen> createState() => _SignInScreenState();
 }
- 
+
 class _SignInScreenState extends State<SignInScreen> {
   final SignInController signInController = Get.put(SignInController());
   final ProfileController profileController = Get.put(ProfileController());
@@ -36,11 +36,9 @@ class _SignInScreenState extends State<SignInScreen> {
     GoogleSignUpAuthController(),
   );
 
-  final formKey = GlobalKey<FormState>(); 
-  final emailController = TextEditingController(
-    text: 'aminulislamzxx5152@gmail.com',
-  );
-  final passwordController = TextEditingController(text: 'Aminul@123');
+  final formKey = GlobalKey<FormState>();
+  final emailController = TextEditingController();
+  final passwordController = TextEditingController();
   // final passwordController = TextEditingController(text: '12345678');
   void signIn() {
     showLoadingOverLay(
@@ -173,12 +171,12 @@ class _SignInScreenState extends State<SignInScreen> {
                       ),
                     ),
                   ),
-                ), 
+                ),
                 heightBox100,
                 Column(
                   crossAxisAlignment: CrossAxisAlignment.center,
                   children: [
-                    Text( 
+                    Text(
                       "Sign Up With",
                       style: TextStyle(
                         color: const Color(0xff8C8C8C),

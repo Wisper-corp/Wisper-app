@@ -27,7 +27,17 @@ import 'package:wisper/push_notification.dart';
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
-  await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
+  // Hot restart can re-run `main()` while the native FirebaseApp instance still
+  // exists, causing `[core/duplicate-app]` for the default app.
+  if (Firebase.apps.isEmpty) {
+    try {
+      await Firebase.initializeApp(
+        options: DefaultFirebaseOptions.currentPlatform,
+      );
+    } on FirebaseException catch (e) {
+      if (e.code != 'duplicate-app') rethrow;
+    }
+  }
 
   await StorageUtil.init();
   // Local cache init (Hive).

@@ -89,6 +89,7 @@ dependencies:
   flutter_randomcolor: ^1.0.18
 
 
+
 dev_dependencies:
   flutter_test:
     sdk: flutter

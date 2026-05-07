@@ -1,84 +1,40 @@
 {
   "project_info": {
-    "project_number": "490742211308",
-    "project_id": "wisper-74d39",
-    "storage_bucket": "wisper-74d39.firebasestorage.app"
+    "project_number": "667291069508",
+    "project_id": "wisper-9f2ab",
+    "storage_bucket": "wisper-9f2ab.firebasestorage.app"
   },
   "client": [
     {
       "client_info": {
-        "mobilesdk_app_id": "1:490742211308:android:01bc1cc1348b3dc7e43bc9",
-        "android_client_info": {
-          "package_name": "com.example.wisper"
-        }
-      },
-      "oauth_client": [
-        {
-          "client_id": "490742211308-643o4ef31gmvehmgt4anp4eak6krvcbj.apps.googleusercontent.com",
-          "client_type": 1,
-          "android_info": {
-            "package_name": "com.example.wisper",
-            "certificate_hash": "6c01b9ab5f029abf94d12cd0a86a645d374c4e1f"
-          }
-        },
-        {
-          "client_id": "490742211308-mgvd9k6vufkggpkqvj3542mtr7fauivp.apps.googleusercontent.com",
-          "client_type": 3
-        }
-      ],
-      "api_key": [
-        {
-          "current_key": "AIzaSyAxNZ0TrKbOx4GANA7xD396XcqpSFJoVDw"
-        }
-      ],
-      "services": {
-        "appinvite_service": {
-          "other_platform_oauth_client": [
-            {
-              "client_id": "490742211308-mgvd9k6vufkggpkqvj3542mtr7fauivp.apps.googleusercontent.com",
-              "client_type": 3
-            },
-            {
-              "client_id": "490742211308-ahh388hkmqg0msnhg4ouf4jd98830vsb.apps.googleusercontent.com",
-              "client_type": 2,
-              "ios_info": {
-                "bundle_id": "com.example.wisper"
-              }
-            }
-          ]
-        }
-      }
-    },
-    {
-      "client_info": {
-        "mobilesdk_app_id": "1:490742211308:android:a70790e93b547b11e43bc9",
+        "mobilesdk_app_id": "1:667291069508:android:e82fadf5f25ee2ec6ce011",
         "android_client_info": {
           "package_name": "com.wisperuser.app"
         }
       },
       "oauth_client": [
         {
-          "client_id": "490742211308-mgvd9k6vufkggpkqvj3542mtr7fauivp.apps.googleusercontent.com",
+          "client_id": "667291069508-73uj6qgus3vu2n9q16rfaikcd9p1dpr0.apps.googleusercontent.com",
           "client_type": 3
         }
       ],
       "api_key": [
         {
-          "current_key": "AIzaSyAxNZ0TrKbOx4GANA7xD396XcqpSFJoVDw"
+          "current_key": "AIzaSyBx3M0QY83BaEtLmSfyaFYAeV_king70Bc"
         }
       ],
       "services": {
         "appinvite_service": {
           "other_platform_oauth_client": [
             {
-              "client_id": "490742211308-mgvd9k6vufkggpkqvj3542mtr7fauivp.apps.googleusercontent.com",
+              "client_id": "667291069508-73uj6qgus3vu2n9q16rfaikcd9p1dpr0.apps.googleusercontent.com",
               "client_type": 3
             },
             {
-              "client_id": "490742211308-ahh388hkmqg0msnhg4ouf4jd98830vsb.apps.googleusercontent.com",
+              "client_id": "667291069508-a133gvq6akre4sq30i30fbq3u24lech0.apps.googleusercontent.com",
               "client_type": 2,
               "ios_info": {
-                "bundle_id": "com.example.wisper"
+                "bundle_id": "com.wisperuser.userapp"
               }
             }
           ]
