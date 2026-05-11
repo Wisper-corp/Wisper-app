@@ -24,7 +24,7 @@ import 'package:wisper/gen/assets.gen.dart';
 
 class GalleryPostScreen extends StatefulWidget {
   final String? groupId;
-  const GalleryPostScreen({super.key, this.groupId});
+  const GalleryPostScreen({super.key, this.groupId}); 
 
   @override
   State<GalleryPostScreen> createState() => _GalleryPostScreenState();

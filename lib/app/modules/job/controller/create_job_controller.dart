@@ -14,7 +14,7 @@ class CreateJobController extends GetxController {
   Future<bool> createJob({
     String? groupId,
     String? locationType,
-    String? title, 
+    String? title,
     String? description,
     String? type, // FULL_TIME, PART_TIME, CONTRACT
     String? experienceLevel, // ENTRY_LEVEL, JUNIOR, MID_LEVEL, SENIOR
@@ -31,22 +31,38 @@ class CreateJobController extends GetxController {
     _inProgress.value = true;
 
     try {
-      Map<String, dynamic> body = {
-        "groupId": groupId ?? '',
-        "title": title,
-        "description": description,
-        "type": type,
-        "experienceLevel": experienceLevel,
-        "compensationType": compensationType,
-        "salary": salary,
-        'locationType': locationType,
-        "location": location,
-        "industry": industry,
-        "qualification": qualification,
-        "requirements": requirements,
-        "responsibilities": responsibilities,
-        "applicationType": applicationType,
-      };
+      Map<String, dynamic> body = groupId == null || groupId == ''
+          ? {
+              "title": title,
+              "description": description,
+              "type": type,
+              "experienceLevel": experienceLevel,
+              "compensationType": compensationType,
+              "salary": salary,
+              'locationType': locationType,
+              "location": location,
+              "industry": industry,
+              "qualification": qualification,
+              "requirements": requirements,
+              "responsibilities": responsibilities,
+              "applicationType": applicationType,
+            }
+          : {
+              "groupId": groupId,
+              "title": title,
+              "description": description,
+              "type": type,
+              "experienceLevel": experienceLevel,
+              "compensationType": compensationType,
+              "salary": salary,
+              'locationType': locationType,
+              "location": location,
+              "industry": industry,
+              "qualification": qualification,
+              "requirements": requirements,
+              "responsibilities": responsibilities,
+              "applicationType": applicationType,
+            };
       if (applicationType == 'EXTERNAL') {
         if (applicationLink != null || applicationLink != '') {
           body['applicationLink'] = applicationLink;

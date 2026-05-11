@@ -24,11 +24,13 @@ class CreatePostController extends GetxController {
     _inProgress.value = true;
 
     try {
-      Map<String, dynamic> body = {
-        "groupId": groupId ?? '',
-        "caption": description,
-        "commentAccess": privacy,
-      };
+      Map<String, dynamic> body = groupId == null || groupId == ''
+          ? {"caption": description, "commentAccess": privacy}
+          : {
+              "groupId": groupId,
+              "caption": description,
+              "commentAccess": privacy,
+            };
       final NetworkResponse response = await Get.find<NetworkCaller>()
           .postRequest(
             images: images,

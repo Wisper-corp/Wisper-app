@@ -21,7 +21,7 @@ class CreatePostScreen extends StatefulWidget {
 class _CreatePostScreenState extends State<CreatePostScreen> {
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
+    return Scaffold( 
       body: Padding(
         padding: EdgeInsets.symmetric(
           horizontal: widget.groupId == null ? 20.0 : 00.0,
