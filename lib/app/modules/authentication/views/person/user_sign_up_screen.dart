@@ -145,14 +145,16 @@ class _SignUpScreenState extends State<SignUpScreen> {
                     )
                   : CircleIconWidget(
                       imagePath: Assets.images.arrowBack.keyName,
-                      onTap: () {},
+                      onTap: () {
+                        Navigator.pop(context);
+                      },
                     ),
               heightBox16,
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
                   Text(
-                    'Create Account',
+                    'Create Account', 
                     style: TextStyle(
                       fontSize: 24.sp,
                       fontWeight: FontWeight.w800,

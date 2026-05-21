@@ -34,7 +34,7 @@ void main() async {
       await Firebase.initializeApp(
         options: DefaultFirebaseOptions.currentPlatform,
       );
-    } on FirebaseException catch (e) {
+    } on FirebaseException catch (e) { 
       if (e.code != 'duplicate-app') rethrow;
     }
   }

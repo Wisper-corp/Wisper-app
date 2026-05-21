@@ -131,7 +131,7 @@ class _ChatListScreenState extends State<ChatListScreen> {
           return const Center(
             child: Text(
               'No Chats Found',
-              style: TextStyle(fontSize: 18, color: Colors.white70),
+              style: TextStyle(fontSize: 14, color: Colors.white70),
             ),
           );
         }

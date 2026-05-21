@@ -111,7 +111,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                   ),
                 ],
               ),
-              heightBox10,
+              heightBox10, 
               SeetingsFeatureCard(
                 iconPath: Assets.images.person.keyName,
                 title: 'Account',

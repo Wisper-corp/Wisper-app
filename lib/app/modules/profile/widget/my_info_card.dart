@@ -20,6 +20,8 @@ class MyInfoCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final bool hasImage = imagePath.trim().isNotEmpty;
+
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children: [
@@ -30,17 +32,19 @@ class MyInfoCard extends StatelessWidget {
               CircleAvatar(
                 radius: 18.r,
                 backgroundColor: Colors.grey.shade800,
-                backgroundImage: NetworkImage(imagePath),
-                child: Text(
-                  name.isNotEmpty
-                      ? '${name[0].toUpperCase()}${name.length > 1 ? name[1].toUpperCase() : ''}'
-                      : '',
-                  style: TextStyle(
-                    fontSize: 16.sp,
-                    fontWeight: FontWeight.w400,
-                    color: Colors.white,
-                  ),
-                ),
+                backgroundImage: hasImage ? NetworkImage(imagePath) : null,
+                child: hasImage
+                    ? null
+                    : Text(
+                        name.isNotEmpty
+                            ? '${name[0].toUpperCase()}${name.length > 1 ? name[1].toUpperCase() : ''}'
+                            : '',
+                        style: TextStyle(
+                          fontSize: 16.sp,
+                          fontWeight: FontWeight.w400,
+                          color: Colors.white,
+                        ),
+                      ),
               ),
               widthBox8,
               Column(

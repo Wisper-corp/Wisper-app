@@ -74,7 +74,7 @@ class _PostSectionState extends State<PostSection> {
               Center(
                 child: Text(
                   'No posts yet',
-                  style: TextStyle(color: Colors.white70, fontSize: 12),
+                  style: TextStyle(color: Colors.white70, fontSize: 14),
                 ),
               ),
             ],
