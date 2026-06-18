@@ -1,4 +1,3 @@
-import 'package:crash_safe_image/crash_safe_image.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:wisper/app/core/config/theme/light_theme_colors.dart';
@@ -62,7 +61,7 @@ class ReviewCard extends StatelessWidget {
                         for (int i = 0; i < updateRating; i++) ...{
                           Padding(
                             padding: const EdgeInsets.only(right: 4),
-                            child: CrashSafeImage(
+                            child: Image.asset(
                               Assets.images.star.keyName,
                               height: 12,
                             ),

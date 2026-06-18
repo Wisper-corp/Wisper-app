@@ -1,4 +1,3 @@
-import 'package:crash_safe_image/crash_safe_image.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:get/get.dart';
@@ -168,7 +167,7 @@ class _MainButtonNavbarScreenState extends State<MainButtonNavbarScreen> {
           mainAxisSize: MainAxisSize.min,
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            CrashSafeImage(
+            Image.asset(
               isSelected ? selectedIcon : unselectedIcon,
               height: height ?? 24.h,
               width: width ?? 24.h,

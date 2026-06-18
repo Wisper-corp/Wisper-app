@@ -1,4 +1,3 @@
-import 'package:crash_safe_image/crash_safe_image.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:get/get.dart';
@@ -48,7 +47,7 @@ class _ProfileImageScreenState extends State<ProfileImageScreen> {
                         ),
                       ),
                       widthBox8,
-                      CrashSafeImage(
+                      Image.asset(
                         color: Colors.white,
                         Assets.images.arrowForwoard.keyName,
                         height: 16.h,

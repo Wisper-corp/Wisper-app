@@ -1,208 +1,18 @@
-// import 'package:flutter/material.dart';
-// import 'package:flutter_screenutil/flutter_screenutil.dart';
-// import 'package:get/get.dart';
-// import 'package:wisper/app/core/config/theme/light_theme_colors.dart';
-// import 'package:wisper/app/core/others/custom_size.dart';
-// import 'package:wisper/app/core/others/get_storage.dart';
-// import 'package:wisper/app/modules/post/model/comment_model.dart';
-// import 'package:wisper/app/modules/profile/controller/buisness/buisness_controller.dart';
-// import 'package:wisper/app/modules/profile/controller/person/profile_controller.dart';
-// import 'package:wisper/app/modules/profile/widget/card_section.dart';
-// import 'package:wisper/app/modules/settings/controller/walllet_controller.dart';
-// import 'package:wisper/app/modules/settings/views/transaction_section.dart';
-// import 'package:wisper/app/modules/settings/wigdets/wallet_option.dart';
-// import 'package:wisper/gen/assets.gen.dart';
-
-// class WalletScreen extends StatefulWidget {
-//   const WalletScreen({super.key});
-
-//   @override
-//   State<WalletScreen> createState() => _WalletScreenState();
-// }
-
-// class _WalletScreenState extends State<WalletScreen> {
-//   final WallletController wallletController = Get.put(WallletController());
-//   final ProfileController profileController = Get.find<ProfileController>();
-//   final BusinessController businessController = Get.find<BusinessController>();
-
-//   @override
-//   void initState() {
-//     wallletController.getWallet();
-//     profileController.getMyProfile();
-//     businessController.getMyProfile();
-//     super.initState();
-//   }
-
-//   int isSelected = 0;
-//   @override
-//   Widget build(BuildContext context) {
-//     return Scaffold(
-//       body: Obx(() {
-//         if (wallletController.inProgress) {
-//           return const Center(child: CircularProgressIndicator());
-//         } else {
-//           return Column(
-//             crossAxisAlignment: CrossAxisAlignment.start,
-//             children: [
-//               Container(
-//                 height: 150.h,
-//                 width: double.infinity,
-//                 decoration: BoxDecoration(color: LightThemeColors.blueColor),
-//                 child: Padding(
-//                   padding: const EdgeInsets.symmetric(
-//                     horizontal: 16.0,
-//                     vertical: 6,
-//                   ),
-//                   child: Column(
-//                     mainAxisAlignment: MainAxisAlignment.end,
-//                     children: [
-//                       Obx(() {
-//                         if (profileController.inProgress) {
-//                           return const CircularProgressIndicator();
-//                         } else {
-//                           var isPerson =
-//                               StorageUtil.getData(StorageUtil.userRole) ==
-//                                   'PERSON'
-//                               ? true
-//                               : false;
-
-//                           return Row(
-//                             crossAxisAlignment: CrossAxisAlignment.center,
-//                             mainAxisAlignment: MainAxisAlignment.spaceBetween,
-//                             children: [
-//                               Column(
-//                                 crossAxisAlignment: CrossAxisAlignment.start,
-//                                 mainAxisAlignment: MainAxisAlignment.end,
-//                                 mainAxisSize: MainAxisSize.min,
-//                                 children: [
-//                                   Text(
-//                                     'Total Balance',
-//                                     style: TextStyle(
-//                                       fontSize: 20.sp,
-//                                       fontWeight: FontWeight.w800,
-//                                       color: Colors.white,
-//                                     ),
-//                                   ),
-//                                   Text(
-//                                     '\$0.00',
-//                                     style: TextStyle(
-//                                       fontSize: 26.sp,
-//                                       fontWeight: FontWeight.w800,
-//                                       color: Colors.white,
-//                                     ),
-//                                   ),
-//                                 ],
-//                               ),
-//                               CircleAvatar(
-//                                 radius: 21.r,
-//                                 backgroundImage: NetworkImage(
-//                                   isPerson
-//                                       ? profileController
-//                                                 .profileData!
-//                                                 .auth!
-//                                                 .person
-//                                                 ?.image ??
-//                                             ''
-//                                       : businessController
-//                                                 .buisnessData
-//                                                 ?.auth!
-//                                                 .business
-//                                                 ?.image ??
-//                                             '',
-//                                 ),
-//                               ),
-//                             ],
-//                           );
-//                         }
-//                       }),
-//                     ],
-//                   ),
-//                 ),
-//               ),
-
-//               heightBox20,
-//               heightBox20,
-//           Row(
-//             mainAxisAlignment: MainAxisAlignment.spaceAround,
-//             children: [
-//               WalletOption(
-//                 bgColor: isSelected == 0
-//                     ? LightThemeColors.blueColor
-//                     : Colors.transparent,
-//                 borderColor: isSelected == 0
-//                     ? Colors.transparent
-//                     : Colors.white.withValues(alpha: 0.20),
-//                 title: 'Deposit',
-
-//                 onTap: () {
-//                   setState(() {
-//                     isSelected = 0;
-//                   });
-//                 },
-//               ),
-//               WalletOption(
-//                 bgColor: isSelected == 1
-//                     ? LightThemeColors.blueColor
-//                     : Colors.transparent,
-//                 borderColor: isSelected == 1
-//                     ? Colors.transparent
-//                     : Colors.white.withValues(alpha: 0.20),
-//                 title: 'Add',
-//                 onTap: () {
-//                   setState(() {
-//                     isSelected = 1;
-//                   });
-//                 },
-//               ),
-//               WalletOption(
-//                 bgColor: isSelected == 2
-//                     ? LightThemeColors.blueColor
-//                     : Colors.transparent,
-//                 borderColor: isSelected == 2
-//                     ? Colors.transparent
-//                     : Colors.white.withValues(alpha: 0.20),
-//                 title: 'Withdraw',
-//                 onTap: () {
-//                   setState(() {
-//                     isSelected = 2;
-//                   });
-//                 },
-//               ),
-//             ],
-//           ),
-
-//           heightBox10,
-//           isSelected == 0 ? TransactionSection() : Container(),
-//           isSelected == 1 ? CardSection() : Container(),
-//           isSelected == 2 ? Container() : Container(),
-//               heightBox10,
-//               TransactionSection(
-//                 allTransectionModel: wallletController.allTransectionData,
-//               ),
-//             ],
-//           );
-//         }
-//       }),
-//     );
-//   }
-// }
-
-
-
-
-
-
-
-
-
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
+import 'package:get/get.dart';
 import 'package:wisper/app/core/config/theme/light_theme_colors.dart';
 import 'package:wisper/app/core/others/custom_size.dart';
-import 'package:wisper/app/modules/profile/widget/card_section.dart';
+import 'package:wisper/app/core/others/get_storage.dart';
+import 'package:wisper/app/core/widgets/common/custom_button.dart';
+import 'package:wisper/app/modules/kyc/controller/kyc_controller.dart';
+import 'package:wisper/app/modules/kyc/views/kyc_screen.dart';
+import 'package:wisper/app/modules/profile/controller/buisness/buisness_controller.dart';
+import 'package:wisper/app/modules/profile/controller/person/profile_controller.dart';
+import 'package:wisper/app/modules/settings/controller/monnify_controller.dart';
+import 'package:wisper/app/modules/settings/controller/walllet_controller.dart';
 import 'package:wisper/app/modules/settings/views/transaction_section.dart';
 import 'package:wisper/app/modules/settings/wigdets/wallet_option.dart';
-import 'package:wisper/gen/assets.gen.dart';
 
 class WalletScreen extends StatefulWidget {
   const WalletScreen({super.key});
@@ -212,118 +22,702 @@ class WalletScreen extends StatefulWidget {
 }
 
 class _WalletScreenState extends State<WalletScreen> {
+  final WallletController wallletController = Get.put(WallletController());
+  final ProfileController profileController = Get.find<ProfileController>();
+  final BusinessController businessController = Get.find<BusinessController>();
+  final KycController _kycController = Get.put(KycController());
+  final MonnifyController _monnifyController = Get.put(MonnifyController());
+  
   int isSelected = 0;
+
+  @override
+  void initState() {
+    wallletController.getWallet();
+    profileController.getMyProfile();
+    businessController.getMyProfile();
+    _kycController.getKycStatus();
+    super.initState();
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      body: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
+      body: Obx(() {
+        if (wallletController.inProgress) {
+          return const Center(child: CircularProgressIndicator());
+        } else {
+          return Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Container(
+                height: 150.h,
+                width: double.infinity,
+                decoration: BoxDecoration(color: LightThemeColors.blueColor),
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 16.0,
+                    vertical: 6,
+                  ),
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.end,
+                    children: [
+                      Obx(() {
+                        if (profileController.inProgress) {
+                          return const CircularProgressIndicator();
+                        } else {
+                          var isPerson =
+                              StorageUtil.getData(StorageUtil.userRole) ==
+                                  'PERSON';
+
+                          return Row(
+                            crossAxisAlignment: CrossAxisAlignment.center,
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                            children: [
+                              Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                mainAxisAlignment: MainAxisAlignment.end,
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  Text(
+                                    'Total Balance',
+                                    style: TextStyle(
+                                      fontSize: 20.sp,
+                                      fontWeight: FontWeight.w800,
+                                      color: Colors.white,
+                                    ),
+                                  ),
+                                  Text(
+                                    '₦${_monnifyController.walletBalance.toStringAsFixed(2)}',
+                                    style: TextStyle(
+                                      fontSize: 26.sp,
+                                      fontWeight: FontWeight.w800,
+                                      color: Colors.white,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                              CircleAvatar(
+                                radius: 21.r,
+                                backgroundImage: NetworkImage(
+                                  isPerson
+                                      ? profileController
+                                                .profileData
+                                                ?.auth
+                                                ?.person
+                                                ?.image ??
+                                            ''
+                                      : businessController
+                                                .buisnessData
+                                                ?.auth
+                                                ?.business
+                                                ?.image ??
+                                            '',
+                                ),
+                              ),
+                            ],
+                          );
+                        }
+                      }),
+                    ],
+                  ),
+                ),
+              ),
+
+              heightBox20,
+              heightBox20,
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceAround,
+                children: [
+                  WalletOption(
+                    bgColor: isSelected == 0
+                        ? LightThemeColors.blueColor
+                        : Colors.transparent,
+                    borderColor: isSelected == 0
+                        ? Colors.transparent
+                        : Colors.white.withOpacity(0.20),
+                    title: 'Transactions',
+                    onTap: () {
+                      setState(() {
+                        isSelected = 0;
+                      });
+                    },
+                  ),
+                  WalletOption(
+                    bgColor: isSelected == 1
+                        ? LightThemeColors.blueColor
+                        : Colors.transparent,
+                    borderColor: isSelected == 1
+                        ? Colors.transparent
+                        : Colors.white.withOpacity(0.20),
+                    title: 'Add Fund',
+                    onTap: () {
+                      setState(() {
+                        isSelected = 1;
+                      });
+                    },
+                  ),
+                  WalletOption(
+                    bgColor: isSelected == 2
+                        ? LightThemeColors.blueColor
+                        : Colors.transparent,
+                    borderColor: isSelected == 2
+                        ? Colors.transparent
+                        : Colors.white.withOpacity(0.20),
+                    title: 'Withdraw',
+                    onTap: () {
+                      // Check KYC for withdrawal only
+                      if (!_kycController.isVerified) {
+                        _showKycRequiredDialog();
+                      } else {
+                        setState(() {
+                          isSelected = 2;
+                        });
+                      }
+                    },
+                  ),
+                ],
+              ),
+
+              heightBox10,
+              Expanded(
+                child: SingleChildScrollView(
+                  child: Column(
+                    children: [
+                      if (isSelected == 0) TransactionSection(allTransectionModel: wallletController.allTransectionData),
+                      if (isSelected == 1) _buildFundWalletSection(),
+                      if (isSelected == 2) _buildWithdrawSection(),
+                    ],
+                  ),
+                ),
+              ),
+            ],
+          );
+        }
+      }),
+    );
+  }
+
+  // ── Fund Wallet Section (Monnify SDK Integration) ─────────────────────────────────────
+  Widget _buildFundWalletSection() {
+    final TextEditingController amountController = TextEditingController();
+    
+    return Padding(
+      padding: EdgeInsets.all(16.w),
+      child: Column(
         children: [
           Container(
-            height: 150.h,
-            width: double.infinity,
-            decoration: BoxDecoration(color: LightThemeColors.blueColor),
-            child: Padding(
-              padding: const EdgeInsets.symmetric(
-                horizontal: 16.0,
-                vertical: 6,
-              ),
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.end,
-                children: [
-                  Row(
-                    crossAxisAlignment: CrossAxisAlignment.center,
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            padding: EdgeInsets.all(16.w),
+            decoration: BoxDecoration(
+              color: const Color(0xFF1E1E1E),
+              borderRadius: BorderRadius.circular(12.r),
+              border: Border.all(color: LightThemeColors.blueColor.withOpacity(0.3)),
+            ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  children: [
+                    Icon(Icons.account_balance_wallet_outlined, size: 32.sp, color: LightThemeColors.blueColor),
+                    widthBox12,
+                    Text(
+                      'Fund Wallet',
+                      style: TextStyle(fontSize: 18.sp, fontWeight: FontWeight.w700, color: Colors.white),
+                    ),
+                  ],
+                ),
+                heightBox16,
+                Text(
+                  'Add money to your wallet using Monnify payment gateway (Card, Bank Transfer, USSD)',
+                  style: TextStyle(fontSize: 14.sp, color: const Color(0xFFD1D1D1)),
+                ),
+                heightBox20,
+                
+                // Amount Input
+                TextField(
+                  controller: amountController,
+                  keyboardType: TextInputType.number,
+                  style: TextStyle(color: Colors.white, fontSize: 16.sp),
+                  decoration: InputDecoration(
+                    labelText: 'Amount (₦)',
+                    labelStyle: const TextStyle(color: Colors.grey),
+                    prefixIcon: Icon(Icons.money, color: LightThemeColors.blueColor),
+                    filled: true,
+                    fillColor: const Color(0xFF2A2A2A),
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(8.r),
+                      borderSide: BorderSide.none,
+                    ),
+                    hintText: 'Enter amount to add',
+                    hintStyle: TextStyle(color: Colors.grey.withOpacity(0.5)),
+                  ),
+                ),
+                
+                heightBox20,
+                
+                // Quick Amount Buttons
+                Text('Quick amounts:', style: TextStyle(fontSize: 12.sp, color: Colors.grey)),
+                heightBox8,
+                Wrap(
+                  spacing: 8.w,
+                  runSpacing: 8.h,
+                  children: [
+                    _buildQuickAmountButton('₦1,000', () => amountController.text = '1000'),
+                    _buildQuickAmountButton('₦5,000', () => amountController.text = '5000'),
+                    _buildQuickAmountButton('₦10,000', () => amountController.text = '10000'),
+                    _buildQuickAmountButton('₦20,000', () => amountController.text = '20000'),
+                  ],
+                ),
+                
+                heightBox20,
+                
+                Obx(() => CustomElevatedButton(
+                  title: _monnifyController.inProgress ? 'Processing...' : 'Fund Wallet with Monnify',
+                  onPress: _monnifyController.inProgress ? null : () => _fundWallet(amountController.text),
+                )),
+                
+                heightBox12,
+                
+                // Payment Methods Info
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Icon(Icons.credit_card, size: 16.sp, color: Colors.grey),
+                    widthBox4,
+                    Text('Card', style: TextStyle(fontSize: 10.sp, color: Colors.grey)),
+                    widthBox20,
+                    Icon(Icons.account_balance, size: 16.sp, color: Colors.grey),
+                    widthBox4,
+                    Text('Bank Transfer', style: TextStyle(fontSize: 10.sp, color: Colors.grey)),
+                    widthBox20,
+                    Icon(Icons.phone_android, size: 16.sp, color: Colors.grey),
+                    widthBox4,
+                    Text('USSD', style: TextStyle(fontSize: 10.sp, color: Colors.grey)),
+                  ],
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildQuickAmountButton(String amount, VoidCallback onTap) {
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        padding: EdgeInsets.symmetric(horizontal: 12.w, vertical: 8.h),
+        decoration: BoxDecoration(
+          color: LightThemeColors.blueColor.withOpacity(0.1),
+          borderRadius: BorderRadius.circular(6.r),
+          border: Border.all(color: LightThemeColors.blueColor.withOpacity(0.3)),
+        ),
+        child: Text(
+          amount,
+          style: TextStyle(fontSize: 10.sp, color: LightThemeColors.blueColor, fontWeight: FontWeight.w600),
+        ),
+      ),
+    );
+  }
+
+  void _fundWallet(String amountText) async {
+    if (amountText.isEmpty) {
+      Get.snackbar('Error', 'Please enter an amount');
+      return;
+    }
+
+    final double? amount = double.tryParse(amountText);
+    if (amount == null || amount <= 0) {
+      Get.snackbar('Error', 'Please enter a valid amount');
+      return;
+    }
+
+    if (amount < 100) {
+      Get.snackbar('Error', 'Minimum funding amount is ₦100');
+      return;
+    }
+
+    // Get user data
+    var isPerson = StorageUtil.getData(StorageUtil.userRole) == 'PERSON';
+    String name = '';
+    String email = '';
+    String phone = '';
+
+    if (isPerson && profileController.profileData != null) {
+      name = profileController.profileData?.auth?.person?.name ?? 'User';
+      email = profileController.profileData?.auth?.person?.email ?? '';
+      phone = profileController.profileData?.auth?.person?.phone ?? '';
+    } else if (!isPerson && businessController.buisnessData != null) {
+      name = businessController.buisnessData?.auth?.business?.name ?? 'Business';
+      email = businessController.buisnessData?.auth?.business?.email ?? '';
+      phone = businessController.buisnessData?.auth?.business?.phone ?? '';
+    }
+
+    if (email.isEmpty) {
+      Get.snackbar('Error', 'User email not found. Please update your profile.');
+      return;
+    }
+
+    // Launch Monnify SDK payment
+    final bool success = await _monnifyController.makePayment(
+      amount: amount,
+      email: email,
+      name: name,
+      phone: phone,
+    );
+
+    if (success) {
+      Get.snackbar(
+        'Success',
+        'Wallet funded successfully with ₦${amount.toStringAsFixed(2)}',
+        snackPosition: SnackPosition.TOP,
+        backgroundColor: Colors.green,
+        colorText: Colors.white,
+      );
+      setState(() => isSelected = 0); // Switch to transactions tab
+      wallletController.getWallet(); // Refresh transactions
+    } else {
+      Get.snackbar(
+        'Error',
+        _monnifyController.errorMessage.isNotEmpty 
+          ? _monnifyController.errorMessage 
+          : 'Payment failed or cancelled. Please try again.',
+        snackPosition: SnackPosition.TOP,
+        backgroundColor: Colors.red,
+        colorText: Colors.white,
+      );
+    }
+  }
+  
+  // ── Withdrawal Section (KYC protected) ─────────────────────────────────────
+  Widget _buildWithdrawSection() {
+    final TextEditingController amountController = TextEditingController();
+    final TextEditingController accountNumberController = TextEditingController();
+    final TextEditingController accountNameController = TextEditingController();
+    final RxString selectedBank = 'Select Bank'.obs;
+    final RxString selectedBankCode = ''.obs;
+
+    return Padding(
+      padding: EdgeInsets.all(16.w),
+      child: Column(
+        children: [
+          Container(
+            padding: EdgeInsets.all(16.w),
+            decoration: BoxDecoration(
+              color: const Color(0xFF1E1E1E),
+              borderRadius: BorderRadius.circular(12.r),
+              border: Border.all(color: LightThemeColors.blueColor.withOpacity(0.3)),
+            ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  children: [
+                    Icon(Icons.send_outlined, size: 32.sp, color: LightThemeColors.blueColor),
+                    widthBox12,
+                    Text(
+                      'Withdraw Funds',
+                      style: TextStyle(fontSize: 18.sp, fontWeight: FontWeight.w700, color: Colors.white),
+                    ),
+                  ],
+                ),
+                heightBox8,
+                Text(
+                  'Transfer money from your wallet to your bank account',
+                  style: TextStyle(fontSize: 14.sp, color: const Color(0xFFD1D1D1)),
+                ),
+                heightBox20,
+
+                // Available Balance
+                Container(
+                  padding: EdgeInsets.all(12.w),
+                  decoration: BoxDecoration(
+                    color: LightThemeColors.blueColor.withOpacity(0.1),
+                    borderRadius: BorderRadius.circular(8.r),
+                  ),
+                  child: Row(
                     children: [
-                      Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        mainAxisAlignment: MainAxisAlignment.end,
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          Text(
-                            'Total Balance',
-                            style: TextStyle(
-                              fontSize: 20.sp,
-                              fontWeight: FontWeight.w800,
-                              color: Colors.white,
-                            ),
-                          ),
-                          Text(
-                            '\$0.00',
-                            style: TextStyle(
-                              fontSize: 40.sp,
-                              fontWeight: FontWeight.w800,
-                              color: Colors.white,
-                            ),
-                          ),
-                        ],
+                      Icon(Icons.account_balance_wallet, size: 20.sp, color: LightThemeColors.blueColor),
+                      widthBox8,
+                      Text(
+                        'Available Balance: ',
+                        style: TextStyle(fontSize: 14.sp, color: Colors.white),
                       ),
-                      CircleAvatar(
-                        radius: 21.r,
-                        backgroundImage: AssetImage(
-                          Assets.images.image.keyName,
+                      Obx(() => Text(
+                        '₦${_monnifyController.walletBalance.toStringAsFixed(2)}',
+                        style: TextStyle(fontSize: 16.sp, fontWeight: FontWeight.bold, color: LightThemeColors.blueColor),
+                      )),
+                    ],
+                  ),
+                ),
+                
+                heightBox20,
+
+                // Amount Input
+                TextField(
+                  controller: amountController,
+                  keyboardType: TextInputType.number,
+                  style: TextStyle(color: Colors.white, fontSize: 16.sp),
+                  decoration: InputDecoration(
+                    labelText: 'Amount to withdraw (₦)',
+                    labelStyle: const TextStyle(color: Colors.grey),
+                    prefixIcon: Icon(Icons.money, color: LightThemeColors.blueColor),
+                    filled: true,
+                    fillColor: const Color(0xFF2A2A2A),
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(8.r),
+                      borderSide: BorderSide.none,
+                    ),
+                    hintText: 'Enter withdrawal amount',
+                    hintStyle: TextStyle(color: Colors.grey.withOpacity(0.5)),
+                  ),
+                ),
+
+                heightBox16,
+
+                // Bank Selection
+                GestureDetector(
+                  onTap: () => _showBankSelection(selectedBank, selectedBankCode),
+                  child: Container(
+                    padding: EdgeInsets.all(16.w),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFF2A2A2A),
+                      borderRadius: BorderRadius.circular(8.r),
+                    ),
+                    child: Row(
+                      children: [
+                        Icon(Icons.account_balance, color: LightThemeColors.blueColor),
+                        widthBox12,
+                        Expanded(
+                          child: Obx(() => Text(
+                            selectedBank.value,
+                            style: TextStyle(
+                              color: selectedBank.value == 'Select Bank' ? Colors.grey : Colors.white,
+                              fontSize: 16.sp,
+                            ),
+                          )),
+                        ),
+                        const Icon(Icons.keyboard_arrow_down, color: Colors.grey),
+                      ],
+                    ),
+                  ),
+                ),
+
+                heightBox16,
+
+                // Account Number
+                TextField(
+                  controller: accountNumberController,
+                  keyboardType: TextInputType.number,
+                  maxLength: 10,
+                  style: TextStyle(color: Colors.white, fontSize: 16.sp),
+                  decoration: InputDecoration(
+                    labelText: 'Account Number',
+                    labelStyle: const TextStyle(color: Colors.grey),
+                    prefixIcon: Icon(Icons.account_box, color: LightThemeColors.blueColor),
+                    filled: true,
+                    fillColor: const Color(0xFF2A2A2A),
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(8.r),
+                      borderSide: BorderSide.none,
+                    ),
+                    hintText: 'Enter 10-digit account number',
+                    hintStyle: TextStyle(color: Colors.grey.withOpacity(0.5)),
+                    counterText: '',
+                  ),
+                ),
+
+                heightBox16,
+
+                // Account Name
+                TextField(
+                  controller: accountNameController,
+                  style: TextStyle(color: Colors.white, fontSize: 16.sp),
+                  decoration: InputDecoration(
+                    labelText: 'Account Name',
+                    labelStyle: const TextStyle(color: Colors.grey),
+                    prefixIcon: Icon(Icons.person, color: LightThemeColors.blueColor),
+                    filled: true,
+                    fillColor: const Color(0xFF2A2A2A),
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(8.r),
+                      borderSide: BorderSide.none,
+                    ),
+                    hintText: 'Enter account name',
+                    hintStyle: TextStyle(color: Colors.grey.withOpacity(0.5)),
+                  ),
+                ),
+
+                heightBox20,
+
+                Obx(() => CustomElevatedButton(
+                  title: _monnifyController.inProgress ? 'Processing...' : 'Withdraw Funds',
+                  onPress: _monnifyController.inProgress ? null : () => _withdrawFunds(
+                    amountController.text,
+                    selectedBankCode.value,
+                    accountNumberController.text,
+                    accountNameController.text,
+                  ),
+                )),
+
+                heightBox12,
+
+                // Withdrawal Info
+                Container(
+                  padding: EdgeInsets.all(12.w),
+                  decoration: BoxDecoration(
+                    color: Colors.orange.withOpacity(0.1),
+                    borderRadius: BorderRadius.circular(8.r),
+                  ),
+                  child: Row(
+                    children: [
+                      Icon(Icons.info_outline, size: 16.sp, color: Colors.orange),
+                      widthBox8,
+                      Expanded(
+                        child: Text(
+                          'Withdrawals are processed within 24 hours on business days.',
+                          style: TextStyle(fontSize: 11.sp, color: Colors.orange),
                         ),
                       ),
                     ],
                   ),
-                ],
-              ),
+                ),
+              ],
             ),
           ),
-          heightBox20,
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceAround,
-            children: [
-              WalletOption(
-                bgColor: isSelected == 0
-                    ? LightThemeColors.blueColor
-                    : Colors.transparent,
-                borderColor: isSelected == 0
-                    ? Colors.transparent
-                    : Colors.white.withValues(alpha: 0.20),
-                title: 'Deposit',
+        ],
+      ),
+    );
+  }
 
-                onTap: () {
-                  setState(() {
-                    isSelected = 0;
-                  });
+  void _showBankSelection(RxString selectedBank, RxString selectedBankCode) async {
+    final banks = await _monnifyController.getNigerianBanks();
+    
+    Get.bottomSheet(
+      Container(
+        height: 400.h,
+        decoration: BoxDecoration(
+          color: const Color(0xFF1E1E1E),
+          borderRadius: BorderRadius.vertical(top: Radius.circular(20.r)),
+        ),
+        child: Column(
+          children: [
+            Container(
+              padding: EdgeInsets.all(16.w),
+              child: Text(
+                'Select Bank',
+                style: TextStyle(fontSize: 18.sp, fontWeight: FontWeight.bold, color: Colors.white),
+              ),
+            ),
+            Expanded(
+              child: ListView.builder(
+                itemCount: banks.length,
+                itemBuilder: (context, index) {
+                  final bank = banks[index];
+                  return ListTile(
+                    title: Text(
+                      bank['name'] ?? '',
+                      style: const TextStyle(color: Colors.white),
+                    ),
+                    onTap: () {
+                      selectedBank.value = bank['name'] ?? '';
+                      selectedBankCode.value = bank['code'] ?? '';
+                      Get.back();
+                    },
+                  );
                 },
               ),
-              WalletOption(
-                bgColor: isSelected == 1
-                    ? LightThemeColors.blueColor
-                    : Colors.transparent,
-                borderColor: isSelected == 1
-                    ? Colors.transparent
-                    : Colors.white.withValues(alpha: 0.20),
-                title: 'Add',
-                onTap: () {
-                  setState(() {
-                    isSelected = 1;
-                  });
-                },
-              ),
-              WalletOption(
-                bgColor: isSelected == 2
-                    ? LightThemeColors.blueColor
-                    : Colors.transparent,
-                borderColor: isSelected == 2
-                    ? Colors.transparent
-                    : Colors.white.withValues(alpha: 0.20),
-                title: 'Withdraw',
-                onTap: () {
-                  setState(() {
-                    isSelected = 2;
-                  });
-                },
-              ),
-            ],
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  void _withdrawFunds(String amountText, String bankCode, String accountNumber, String accountName) async {
+    if (amountText.isEmpty || bankCode.isEmpty || accountNumber.isEmpty || accountName.isEmpty) {
+      Get.snackbar('Error', 'Please fill all fields');
+      return;
+    }
+
+    if (bankCode == 'Select Bank') {
+      Get.snackbar('Error', 'Please select a bank');
+      return;
+    }
+
+    final double? amount = double.tryParse(amountText);
+    if (amount == null || amount <= 0) {
+      Get.snackbar('Error', 'Please enter a valid amount');
+      return;
+    }
+
+    if (amount > _monnifyController.walletBalance) {
+      Get.snackbar('Error', 'Insufficient balance');
+      return;
+    }
+
+    if (amount < 1000) {
+      Get.snackbar('Error', 'Minimum withdrawal amount is ₦1,000');
+      return;
+    }
+
+    if (accountNumber.length != 10) {
+      Get.snackbar('Error', 'Account number must be 10 digits');
+      return;
+    }
+
+    final bool success = await _monnifyController.withdrawFunds(
+      amount: amount,
+      bankCode: bankCode,
+      accountNumber: accountNumber,
+      accountName: accountName,
+    );
+
+    if (success) {
+      Get.snackbar(
+        'Success',
+        'Withdrawal request submitted successfully. Funds will be transferred within 24 hours.',
+        snackPosition: SnackPosition.TOP,
+        backgroundColor: Colors.green,
+        colorText: Colors.white,
+        duration: const Duration(seconds: 5),
+      );
+      setState(() => isSelected = 0); // Switch to transactions tab
+      wallletController.getWallet(); // Refresh transactions
+    } else {
+      Get.snackbar(
+        'Error',
+        _monnifyController.errorMessage.isNotEmpty 
+          ? _monnifyController.errorMessage 
+          : 'Withdrawal failed. Please try again.',
+        snackPosition: SnackPosition.TOP,
+        backgroundColor: Colors.red,
+        colorText: Colors.white,
+      );
+    }
+  }
+
+  void _showKycRequiredDialog() {
+    Get.dialog(
+      AlertDialog(
+        backgroundColor: const Color(0xFF1E1E1E),
+        title: Text('Identity Verification Required', style: TextStyle(color: Colors.white, fontSize: 18.sp)),
+        content: Text(
+          'Please complete your BVN/NIN verification to withdraw funds from your wallet.',
+          style: TextStyle(color: Colors.white70, fontSize: 14.sp),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Get.back(),
+            child: const Text('Cancel', style: TextStyle(color: Colors.grey)),
           ),
-
-          heightBox10,
-          isSelected == 0 ? TransactionSection() : Container(),
-          isSelected == 1 ? CardSection() : Container(),
-          isSelected == 2 ? Container() : Container(),
+          TextButton(
+            onPressed: () {
+              Get.back();
+              Get.to(() => const KycScreen());
+            },
+            child: Text('Verify Now', style: TextStyle(color: LightThemeColors.blueColor)),
+          ),
         ],
       ),
     );

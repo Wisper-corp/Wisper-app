@@ -1,4 +1,3 @@
-import 'package:crash_safe_image/crash_safe_image.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:wisper/app/core/others/custom_size.dart';
@@ -32,7 +31,7 @@ class SeetingsButton extends StatelessWidget {
           child: Row(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              CrashSafeImage(
+              Image.asset(
                 iconPath,
                 height: 18.h,
                 width: 18.w,

@@ -7,8 +7,9 @@ class Urls {
   // static const String _baseUrl = 'https://wisper.up.railway.app/api/v1';
 //  static const String _baseUrl = 'https://cd234531fe15.ngrok-free.app/api/v1';
  // static const String socketUrl = 'https://cd234531fe15.ngrok-free.app';
-  static const String _baseUrl = 'http://72.244.153.29:5008/api/v1';
-  static const String socketUrl = 'http://72.244.153.29:5008';
+  static const String _baseUrl = 'https://api.wisperonline.com/api/v1';
+  static const String baseUrl = 'https://api.wisperonline.com/api/v1'; // Added for Monnify controller
+  static const String socketUrl = 'https://api.wisperonline.com';
 
   
   
@@ -87,6 +88,16 @@ class Urls {
   static const String roleUrl = '$_baseUrl/persons/roles';
   static const String walletUrl = '$_baseUrl/payments';
   static const String allGroupUrl = '$_baseUrl/groups';
+
+  // =========================================== KYC Block =========================================== //
+  static const String kycSubmitUrl = '$_baseUrl/kyc/submit';
+  static const String kycStatusUrl = '$_baseUrl/kyc/status';
+
+  // =========================================== Monnify Wallet ================================== //
+  static const String monnifyInitializeUrl = '$_baseUrl/wallet/monnify/initialize';
+  static const String monnifyVerifyUrl = '$_baseUrl/wallet/monnify/verify';
+  static const String walletBalanceUrl = '$_baseUrl/wallet/balance';
+  static const String monnifyWithdrawUrl = '$_baseUrl/wallet/withdraw';
  
   static String editPostId(String id) {
     return '$_baseUrl/posts/$id';

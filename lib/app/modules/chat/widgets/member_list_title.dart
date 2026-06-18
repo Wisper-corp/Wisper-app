@@ -1,4 +1,3 @@
-import 'package:crash_safe_image/crash_safe_image.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:google_fonts/google_fonts.dart';
@@ -54,13 +53,13 @@ class MemberListTile extends StatelessWidget {
                         ? const Color(0xff102B19)
                         : Colors.grey.shade800,
                     child: isGroup
-                        ? CrashSafeImage(
+                        ? Image.asset(
                             Assets.images.userGroup.keyName,
                             color: const Color(0xff1F7DE9),
                             height: 26.h,
                           )
                         : isClass
-                        ? CrashSafeImage(
+                        ? Image.asset(
                             Assets.images.education.keyName,
                             color: const Color(0xff11AE46),
                             height: 22.h,

@@ -1,4 +1,3 @@
-import 'package:crash_safe_image/crash_safe_image.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:get/get.dart';
@@ -32,7 +31,7 @@ class _PasswordUpdateSuccessScreenState
             children: [
               SizedBox(height: 200.h),
 
-              CrashSafeImage(
+              Image.asset(
                 Assets.images.shield1.keyName,
                 height: 167.h,
                 width: 142.h,

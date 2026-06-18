@@ -1,6 +1,5 @@
 // ignore_for_file: unused_field
 
-import 'package:crash_safe_image/crash_safe_image.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:get/get.dart';
@@ -151,13 +150,13 @@ class _OnboardingViewState extends State<OnboardingView> {
                   children: [
                     GestureDetector(
                       onTap: signInGoogle,
-                      child: CrashSafeImage(
+                      child: Image.asset(
                         Assets.images.gmail.keyName,
                         height: 30.h,
                       ),
                     ),
                     // widthBox14,
-                    // CrashSafeImage(Assets.images.facebook.keyName, height: 30.h),
+                    // Image.asset(Assets.images.facebook.keyName, height: 30.h),
                   ],
                 ),
               ],

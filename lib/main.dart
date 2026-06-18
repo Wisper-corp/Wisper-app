@@ -23,10 +23,14 @@ import 'package:wisper/app/modules/onboarding/views/splash_screen.dart';
 import 'package:wisper/app/modules/profile/views/business/others_business_screen.dart';
 import 'package:wisper/app/modules/profile/views/person/others_person_screen.dart';
 
+import 'package:smile_id/smile_id.dart';
 import 'package:wisper/firebase_options.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
+
+  // Initialize SmileID SDK
+  SmileID.initialize(useSandbox: false, enableCrashReporting: false);
 
   await Firebase.initializeApp(
     options: DefaultFirebaseOptions.currentPlatform,

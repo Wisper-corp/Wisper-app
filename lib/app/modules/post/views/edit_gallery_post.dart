@@ -1,7 +1,6 @@
 // EditGalleryPostScreen.dart - Final, Error-Free & Super Simple
 
 import 'dart:io';
-import 'package:crash_safe_image/crash_safe_image.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:get/get.dart';
@@ -232,7 +231,7 @@ class _EditGalleryPostScreenState extends State<EditGalleryPostScreen> {
                           ),
                           child: Row(
                             children: [
-                              CrashSafeImage(
+                              Image.asset(
                                 Assets.images.gallery02.keyName,
                                 height: 28.h,
                               ),
@@ -303,7 +302,7 @@ class _EditGalleryPostScreenState extends State<EditGalleryPostScreen> {
         ClipRRect(
           borderRadius: BorderRadius.circular(12.r),
           child: url != null
-              ? CrashSafeImage(
+              ? Image.asset(
                   url,
                   width: 120.w,
                   height: 120.h,

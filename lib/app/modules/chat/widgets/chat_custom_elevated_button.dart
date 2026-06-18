@@ -1,5 +1,4 @@
 
-import 'package:crash_safe_image/crash_safe_image.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:wisper/app/core/others/custom_size.dart';
@@ -28,7 +27,7 @@ class ChatCustomElevatedButton extends StatelessWidget {
         child: Row(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            CrashSafeImage(imagePath, height: 20.h),
+            Image.asset(imagePath, height: 20.h),
             widthBox20,
             Text(
               title,

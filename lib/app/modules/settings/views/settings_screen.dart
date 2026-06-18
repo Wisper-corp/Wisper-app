@@ -1,4 +1,3 @@
-import 'package:crash_safe_image/crash_safe_image.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:get/get.dart';
@@ -11,6 +10,7 @@ import 'package:wisper/app/core/widgets/common/line_widget.dart';
 import 'package:wisper/app/modules/authentication/views/sign_in_screen.dart';
 import 'package:wisper/app/modules/chat/widgets/toggle_option.dart';
 import 'package:wisper/app/modules/job/views/favorite_job_screen.dart';
+import 'package:wisper/app/modules/kyc/views/kyc_screen.dart';
 import 'package:wisper/app/modules/post/views/my_post_section.dart';
 import 'package:wisper/app/modules/profile/controller/buisness/buisness_controller.dart';
 import 'package:wisper/app/modules/profile/controller/person/profile_controller.dart';
@@ -195,8 +195,56 @@ class _SettingsScreenState extends State<SettingsScreen> {
                     heightBox20,
                     StraightLiner(height: 0.5),
                     heightBox10,
+                  ],
+                ),
+              ),
+              heightBox16,
+              // ========= NEW: Identity & Verification Section =========
+              SeetingsFeatureCard(
+                iconPath: Assets.images.sheild.keyName,
+                title: 'Identity & Verification',
+                widget: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'Verify your identity and manage security',
+                      style: TextStyle(
+                        fontSize: 14.sp,
+                        fontWeight: FontWeight.w400,
+                        color: Color(0xff999999),
+                      ),
+                    ),
+                    heightBox20,
+                    SettingsFeatureRow(
+                      title: 'KYC Verification',
+                      subtitle: 'Complete identity verification',
+                      onTap: () {
+                        Get.to(() => const KycScreen());
+                      },
+                    ),
+                  ],
+                ),
+              ),
+              heightBox16,
+              // ========= NEW: Separate Wallet Section =========
+              SeetingsFeatureCard(
+                iconPath: Assets.images.adds.keyName,
+                title: 'Wallet & Payments',
+                widget: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'Manage your wallet and payment methods',
+                      style: TextStyle(
+                        fontSize: 14.sp,
+                        fontWeight: FontWeight.w400,
+                        color: Color(0xff999999),
+                      ),
+                    ),
+                    heightBox20,
                     SettingsFeatureRow(
                       title: 'Wallet',
+                      subtitle: 'View balance and transactions',
                       onTap: () {
                         Get.to(() => const WalletScreen());
                       },
@@ -302,7 +350,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                       children: [
                         Row(
                           children: [
-                            CrashSafeImage(
+                            Image.asset(
                               Assets.images.browse.keyName,
                               height: 18.h,
                               width: 18.w,
@@ -329,7 +377,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                               ),
                             ),
                             widthBox8,
-                            CrashSafeImage(
+                            Image.asset(
                               Assets.images.arrowForwoard.keyName,
                               height: 16.h,
                               width: 16.w,
@@ -345,7 +393,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                       children: [
                         Row(
                           children: [
-                            CrashSafeImage(
+                            Image.asset(
                               Assets.images.glove.keyName,
                               height: 18.h,
                               width: 18.w,
@@ -371,7 +419,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                               ),
                             ),
                             widthBox8,
-                            CrashSafeImage(
+                            Image.asset(
                               Assets.images.arrowForwoard.keyName,
                               height: 16.h,
                               width: 16.w,

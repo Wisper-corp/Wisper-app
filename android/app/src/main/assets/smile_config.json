@@ -1,0 +1,6 @@
+{
+  "partner_id": "8465",
+  "auth_token": "ff0b9f6a-e814-4b2c-9bc2-af093b5fd268",
+  "production_lambda_url": "https://3eydmgh10d.execute-api.us-west-2.amazonaws.com/v1",
+  "test_lambda_url": "https://testapi.smileidentity.com/v1"
+}

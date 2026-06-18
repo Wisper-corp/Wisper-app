@@ -1,6 +1,5 @@
 import 'dart:io';
 
-import 'package:crash_safe_image/crash_safe_image.dart';
 import 'package:flutter/material.dart';
 import 'package:wisper/app/core/config/theme/light_theme_colors.dart';
  
@@ -28,7 +27,7 @@ class CircleIconWidget extends StatelessWidget {
       child: CircleAvatar(
         backgroundColor: color,
         radius: radius,
-        child: CrashSafeImage(
+        child: Image.asset(
           imagePath,
           height: iconRadius,
           width: iconRadius,
@@ -88,14 +87,14 @@ class CircleIconProfileWidget extends StatelessWidget {
                   ),
                 )
               : isNetworkImage
-              ? CrashSafeImage(
+              ? Image.network(
                   imagePath,
                   height: iconRadius * 2,
                   width: iconRadius * 2,
                   fit: BoxFit.cover,
                   color: iconColor,
                 )
-              : CrashSafeImage(
+              : Image.asset(
                   // Asset image
                   imagePath,
                   height: iconRadius * 2,

@@ -1,4 +1,3 @@
-import 'package:crash_safe_image/crash_safe_image.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:get/get.dart';
@@ -138,13 +137,13 @@ class _RecruiterSignUpScreenState extends State<RecruiterSignUpScreen> {
                       children: [
                         GestureDetector(
                           onTap: signInGoogle,
-                          child: CrashSafeImage(
+                          child: Image.asset(
                             Assets.images.gmail.keyName,
                             height: 30.h,
                           ),
                         ),
                         // widthBox14,
-                        // CrashSafeImage(
+                        // Image.asset(
                         //   Assets.images.facebook.keyName,
                         //   height: 30.h,
                         // ),

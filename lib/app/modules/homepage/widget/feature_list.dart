@@ -1,4 +1,3 @@
-import 'package:crash_safe_image/crash_safe_image.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:wisper/app/core/others/custom_size.dart' show widthBox4, heightBox10, heightBox8;
@@ -17,7 +16,7 @@ class FeatureList extends StatelessWidget {
         Row(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            CrashSafeImage(iconPath!, height: 16.h, width: 16),
+            Image.asset(iconPath!, height: 16.h, width: 16),
             widthBox4,
             SizedBox(
               width: MediaQuery.of(context).size.width * 0.75,

@@ -1,4 +1,3 @@
-import 'package:crash_safe_image/crash_safe_image.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:get/get.dart';
@@ -43,7 +42,7 @@ class _AllSetScreenState extends State<AllSetScreen> {
                       ),
                     ),
                     widthBox4,
-                    CrashSafeImage(
+                    Image.asset(
                       Assets.images.arrowForwoard.keyName,
                       height: 16.h,
                       width: 16.w,
@@ -53,7 +52,7 @@ class _AllSetScreenState extends State<AllSetScreen> {
                 ),
               ), 
               heightBox80,
-              CrashSafeImage(
+              Image.asset(
                 Assets.images.vector01.keyName,
                 height: 283,
                 width: 211,

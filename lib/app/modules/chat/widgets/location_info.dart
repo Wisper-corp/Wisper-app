@@ -1,4 +1,3 @@
-import 'package:crash_safe_image/crash_safe_image.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:wisper/app/core/others/custom_size.dart';
@@ -17,7 +16,7 @@ class LocationInfo extends StatelessWidget {
       children: [
         Row(
           children: [
-            CrashSafeImage(
+            Image.asset(
               Assets.images.location.keyName,
               height: 16.h,
               color: const Color(0xff7F8694),
@@ -37,7 +36,7 @@ class LocationInfo extends StatelessWidget {
         isDate!
             ? Row(
                 children: [
-                  CrashSafeImage(
+                  Image.asset(
                     Assets.images.calendar.keyName,
                     height: 16.h,
                     color: const Color(0xff7F8694),

@@ -3,7 +3,6 @@
 // SplashScreen.dart - Updated with Camera & Mic permission
 // বাকি সব অপরিবর্তিত রাখা হয়েছে
 
-import 'package:crash_safe_image/crash_safe_image.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:get/get.dart';
@@ -104,7 +103,7 @@ class _SplashScreenState extends State<SplashScreen> {
     return Scaffold(
       backgroundColor: LightThemeColors.blueColor,
       body: Center(
-        child: CrashSafeImage(
+        child: Image.asset(
           Assets.images.appLogo.keyName,
           height: 84.h,
           width: 84.h,

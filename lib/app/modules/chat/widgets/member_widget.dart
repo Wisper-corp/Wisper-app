@@ -1,5 +1,4 @@
 
-import 'package:crash_safe_image/crash_safe_image.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:wisper/app/core/others/custom_size.dart';
@@ -38,7 +37,7 @@ class MemberWidget extends StatelessWidget {
             widthBox10,
             GestureDetector(
               onTap: onTap,
-              child: CrashSafeImage(Assets.images.cross.keyName, height: 14),
+              child: Image.asset(Assets.images.cross.keyName, height: 14),
             ),
           ],
         ),

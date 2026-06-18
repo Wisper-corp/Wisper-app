@@ -1,4 +1,3 @@
-import 'package:crash_safe_image/crash_safe_image.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:get/get.dart';
@@ -389,7 +388,7 @@ class _JobDetailsScreenState extends State<JobDetailsScreen> {
                               ),
                               child: Row(
                                 children: [
-                                  CrashSafeImage(
+                                  Image.asset(
                                     Assets.images.adds.keyName,
                                     height: 16.h,
                                     width: 16,
@@ -503,7 +502,7 @@ class _JobDetailsScreenState extends State<JobDetailsScreen> {
                               ),
                               child: Row(
                                 children: [
-                                  CrashSafeImage(
+                                  Image.asset(
                                     Assets.images.location.keyName,
                                     height: 16.h,
                                     width: 16,
@@ -544,7 +543,7 @@ class _JobDetailsScreenState extends State<JobDetailsScreen> {
                               ),
                               child: Row(
                                 children: [
-                                  CrashSafeImage(
+                                  Image.asset(
                                     Assets.images.education.keyName,
                                     height: 16.h,
                                     width: 16,

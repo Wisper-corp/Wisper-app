@@ -1,4 +1,3 @@
-import 'package:crash_safe_image/crash_safe_image.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:google_fonts/google_fonts.dart';
@@ -46,7 +45,7 @@ class CustomElevatedButton extends StatelessWidget {
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
             iconData != null
-                ? CrashSafeImage(iconData!, height: 20.h, width: 20.w)
+                ? Image.asset(iconData!, height: 20.h, width: 20.w)
                 : Container(),
             iconData != null ? widthBox10 : Container(),
             Text(
