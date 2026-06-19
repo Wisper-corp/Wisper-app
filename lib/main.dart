@@ -14,7 +14,7 @@ import 'package:wisper/app/core/services/others/deeplink_services.dart';
 import 'package:wisper/app/core/services/socket/socket_service.dart';
 import 'package:wisper/app/core/utils/connectivity_services.dart';
 import 'package:wisper/app/core/utils/no_inter_screen.dart';
- 
+
 import 'package:wisper/app/modules/dashboard/views/dashboard_screen.dart';
 import 'package:wisper/app/modules/onboarding/views/onboarding_view.dart';
 import 'package:wisper/app/modules/onboarding/views/splash_screen.dart';
@@ -27,16 +27,16 @@ import 'package:wisper/push_notification.dart';
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
-  // Hot restart can re-run `main()` while the native FirebaseApp instance still
-  // exists, causing `[core/duplicate-app]` for the default app.
-  if (Firebase.apps.isEmpty) {
-    try {
-      await Firebase.initializeApp(
-        options: DefaultFirebaseOptions.currentPlatform,
-      );
-    } on FirebaseException catch (e) { 
-      if (e.code != 'duplicate-app') rethrow;
-    }
+  // On iOS, a hot restart can keep the native Firebase app alive while Dart restarts.
+  // If we call initialize again, Firebase throws [core/duplicate-app]. In that case,
+  // we just reuse the already-configured native default app.
+  try {
+    await Firebase.initializeApp(
+      options: DefaultFirebaseOptions.currentPlatform,
+    );
+  } on FirebaseException catch (e) {
+    if (e.code != 'duplicate-app') rethrow;
+    await Firebase.app();
   }
 
   await StorageUtil.init();
@@ -70,7 +70,7 @@ void main() async {
   ]).then((_) {
     runApp(
       ScreenUtilInit(
-        designSize: const Size(375, 812), 
+        designSize: const Size(375, 812),
         minTextAdapt: true,
         splitScreenMode: true,
         useInheritedMediaQuery: true,

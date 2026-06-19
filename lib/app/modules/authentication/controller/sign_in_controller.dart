@@ -1,3 +1,6 @@
+import 'dart:io';
+
+import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:get/get.dart';
 import 'package:jwt_decoder/jwt_decoder.dart';
@@ -11,7 +14,7 @@ class SignInController extends GetxController {
     // Support common claim names
     final candidates = [
       decodedToken['id'],
-      decodedToken['authId'], 
+      decodedToken['authId'],
       decodedToken['userId'],
       decodedToken['sub'],
     ];
@@ -31,13 +34,18 @@ class SignInController extends GetxController {
   String get errorMessage => _errorMessage.value;
 
   Future<bool> signIn({String? email, String? password}) async {
-
     _inProgress.value = true;
 
     try {
-
       /// 🔹 Get FCM Token
-      String? fcmToken = await FirebaseMessaging.instance.getToken();
+      String? fcmToken;
+      try {
+        fcmToken = await FirebaseMessaging.instance.getToken();
+      } on FirebaseException catch (e) {
+        // iOS can throw until APNs token is available; sign-in should still work.
+        if (e.code != 'apns-token-not-set') rethrow;
+        fcmToken = null;
+      }
 
       print("FCM TOKEN: $fcmToken");
 
@@ -46,15 +54,13 @@ class SignInController extends GetxController {
         "password": password,
         "isMobileApp": true,
         "fcmToken": fcmToken,
-        "deviceType": "android"
+        "deviceType": Platform.isIOS ? "ios" : "android",
       };
 
-      final NetworkResponse response =
-          await Get.find<NetworkCaller>()
-              .postRequest(Urls.signInUrl, body: body);
+      final NetworkResponse response = await Get.find<NetworkCaller>()
+          .postRequest(Urls.signInUrl, body: body);
 
       if (response.isSuccess && response.responseData != null) {
-
         _errorMessage.value = '';
 
         var token = response.responseData['data']['accessToken'];
@@ -85,19 +91,14 @@ class SignInController extends GetxController {
         _inProgress.value = false;
 
         return true;
-
       } else {
-
         _errorMessage.value = response.errorMessage;
 
         _inProgress.value = false;
 
         return false;
-
       }
-
     } catch (e) {
-
       _errorMessage.value = e.toString();
 
       print("SignIn Error: $e");
