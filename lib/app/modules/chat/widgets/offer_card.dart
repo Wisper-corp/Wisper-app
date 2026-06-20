@@ -251,6 +251,26 @@ class _OfferCardState extends State<OfferCard> {
               fontSize: 14,
             ),
           ),
+          const SizedBox(height: 8),
+          
+          // Duration
+          Row(
+            children: [
+              const Icon(
+                Icons.access_time,
+                color: Colors.grey,
+                size: 16,
+              ),
+              const SizedBox(width: 4),
+              Text(
+                'Duration: ${widget.offer.duration}',
+                style: const TextStyle(
+                  color: Colors.grey,
+                  fontSize: 13,
+                ),
+              ),
+            ],
+          ),
           const SizedBox(height: 12),
           
           // Sender/Receiver info

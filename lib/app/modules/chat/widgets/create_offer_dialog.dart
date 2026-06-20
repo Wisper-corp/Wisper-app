@@ -23,6 +23,7 @@ class CreateOfferDialog extends StatefulWidget {
 class _CreateOfferDialogState extends State<CreateOfferDialog> {
   final TextEditingController _amountController = TextEditingController();
   final TextEditingController _descriptionController = TextEditingController();
+  final TextEditingController _durationController = TextEditingController();
   final OfferService _offerService = Get.find<OfferService>();
   bool _isLoading = false;
 
@@ -30,11 +31,14 @@ class _CreateOfferDialogState extends State<CreateOfferDialog> {
   void dispose() {
     _amountController.dispose();
     _descriptionController.dispose();
+    _durationController.dispose();
     super.dispose();
   }
 
   Future<void> _createOffer() async {
-    if (_amountController.text.isEmpty || _descriptionController.text.isEmpty) {
+    if (_amountController.text.isEmpty || 
+        _descriptionController.text.isEmpty ||
+        _durationController.text.isEmpty) {
       Get.snackbar(
         'Error',
         'Please fill in all fields',
@@ -65,6 +69,7 @@ class _CreateOfferDialogState extends State<CreateOfferDialog> {
         chatId: widget.chatId,
         amount: amount,
         description: _descriptionController.text,
+        duration: _durationController.text,
       );
 
       widget.onOfferCreated(offer);
@@ -139,9 +144,28 @@ class _CreateOfferDialogState extends State<CreateOfferDialog> {
               maxLines: 3,
               style: const TextStyle(color: Colors.white),
               decoration: InputDecoration(
-                labelText: 'Description',
+                labelText: 'Service Description',
                 labelStyle: const TextStyle(color: Colors.grey),
-                hintText: 'Describe what this offer is for...',
+                hintText: 'Describe the service you are offering...',
+                hintStyle: const TextStyle(color: Colors.grey),
+                enabledBorder: OutlineInputBorder(
+                  borderSide: const BorderSide(color: Colors.grey),
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                focusedBorder: OutlineInputBorder(
+                  borderSide: const BorderSide(color: Color(0xffFFD700)),
+                  borderRadius: BorderRadius.circular(8),
+                ),
+              ),
+            ),
+            const SizedBox(height: 16),
+            TextField(
+              controller: _durationController,
+              style: const TextStyle(color: Colors.white),
+              decoration: InputDecoration(
+                labelText: 'Duration',
+                labelStyle: const TextStyle(color: Colors.grey),
+                hintText: 'e.g., 3 days, 1 week, 2 hours',
                 hintStyle: const TextStyle(color: Colors.grey),
                 enabledBorder: OutlineInputBorder(
                   borderSide: const BorderSide(color: Colors.grey),

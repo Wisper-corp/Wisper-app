@@ -13,6 +13,7 @@ class OfferService extends GetxService {
     required String chatId,
     required double amount,
     required String description,
+    required String duration,
   }) async {
     try {
       final response = await GetConnect().post(
@@ -22,6 +23,7 @@ class OfferService extends GetxService {
           'chatId': chatId,
           'amount': amount,
           'description': description,
+          'duration': duration,
         },
         headers: {
           'Authorization': 'Bearer ${_userController.token.value}',

@@ -9,6 +9,7 @@ class OfferModel {
   final String chatId;
   final double amount;
   final String description;
+  final String duration;
   final OfferStatus status;
   final DateTime createdAt;
   final DateTime updatedAt;
@@ -24,6 +25,7 @@ class OfferModel {
     required this.chatId,
     required this.amount,
     required this.description,
+    required this.duration,
     required this.status,
     required this.createdAt,
     required this.updatedAt,
@@ -49,6 +51,7 @@ class OfferModel {
       chatId: json['chatId'],
       amount: json['amount'].toDouble(),
       description: json['description'],
+      duration: json['duration'],
       status: OfferStatus.values.firstWhere(
         (e) => e.toString() == 'OfferStatus.${json['status']}',
       ),
@@ -65,6 +68,7 @@ class OfferModel {
       'chatId': chatId,
       'amount': amount,
       'description': description,
+      'duration': duration,
       'status': status.toString().split('.').last,
       'createdAt': createdAt.toIso8601String(),
       'updatedAt': updatedAt.toIso8601String(),
