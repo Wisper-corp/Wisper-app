@@ -24,8 +24,21 @@ class _CreateOfferDialogState extends State<CreateOfferDialog> {
   final TextEditingController _amountController = TextEditingController();
   final TextEditingController _descriptionController = TextEditingController();
   final TextEditingController _durationController = TextEditingController();
-  final OfferService _offerService = Get.find<OfferService>();
+  late final OfferService _offerService;
   bool _isLoading = false;
+  bool _serviceInitialized = false;
+
+  @override
+  void initState() {
+    super.initState();
+    try {
+      _offerService = Get.find<OfferService>();
+      _serviceInitialized = true;
+    } catch (e) {
+      _offerService = Get.put(OfferService());
+      _serviceInitialized = true;
+    }
+  }
 
   @override
   void dispose() {
@@ -40,10 +53,11 @@ class _CreateOfferDialogState extends State<CreateOfferDialog> {
         _descriptionController.text.isEmpty ||
         _durationController.text.isEmpty) {
       Get.snackbar(
-        'Error',
+        'Missing Information',
         'Please fill in all fields',
         backgroundColor: Colors.red,
         colorText: Colors.white,
+        snackPosition: SnackPosition.BOTTOM,
       );
       return;
     }
@@ -51,10 +65,11 @@ class _CreateOfferDialogState extends State<CreateOfferDialog> {
     final amount = double.tryParse(_amountController.text);
     if (amount == null || amount <= 0) {
       Get.snackbar(
-        'Error',
-        'Please enter a valid amount',
+        'Invalid Amount',
+        'Please enter a valid amount greater than 0',
         backgroundColor: Colors.red,
         colorText: Colors.white,
+        snackPosition: SnackPosition.BOTTOM,
       );
       return;
     }
@@ -72,25 +87,49 @@ class _CreateOfferDialogState extends State<CreateOfferDialog> {
         duration: _durationController.text,
       );
 
-      widget.onOfferCreated(offer);
-      Get.back();
-      Get.snackbar(
-        'Success',
-        'Offer sent successfully',
-        backgroundColor: Colors.green,
-        colorText: Colors.white,
-      );
+      if (mounted) {
+        widget.onOfferCreated(offer);
+        Navigator.pop(context);
+        Get.snackbar(
+          'Success',
+          'Offer sent successfully',
+          backgroundColor: Colors.green,
+          colorText: Colors.white,
+          snackPosition: SnackPosition.BOTTOM,
+        );
+      }
     } catch (e) {
-      Get.snackbar(
-        'Error',
-        e.toString(),
-        backgroundColor: Colors.red,
-        colorText: Colors.white,
-      );
+      if (mounted) {
+        String errorMessage = 'Failed to send offer';
+        
+        // Check if it's a network/backend issue
+        if (e.toString().contains('SocketException') || 
+            e.toString().contains('Connection') ||
+            e.toString().contains('Failed host lookup')) {
+          errorMessage = 'Cannot connect to server. Please check your internet connection or try again later.';
+        } else if (e.toString().contains('401') || e.toString().contains('Unauthorized')) {
+          errorMessage = 'Session expired. Please login again.';
+        } else if (e.toString().contains('404')) {
+          errorMessage = 'Server feature not available yet. Please contact support.';
+        } else {
+          errorMessage = e.toString().replaceAll('Exception:', '').trim();
+        }
+
+        Get.snackbar(
+          'Error',
+          errorMessage,
+          backgroundColor: Colors.red,
+          colorText: Colors.white,
+          snackPosition: SnackPosition.BOTTOM,
+          duration: const Duration(seconds: 4),
+        );
+      }
     } finally {
-      setState(() {
-        _isLoading = false;
-      });
+      if (mounted) {
+        setState(() {
+          _isLoading = false;
+        });
+      }
     }
   }
 
@@ -163,7 +202,7 @@ class _CreateOfferDialogState extends State<CreateOfferDialog> {
               controller: _durationController,
               style: const TextStyle(color: Colors.white),
               decoration: InputDecoration(
-                labelText: 'Duration',
+                labelText: 'Delivery Time',
                 labelStyle: const TextStyle(color: Colors.grey),
                 hintText: 'e.g., 3 days, 1 week, 2 hours',
                 hintStyle: const TextStyle(color: Colors.grey),

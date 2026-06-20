@@ -263,7 +263,7 @@ class _OfferCardState extends State<OfferCard> {
               ),
               const SizedBox(width: 4),
               Text(
-                'Duration: ${widget.offer.duration}',
+                'Delivery Time: ${widget.offer.duration}',
                 style: const TextStyle(
                   color: Colors.grey,
                   fontSize: 13,
