@@ -7,19 +7,21 @@ class AttachmentBottomSheet extends StatelessWidget {
   final VoidCallback onImageSelected;
   final VoidCallback onVideoSelected;
   final VoidCallback onFileSelected;
+  final VoidCallback onOfferSelected;
 
   const AttachmentBottomSheet({
     super.key,
     required this.onImageSelected,
     required this.onVideoSelected,
     required this.onFileSelected,
+    required this.onOfferSelected,
   });
 
   @override
   Widget build(BuildContext context) {
     return Container(
       color: Colors.black,
-      height: Get.height * 0.18,
+      height: Get.height * 0.22,
       padding: const EdgeInsets.all(20.0),
       child: Column(
         children: [
@@ -61,6 +63,15 @@ class AttachmentBottomSheet extends StatelessWidget {
                 imagePath: Assets.images.file.keyName,
                 iconColor: const Color(0xff00F359),
                 title: 'Document',
+              ),
+              Option(
+                onTap: () {
+                  Get.back();
+                  onOfferSelected();
+                },
+                imagePath: Assets.images.file.keyName, // Will use a money/offer icon
+                iconColor: const Color(0xffFFD700),
+                title: 'Offer',
               ),
             ],
           ),

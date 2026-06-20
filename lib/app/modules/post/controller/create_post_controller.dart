@@ -19,6 +19,7 @@ class CreatePostController extends GetxController {
     String? privacy,
     String? description,
     List<File>? images,
+    double? price,
   }) async {
     _inProgress.value = true;
 
@@ -26,6 +27,7 @@ class CreatePostController extends GetxController {
       Map<String, dynamic> body = {
         "caption": description,
         "commentAccess": privacy,
+        if (price != null) "price": price,
       };
       final NetworkResponse response = await Get.find<NetworkCaller>()
           .postRequest(

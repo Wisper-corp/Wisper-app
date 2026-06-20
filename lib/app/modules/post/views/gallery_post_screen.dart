@@ -29,6 +29,7 @@ class GalleryPostScreen extends StatefulWidget {
 
 class _GalleryPostScreenState extends State<GalleryPostScreen> {
   final TextEditingController _captionCtrl = TextEditingController();
+  final TextEditingController _priceCtrl = TextEditingController();
   final CreatePostController createPostController = CreatePostController();
   final ProfileController profileController = Get.find<ProfileController>();
   final BusinessController businessController = Get.find<BusinessController>();
@@ -99,10 +100,16 @@ class _GalleryPostScreenState extends State<GalleryPostScreen> {
   }
 
   Future<void> performCreatePost() async {
+    double? price;
+    if (_priceCtrl.text.trim().isNotEmpty) {
+      price = double.tryParse(_priceCtrl.text.trim());
+    }
+    
     final bool isSuccess = await createPostController.createPost(
       description: _captionCtrl.text.trim(),
       images: _selectedImages,
       privacy: _selectedPrivacy,
+      price: price,
     );
 
     if (isSuccess) {
@@ -165,6 +172,7 @@ class _GalleryPostScreenState extends State<GalleryPostScreen> {
   @override
   void dispose() {
     _captionCtrl.dispose();
+    _priceCtrl.dispose();
     super.dispose();
   }
 
@@ -315,6 +323,30 @@ class _GalleryPostScreenState extends State<GalleryPostScreen> {
                     );
                   }),
 
+                  heightBox10,
+                  StraightLiner(height: 0.5),
+                  heightBox10,
+
+                  // Price field (optional)
+                  CustomTextField(
+                    controller: _priceCtrl,
+                    keyboardType: TextInputType.numberWithOptions(decimal: true),
+                    hintText: 'Price (Optional - for services)',
+                    hintStyle: TextStyle(
+                      fontSize: 14.sp,
+                      color: const Color(0xff8C8C8C),
+                    ),
+                    prefixIcon: Padding(
+                      padding: EdgeInsets.symmetric(horizontal: 12.w, vertical: 12.h),
+                      child: Text(
+                        '₦',
+                        style: TextStyle(
+                          fontSize: 14.sp,
+                          color: Colors.white,
+                        ),
+                      ),
+                    ),
+                  ),
                   heightBox10,
                   StraightLiner(height: 0.5),
                   heightBox10,
