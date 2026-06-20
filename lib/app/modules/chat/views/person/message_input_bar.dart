@@ -7,6 +7,8 @@ import 'package:wisper/gen/assets.gen.dart';
 class MessageInputBar extends StatelessWidget {
   final TextEditingController controller;
   final VoidCallback onSend;
+  final String chatId;
+  final String receiverId;
 
   final RxBool isSendEnabled = false.obs;
 
@@ -14,6 +16,8 @@ class MessageInputBar extends StatelessWidget {
     super.key,
     required this.controller,
     required this.onSend,
+    required this.chatId,
+    required this.receiverId,
   });
 
   @override
@@ -34,6 +38,8 @@ class MessageInputBar extends StatelessWidget {
                   child: ChattingFieldWidget(
                     controller: controller,
                     isSendEnabled: isSendEnabled,
+                    chatId: chatId,
+                    receiverId: receiverId,
                   ),
                 ),
                 const SizedBox(width: 8),

@@ -1,11 +1,11 @@
 import 'dart:convert';
 import 'package:get/get.dart';
+import 'package:wisper/app/core/others/get_storage.dart';
 import 'package:wisper/app/modules/chat/model/offer_model.dart';
-import 'package:wisper/app/modules/settings/controller/user_controller.dart';
 import 'package:wisper/app/urls.dart';
 
 class OfferService extends GetxService {
-  final UserController _userController = Get.find<UserController>();
+  String? get _token => StorageUtil.getData(StorageUtil.userAccessToken);
 
   // Create a new offer
   Future<OfferModel> createOffer({
@@ -17,7 +17,7 @@ class OfferService extends GetxService {
   }) async {
     try {
       final response = await GetConnect().post(
-        '${URLs.baseURL}/offers',
+        '${Urls.baseUrl}/offers',
         {
           'receiverId': receiverId,
           'chatId': chatId,
@@ -26,7 +26,7 @@ class OfferService extends GetxService {
           'duration': duration,
         },
         headers: {
-          'Authorization': 'Bearer ${_userController.token.value}',
+          'Authorization': 'Bearer $_token',
           'Content-Type': 'application/json',
         },
       );
@@ -45,9 +45,9 @@ class OfferService extends GetxService {
   Future<List<OfferModel>> getOffersByChatId(String chatId) async {
     try {
       final response = await GetConnect().get(
-        '${URLs.baseURL}/offers/chat/$chatId',
+        '${Urls.baseUrl}/offers/chat/$chatId',
         headers: {
-          'Authorization': 'Bearer ${_userController.token.value}',
+          'Authorization': 'Bearer $_token',
         },
       );
 
@@ -66,9 +66,9 @@ class OfferService extends GetxService {
   Future<OfferModel> getOfferById(String id) async {
     try {
       final response = await GetConnect().get(
-        '${URLs.baseURL}/offers/$id',
+        '${Urls.baseUrl}/offers/$id',
         headers: {
-          'Authorization': 'Bearer ${_userController.token.value}',
+          'Authorization': 'Bearer $_token',
         },
       );
 
@@ -86,10 +86,10 @@ class OfferService extends GetxService {
   Future<OfferModel> acceptOffer(String id) async {
     try {
       final response = await GetConnect().patch(
-        '${URLs.baseURL}/offers/$id/accept',
+        '${Urls.baseUrl}/offers/$id/accept',
         {},
         headers: {
-          'Authorization': 'Bearer ${_userController.token.value}',
+          'Authorization': 'Bearer $_token',
           'Content-Type': 'application/json',
         },
       );
@@ -108,10 +108,10 @@ class OfferService extends GetxService {
   Future<OfferModel> declineOffer(String id) async {
     try {
       final response = await GetConnect().patch(
-        '${URLs.baseURL}/offers/$id/decline',
+        '${Urls.baseUrl}/offers/$id/decline',
         {},
         headers: {
-          'Authorization': 'Bearer ${_userController.token.value}',
+          'Authorization': 'Bearer $_token',
           'Content-Type': 'application/json',
         },
       );
@@ -130,10 +130,10 @@ class OfferService extends GetxService {
   Future<OfferModel> payOffer(String id) async {
     try {
       final response = await GetConnect().post(
-        '${URLs.baseURL}/offers/$id/pay',
+        '${Urls.baseUrl}/offers/$id/pay',
         {},
         headers: {
-          'Authorization': 'Bearer ${_userController.token.value}',
+          'Authorization': 'Bearer $_token',
           'Content-Type': 'application/json',
         },
       );

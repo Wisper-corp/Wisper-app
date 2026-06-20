@@ -114,6 +114,8 @@ class _ClassChatScreenState extends State<ClassChatScreen> {
 
           MessageInputBar(
             controller: ctrl.textController,
+            chatId: widget.chatId ?? '',
+            receiverId: '', // Group/class chats don't have a single receiver
             onSend: () => ctrl.sendMessage(widget.chatId ?? ''),
           ),
         ],

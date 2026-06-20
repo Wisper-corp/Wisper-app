@@ -441,6 +441,8 @@ class _ChatScreenState extends State<ChatScreen> {
 
           MessageInputBar(
             controller: ctrl.textController,
+            chatId: widget.chatId ?? '',
+            receiverId: widget.receiverId ?? '',
             onSend: () {
               ctrl.sendMessage(widget.chatId ?? '');
               // Auto scroll after sending message
