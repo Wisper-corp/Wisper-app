@@ -102,7 +102,9 @@ class GoogleSignUpAuthController extends GetxController {
         Map<String, dynamic> decodedToken = JwtDecoder.decode(token);
         print(decodedToken);
         var role = decodedToken['role'];
+        var userId = decodedToken['id'];
         StorageUtil.saveData(StorageUtil.userRole, role);
+        StorageUtil.saveData(StorageUtil.userId, userId ?? '');
         StorageUtil.saveData(
           StorageUtil.userAccessToken,
           response.responseData['data']['accessToken'],
