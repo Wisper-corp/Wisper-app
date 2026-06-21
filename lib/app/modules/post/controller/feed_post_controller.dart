@@ -105,10 +105,26 @@ class AllFeedPostController extends GetxController {
   }
 
   void resetPagination() {
-    page = 0; // Reset to 0 so first call uses page 1
+    page = 0;
     lastPage = null;
     _allPostList.clear();
     print('Pagination reset, fetching with categoryId: $_selectedCategoryId');
     getAllPost(categoryId: _selectedCategoryId.value);
+  }
+
+  // Track which posts have already been viewed this session to avoid duplicate calls
+  final Set<String> _viewedPostIds = {};
+
+  Future<void> incrementView(String postId) async {
+    if (postId.isEmpty || _viewedPostIds.contains(postId)) return;
+    _viewedPostIds.add(postId);
+    try {
+      await networkCaller.patchRequest(
+        Urls.postViewUrl(postId),
+        accessToken: StorageUtil.getData(StorageUtil.userAccessToken),
+      );
+    } catch (_) {
+      // Silently fail - view count is non-critical
+    }
   }
 }

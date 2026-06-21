@@ -39,6 +39,16 @@ class PostCard extends StatelessWidget {
     this.isPerson = true,
   });
 
+  String _formatViews(String? views) {
+    final count = int.tryParse(views ?? '0') ?? 0;
+    if (count >= 1000000) {
+      return '${(count / 1000000).toStringAsFixed(1)}M Views';
+    } else if (count >= 1000) {
+      return '${(count / 1000).toStringAsFixed(1)}K Views';
+    }
+    return '$count Views';
+  }
+
   @override
   Widget build(BuildContext context) {
     print('Post Images: $postImage');
@@ -137,16 +147,24 @@ class PostCard extends StatelessWidget {
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  GestureDetector(
-                    onTap: onTapComment,
-                    child: Text(
-                      'Comments',
-                      style: TextStyle(
-                        fontWeight: FontWeight.w400,
-                        fontSize: 10,
+                  // Views count with eye icon (like "105K Views")
+                  Row(
+                    children: [
+                      Icon(
+                        Icons.remove_red_eye_outlined,
+                        size: 12,
                         color: LightThemeColors.themeGreyColor,
                       ),
-                    ),
+                      const SizedBox(width: 4),
+                      Text(
+                        _formatViews(views),
+                        style: TextStyle(
+                          fontWeight: FontWeight.w400,
+                          fontSize: 10,
+                          color: LightThemeColors.themeGreyColor,
+                        ),
+                      ),
+                    ],
                   ),
                   Text(
                     postTime ?? '',

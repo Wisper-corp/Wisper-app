@@ -9,7 +9,7 @@ import 'package:wisper/app/modules/post/widgets/post_card.dart';
 
 class PostSection extends StatefulWidget {
   const PostSection({super.key});
-  
+
   @override
   State<PostSection> createState() => _PostSectionState();
 }
@@ -20,7 +20,6 @@ class _PostSectionState extends State<PostSection> {
   @override
   void initState() {
     super.initState();
-    
     WidgetsBinding.instance.addPostFrameCallback((_) {
       controller.getAllPost();
     });
@@ -29,14 +28,11 @@ class _PostSectionState extends State<PostSection> {
   @override
   Widget build(BuildContext context) {
     return Expanded(
-      // Expanded Obx এর বাইরে → সমস্যা সমাধান!
       child: Obx(() {
-        // লোডিং স্টেট
         if (controller.inProgress) {
           return const Center(child: PostShimmerEffectWidget());
         }
 
-        // খালি লিস্ট
         if (controller.allPostData.isEmpty) {
           return const Center(
             child: Text(
@@ -46,7 +42,6 @@ class _PostSectionState extends State<PostSection> {
           );
         }
 
-        // মূল পোস্ট লিস্ট
         return ListView.builder(
           padding: EdgeInsets.zero,
           itemCount: controller.allPostData.length,
@@ -56,41 +51,78 @@ class _PostSectionState extends State<PostSection> {
               post.createdAt!,
             ).getRelativeTimeFormat();
 
-            return Padding(
-              padding: const EdgeInsets.symmetric(vertical: 8.0),
-              child: PostCard(
-                isPerson: post.author?.person != null,
-                onTapComment: () {
-                  Get.to(CommentScreen(postId: post.id ?? ''));
-                },
-                isComment: false,
-                ownerId: post.author?.id ?? '', 
-                trailing: const Text(
-                  'Sponsor',
-                  style: TextStyle(
-                    fontWeight: FontWeight.w400,
-                    fontSize: 12,
-                    color: LightThemeColors.themeGreyColor,
-                  ),
-                ),
-                ownerName: post.author?.person != null
-                    ? post.author?.person?.name ?? 'Unknown User'
-                    : post.author?.business?.name ?? 'Unknown Business',
-                ownerImage: post.author?.person != null
-                    ? post.author?.person?.image ?? ''
-                    : post.author?.business?.image ?? '',
-                ownerProfession: post.author?.person != null
-                    ? post.author?.person?.title ?? 'Professional'
-                    : post.author?.business?.name ?? 'Business',
-                postImage: post.images.isNotEmpty ? post.images : [],
-                postDescription: post.caption ?? '',
-                postTime: formattedTime,
-                views: post.views.toString(),
-              ),
+            return _PostItem(
+              post: post,
+              formattedTime: formattedTime,
+              controller: controller,
             );
           },
         );
       }),
+    );
+  }
+}
+
+/// Stateful wrapper so we can increment the view once when the item first appears
+class _PostItem extends StatefulWidget {
+  final dynamic post;
+  final String formattedTime;
+  final AllFeedPostController controller;
+
+  const _PostItem({
+    required this.post,
+    required this.formattedTime,
+    required this.controller,
+  });
+
+  @override
+  State<_PostItem> createState() => _PostItemState();
+}
+
+class _PostItemState extends State<_PostItem> {
+  @override
+  void initState() {
+    super.initState();
+    // Increment view once when the post widget is first built (visible in list)
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      widget.controller.incrementView(widget.post.id ?? '');
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final post = widget.post;
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 8.0),
+      child: PostCard(
+        isPerson: post.author?.person != null,
+        onTapComment: () {
+          Get.to(CommentScreen(postId: post.id ?? ''));
+        },
+        isComment: false,
+        ownerId: post.author?.id ?? '',
+        trailing: const Text(
+          'Sponsor',
+          style: TextStyle(
+            fontWeight: FontWeight.w400,
+            fontSize: 12,
+            color: LightThemeColors.themeGreyColor,
+          ),
+        ),
+        ownerName: post.author?.person != null
+            ? post.author?.person?.name ?? 'Unknown User'
+            : post.author?.business?.name ?? 'Unknown Business',
+        ownerImage: post.author?.person != null
+            ? post.author?.person?.image ?? ''
+            : post.author?.business?.image ?? '',
+        ownerProfession: post.author?.person != null
+            ? post.author?.person?.title ?? 'Professional'
+            : post.author?.business?.name ?? 'Business',
+        postImage: post.images.isNotEmpty ? post.images : [],
+        postDescription: post.caption ?? '',
+        postTime: widget.formattedTime,
+        views: post.views.toString(),
+      ),
     );
   }
 }

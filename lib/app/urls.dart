@@ -103,6 +103,10 @@ class Urls {
     return '$_baseUrl/posts/$id';
   }
 
+  static String postViewUrl(String id) {
+    return '$_baseUrl/posts/view/$id';
+  }
+
   static String resumeById(String id) {
     return '$_baseUrl/resumes/$id';
   }
