@@ -28,7 +28,7 @@ class _WalletScreenState extends State<WalletScreen> {
   final KycController _kycController = Get.put(KycController());
   final MonnifyController _monnifyController = Get.put(MonnifyController());
   
-  int isSelected = 0;
+  int isSelected = 1;
 
   @override
   void initState() {
@@ -73,26 +73,40 @@ class _WalletScreenState extends State<WalletScreen> {
                             crossAxisAlignment: CrossAxisAlignment.center,
                             mainAxisAlignment: MainAxisAlignment.spaceBetween,
                             children: [
-                              Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                mainAxisAlignment: MainAxisAlignment.end,
-                                mainAxisSize: MainAxisSize.min,
+                              Row(
                                 children: [
-                                  Text(
-                                    'Total Balance',
-                                    style: TextStyle(
-                                      fontSize: 20.sp,
-                                      fontWeight: FontWeight.w800,
+                                  // Back button
+                                  GestureDetector(
+                                    onTap: () => Get.back(),
+                                    child: const Icon(
+                                      Icons.arrow_back_ios,
                                       color: Colors.white,
+                                      size: 20,
                                     ),
                                   ),
-                                  Text(
-                                    '₦${_monnifyController.walletBalance.toStringAsFixed(2)}',
-                                    style: TextStyle(
-                                      fontSize: 26.sp,
-                                      fontWeight: FontWeight.w800,
-                                      color: Colors.white,
-                                    ),
+                                  SizedBox(width: 12.w),
+                                  Column(
+                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                    mainAxisAlignment: MainAxisAlignment.end,
+                                    mainAxisSize: MainAxisSize.min,
+                                    children: [
+                                      Text(
+                                        'Total Balance',
+                                        style: TextStyle(
+                                          fontSize: 20.sp,
+                                          fontWeight: FontWeight.w800,
+                                          color: Colors.white,
+                                        ),
+                                      ),
+                                      Text(
+                                        '₦${_monnifyController.walletBalance.toStringAsFixed(2)}',
+                                        style: TextStyle(
+                                          fontSize: 26.sp,
+                                          fontWeight: FontWeight.w800,
+                                          color: Colors.white,
+                                        ),
+                                      ),
+                                    ],
                                   ),
                                 ],
                               ),
@@ -125,57 +139,105 @@ class _WalletScreenState extends State<WalletScreen> {
 
               heightBox20,
               heightBox20,
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceAround,
-                children: [
-                  WalletOption(
-                    bgColor: isSelected == 0
-                        ? LightThemeColors.blueColor
-                        : Colors.transparent,
-                    borderColor: isSelected == 0
-                        ? Colors.transparent
-                        : Colors.white.withOpacity(0.20),
-                    title: 'Transactions',
-                    onTap: () {
-                      setState(() {
-                        isSelected = 0;
-                      });
-                    },
-                  ),
-                  WalletOption(
-                    bgColor: isSelected == 1
-                        ? LightThemeColors.blueColor
-                        : Colors.transparent,
-                    borderColor: isSelected == 1
-                        ? Colors.transparent
-                        : Colors.white.withOpacity(0.20),
-                    title: 'Add Fund',
-                    onTap: () {
-                      setState(() {
-                        isSelected = 1;
-                      });
-                    },
-                  ),
-                  WalletOption(
-                    bgColor: isSelected == 2
-                        ? LightThemeColors.blueColor
-                        : Colors.transparent,
-                    borderColor: isSelected == 2
-                        ? Colors.transparent
-                        : Colors.white.withOpacity(0.20),
-                    title: 'Withdraw',
-                    onTap: () {
-                      // Check KYC for withdrawal only
-                      if (!_kycController.isVerified) {
-                        _showKycRequiredDialog();
-                      } else {
-                        setState(() {
-                          isSelected = 2;
-                        });
-                      }
-                    },
-                  ),
-                ],
+              Padding(
+                padding: EdgeInsets.symmetric(horizontal: 16.w),
+                child: Row(
+                  children: [
+                    // Add Fund button
+                    Expanded(
+                      child: GestureDetector(
+                        onTap: () {
+                          setState(() {
+                            isSelected = 1;
+                          });
+                        },
+                        child: Container(
+                          height: 52.h,
+                          decoration: BoxDecoration(
+                            color: isSelected == 1
+                                ? LightThemeColors.blueColor
+                                : Colors.transparent,
+                            borderRadius: BorderRadius.circular(30.r),
+                            border: Border.all(
+                              color: isSelected == 1
+                                  ? Colors.transparent
+                                  : Colors.white.withOpacity(0.30),
+                              width: 1.5,
+                            ),
+                          ),
+                          child: Row(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              Icon(
+                                Icons.add_circle_outline,
+                                color: Colors.white,
+                                size: 18.sp,
+                              ),
+                              SizedBox(width: 6.w),
+                              Text(
+                                'Add Fund',
+                                style: TextStyle(
+                                  color: Colors.white,
+                                  fontSize: 15.sp,
+                                  fontWeight: FontWeight.w600,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
+                    ),
+                    SizedBox(width: 12.w),
+                    // Withdraw button
+                    Expanded(
+                      child: GestureDetector(
+                        onTap: () {
+                          if (!_kycController.isVerified) {
+                            _showKycRequiredDialog();
+                          } else {
+                            setState(() {
+                              isSelected = 2;
+                            });
+                          }
+                        },
+                        child: Container(
+                          height: 52.h,
+                          decoration: BoxDecoration(
+                            color: isSelected == 2
+                                ? LightThemeColors.blueColor
+                                : Colors.transparent,
+                            borderRadius: BorderRadius.circular(30.r),
+                            border: Border.all(
+                              color: isSelected == 2
+                                  ? Colors.transparent
+                                  : Colors.white.withOpacity(0.30),
+                              width: 1.5,
+                            ),
+                          ),
+                          child: Row(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              Icon(
+                                Icons.arrow_upward_rounded,
+                                color: Colors.white,
+                                size: 18.sp,
+                              ),
+                              SizedBox(width: 6.w),
+                              Text(
+                                'Withdraw',
+                                style: TextStyle(
+                                  color: Colors.white,
+                                  fontSize: 15.sp,
+                                  fontWeight: FontWeight.w600,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
               ),
 
               heightBox10,
@@ -183,7 +245,6 @@ class _WalletScreenState extends State<WalletScreen> {
                 child: SingleChildScrollView(
                   child: Column(
                     children: [
-                      if (isSelected == 0) TransactionSection(allTransectionModel: wallletController.allTransectionData),
                       if (isSelected == 1) _buildFundWalletSection(),
                       if (isSelected == 2) _buildWithdrawSection(),
                     ],
