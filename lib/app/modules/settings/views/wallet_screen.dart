@@ -36,6 +36,8 @@ class _WalletScreenState extends State<WalletScreen> {
     profileController.getMyProfile();
     businessController.getMyProfile();
     _kycController.getKycStatus();
+    // Always fetch latest balance when screen opens
+    _monnifyController.getWalletBalance();
     super.initState();
   }
 

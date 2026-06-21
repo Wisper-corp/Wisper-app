@@ -68,36 +68,39 @@ class MonnifyController extends GetxController {
         },
       );
 
-      // Launch Monnify payment
+      // Launch Monnify payment SDK
       final response = await _monnify?.initializePayment(transaction: transaction);
-
-      print('Monnify response status: ${response?.transactionStatus}');
-
-      // Always refresh balance after payment dialog closes - 
-      // webhook may have already credited the wallet regardless of SDK status
-      await Future.delayed(const Duration(seconds: 2));
-      await getWalletBalance();
-
       final status = response?.transactionStatus?.toUpperCase() ?? '';
-      final isPaid = status == 'PAID' || status == 'SUCCESS' || status == 'SUCCESSFUL';
+      print('Monnify response status: $status');
 
-      if (isPaid) {
-        _inProgress.value = false;
-        return true;
-      }
-
-      // Even if status is not PAID, wallet may have been credited via webhook
-      // Return true if balance increased
       _inProgress.value = false;
+
+      // Poll balance up to 5 times with 2s intervals to catch webhook credit
+      await _pollBalanceUntilUpdated();
+
+      final isPaid = status == 'PAID' || status == 'SUCCESS' || status == 'SUCCESSFUL';
       return isPaid;
 
     } catch (e) {
       print('Payment error: $e');
-      // Still refresh balance - webhook may have fired before the error
-      await getWalletBalance();
-      _errorMessage.value = 'Payment error: ${e.toString()}';
       _inProgress.value = false;
+      // Still refresh - webhook may have fired
+      await _pollBalanceUntilUpdated();
+      _errorMessage.value = 'Payment error: ${e.toString()}';
       return false;
+    }
+  }
+
+  /// Poll balance up to 5 times until it changes (webhook may take a moment)
+  Future<void> _pollBalanceUntilUpdated() async {
+    final double balanceBefore = _walletBalance.value;
+    for (int i = 0; i < 5; i++) {
+      await Future.delayed(const Duration(seconds: 2));
+      await getWalletBalance();
+      if (_walletBalance.value > balanceBefore) {
+        print('Balance updated: ${_walletBalance.value}');
+        break;
+      }
     }
   }
 
@@ -133,9 +136,17 @@ class MonnifyController extends GetxController {
             accessToken: StorageUtil.getData(StorageUtil.userAccessToken),
           );
 
+      print('Wallet balance response: ${response.responseData}');
+
       if (response.isSuccess && response.responseData != null) {
-        _walletBalance.value = (response.responseData['balance'] ?? 0.0).toDouble();
+        final data = response.responseData;
+        // Handle both { balance: x } and { data: { balance: x } }
+        final balance = data['balance'] ?? data['data']?['balance'] ?? 0.0;
+        _walletBalance.value = (balance is int)
+            ? balance.toDouble()
+            : (balance as num).toDouble();
         _errorMessage.value = '';
+        print('Wallet balance set to: ${_walletBalance.value}');
       }
     } catch (e) {
       print('Balance fetch error: $e');
