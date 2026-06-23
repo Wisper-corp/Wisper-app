@@ -2,14 +2,18 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:get/get.dart';
+import 'package:wisper/app/core/others/get_storage.dart';
 import 'package:wisper/app/core/utils/date_formatter.dart';
 import 'package:wisper/app/core/widgets/shimmer/chat_shimmer.dart';
 import 'package:wisper/app/modules/chat/controller/message_controller.dart';
+import 'package:wisper/app/modules/chat/controller/offer_service.dart';
 import 'package:wisper/app/modules/chat/controller/seen_message_controller.dart';
 import 'package:wisper/app/modules/chat/model/message_keys.dart';
+import 'package:wisper/app/modules/chat/model/offer_model.dart';
 import 'package:wisper/app/modules/chat/views/person/message_input_bar.dart';
 import 'package:wisper/app/modules/chat/widgets/chatting_header.dart';
 import 'package:wisper/app/modules/chat/widgets/message_bubble.dart';
+import 'package:wisper/app/modules/chat/widgets/offer_card.dart';
 
 class ChatScreen extends StatefulWidget {
   final String? receiverId;
@@ -36,7 +40,8 @@ class ChatScreen extends StatefulWidget {
 class _ChatScreenState extends State<ChatScreen> {
   final MessageController ctrl = Get.put(MessageController());
   final ScrollController _scrollController = ScrollController();
-  final SeenMessageController seenMessageController = SeenMessageController(); 
+  final SeenMessageController seenMessageController = SeenMessageController();
+  late final OfferService _offerService;
   bool _showNewMessageIndicator = false;
   bool _isAtBottom = true;
   int _previousMessageCount = 0;
@@ -48,17 +53,34 @@ class _ChatScreenState extends State<ChatScreen> {
       'Chat ID: ${widget.chatId} Receiver ID: ${widget.receiverId} Receiver Name: ${widget.receiverName} Receiver Image: ${widget.receiverImage}',
     );
 
+    try {
+      _offerService = Get.find<OfferService>();
+    } catch (_) {
+      _offerService = Get.put(OfferService());
+    }
+
     WidgetsBinding.instance.addPostFrameCallback((_) {
       seenMessageController.seenMessage(widget.chatId!);
       ctrl.setupChat(chatId: widget.chatId);
-      // Scroll to bottom on initial load
+      _loadOffers();
       _scrollToBottom(animated: false);
     });
 
-    // Scroll controller listener
     _scrollController.addListener(_scrollListener);
-
     super.initState();
+  }
+
+  /// Load all offers for this chat and inject them as messages
+  Future<void> _loadOffers() async {
+    if (widget.chatId == null || widget.chatId!.isEmpty) return;
+    try {
+      final offers = await _offerService.getOffersByChatId(widget.chatId!);
+      for (final offer in offers) {
+        ctrl.injectOfferMessage(offer);
+      }
+    } catch (e) {
+      print('Failed to load offers: $e');
+    }
   }
 
   void _scrollListener() {
@@ -224,6 +246,27 @@ class _ChatScreenState extends State<ChatScreen> {
     );
   }
 
+  /// Builds a Fiverr-style offer bubble aligned to sender side
+  Widget _buildOfferBubble(Map<String, dynamic> msg, bool isMe) {
+    final offer = msg[SocketMessageKeys.offerData];
+    if (offer == null) return const SizedBox.shrink();
+    final currentUserId = StorageUtil.getData(StorageUtil.userId) ?? '';
+    return Align(
+      alignment: isMe ? Alignment.centerRight : Alignment.centerLeft,
+      child: Container(
+        margin: EdgeInsets.symmetric(vertical: 4.h, horizontal: 8.w),
+        constraints: BoxConstraints(maxWidth: MediaQuery.of(context).size.width * 0.85),
+        child: OfferCard(
+          offer: offer,
+          currentUserId: currentUserId,
+          onOfferUpdated: (updatedOffer) {
+            ctrl.injectOfferMessage(updatedOffer);
+          },
+        ),
+      ),
+    );
+  }
+
   @override
   void dispose() {
     _scrollController.removeListener(_scrollListener);
@@ -342,8 +385,11 @@ class _ChatScreenState extends State<ChatScreen> {
                           if (showDateSeparator && _lastDateSeparator != null)
                             _buildDateSeparator(_lastDateSeparator!),
 
-                          // Animate new messages (if this is one of the recent messages)
-                          if (messageIndex <
+                          // ── OFFER MESSAGE ──────────────────────────────
+                          if (msg[SocketMessageKeys.fileType] == SocketMessageKeys.offerFileType)
+                            _buildOfferBubble(msg, isMe)
+                          // ── REGULAR MESSAGE ────────────────────────────
+                          else if (messageIndex <
                               (ctrl.messages.length - _previousMessageCount))
                             AnimatedMessageBubble(
                               message: msg,

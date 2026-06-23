@@ -12,7 +12,7 @@ class SocketMessageKeys {
   static const String createdAt = "createdAt";
   static const String fileType = "fileType";
 
-  
-
-  // যদি আরও key লাগে পরে যোগ করবেন
+  // Offer message type
+  static const String offerFileType = "OFFER";
+  static const String offerData = "offerData";
 }

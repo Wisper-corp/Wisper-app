@@ -219,4 +219,41 @@ class MessageController extends GetxController {
     textController.dispose();
     super.onClose();
   }
+
+  // ── Offer message helpers ────────────────────────────────────────────────
+
+  /// Convert an OfferModel into a fake message map so it appears in the chat list
+  Map<String, dynamic> offerToMessage(dynamic offer) {
+    return {
+      SocketMessageKeys.id: 'offer_${offer.id}',
+      SocketMessageKeys.text: '',
+      SocketMessageKeys.imageUrl: '',
+      SocketMessageKeys.fileType: SocketMessageKeys.offerFileType,
+      SocketMessageKeys.seen: true,
+      SocketMessageKeys.senderId: offer.senderId,
+      SocketMessageKeys.senderName: offer.senderName,
+      SocketMessageKeys.senderImage: offer.senderImage,
+      SocketMessageKeys.chat: offer.chatId,
+      SocketMessageKeys.createdAt: offer.createdAt.toIso8601String(),
+      SocketMessageKeys.offerData: offer,
+    };
+  }
+
+  /// Inject an offer as a message at the correct position in the list
+  void injectOfferMessage(dynamic offer) {
+    final msgId = 'offer_${offer.id}';
+    // Remove existing entry first (in case of update)
+    messages.removeWhere((m) => m[SocketMessageKeys.id] == msgId);
+    final offerMsg = offerToMessage(offer);
+    // Insert at correct time position
+    int insertIdx = messages.indexWhere((m) {
+      final msgTime = DateTime.tryParse(m[SocketMessageKeys.createdAt] ?? '') ?? DateTime(1970);
+      return msgTime.isBefore(offer.createdAt);
+    });
+    if (insertIdx == -1) {
+      messages.insert(0, offerMsg);
+    } else {
+      messages.insert(insertIdx, offerMsg);
+    }
+  }
 }

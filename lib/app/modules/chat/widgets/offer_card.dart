@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:wisper/app/modules/chat/controller/offer_service.dart';
 import 'package:wisper/app/modules/chat/model/offer_model.dart';
-import 'package:intl/intl.dart';
 
 class OfferCard extends StatefulWidget {
   final OfferModel offer;
@@ -21,381 +20,381 @@ class OfferCard extends StatefulWidget {
 }
 
 class _OfferCardState extends State<OfferCard> {
-  final OfferService _offerService = Get.find<OfferService>();
+  late OfferService _offerService;
   bool _isLoading = false;
 
   bool get _isSender => widget.offer.senderId == widget.currentUserId;
   bool get _isReceiver => widget.offer.receiverId == widget.currentUserId;
 
-  Future<void> _acceptOffer() async {
-    setState(() {
-      _isLoading = true;
-    });
-
+  @override
+  void initState() {
+    super.initState();
     try {
-      final updatedOffer = await _offerService.acceptOffer(widget.offer.id);
-      widget.onOfferUpdated(updatedOffer);
-      Get.snackbar(
-        'Success',
-        'Offer accepted. You can now proceed to payment.',
-        backgroundColor: Colors.green,
-        colorText: Colors.white,
-      );
+      _offerService = Get.find<OfferService>();
+    } catch (_) {
+      _offerService = Get.put(OfferService());
+    }
+  }
+
+  Future<void> _acceptOffer() async {
+    setState(() => _isLoading = true);
+    try {
+      final updated = await _offerService.acceptOffer(widget.offer.id);
+      widget.onOfferUpdated(updated);
+      Get.snackbar('Offer Accepted', 'You can now proceed to payment.',
+          backgroundColor: Colors.green,
+          colorText: Colors.white,
+          snackPosition: SnackPosition.BOTTOM);
     } catch (e) {
-      Get.snackbar(
-        'Error',
-        e.toString(),
-        backgroundColor: Colors.red,
-        colorText: Colors.white,
-      );
+      Get.snackbar('Error', 'Failed to accept offer',
+          backgroundColor: Colors.red,
+          colorText: Colors.white,
+          snackPosition: SnackPosition.BOTTOM);
     } finally {
-      setState(() {
-        _isLoading = false;
-      });
+      if (mounted) setState(() => _isLoading = false);
     }
   }
 
   Future<void> _declineOffer() async {
-    setState(() {
-      _isLoading = true;
-    });
-
+    setState(() => _isLoading = true);
     try {
-      final updatedOffer = await _offerService.declineOffer(widget.offer.id);
-      widget.onOfferUpdated(updatedOffer);
-      Get.snackbar(
-        'Success',
-        'Offer declined',
-        backgroundColor: Colors.orange,
-        colorText: Colors.white,
-      );
+      final updated = await _offerService.declineOffer(widget.offer.id);
+      widget.onOfferUpdated(updated);
+      Get.snackbar('Offer Declined', 'The offer has been declined.',
+          backgroundColor: Colors.orange,
+          colorText: Colors.white,
+          snackPosition: SnackPosition.BOTTOM);
     } catch (e) {
-      Get.snackbar(
-        'Error',
-        e.toString(),
-        backgroundColor: Colors.red,
-        colorText: Colors.white,
-      );
+      Get.snackbar('Error', 'Failed to decline offer',
+          backgroundColor: Colors.red,
+          colorText: Colors.white,
+          snackPosition: SnackPosition.BOTTOM);
     } finally {
-      setState(() {
-        _isLoading = false;
-      });
+      if (mounted) setState(() => _isLoading = false);
     }
   }
 
   Future<void> _payOffer() async {
-    // Show confirmation dialog
     final confirmed = await Get.dialog<bool>(
       AlertDialog(
         backgroundColor: const Color(0xff1C1C1E),
-        title: const Text(
-          'Confirm Payment',
-          style: TextStyle(color: Colors.white),
-        ),
+        title: const Text('Confirm Payment',
+            style: TextStyle(color: Colors.white)),
         content: Text(
-          'Are you sure you want to pay ₦${NumberFormat('#,##0.00').format(widget.offer.amount)} for this offer?',
+          'Pay ₦${widget.offer.amount.toStringAsFixed(0)} for this offer?',
           style: const TextStyle(color: Colors.white70),
         ),
         actions: [
           TextButton(
-            onPressed: () => Get.back(result: false),
-            child: const Text('Cancel', style: TextStyle(color: Colors.grey)),
-          ),
+              onPressed: () => Get.back(result: false),
+              child:
+                  const Text('Cancel', style: TextStyle(color: Colors.grey))),
           ElevatedButton(
-            onPressed: () => Get.back(result: true),
-            style: ElevatedButton.styleFrom(
-              backgroundColor: const Color(0xffFFD700),
-            ),
-            child: const Text(
-              'Pay',
-              style: TextStyle(color: Colors.black),
-            ),
-          ),
+              onPressed: () => Get.back(result: true),
+              style: ElevatedButton.styleFrom(backgroundColor: Colors.green),
+              child: const Text('Pay', style: TextStyle(color: Colors.white))),
         ],
       ),
     );
-
     if (confirmed != true) return;
 
-    setState(() {
-      _isLoading = true;
-    });
-
+    setState(() => _isLoading = true);
     try {
-      final updatedOffer = await _offerService.payOffer(widget.offer.id);
-      widget.onOfferUpdated(updatedOffer);
-      Get.snackbar(
-        'Success',
-        'Payment successful!',
-        backgroundColor: Colors.green,
-        colorText: Colors.white,
-      );
+      final updated = await _offerService.payOffer(widget.offer.id);
+      widget.onOfferUpdated(updated);
+      Get.snackbar('Payment Successful', '₦${widget.offer.amount.toStringAsFixed(0)} paid!',
+          backgroundColor: Colors.green,
+          colorText: Colors.white,
+          snackPosition: SnackPosition.BOTTOM);
     } catch (e) {
-      Get.snackbar(
-        'Error',
-        e.toString(),
-        backgroundColor: Colors.red,
-        colorText: Colors.white,
-      );
+      Get.snackbar('Error', 'Payment failed',
+          backgroundColor: Colors.red,
+          colorText: Colors.white,
+          snackPosition: SnackPosition.BOTTOM);
     } finally {
-      setState(() {
-        _isLoading = false;
-      });
-    }
-  }
-
-  Color _getStatusColor() {
-    switch (widget.offer.status) {
-      case OfferStatus.PENDING:
-        return const Color(0xffFFD700);
-      case OfferStatus.ACCEPTED:
-        return Colors.green;
-      case OfferStatus.DECLINED:
-        return Colors.red;
-      case OfferStatus.PAID:
-        return Colors.blue;
-    }
-  }
-
-  String _getStatusText() {
-    switch (widget.offer.status) {
-      case OfferStatus.PENDING:
-        return 'Pending';
-      case OfferStatus.ACCEPTED:
-        return 'Accepted';
-      case OfferStatus.DECLINED:
-        return 'Declined';
-      case OfferStatus.PAID:
-        return 'Paid';
+      if (mounted) setState(() => _isLoading = false);
     }
   }
 
   @override
   Widget build(BuildContext context) {
+    final isPending = widget.offer.status == OfferStatus.PENDING;
+    final isAccepted = widget.offer.status == OfferStatus.ACCEPTED;
+    final isDeclined = widget.offer.status == OfferStatus.DECLINED;
+    final isPaid = widget.offer.status == OfferStatus.PAID;
+
     return Container(
-      margin: const EdgeInsets.symmetric(vertical: 8, horizontal: 12),
-      padding: const EdgeInsets.all(16),
+      width: double.infinity,
       decoration: BoxDecoration(
-        color: const Color(0xff2C2C2E),
-        borderRadius: BorderRadius.circular(12),
+        color: const Color(0xff1E1E1E),
+        borderRadius: BorderRadius.circular(16),
         border: Border.all(
-          color: _getStatusColor(),
-          width: 2,
+          color: isDeclined
+              ? Colors.red.withOpacity(0.4)
+              : isPaid
+                  ? Colors.blue.withOpacity(0.4)
+                  : isAccepted
+                      ? Colors.green.withOpacity(0.4)
+                      : Colors.white.withOpacity(0.12),
+          width: 1,
         ),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // Header
-          Row(
-            children: [
-              Icon(
-                Icons.local_offer_rounded,
-                color: _getStatusColor(),
-                size: 24,
-              ),
-              const SizedBox(width: 8),
-              const Text(
-                'Offer',
-                style: TextStyle(
-                  color: Colors.white,
-                  fontSize: 18,
-                  fontWeight: FontWeight.bold,
-                ),
-              ),
-              const Spacer(),
-              Container(
-                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
-                decoration: BoxDecoration(
-                  color: _getStatusColor().withOpacity(0.2),
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                child: Text(
-                  _getStatusText(),
-                  style: TextStyle(
-                    color: _getStatusColor(),
-                    fontSize: 12,
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 12),
-          
-          // Amount
-          Row(
-            children: [
-              const Text(
-                'Amount:',
-                style: TextStyle(color: Colors.grey, fontSize: 14),
-              ),
-              const SizedBox(width: 8),
-              Text(
-                '₦${NumberFormat('#,##0.00').format(widget.offer.amount)}',
-                style: const TextStyle(
-                  color: Colors.white,
-                  fontSize: 24,
-                  fontWeight: FontWeight.bold,
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 8),
-          
-          // Description
-          Text(
-            widget.offer.description,
-            style: const TextStyle(
-              color: Colors.white70,
-              fontSize: 14,
+          // ── Header ──────────────────────────────────────────────
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+            decoration: BoxDecoration(
+              color: const Color(0xff2A2A2A),
+              borderRadius: const BorderRadius.vertical(top: Radius.circular(16)),
             ),
-          ),
-          const SizedBox(height: 8),
-          
-          // Duration
-          Row(
-            children: [
-              const Icon(
-                Icons.access_time,
-                color: Colors.grey,
-                size: 16,
-              ),
-              const SizedBox(width: 4),
-              Text(
-                'Delivery Time: ${widget.offer.duration}',
-                style: const TextStyle(
-                  color: Colors.grey,
-                  fontSize: 13,
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 12),
-          
-          // Sender/Receiver info
-          Text(
-            _isSender
-                ? 'To: ${widget.offer.receiverName}'
-                : 'From: ${widget.offer.senderName}',
-            style: const TextStyle(
-              color: Colors.grey,
-              fontSize: 12,
-            ),
-          ),
-          const SizedBox(height: 12),
-          
-          // Action buttons
-          if (_isReceiver && widget.offer.status == OfferStatus.PENDING)
-            Row(
+            child: Row(
               children: [
-                Expanded(
-                  child: ElevatedButton(
-                    onPressed: _isLoading ? null : _declineOffer,
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: Colors.red,
-                      padding: const EdgeInsets.symmetric(vertical: 12),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(8),
-                      ),
-                    ),
-                    child: _isLoading
-                        ? const SizedBox(
-                            width: 20,
-                            height: 20,
-                            child: CircularProgressIndicator(
-                              strokeWidth: 2,
-                              valueColor:
-                                  AlwaysStoppedAnimation<Color>(Colors.white),
-                            ),
-                          )
-                        : const Text(
-                            'Decline',
-                            style: TextStyle(
-                              color: Colors.white,
-                              fontWeight: FontWeight.bold,
-                            ),
-                          ),
+                const Icon(Icons.local_offer_rounded,
+                    color: Color(0xff1877F2), size: 18),
+                const SizedBox(width: 8),
+                const Text(
+                  'Service Offer',
+                  style: TextStyle(
+                    color: Colors.white,
+                    fontWeight: FontWeight.w700,
+                    fontSize: 14,
                   ),
                 ),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: ElevatedButton(
-                    onPressed: _isLoading ? null : _acceptOffer,
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: Colors.green,
-                      padding: const EdgeInsets.symmetric(vertical: 12),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(8),
-                      ),
-                    ),
-                    child: _isLoading
-                        ? const SizedBox(
-                            width: 20,
-                            height: 20,
-                            child: CircularProgressIndicator(
-                              strokeWidth: 2,
-                              valueColor:
-                                  AlwaysStoppedAnimation<Color>(Colors.white),
-                            ),
-                          )
-                        : const Text(
-                            'Accept',
-                            style: TextStyle(
-                              color: Colors.white,
-                              fontWeight: FontWeight.bold,
-                            ),
-                          ),
-                  ),
-                ),
+                const Spacer(),
+                _buildStatusBadge(widget.offer.status),
               ],
             ),
-          
-          // Pay button
-          if (_isReceiver && widget.offer.status == OfferStatus.ACCEPTED)
-            SizedBox(
-              width: double.infinity,
-              child: ElevatedButton(
-                onPressed: _isLoading ? null : _payOffer,
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: const Color(0xffFFD700),
-                  padding: const EdgeInsets.symmetric(vertical: 12),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(8),
+          ),
+
+          // ── Body ────────────────────────────────────────────────
+          Padding(
+            padding: const EdgeInsets.all(16),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                // Description
+                Text(
+                  widget.offer.description,
+                  style: const TextStyle(
+                    color: Colors.white,
+                    fontSize: 15,
+                    fontWeight: FontWeight.w500,
+                    height: 1.4,
                   ),
                 ),
-                child: _isLoading
-                    ? const SizedBox(
-                        width: 20,
-                        height: 20,
-                        child: CircularProgressIndicator(
-                          strokeWidth: 2,
-                          valueColor:
-                              AlwaysStoppedAnimation<Color>(Colors.black),
-                        ),
-                      )
-                    : const Text(
-                        'Pay Now',
-                        style: TextStyle(
-                          color: Colors.black,
-                          fontWeight: FontWeight.bold,
-                          fontSize: 16,
-                        ),
+                const SizedBox(height: 16),
+
+                // Price
+                Row(
+                  children: [
+                    Container(
+                      width: 32,
+                      height: 32,
+                      decoration: BoxDecoration(
+                        color: const Color(0xff2A2A2A),
+                        shape: BoxShape.circle,
                       ),
-              ),
-            ),
-          
-          // Time
-          const SizedBox(height: 8),
-          Text(
-            DateFormat('MMM dd, yyyy - HH:mm').format(widget.offer.createdAt),
-            style: const TextStyle(
-              color: Colors.grey,
-              fontSize: 12,
+                      child: const Center(
+                        child: Text('₦',
+                            style: TextStyle(
+                                color: Colors.white70,
+                                fontSize: 14,
+                                fontWeight: FontWeight.bold)),
+                      ),
+                    ),
+                    const SizedBox(width: 12),
+                    Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        const Text('Offer price',
+                            style: TextStyle(color: Colors.grey, fontSize: 11)),
+                        Text(
+                          '₦${widget.offer.amount.toStringAsFixed(0)}',
+                          style: const TextStyle(
+                            color: Colors.white,
+                            fontSize: 18,
+                            fontWeight: FontWeight.w700,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 12),
+
+                // Delivery time
+                Row(
+                  children: [
+                    Container(
+                      width: 32,
+                      height: 32,
+                      decoration: BoxDecoration(
+                        color: const Color(0xff2A2A2A),
+                        shape: BoxShape.circle,
+                      ),
+                      child: const Icon(Icons.access_time_rounded,
+                          color: Colors.white70, size: 16),
+                    ),
+                    const SizedBox(width: 12),
+                    Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        const Text('Delivery time',
+                            style: TextStyle(color: Colors.grey, fontSize: 11)),
+                        Text(
+                          widget.offer.duration,
+                          style: const TextStyle(
+                            color: Colors.white,
+                            fontSize: 14,
+                            fontWeight: FontWeight.w500,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
+
+                const SizedBox(height: 16),
+                const Divider(color: Color(0xff2A2A2A), height: 1),
+                const SizedBox(height: 16),
+
+                // ── Action Buttons ───────────────────────────────
+                if (_isLoading)
+                  const Center(child: CircularProgressIndicator())
+
+                // Receiver sees Accept/Decline when PENDING
+                else if (_isReceiver && isPending) ...[
+                  _buildButton(
+                    label: 'Accept Offer',
+                    color: const Color(0xff1877F2),
+                    textColor: Colors.white,
+                    onTap: _acceptOffer,
+                  ),
+                  const SizedBox(height: 8),
+                  _buildButton(
+                    label: 'Decline',
+                    color: Colors.transparent,
+                    textColor: Colors.grey,
+                    onTap: _declineOffer,
+                    border: true,
+                  ),
+                ]
+
+                // Receiver sees Pay when ACCEPTED
+                else if (_isReceiver && isAccepted)
+                  _buildButton(
+                    label: 'Pay ₦${widget.offer.amount.toStringAsFixed(0)}',
+                    color: Colors.green,
+                    textColor: Colors.white,
+                    onTap: _payOffer,
+                  )
+
+                // Sender sees Cancel when PENDING
+                else if (_isSender && isPending)
+                  _buildButton(
+                    label: 'Cancel Offer',
+                    color: Colors.transparent,
+                    textColor: Colors.grey,
+                    onTap: _declineOffer,
+                    border: true,
+                  )
+
+                // Final states
+                else if (isPaid)
+                  _buildStatusRow(Icons.check_circle, 'Payment Completed', Colors.green)
+                else if (isDeclined)
+                  _buildStatusRow(Icons.cancel, 'Offer Declined', Colors.red)
+                else if (isAccepted && _isSender)
+                  _buildStatusRow(Icons.hourglass_top, 'Waiting for payment', Colors.orange),
+              ],
             ),
           ),
         ],
       ),
+    );
+  }
+
+  Widget _buildStatusBadge(OfferStatus status) {
+    Color color;
+    String label;
+    switch (status) {
+      case OfferStatus.PENDING:
+        color = Colors.orange;
+        label = 'Pending';
+        break;
+      case OfferStatus.ACCEPTED:
+        color = Colors.green;
+        label = 'Accepted';
+        break;
+      case OfferStatus.DECLINED:
+        color = Colors.red;
+        label = 'Declined';
+        break;
+      case OfferStatus.PAID:
+        color = Colors.blue;
+        label = 'Paid';
+        break;
+    }
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+      decoration: BoxDecoration(
+        color: color.withOpacity(0.15),
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(color: color.withOpacity(0.5)),
+      ),
+      child: Text(label,
+          style: TextStyle(
+              color: color, fontSize: 11, fontWeight: FontWeight.w600)),
+    );
+  }
+
+  Widget _buildButton({
+    required String label,
+    required Color color,
+    required Color textColor,
+    required VoidCallback onTap,
+    bool border = false,
+  }) {
+    return SizedBox(
+      width: double.infinity,
+      child: GestureDetector(
+        onTap: onTap,
+        child: Container(
+          padding: const EdgeInsets.symmetric(vertical: 14),
+          decoration: BoxDecoration(
+            color: color,
+            borderRadius: BorderRadius.circular(12),
+            border: border
+                ? Border.all(color: Colors.grey.withOpacity(0.3))
+                : null,
+          ),
+          child: Center(
+            child: Text(
+              label,
+              style: TextStyle(
+                color: textColor,
+                fontWeight: FontWeight.w600,
+                fontSize: 15,
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildStatusRow(IconData icon, String label, Color color) {
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.center,
+      children: [
+        Icon(icon, color: color, size: 18),
+        const SizedBox(width: 8),
+        Text(label,
+            style: TextStyle(
+                color: color, fontSize: 14, fontWeight: FontWeight.w500)),
+      ],
     );
   }
 }

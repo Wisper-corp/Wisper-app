@@ -5,6 +5,7 @@ import 'package:wisper/app/core/utils/file_picker.dart';
 import 'package:wisper/app/core/utils/image_picker.dart';
 import 'package:wisper/app/core/widgets/common/circle_icon.dart';
 import 'package:wisper/app/modules/chat/controller/image_decode_controller.dart';
+import 'package:wisper/app/modules/chat/controller/message_controller.dart';
 import 'package:wisper/app/modules/chat/views/person/attach_buttom.dart';
 import 'package:wisper/app/modules/chat/widgets/create_offer_dialog.dart';
 import 'package:wisper/gen/assets.gen.dart';
@@ -75,20 +76,30 @@ class _ChattingFieldWidgetState extends State<ChattingFieldWidget> {
         onVideoSelected: () => _attachmentPickerHelper.pickVideo(context, _onVideoPicked),
         onFileSelected: () => _attachmentPickerHelper.pickDocument(context, _onDocumentsPicked),
         onOfferSelected: () {
-          Navigator.pop(context);
-          showDialog(
-            context: context,
-            builder: (context) => CreateOfferDialog(
-              chatId: widget.chatId,
-              receiverId: widget.receiverId,
-              onOfferCreated: (offer) {
-                // Offer created successfully - could show snackbar or update UI
-                Get.snackbar(
-                  'Success',
-                  'Offer sent successfully!',
-                  snackPosition: SnackPosition.BOTTOM,
-                );
-              },
+          Navigator.pop(context); // close attachment sheet
+          Navigator.push(
+            context,
+            MaterialPageRoute(
+              fullscreenDialog: true,
+              builder: (_) => CreateOfferDialog(
+                chatId: widget.chatId,
+                receiverId: widget.receiverId,
+                onOfferCreated: (offer) {
+                  // Inject offer as a chat message immediately
+                  try {
+                    final msgController = Get.find<MessageController>();
+                    msgController.injectOfferMessage(offer);
+                    msgController.scrollToBottom();
+                  } catch (_) {}
+                  Get.snackbar(
+                    'Offer Sent',
+                    'Your offer has been sent successfully!',
+                    snackPosition: SnackPosition.BOTTOM,
+                    backgroundColor: Colors.green,
+                    colorText: Colors.white,
+                  );
+                },
+              ),
             ),
           );
         },
