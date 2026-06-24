@@ -4,17 +4,28 @@ import 'package:wisper/app/core/widgets/common/circle_icon.dart';
 import 'package:wisper/app/modules/chat/widgets/chatting_field.dart';
 import 'package:wisper/gen/assets.gen.dart';
 
-class MessageInputBar extends StatelessWidget {
+class MessageInputBar extends StatefulWidget {
   final TextEditingController controller;
   final VoidCallback onSend;
 
-  final RxBool isSendEnabled = false.obs;
-
-  MessageInputBar({
-    super.key, 
+  const MessageInputBar({
+    super.key,
     required this.controller,
     required this.onSend,
   });
+
+  @override
+  State<MessageInputBar> createState() => _MessageInputBarState();
+}
+
+class _MessageInputBarState extends State<MessageInputBar> {
+  final RxBool isSendEnabled = false.obs;
+
+  @override
+  void dispose() {
+    isSendEnabled.close();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -24,15 +35,17 @@ class MessageInputBar extends StatelessWidget {
         padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
         child: Card(
           color: Colors.black,
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(24),
+          ),
           child: Padding(
-            padding:  EdgeInsets.symmetric(horizontal: 0, vertical: 6),
+            padding: EdgeInsets.symmetric(horizontal: 0, vertical: 6),
             child: Row(
               crossAxisAlignment: CrossAxisAlignment.center,
               children: [
                 Expanded(
                   child: ChattingFieldWidget(
-                    controller: controller,
+                    controller: widget.controller,
                     isSendEnabled: isSendEnabled,
                   ),
                 ),
@@ -42,8 +55,10 @@ class MessageInputBar extends StatelessWidget {
                     imagePath: Assets.images.send.keyName,
                     radius: 22,
                     iconRadius: 22,
-                    iconColor: isSendEnabled.value ? Colors.blue : Colors.grey[600]!,
-                    onTap: isSendEnabled.value ? onSend : () {},
+                    iconColor: isSendEnabled.value
+                        ? Colors.blue
+                        : Colors.grey[600]!,
+                    onTap: isSendEnabled.value ? widget.onSend : () {},
                   ),
                 ),
               ],

@@ -22,12 +22,27 @@
 	<string>$(FLUTTER_BUILD_NAME)</string>
 	<key>CFBundleSignature</key>
 	<string>????</string>
+	<key>CFBundleURLTypes</key>
+	<array>
+		<dict>
+			<key>CFBundleTypeRole</key>
+			<string>Editor</string>
+			<key>CFBundleURLName</key>
+			<string>com.wisperuser.app.mytest</string>
+			<key>CFBundleURLSchemes</key>
+			<array>
+				<string>com.googleusercontent.apps.488154013426-bgu8vja9mm5bpvgr3mtksc3hqf60k247</string>
+			</array>
+		</dict>
+	</array>
 	<key>CFBundleVersion</key>
 	<string>$(FLUTTER_BUILD_NUMBER)</string>
 	<key>LSRequiresIPhoneOS</key>
 	<true/>
 	<key>NSCameraUsageDescription</key>
 	<string>This app needs camera access to allow users to take and upload photos.</string>
+	<key>NSMicrophoneUsageDescription</key>
+	<string>This app needs microphone access for voice and video calls.</string>
 	<key>NSPhotoLibraryUsageDescription</key>
 	<string>This app needs photo library access to let users select and upload images from their device.</string>
 	<key>UIApplicationSceneManifest</key>

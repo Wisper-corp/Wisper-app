@@ -36,9 +36,13 @@ class _MyPostSectionState extends State<MyPostSection> {
   );
 
   @override
+  @override
   void initState() {
     super.initState();
-    controller.getAllPost();
+
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      controller.getAllPost();
+    });
   }
 
   Future<void> _handleDeletePost(String postId) async {

@@ -7,7 +7,6 @@ import 'package:wisper/app/core/config/theme/light_theme_colors.dart';
 import 'package:wisper/app/core/others/get_storage.dart';
 import 'package:wisper/app/core/services/others/deeplink_services.dart';
 import 'package:wisper/app/core/services/call/controller/call_services.dart';
-import 'package:wisper/app/core/services/socket/socket_service.dart';
 import 'package:wisper/app/core/utils/connectivity_services.dart';
 import 'package:wisper/app/core/utils/no_inter_screen.dart';
 import 'package:wisper/app/modules/dashboard/views/dashboard_screen.dart';
@@ -21,7 +20,8 @@ class SplashScreen extends StatefulWidget {
   State<SplashScreen> createState() => _SplashScreenState();
 }
 
-class _SplashScreenState extends State<SplashScreen> with WidgetsBindingObserver {
+class _SplashScreenState extends State<SplashScreen>
+    with WidgetsBindingObserver {
   @override
   void initState() {
     super.initState();
@@ -65,23 +65,15 @@ class _SplashScreenState extends State<SplashScreen> with WidgetsBindingObserver
   }
 
   Future<void> _requestPermissions() async {
-    Map<Permission, PermissionStatus> statuses = await [
-      Permission.camera,
-      Permission.microphone,
-    ].request();
-
-    if (statuses[Permission.camera]!.isPermanentlyDenied ||
-        statuses[Permission.microphone]!.isPermanentlyDenied) {
-      await openAppSettings();
-    }
+    await [Permission.camera, Permission.microphone].request();
   }
 
   Future<void> _checkAndNavigate() async {
     await Future.delayed(const Duration(seconds: 2, milliseconds: 500));
 
     final connectivityService = Get.find<ConnectivityService>();
-    final List<ConnectivityResult> results =
-        await Connectivity().checkConnectivity();
+    final List<ConnectivityResult> results = await Connectivity()
+        .checkConnectivity();
     final bool hasNetwork =
         results.isNotEmpty && !results.contains(ConnectivityResult.none);
 
@@ -96,7 +88,7 @@ class _SplashScreenState extends State<SplashScreen> with WidgetsBindingObserver
       final String? token = StorageUtil.getData(StorageUtil.userAccessToken);
       if (token != null && token.isNotEmpty) {
         // Offline start: go directly to Chat tab to show cached data.
-        Get.offAll(() =>  MainButtonNavbarScreen(initialIndex: 3));
+        Get.offAll(() => MainButtonNavbarScreen(initialIndex: 3));
       } else {
         Get.offAll(() => const NoInternetScreen());
       }

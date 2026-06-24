@@ -1,5 +1,6 @@
 import 'dart:io';
 import 'package:flutter/material.dart';
+import 'package:flutter/scheduler.dart';
 import 'package:get/get.dart';
 import 'package:wisper/app/core/utils/file_picker.dart';
 import 'package:wisper/app/core/utils/image_picker.dart';
@@ -23,13 +24,16 @@ class ChattingFieldWidget extends StatefulWidget {
 }
 
 class _ChattingFieldWidgetState extends State<ChattingFieldWidget> {
-  final FileDecodeController fileDecodeController = Get.find<FileDecodeController>();
+  final FileDecodeController fileDecodeController =
+      Get.find<FileDecodeController>();
 
   final ImagePickerHelper _imagePickerHelper = ImagePickerHelper();
-  final AttachmentPickerHelper _attachmentPickerHelper = AttachmentPickerHelper();
+  final AttachmentPickerHelper _attachmentPickerHelper =
+      AttachmentPickerHelper();
 
   late FocusNode _focusNode;
   late TextEditingController _controller;
+  Worker? _attachmentWorker;
 
   @override
   void initState() {
@@ -37,17 +41,41 @@ class _ChattingFieldWidgetState extends State<ChattingFieldWidget> {
     _focusNode = FocusNode();
     _controller = widget.controller;
     _controller.addListener(_updateSendButton);
-    ever(fileDecodeController.imageUrlRx, (_) => _updateSendButton());
+    _attachmentWorker = ever(
+      fileDecodeController.imageUrlRx,
+      (_) => _updateSendButton(),
+    );
+    _updateSendButton();
   }
 
   void _updateSendButton() {
     if (!mounted) return;
     try {
-      widget.isSendEnabled.value =
-          _controller.text.trim().isNotEmpty || fileDecodeController.imageUrl.isNotEmpty;
+      final isEnabled =
+          _controller.text.trim().isNotEmpty ||
+          fileDecodeController.imageUrl.isNotEmpty;
+      _setSendButtonEnabled(isEnabled);
     } catch (_) {
       // Controller might be disposed by parent during a rebuild; ignore.
     }
+  }
+
+  void _setSendButtonEnabled(bool isEnabled) {
+    if (widget.isSendEnabled.value == isEnabled) return;
+
+    final phase = SchedulerBinding.instance.schedulerPhase;
+    if (phase == SchedulerPhase.idle ||
+        phase == SchedulerPhase.postFrameCallbacks) {
+      widget.isSendEnabled.value = isEnabled;
+      return;
+    }
+
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+      if (widget.isSendEnabled.value != isEnabled) {
+        widget.isSendEnabled.value = isEnabled;
+      }
+    });
   }
 
   @override
@@ -64,14 +92,19 @@ class _ChattingFieldWidgetState extends State<ChattingFieldWidget> {
   @override
   void dispose() {
     _controller.removeListener(_updateSendButton);
+    _attachmentWorker?.dispose();
     _focusNode.dispose();
     super.dispose();
   }
 
-  void _onImagePicked(File image) async => await fileDecodeController.imageDecode(image: image);
-  void _onVideoPicked(File video) async => await fileDecodeController.videoDecode(image: video);
+  void _onImagePicked(File image) async =>
+      await fileDecodeController.imageDecode(image: image);
+  void _onVideoPicked(File video) async =>
+      await fileDecodeController.videoDecode(image: video);
   void _onDocumentsPicked(List<File> docs) async {
-    if (docs.isNotEmpty) await fileDecodeController.fileDecode(image: docs.first);
+    if (docs.isNotEmpty) {
+      await fileDecodeController.fileDecode(image: docs.first);
+    }
   }
 
   void _clearAllAttachments() {
@@ -84,9 +117,12 @@ class _ChattingFieldWidgetState extends State<ChattingFieldWidget> {
       context: context,
       backgroundColor: Colors.transparent,
       builder: (_) => AttachmentBottomSheet(
-        onImageSelected: () => _imagePickerHelper.showAlertDialog(context, _onImagePicked),
-        onVideoSelected: () => _attachmentPickerHelper.pickVideo(context, _onVideoPicked),
-        onFileSelected: () => _attachmentPickerHelper.pickDocument(context, _onDocumentsPicked),
+        onImageSelected: () =>
+            _imagePickerHelper.showAlertDialog(context, _onImagePicked),
+        onVideoSelected: () =>
+            _attachmentPickerHelper.pickVideo(context, _onVideoPicked),
+        onFileSelected: () =>
+            _attachmentPickerHelper.pickDocument(context, _onDocumentsPicked),
       ),
     );
   }
@@ -143,7 +179,8 @@ class _ChattingFieldWidgetState extends State<ChattingFieldWidget> {
                 child: Obx(() {
                   if (fileDecodeController.inProgress) {
                     final localPath = fileDecodeController.localPath;
-                    final isImage = fileDecodeController.currentFileType == 'IMAGE';
+                    final isImage =
+                        fileDecodeController.currentFileType == 'IMAGE';
                     if (isImage && localPath.isNotEmpty) {
                       return _buildPreviewContainer(
                         child: Stack(
@@ -163,7 +200,9 @@ class _ChattingFieldWidgetState extends State<ChattingFieldWidget> {
                               width: 80,
                               height: 80,
                               child: Center(
-                                child: CircularProgressIndicator(strokeWidth: 3),
+                                child: CircularProgressIndicator(
+                                  strokeWidth: 3,
+                                ),
                               ),
                             ),
                           ],
@@ -206,12 +245,15 @@ class _ChattingFieldWidgetState extends State<ChattingFieldWidget> {
                                   child: Image.network(
                                     url,
                                     fit: BoxFit.cover,
-                                    errorBuilder: (_, __, ___) => const Icon(Icons.broken_image),
+                                    errorBuilder: (_, __, ___) =>
+                                        const Icon(Icons.broken_image),
                                   ),
                                 )
                               : Center(
                                   child: Icon(
-                                    type == 'video' ? Icons.play_circle_fill : Icons.picture_as_pdf,
+                                    type == 'video'
+                                        ? Icons.play_circle_fill
+                                        : Icons.picture_as_pdf,
                                     size: 40,
                                     color: Colors.white70,
                                   ),

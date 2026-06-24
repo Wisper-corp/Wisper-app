@@ -31,7 +31,7 @@ void main() async {
   // If we call initialize again, Firebase throws [core/duplicate-app]. In that case,
   // we just reuse the already-configured native default app.
   try {
-    await Firebase.initializeApp(
+    await Firebase.initializeApp( 
       options: DefaultFirebaseOptions.currentPlatform,
     );
   } on FirebaseException catch (e) {

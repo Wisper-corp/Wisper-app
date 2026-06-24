@@ -28,7 +28,7 @@ class AudioCallPage extends StatefulWidget {
   final String? classId;
   final bool isGroupCall;
   final String? callerName;
- 
+
   const AudioCallPage({
     super.key,
     required this.name,
@@ -69,10 +69,12 @@ class _AudioCallPageState extends State<AudioCallPage> {
       ? Get.find<CallService>()
       : Get.put(CallService());
   final CallController _callController = CallController();
-  final GroupMembersController _groupMembersController =
-      Get.put(GroupMembersController());
-  final ClassMembersController _classMembersController =
-      Get.put(ClassMembersController());
+  final GroupMembersController _groupMembersController = Get.put(
+    GroupMembersController(),
+  );
+  final ClassMembersController _classMembersController = Get.put(
+    ClassMembersController(),
+  );
 
   Worker? _declinedWorker;
   Worker? _endedWorker;
@@ -176,10 +178,28 @@ class _AudioCallPageState extends State<AudioCallPage> {
     });
   }
 
+  // Future<bool> _ensurePermissions() async {
+  //   final micStatus = await Permission.microphone.request();
+  //   if (!micStatus.isGranted) {
+  //     Get.snackbar('Permission Required', 'Microphone permission is needed.');
+  //     return false;
+  //   }
+  //   return true;
+  // }
+
   Future<bool> _ensurePermissions() async {
     final micStatus = await Permission.microphone.request();
     if (!micStatus.isGranted) {
-      Get.snackbar('Permission Required', 'Microphone permission is needed.');
+      // ✅ সমাধান: Get.snackbar এর বদলে Flutter এর নিজস্ব ScaffoldMessenger ব্যবহার করা হয়েছে
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Microphone permission is needed for audio calls.'),
+            backgroundColor: Colors.redAccent,
+            duration: Duration(seconds: 3),
+          ),
+        );
+      }
       return false;
     }
     return true;
@@ -309,7 +329,9 @@ class _AudioCallPageState extends State<AudioCallPage> {
               final keys = callService.participantInfo.keys.toList();
               print('🔎 [AudioCall] onUserJoined uid=$rUid');
               print('🔎 [AudioCall] participantInfo keys=$keys');
-              print('🔎 [AudioCall] uid match in participantInfo: ${keys.contains(rUid)}');
+              print(
+                '🔎 [AudioCall] uid match in participantInfo: ${keys.contains(rUid)}',
+              );
               final incoming = callService.incomingCall.value;
               if (incoming != null && incoming['participants'] is List) {
                 final list = incoming['participants'] as List;
@@ -318,7 +340,9 @@ class _AudioCallPageState extends State<AudioCallPage> {
                     .where((v) => v != null)
                     .toList();
                 print('🔎 [AudioCall] incoming participant uids=$uids');
-                print('🔎 [AudioCall] uid match in incoming list: ${uids.contains(rUid)}');
+                print(
+                  '🔎 [AudioCall] uid match in incoming list: ${uids.contains(rUid)}',
+                );
                 for (final p in list) {
                   if (p is! Map) continue;
                   final rawUid = p['uid'];
@@ -342,40 +366,42 @@ class _AudioCallPageState extends State<AudioCallPage> {
               setState(() {});
             });
           },
-          onUserOffline: (
-            RtcConnection connection,
-            int rUid,
-            UserOfflineReasonType reason,
-          ) {
-            if (mounted) {
-              setState(() {
-                _remoteUids.remove(rUid);
-              });
+          onUserOffline:
+              (
+                RtcConnection connection,
+                int rUid,
+                UserOfflineReasonType reason,
+              ) {
+                if (mounted) {
+                  setState(() {
+                    _remoteUids.remove(rUid);
+                  });
 
-              if (_remoteUids.isEmpty && !_isLeavingCall) {
-                final duration = _getCallDuration();
-                socketService.socket.emitWithAck(
-                  'callEnd',
-                  {'callId': widget.callId, 'duration': duration},
-                  ack: (response) {
-                    print('Server acknowledged for callEnd: $response');
-                  },
-                );
-                _leaveAndPop();
-              }
-            }
-          },
-          onConnectionStateChanged: (
-            RtcConnection connection,
-            ConnectionStateType state,
-            ConnectionChangedReasonType reason,
-          ) {
-            if (mounted) {
-              setState(() {
-                engineLog = 'Connection: ${state.name}';
-              });
-            }
-          },
+                  if (_remoteUids.isEmpty && !_isLeavingCall) {
+                    final duration = _getCallDuration();
+                    socketService.socket.emitWithAck(
+                      'callEnd',
+                      {'callId': widget.callId, 'duration': duration},
+                      ack: (response) {
+                        print('Server acknowledged for callEnd: $response');
+                      },
+                    );
+                    _leaveAndPop();
+                  }
+                }
+              },
+          onConnectionStateChanged:
+              (
+                RtcConnection connection,
+                ConnectionStateType state,
+                ConnectionChangedReasonType reason,
+              ) {
+                if (mounted) {
+                  setState(() {
+                    engineLog = 'Connection: ${state.name}';
+                  });
+                }
+              },
           onError: (ErrorCodeType err, String msg) {
             if (mounted) {
               setState(() {
@@ -537,11 +563,7 @@ class _AudioCallPageState extends State<AudioCallPage> {
           alignment: WrapAlignment.center,
           children: [
             // Local user (Me)
-            _buildAvatarTileWithLabel(
-              imageUrl: '',
-              label: 'Me',
-              isLocal: true,
-            ),
+            _buildAvatarTileWithLabel(imageUrl: '', label: 'Me', isLocal: true),
             // Remote users — participantInfo থেকে name + image
             ..._remoteUids.map((uid) {
               final name = _nameForUid(uid);
@@ -628,9 +650,7 @@ class _AudioCallPageState extends State<AudioCallPage> {
           decoration: BoxDecoration(
             shape: BoxShape.circle,
             border: Border.all(
-              color: isLocal
-                  ? Colors.blue.shade400
-                  : Colors.green.shade400,
+              color: isLocal ? Colors.blue.shade400 : Colors.green.shade400,
               width: 2,
             ),
           ),
@@ -728,13 +748,15 @@ class _AudioCallPageState extends State<AudioCallPage> {
                       // Mic toggle
                       CircleAvatar(
                         radius: 30,
-                        backgroundColor:
-                            _micEnabled ? Colors.black26 : Colors.red,
+                        backgroundColor: _micEnabled
+                            ? Colors.black26
+                            : Colors.red,
                         child: IconButton(
                           onPressed: () async {
                             setState(() => _micEnabled = !_micEnabled);
-                            await agoraEngine
-                                .muteLocalAudioStream(!_micEnabled);
+                            await agoraEngine.muteLocalAudioStream(
+                              !_micEnabled,
+                            );
                           },
                           icon: Icon(
                             _micEnabled ? Icons.mic : Icons.mic_off,
@@ -752,10 +774,10 @@ class _AudioCallPageState extends State<AudioCallPage> {
                             : Colors.black26,
                         child: IconButton(
                           onPressed: () async {
-                            setState(
-                                () => _speakerEnabled = !_speakerEnabled);
-                            await agoraEngine
-                                .setEnableSpeakerphone(_speakerEnabled);
+                            setState(() => _speakerEnabled = !_speakerEnabled);
+                            await agoraEngine.setEnableSpeakerphone(
+                              _speakerEnabled,
+                            );
                           },
                           icon: Icon(
                             _speakerEnabled
