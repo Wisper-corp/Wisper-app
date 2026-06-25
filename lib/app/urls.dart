@@ -107,6 +107,11 @@ class Urls {
     return '$_baseUrl/posts/view/$id';
   }
 
+  // Job title autocomplete
+  static String jobTitleSearchUrl(String q) {
+    return '$_baseUrl/job-titles/search?q=${Uri.encodeComponent(q)}&limit=20';
+  }
+
   static String resumeById(String id) {
     return '$_baseUrl/resumes/$id';
   }

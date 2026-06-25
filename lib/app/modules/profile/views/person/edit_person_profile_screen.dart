@@ -12,6 +12,7 @@ import 'package:wisper/app/core/utils/snack_bar.dart';
 import 'package:wisper/app/core/utils/validator_service.dart';
 import 'package:wisper/app/core/widgets/common/custom_button.dart';
 import 'package:wisper/app/core/widgets/common/custom_text_filed.dart';
+import 'package:wisper/app/core/widgets/common/job_title_search_field.dart';
 import 'package:wisper/app/core/widgets/common/label.dart';
 import 'package:wisper/app/modules/authentication/widget/auth_header.dart';
 import 'package:wisper/app/modules/profile/controller/person/edit_person_profile_controller.dart';
@@ -52,22 +53,7 @@ class _EditPersonProfileScreenState extends State<EditPersonProfileScreen> {
     selectedAddress.value = '';
   }
 
-  final List<String> _jobTitles = [
-    'Flutter Developer',
-    'Graphic Designer',
-    'UI/UX Designer',
-    'Backend Developer',
-    'Frontend Developer',
-    'Full Stack Developer',
-    'Product Manager',
-    'Project Manager',
-    'Data Scientist',
-    'DevOps Engineer',
-    'QA Engineer',
-    'Mobile Developer',
-    'Other',
-  ];
-
+  final List<String> _jobTitles = [];
   String? _selectedTitle;
 
   @override
@@ -81,11 +67,7 @@ class _EditPersonProfileScreenState extends State<EditPersonProfileScreen> {
     _addressCtrl.text = user?.address ?? '';
 
     _selectedTitle = user?.title;
-    if (_selectedTitle == null || !_jobTitles.contains(_selectedTitle)) {
-      _selectedTitle = _jobTitles.first;
-    }
-
-    _titleCtrl.text = _selectedTitle!;
+    _titleCtrl.text = _selectedTitle ?? '';
   }
 
   @override
@@ -207,48 +189,19 @@ class _EditPersonProfileScreenState extends State<EditPersonProfileScreen> {
               heightBox20,
               const Label(label: 'Job Title'),
               heightBox10,
-              CustomTextField(
-                controller: _titleCtrl,
-                readOnly: true,
-                hintText: 'Select job title',
-                suffixIcon: Icons.keyboard_arrow_down,
-                onTap: () {
-                  showModalBottomSheet(
-                    context: context,
-                    shape: const RoundedRectangleBorder(
-                      borderRadius: BorderRadius.vertical(
-                        top: Radius.circular(20),
-                      ),
-                    ),
-                    builder: (ctx) => ListView.builder(
-                      padding: EdgeInsets.all(16.w),
-                      itemCount: _jobTitles.length,
-                      itemBuilder: (context, index) {
-                        final title = _jobTitles[index];
-                        return ListTile(
-                          title: Text(title),
-                          trailing: _selectedTitle == title
-                              ? const Icon(Icons.check, color: Colors.blue)
-                              : null,
-                          onTap: () {
-                            setState(() {
-                              _selectedTitle = title;
-                              _titleCtrl.text =
-                                  title; // এখানে কন্ট্রোলার আপডেট করা হচ্ছে
-                            });
-                            Navigator.pop(ctx);
-                          },
-                        );
-                      },
-                    ),
-                  );
+              JobTitleSearchField(
+                initialValue: _titleCtrl.text.isNotEmpty ? _titleCtrl.text : null,
+                hintText: 'Search your job title...',
+                onSelected: (title) {
+                  setState(() {
+                    _titleCtrl.text = title;
+                  });
                 },
-                validator: (_) {
-                  if (_selectedTitle == null || _selectedTitle!.isEmpty) {
-                    return 'Please select a job title';
-                  }
-                  return null;
-                },
+              ),
+              heightBox4,
+              const Text(
+                'Type at least 2 characters to search from 1000+ job titles',
+                style: TextStyle(color: Color(0xff8E8E93), fontSize: 11),
               ),
 
               heightBox50,
