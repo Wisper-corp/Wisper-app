@@ -14,7 +14,6 @@ class CommunitySection extends StatefulWidget {
 
 class _CommunitySectionState extends State<CommunitySection> {
   final CommunityController controller = Get.put(CommunityController());
-  
 
   @override
   void initState() {
@@ -30,8 +29,6 @@ class _CommunitySectionState extends State<CommunitySection> {
     super.dispose();
   }
 
- 
-
   @override
   Widget build(BuildContext context) {
     return Obx(() {
@@ -39,8 +36,9 @@ class _CommunitySectionState extends State<CommunitySection> {
         return const Center(child: CircularProgressIndicator());
       }
 
-      if (controller.communitiesData == null ||
-          controller.communitiesData!.isEmpty) {
+      final groupData = controller.communitiesData;
+
+      if (groupData.isEmpty) {
         return Center(
           child: Text(
             'No communities yet',
@@ -48,35 +46,35 @@ class _CommunitySectionState extends State<CommunitySection> {
           ),
         );
       }
-      var groupData = controller.communitiesData;
+
       return ListView.builder(
         padding: const EdgeInsets.symmetric(horizontal: 10),
-        itemCount: groupData?.length,
+        itemCount: groupData.length,
         itemBuilder: (context, index) {
-          final item = groupData?[index];
-          final List<String> membersImages = (item?.members ?? const [])
+          final item = groupData[index];
+          final List<String> membersImages = item.members
               .map((e) => (e.image ?? '').toString().trim())
               .toList();
           return CommunitiesListTile(
-            memberCount: item?.memberCount ?? 0,
+            memberCount: item.memberCount ?? 0,
             membersImage: membersImages,
             isOnline: false,
             onTap: () async {
               await Get.to(
                 CommunityScreen(
-                  hasJoined: item?.isJoined ?? false,
-                  groupId: item?.id ?? '',
-                  chatId: item?.chatId ?? '',
-                  groupName: item?.name ?? '',
+                  hasJoined: item.isJoined ?? false,
+                  groupId: item.id ?? '',
+                  chatId: item.chatId ?? '',
+                  groupName: item.name ?? '',
                   memberImage: membersImages,
-                  memberCount: item?.memberCount ?? 0,
+                  memberCount: item.memberCount ?? 0,
                 ),
               );
               await controller.getCommunities();
             },
             isGroup: true,
-            imagePath: item?.image ?? '',
-            name: item?.name ?? '',
+            imagePath: item.image ?? '',
+            name: item.name ?? '',
             message: '',
             time: '',
           );

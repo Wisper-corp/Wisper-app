@@ -13,7 +13,7 @@ class SignInController extends GetxController {
   String? _extractAuthIdFromJwt(Map<String, dynamic> decodedToken) {
     // Support common claim names
     final candidates = [
-      decodedToken['id'],
+      decodedToken['id'], 
       decodedToken['authId'],
       decodedToken['userId'],
       decodedToken['sub'],

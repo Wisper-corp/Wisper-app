@@ -14,8 +14,8 @@ class CommunityController extends GetxController {
   String get errorMessage => _errorMessage.value;
 
   final Rx<CommunitiesModel?> _communitiesModel = Rx<CommunitiesModel?>(null);
-  List<CommunitiesItemModel>? get communitiesData =>
-      _communitiesModel.value!.data?.groups;
+  List<CommunitiesItemModel> get communitiesData =>
+      _communitiesModel.value?.data?.groups ?? const [];
 
   Future<bool> getCommunities() async {
     _inProgress.value = true;

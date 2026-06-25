@@ -5,7 +5,6 @@ import 'package:get/get.dart';
 import 'package:open_filex/open_filex.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:syncfusion_flutter_pdfviewer/pdfviewer.dart';
-import 'package:wisper/app/core/others/custom_size.dart';
 import 'package:wisper/app/core/utils/snack_bar.dart';
 import 'package:wisper/app/core/utils/video_player.dart';
 import 'package:wisper/app/core/widgets/common/circle_icon.dart';
@@ -36,7 +35,6 @@ class MessageBubble extends StatelessWidget {
     this.isGroupChat = false,
   });
 
-  // Helper: file name extract
   String _getFileName() {
     if (fileUrl.isEmpty) return '';
     return Uri.tryParse(fileUrl)?.pathSegments.last ?? 'file';
@@ -49,7 +47,6 @@ class MessageBubble extends StatelessWidget {
         uri.host.isNotEmpty;
   }
 
-  // Helper: get file extension
   String _getFileExtension() {
     if (fileUrl.isEmpty) return '';
     final uri = Uri.tryParse(fileUrl);
@@ -62,7 +59,6 @@ class MessageBubble extends StatelessWidget {
     return '';
   }
 
-  // Helper: get file icon
   IconData _getFileIcon(String extension) {
     switch (extension) {
       case 'pdf':
@@ -159,421 +155,366 @@ class MessageBubble extends StatelessWidget {
     }
   }
 
-  @override
-  Widget build(BuildContext context) {
-    final String safeFileUrl = _isValidRemoteUrl(fileUrl) ? fileUrl : '';
-    Future<void> _handleFileOpen() async {
-      if (safeFileUrl.isEmpty) {
-        showSnackBarMessage(context, "No file available", true);
+  Future<void> _handleFileOpen(BuildContext context, String safeFileUrl) async {
+    if (safeFileUrl.isEmpty) {
+      showSnackBarMessage(context, "No file available", true);
+      return;
+    }
+
+    final extension = _getFileExtension();
+    final fileName = _getFileName();
+
+    Get.dialog(
+      const Center(child: CircularProgressIndicator()),
+      barrierDismissible: false,
+    );
+
+    try {
+      if (extension == 'pdf') {
+        Get.back();
+        Get.to(
+          () => Scaffold(
+            appBar: AppBar(
+              leading: Padding(
+                padding: const EdgeInsets.all(8.0),
+                child: CircleIconWidget(
+                  iconRadius: 18.r,
+                  imagePath: Assets.images.cross.keyName,
+                  onTap: Get.back,
+                ),
+              ),
+              title: Text(fileName, style: const TextStyle(fontSize: 16)),
+              backgroundColor: Colors.black,
+              foregroundColor: Colors.white,
+              elevation: 0,
+            ),
+            backgroundColor: Colors.grey[900],
+            body: SfPdfViewer.network(
+              fileUrl,
+              onDocumentLoadFailed: (PdfDocumentLoadFailedDetails details) {
+                Get.back();
+                showSnackBarMessage(
+                  Get.context!,
+                  "Failed to load PDF: ${details.description}",
+                  true,
+                );
+              },
+            ),
+          ),
+        );
         return;
       }
 
-      final extension = _getFileExtension();
-      final fileName = _getFileName();
+      final dir = await getTemporaryDirectory();
+      final filePath = '${dir.path}/$fileName';
 
-      // Show loading
-      Get.dialog(
-        const Center(child: CircularProgressIndicator()),
-        barrierDismissible: false,
+      await Dio().download(
+        safeFileUrl,
+        filePath,
+        onReceiveProgress: (received, total) {
+          if (total != -1) {
+            print(
+              'Download progress: ${(received / total * 100).toStringAsFixed(0)}%',
+            );
+          }
+        },
       );
 
-      try {
-        // For PDF - open in app
-        if (extension == 'pdf') {
-          Get.back(); // Remove loading dialog
-          Get.to(
-            () => Scaffold(
-              appBar: AppBar(
-                leading: Padding(
-                  padding: const EdgeInsets.all(8.0),
-                  child: CircleIconWidget(
-                    iconRadius: 18.r,
-                    imagePath: Assets.images.cross.keyName,
-                    onTap: () {
-                      Get.back();
-                    },
-                  ),
-                ),
-                title: Text(fileName, style: const TextStyle(fontSize: 16)),
-                backgroundColor: Colors.black,
-                foregroundColor: Colors.white,
-                elevation: 0,
-              ),
-              backgroundColor: Colors.grey[900],
-              body: SfPdfViewer.network(
-                fileUrl,
-                onDocumentLoadFailed: (PdfDocumentLoadFailedDetails details) {
-                  Get.back();
-                  showSnackBarMessage(
-                    Get.context!,
-                    "Failed to load PDF: ${details.description}",
-                    true,
-                  );
-                },
-                onDocumentLoaded: (PdfDocumentLoadedDetails details) {
-                  // PDF loaded successfully
-                },
-              ),
-            ),
+      Get.back();
+
+      final OpenResult result = await OpenFilex.open(filePath);
+
+      switch (result.type) {
+        case ResultType.done:
+          break;
+        case ResultType.fileNotFound:
+          showSnackBarMessage(Get.context!, 'File not found', true);
+          break;
+        case ResultType.noAppToOpen:
+          showSnackBarMessage(
+            Get.context!,
+            'No app found to open this file',
+            true,
           );
-          return;
-        }
-
-        // For other files - download and open with external app
-        final dir = await getTemporaryDirectory();
-        final filePath = '${dir.path}/$fileName';
-
-        // Download the file
-        await Dio().download(
-          safeFileUrl,
-          filePath,
-          onReceiveProgress: (received, total) {
-            if (total != -1) {
-              print(
-                'Download progress: ${(received / total * 100).toStringAsFixed(0)}%',
-              );
-            }
-          },
-        );
-
-        Get.back(); // Remove loading dialog
-
-        // Open with external app
-        final OpenResult result = await OpenFilex.open(filePath);
-
-        switch (result.type) {
-          case ResultType.done:
-            // Successfully opened
-            break;
-          case ResultType.fileNotFound:
-            showSnackBarMessage(Get.context!, 'File not found', true);
-            break;
-          case ResultType.noAppToOpen:
-            showSnackBarMessage(
-              Get.context!,
-              'No app found to open this file',
-              true,
-            );
-            break;
-          case ResultType.permissionDenied:
-            showSnackBarMessage(Get.context!, 'Permission denied', true);
-            break;
-          case ResultType.error:
-          default:
-            showSnackBarMessage(Get.context!, 'Error: ${result.message}', true);
-            break;
-        }
-      } catch (e) {
-        Get.back(); // Remove loading dialog
-        showSnackBarMessage(Get.context!, 'Error: ${e.toString()}', true);
+          break;
+        case ResultType.permissionDenied:
+          showSnackBarMessage(Get.context!, 'Permission denied', true);
+          break;
+        case ResultType.error:
+        default:
+          showSnackBarMessage(Get.context!, 'Error: ${result.message}', true);
+          break;
       }
+    } catch (e) {
+      Get.back();
+      showSnackBarMessage(Get.context!, 'Error: ${e.toString()}', true);
     }
+  }
 
-    return Align(
-      alignment: isMe ? Alignment.centerRight : Alignment.centerLeft,
-      child: Row(
-        mainAxisAlignment: isMe
-            ? MainAxisAlignment.end
-            : MainAxisAlignment.start,
-        crossAxisAlignment: isMe
-            ? CrossAxisAlignment.end
-            : CrossAxisAlignment.start,
+  Widget _buildSenderAvatar() {
+    return GestureDetector(
+      onTap: _openSenderProfile,
+      child: CircleAvatar(
+        radius: 16.r,
+        backgroundImage: senderImage != null && senderImage!.isNotEmpty
+            ? NetworkImage(senderImage!)
+            : null,
+        child: senderImage == null || senderImage!.isEmpty
+            ? Text(
+                senderName.isNotEmpty ? senderName[0].toUpperCase() : '?',
+                style: TextStyle(
+                  fontSize: 14.sp,
+                  fontWeight: FontWeight.bold,
+                ),
+              )
+            : null,
+      ),
+    );
+  }
+
+  Widget _buildBubble(BuildContext context, String safeFileUrl) {
+    return Container(
+      margin: EdgeInsets.symmetric(vertical: 5.h),
+      padding: EdgeInsets.symmetric(horizontal: 14.w, vertical: 10.h),
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          colors: isMe
+              ? [const Color(0xff2799EA), const Color(0xff2799EA)]
+              : [const Color(0xffF3F3F5), const Color(0xffF3F3F5)],
+        ),
+        borderRadius: BorderRadius.only(
+          topLeft: isMe ? Radius.circular(16.r) : Radius.circular(0),
+          topRight: Radius.circular(16.r),
+          bottomLeft: Radius.circular(16.r),
+          bottomRight: isMe ? Radius.circular(0) : Radius.circular(16.r),
+        ),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          if (!isMe)
-            GestureDetector(
-              onTap: _openSenderProfile,
-              child: CircleAvatar(
-                radius: 16.r,
-                backgroundImage: senderImage != null && senderImage!.isNotEmpty
-                    ? NetworkImage(senderImage!)
-                    : null,
-                child: senderImage == null || senderImage!.isEmpty
-                    ? Text(
-                        senderName.isNotEmpty
-                            ? senderName[0].toUpperCase()
-                            : '?',
-                        style: TextStyle(
-                          fontSize: 14.sp,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      )
-                    : null,
-              ),
-            ),
-          if (!isMe) widthBox8 else widthBox10,
-
-          SizedBox(
-            width: 270.w,
-            child: Column(
-              crossAxisAlignment: isMe
-                  ? CrossAxisAlignment.end
-                  : CrossAxisAlignment.start,
-              children: [
-                if (!isMe)
-                  Text(
-                    senderName,
-                    style: TextStyle(
-                      fontSize: 12.sp,
-                      fontWeight: FontWeight.w500,
-                      color: Colors.white70,
-                    ),
-                  ),
-
-                Container(
-                  margin: EdgeInsets.symmetric(vertical: 5.h),
-                  padding: EdgeInsets.symmetric(
-                    horizontal: 14.w,
-                    vertical: 10.h,
-                  ),
-                  decoration: BoxDecoration(
-                    gradient: LinearGradient(
-                      colors: isMe
-                          ? [const Color(0xff2799EA), const Color(0xff2799EA)]
-                          : [const Color(0xffF3F3F5), const Color(0xffF3F3F5)],
-                    ),
-                    borderRadius: BorderRadius.only(
-                      topLeft: Radius.circular(16.r),
-                      topRight: Radius.circular(16.r),
-                      bottomLeft: isMe
-                          ? Radius.circular(16.r)
-                          : Radius.circular(0),
-                      bottomRight: isMe
-                          ? Radius.circular(0)
-                          : Radius.circular(16.r),
-                    ),
-                  ),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      // File Attachment Handling
-                      if (safeFileUrl.isNotEmpty) ...[
-                        if (fileType == 'IMAGE')
-                          GestureDetector(
-                            onTap: _openFullScreenImage,
-                            child: ClipRRect(
-                              borderRadius: BorderRadius.circular(12.r),
-                              child: Image.network(
-                                safeFileUrl,
-                                height: 200.h,
-                                width: double.infinity,
-                                fit: BoxFit.cover,
-                                loadingBuilder:
-                                    (context, child, loadingProgress) {
-                                      if (loadingProgress == null) return child;
-                                      return Container(
-                                        height: 200.h,
-                                        color: Colors.grey[300],
-                                        child: Center(
-                                          child: CircularProgressIndicator(
-                                            value:
-                                                loadingProgress
-                                                        .expectedTotalBytes !=
-                                                    null
-                                                ? loadingProgress
-                                                          .cumulativeBytesLoaded /
-                                                      loadingProgress
-                                                          .expectedTotalBytes!
-                                                : null,
-                                          ),
-                                        ),
-                                      );
-                                    },
-                                errorBuilder: (_, __, ___) => Container(
-                                  height: 20.h,
-                                  color: Colors.grey[300],
-                                  child: const Icon(
-                                    Icons.broken_image,
-                                    color: Colors.grey,
-                                  ),
-                                ),
-                              ),
-                            ),
-                          )
-                        else if (fileType == 'VIDEO')
-                          GestureDetector(
-                            onTap: () {
-                              Get.to(
-                                () => VideoPlayerScreen(videoUrl: safeFileUrl),
-                              );
-                            },
-                            child: Container(
-                              height: 200.h,
-                              width: double.infinity,
-                              decoration: BoxDecoration(
-                                color: Colors.black54,
-                                borderRadius: BorderRadius.circular(12.r),
-                              ),
-                              child: Stack(
-                                alignment: Alignment.center,
-                                children: [
-                                  // Video thumbnail (if available)
-                                  Container(
-                                    decoration: BoxDecoration(
-                                      borderRadius: BorderRadius.circular(12.r),
-                                    ),
-                                    child: const Icon(
-                                      Icons.play_circle_filled,
-                                      size: 60,
-                                      color: Colors.white70,
-                                    ),
-                                  ),
-                                  Positioned(
-                                    bottom: 8,
-                                    right: 8,
-                                    child: Container(
-                                      padding: EdgeInsets.symmetric(
-                                        horizontal: 8.w,
-                                        vertical: 4.h,
-                                      ),
-                                      decoration: BoxDecoration(
-                                        color: Colors.black45,
-                                        borderRadius: BorderRadius.circular(
-                                          4.r,
-                                        ),
-                                      ),
-                                      child: Text(
-                                        'Video',
-                                        style: TextStyle(
-                                          color: Colors.white,
-                                          fontSize: 12.sp,
-                                        ),
-                                      ),
-                                    ),
-                                  ),
-                                ],
-                              ),
-                            ),
-                          )
-                        else // Other files (pdf, doc, etc.)
-                          GestureDetector(
-                            onTap: _handleFileOpen,
-                            child: Container(
-                              padding: EdgeInsets.all(4.r),
-                              decoration: BoxDecoration(
-                                color: isMe
-                                    ? Colors.white.withOpacity(0.2)
-                                    : Colors.grey[200],
-                                borderRadius: BorderRadius.circular(12.r),
-                                border: Border.all(
-                                  color: isMe
-                                      ? Colors.white30
-                                      : Colors.grey[300]!,
-                                  width: 1,
-                                ),
-                              ),
-                              child: Row(
-                                children: [
-                                  Icon(
-                                    _getFileIcon(_getFileExtension()),
-                                    size: 28.r,
-                                    color: isMe
-                                        ? Colors.white
-                                        : Colors.blue[700],
-                                  ),
-                                  SizedBox(width: 12.w),
-                                  Expanded(
-                                    child: Column(
-                                      crossAxisAlignment:
-                                          CrossAxisAlignment.start,
-                                      children: [
-                                        Text(
-                                          _getFileName(),
-                                          style: TextStyle(
-                                            fontSize: 12.sp,
-                                            color: isMe
-                                                ? Colors.white
-                                                : Colors.black,
-                                            fontWeight: FontWeight.w500,
-                                          ),
-                                          overflow: TextOverflow.ellipsis,
-                                        ),
-                                        SizedBox(height: 4.h),
-                                        Text(
-                                          _getFileExtension().toUpperCase(),
-                                          style: TextStyle(
-                                            fontSize: 10.sp,
-                                            color: isMe
-                                                ? Colors.white70
-                                                : Colors.grey[600],
-                                          ),
-                                        ),
-                                      ],
-                                    ),
-                                  ),
-                                ],
-                              ),
-                            ),
-                          ),
-                        SizedBox(height: 8.h),
-                      ],
-
-                      // Text Message
-                      if (message['text'].toString().isNotEmpty)
-                        Padding(
-                          padding: EdgeInsets.only(
-                            top: safeFileUrl.isNotEmpty ? 8.h : 0,
-                          ),
-                          child: Column(
-                            crossAxisAlignment: isMe
-                                ? CrossAxisAlignment.end
-                                : CrossAxisAlignment.start,
-                            children: [
-                              Text(
-                                message['text'].toString(),
-                                style: TextStyle(
-                                  fontSize: 14.sp,
-                                  color: isMe ? Colors.white : Colors.black,
-                                ),
-                              ),
-                              // SizedBox(height: 4.h),
-                              // Text(
-                              //   time,
-                              //   style: TextStyle(
-                              //     fontSize: 8.sp,
-                              //     color: isMe ? Colors.white : Colors.black,
-                              //   ),
-                              // ),
-                            ],
+          if (safeFileUrl.isNotEmpty) ...[
+            if (fileType == 'IMAGE')
+              GestureDetector(
+                onTap: _openFullScreenImage,
+                child: ClipRRect(
+                  borderRadius: BorderRadius.circular(12.r),
+                  child: Image.network(
+                    safeFileUrl,
+                    height: 200.h,
+                    width: double.infinity,
+                    fit: BoxFit.cover,
+                    loadingBuilder: (context, child, loadingProgress) {
+                      if (loadingProgress == null) return child;
+                      return Container(
+                        height: 200.h,
+                        color: Colors.grey[300],
+                        child: Center(
+                          child: CircularProgressIndicator(
+                            value: loadingProgress.expectedTotalBytes != null
+                                ? loadingProgress.cumulativeBytesLoaded /
+                                      loadingProgress.expectedTotalBytes!
+                                : null,
                           ),
                         ),
-                    ],
+                      );
+                    },
+                    errorBuilder: (_, __, ___) => Container(
+                      height: 20.h,
+                      color: Colors.grey[300],
+                      child: const Icon(Icons.broken_image, color: Colors.grey),
+                    ),
                   ),
                 ),
-
-                // Time + seen tick
-                Padding(
-                  padding: EdgeInsets.only(top: 1.h),
-                  child: Row(
-                    mainAxisAlignment: isMe
-                        ? MainAxisAlignment.end
-                        : MainAxisAlignment.start,
+              )
+            else if (fileType == 'VIDEO')
+              GestureDetector(
+                onTap: () {
+                  Get.to(() => VideoPlayerScreen(videoUrl: safeFileUrl));
+                },
+                child: Container(
+                  height: 200.h,
+                  width: double.infinity,
+                  decoration: BoxDecoration(
+                    color: Colors.black54,
+                    borderRadius: BorderRadius.circular(12.r),
+                  ),
+                  child: Stack(
+                    alignment: Alignment.center,
                     children: [
-                      Text(
-                        time,
-                        style: TextStyle(
-                          fontSize: 10.sp,
-                          color: isMe ? Colors.white70 : Colors.grey[600],
+                      Container(
+                        decoration: BoxDecoration(
+                          borderRadius: BorderRadius.circular(12.r),
+                        ),
+                        child: const Icon(
+                          Icons.play_circle_filled,
+                          size: 60,
+                          color: Colors.white70,
                         ),
                       ),
-                      // if (isMe) ...[
-                      //   SizedBox(width: 6.w),
-                      //   Icon(
-                      //     message['seen'] == true
-                      //         ? Icons.check_circle
-                      //         : Icons.check,
-                      //     size: 14.sp,
-                      //     color: message['seen'] == true
-                      //         ? Colors.cyan
-                      //         : Colors.white70,
-                      //   ),
-                      // ],
+                      Positioned(
+                        bottom: 8,
+                        right: 8,
+                        child: Container(
+                          padding: EdgeInsets.symmetric(
+                            horizontal: 8.w,
+                            vertical: 4.h,
+                          ),
+                          decoration: BoxDecoration(
+                            color: Colors.black45,
+                            borderRadius: BorderRadius.circular(4.r),
+                          ),
+                          child: Text(
+                            'Video',
+                            style: TextStyle(
+                              color: Colors.white,
+                              fontSize: 12.sp,
+                            ),
+                          ),
+                        ),
+                      ),
                     ],
                   ),
                 ),
-              ],
+              )
+            else
+              GestureDetector(
+                onTap: () => _handleFileOpen(context, safeFileUrl),
+                child: Container(
+                  padding: EdgeInsets.all(4.r),
+                  decoration: BoxDecoration(
+                    color: isMe
+                        ? Colors.white.withOpacity(0.2)
+                        : Colors.grey[200],
+                    borderRadius: BorderRadius.circular(12.r),
+                    border: Border.all(
+                      color: isMe ? Colors.white30 : Colors.grey[300]!,
+                      width: 1,
+                    ),
+                  ),
+                  child: Row(
+                    children: [
+                      Icon(
+                        _getFileIcon(_getFileExtension()),
+                        size: 28.r,
+                        color: isMe ? Colors.white : Colors.blue[700],
+                      ),
+                      SizedBox(width: 12.w),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              _getFileName(),
+                              style: TextStyle(
+                                fontSize: 12.sp,
+                                color: isMe ? Colors.white : Colors.black,
+                                fontWeight: FontWeight.w500,
+                              ),
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                            SizedBox(height: 4.h),
+                            Text(
+                              _getFileExtension().toUpperCase(),
+                              style: TextStyle(
+                                fontSize: 10.sp,
+                                color: isMe ? Colors.white70 : Colors.grey[600],
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            SizedBox(height: 8.h),
+          ],
+          if (message['text'].toString().isNotEmpty)
+            Padding(
+              padding: EdgeInsets.only(top: safeFileUrl.isNotEmpty ? 8.h : 0),
+              child: Text(
+                message['text'].toString(),
+                style: TextStyle(
+                  fontSize: 14.sp,
+                  color: isMe ? Colors.white : Colors.black,
+                ),
+              ),
+            ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildTimeLabel() {
+    return Padding(
+      padding: EdgeInsets.only(top: 1.h),
+      child: Text(
+        time,
+        style: TextStyle(
+          fontSize: 10.sp,
+          color: isMe ? Colors.white70 : Colors.grey[600],
+        ),
+      ),
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final safeFileUrl = _isValidRemoteUrl(fileUrl) ? fileUrl : '';
+    final bubble = _buildBubble(context, safeFileUrl);
+    final timeLabel = _buildTimeLabel();
+
+    if (isMe) {
+      return Padding(
+        padding: EdgeInsets.only(bottom: 12.h),
+        child: Align(
+          alignment: Alignment.centerRight,
+          child: SizedBox(
+            width: 270.w,
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.end,
+              children: [bubble, timeLabel],
             ),
           ),
-        ],
+        ),
+      );
+    }
+
+    return Padding(
+      padding: EdgeInsets.only(bottom: 12.h),
+      child: Align(
+        alignment: Alignment.centerLeft,
+        child: ConstrainedBox(
+          constraints: BoxConstraints(maxWidth: 310.w),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                crossAxisAlignment: CrossAxisAlignment.center,
+                children: [
+                  _buildSenderAvatar(),
+                  SizedBox(width: 8.w),
+                  Flexible(
+                    child: Text(
+                      senderName,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: TextStyle(
+                        fontSize: 12.sp,
+                        fontWeight: FontWeight.w500,
+                        color: Colors.white70,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [bubble, timeLabel],
+              ),
+            ],
+          ),
+        ),
       ),
     );
   }

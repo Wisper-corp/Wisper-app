@@ -22,7 +22,7 @@ class ChatScreen extends StatefulWidget {
   final bool? isOnline;
 
   const ChatScreen({
-    super.key,
+    super.key, 
     this.receiverId,
     this.receiverName,
     this.receiverImage,

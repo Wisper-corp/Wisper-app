@@ -4,6 +4,8 @@ import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:get/get.dart';
 import 'package:pin_code_fields/pin_code_fields.dart';
 import 'package:wisper/app/core/others/custom_size.dart'; 
+import 'package:wisper/app/core/others/get_storage.dart';
+import 'package:wisper/app/core/services/socket/socket_service.dart';
 import 'package:wisper/app/core/utils/show_over_loading.dart';
 import 'package:wisper/app/core/utils/snack_bar.dart';
 import 'package:wisper/app/core/widgets/common/custom_button.dart';
@@ -11,8 +13,10 @@ import 'package:wisper/app/core/widgets/common/details_card.dart';
 import 'package:wisper/app/modules/authentication/controller/otp_verify_controller.dart';
 import 'package:wisper/app/modules/authentication/controller/resend_otp_controller.dart';
 import 'package:wisper/app/modules/authentication/views/reset_password_screen.dart';
-import 'package:wisper/app/modules/authentication/views/sign_in_screen.dart';
 import 'package:wisper/app/modules/authentication/widget/auth_header.dart';
+import 'package:wisper/app/modules/dashboard/views/dashboard_screen.dart';
+import 'package:wisper/app/modules/profile/controller/buisness/buisness_controller.dart';
+import 'package:wisper/app/modules/profile/controller/person/profile_controller.dart';
 
 class OtpVerificationScreen extends StatefulWidget {
   final String email;
@@ -36,6 +40,8 @@ class _OtpVerificationScreenState extends State<OtpVerificationScreen> {
   final ResendOtpController resendOtpController = Get.put(
     ResendOtpController(),
   );
+  final ProfileController profileController = Get.put(ProfileController());
+  final BusinessController businessController = Get.put(BusinessController());
   int _secondsRemaining = 60;
   bool _isTimerActive = true;
   Timer? _timer;
@@ -81,6 +87,22 @@ class _OtpVerificationScreenState extends State<OtpVerificationScreen> {
     );
   }
 
+  Future<void> _prepareAuthenticatedSession() async {
+    final socketService = Get.find<SocketService>();
+    await socketService.init();
+    await socketService.ensureRegistered();
+
+    await profileController.getMyProfile();
+    await businessController.getMyProfile();
+    if (StorageUtil.getData(StorageUtil.userId) == null) {
+      await profileController.getMyProfile();
+      await businessController.getMyProfile();
+    }
+
+    await socketService.init();
+    await socketService.ensureRegistered();
+  }
+
   Future<void> performOtpVerify(BuildContext context) async {
     final bool isSuccess = await otpVerifyController.otpVerify(
       isShowVerify: widget.isResetpassword ? false : true,
@@ -90,9 +112,12 @@ class _OtpVerificationScreenState extends State<OtpVerificationScreen> {
 
     if (isSuccess) {
       showSnackBarMessage(context, 'Successfully done');
-      widget.isResetpassword
-          ? Get.to(() => ResetPasswordScreen(email: widget.email))
-          : Get.to(() => SignInScreen());
+      if (widget.isResetpassword) {
+        Get.to(() => ResetPasswordScreen(email: widget.email));
+      } else {
+        await _prepareAuthenticatedSession();
+        Get.offAll(() => const MainButtonNavbarScreen());
+      }
     } else {
       showSnackBarMessage(context, otpVerifyController.errorMessage, true);
     }

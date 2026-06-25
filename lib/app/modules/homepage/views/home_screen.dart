@@ -17,11 +17,11 @@ class HomeScreen extends StatefulWidget {
 
   @override
   State<HomeScreen> createState() => _HomeScreenState();
-}
+} 
 
 class _HomeScreenState extends State<HomeScreen> {
   static const String _generalChatId = '56cbc5ab-78ed-4ec7-9847-0120558f9c62';
-  static const String _generalGroupId = '56cbc5ab-78ed-4ec7-9847-01205585862';
+  static const String _generalGroupId = '56cbc5ab-78ed-4ec7-9847-01205585862'; 
 
   int selectedIndex = 0;
 
@@ -102,7 +102,7 @@ class _HomeScreenState extends State<HomeScreen> {
                             ),
                           )
                         : GroupChatScreen(
-                            isGeneralChat: true,
+                            isGeneralChat: true, 
                             chatId: _generalChatId,
                             groupId: _generalGroupId,
                             groupName: 'General Chat',
