@@ -26,17 +26,14 @@ class _CreateOfferDialogState extends State<CreateOfferDialog> {
   final TextEditingController _durationController = TextEditingController();
   late final OfferService _offerService;
   bool _isLoading = false;
-  bool _serviceInitialized = false;
 
   @override
   void initState() {
     super.initState();
     try {
       _offerService = Get.find<OfferService>();
-      _serviceInitialized = true;
     } catch (e) {
       _offerService = Get.put(OfferService());
-      _serviceInitialized = true;
     }
   }
 
@@ -48,8 +45,8 @@ class _CreateOfferDialogState extends State<CreateOfferDialog> {
     super.dispose();
   }
 
-  Future<void> _createOffer() async {
-    if (_amountController.text.isEmpty || 
+  Future<void> _sendOffer() async {
+    if (_amountController.text.isEmpty ||
         _descriptionController.text.isEmpty ||
         _durationController.text.isEmpty) {
       Get.snackbar(
@@ -74,25 +71,23 @@ class _CreateOfferDialogState extends State<CreateOfferDialog> {
       return;
     }
 
-    setState(() {
-      _isLoading = true;
-    });
+    setState(() => _isLoading = true);
 
     try {
       final offer = await _offerService.createOffer(
         receiverId: widget.receiverId,
         chatId: widget.chatId,
         amount: amount,
-        description: _descriptionController.text,
-        duration: _durationController.text,
+        description: _descriptionController.text.trim(),
+        duration: _durationController.text.trim(),
       );
 
       if (mounted) {
         widget.onOfferCreated(offer);
         Navigator.pop(context);
         Get.snackbar(
-          'Success',
-          'Offer sent successfully',
+          'Offer Sent',
+          'Your offer has been sent successfully',
           backgroundColor: Colors.green,
           colorText: Colors.white,
           snackPosition: SnackPosition.BOTTOM,
@@ -101,20 +96,18 @@ class _CreateOfferDialogState extends State<CreateOfferDialog> {
     } catch (e) {
       if (mounted) {
         String errorMessage = 'Failed to send offer';
-        
-        // Check if it's a network/backend issue
-        if (e.toString().contains('SocketException') || 
+        if (e.toString().contains('SocketException') ||
             e.toString().contains('Connection') ||
             e.toString().contains('Failed host lookup')) {
-          errorMessage = 'Cannot connect to server. Please check your internet connection or try again later.';
-        } else if (e.toString().contains('401') || e.toString().contains('Unauthorized')) {
+          errorMessage = 'Cannot connect to server. Please try again later.';
+        } else if (e.toString().contains('401') ||
+            e.toString().contains('Unauthorized')) {
           errorMessage = 'Session expired. Please login again.';
         } else if (e.toString().contains('404')) {
-          errorMessage = 'Server feature not available yet. Please contact support.';
+          errorMessage = 'Feature not available yet. Please contact support.';
         } else {
           errorMessage = e.toString().replaceAll('Exception:', '').trim();
         }
-
         Get.snackbar(
           'Error',
           errorMessage,
@@ -125,140 +118,214 @@ class _CreateOfferDialogState extends State<CreateOfferDialog> {
         );
       }
     } finally {
-      if (mounted) {
-        setState(() {
-          _isLoading = false;
-        });
-      }
+      if (mounted) setState(() => _isLoading = false);
     }
   }
 
   @override
   Widget build(BuildContext context) {
-    return Dialog(
+    return Scaffold(
       backgroundColor: const Color(0xff1C1C1E),
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(16),
-      ),
-      child: Padding(
-        padding: const EdgeInsets.all(24.0),
+      body: SafeArea(
         child: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            const Text(
-              'Send Offer',
-              style: TextStyle(
-                color: Colors.white,
-                fontSize: 24,
-                fontWeight: FontWeight.bold,
-              ),
-            ),
-            const SizedBox(height: 24),
-            TextField(
-              controller: _amountController,
-              keyboardType: TextInputType.numberWithOptions(decimal: true),
-              inputFormatters: [
-                FilteringTextInputFormatter.allow(RegExp(r'^\d+\.?\d{0,2}')),
-              ],
-              style: const TextStyle(color: Colors.white),
-              decoration: InputDecoration(
-                labelText: 'Amount (₦)',
-                labelStyle: const TextStyle(color: Colors.grey),
-                prefixText: '₦ ',
-                prefixStyle: const TextStyle(color: Colors.white),
-                enabledBorder: OutlineInputBorder(
-                  borderSide: const BorderSide(color: Colors.grey),
-                  borderRadius: BorderRadius.circular(8),
-                ),
-                focusedBorder: OutlineInputBorder(
-                  borderSide: const BorderSide(color: Color(0xffFFD700)),
-                  borderRadius: BorderRadius.circular(8),
-                ),
-              ),
-            ),
-            const SizedBox(height: 16),
-            TextField(
-              controller: _descriptionController,
-              maxLines: 3,
-              style: const TextStyle(color: Colors.white),
-              decoration: InputDecoration(
-                labelText: 'Service Description',
-                labelStyle: const TextStyle(color: Colors.grey),
-                hintText: 'Describe the service you are offering...',
-                hintStyle: const TextStyle(color: Colors.grey),
-                enabledBorder: OutlineInputBorder(
-                  borderSide: const BorderSide(color: Colors.grey),
-                  borderRadius: BorderRadius.circular(8),
-                ),
-                focusedBorder: OutlineInputBorder(
-                  borderSide: const BorderSide(color: Color(0xffFFD700)),
-                  borderRadius: BorderRadius.circular(8),
-                ),
-              ),
-            ),
-            const SizedBox(height: 16),
-            TextField(
-              controller: _durationController,
-              style: const TextStyle(color: Colors.white),
-              decoration: InputDecoration(
-                labelText: 'Delivery Time',
-                labelStyle: const TextStyle(color: Colors.grey),
-                hintText: 'e.g., 3 days, 1 week, 2 hours',
-                hintStyle: const TextStyle(color: Colors.grey),
-                enabledBorder: OutlineInputBorder(
-                  borderSide: const BorderSide(color: Colors.grey),
-                  borderRadius: BorderRadius.circular(8),
-                ),
-                focusedBorder: OutlineInputBorder(
-                  borderSide: const BorderSide(color: Color(0xffFFD700)),
-                  borderRadius: BorderRadius.circular(8),
-                ),
-              ),
-            ),
-            const SizedBox(height: 24),
-            Row(
-              mainAxisAlignment: MainAxisAlignment.end,
-              children: [
-                TextButton(
-                  onPressed: _isLoading ? null : () => Get.back(),
-                  child: const Text(
-                    'Cancel',
-                    style: TextStyle(color: Colors.grey),
-                  ),
-                ),
-                const SizedBox(width: 12),
-                ElevatedButton(
-                  onPressed: _isLoading ? null : _createOffer,
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: const Color(0xffFFD700),
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 24,
-                      vertical: 12,
-                    ),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(8),
+            // ── Top Navigation Bar ──────────────────────────────────
+            Padding(
+              padding:
+                  const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  // Cancel
+                  GestureDetector(
+                    onTap: _isLoading ? null : () => Navigator.pop(context),
+                    child: Text(
+                      'Cancel',
+                      style: TextStyle(
+                        color: _isLoading ? Colors.grey : Colors.white,
+                        fontSize: 16,
+                      ),
                     ),
                   ),
-                  child: _isLoading
-                      ? const SizedBox(
-                          width: 20,
-                          height: 20,
-                          child: CircularProgressIndicator(
-                            strokeWidth: 2,
-                            valueColor:
-                                AlwaysStoppedAnimation<Color>(Colors.black),
+
+                  // Title
+                  const Text(
+                    'Create Offer',
+                    style: TextStyle(
+                      color: Colors.white,
+                      fontSize: 17,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+
+                  // Send button
+                  GestureDetector(
+                    onTap: _isLoading ? null : _sendOffer,
+                    child: _isLoading
+                        ? const SizedBox(
+                            width: 20,
+                            height: 20,
+                            child: CircularProgressIndicator(
+                              strokeWidth: 2,
+                              valueColor: AlwaysStoppedAnimation<Color>(
+                                  Color(0xff1877F2)),
+                            ),
+                          )
+                        : const Text(
+                            'Send',
+                            style: TextStyle(
+                              color: Color(0xff1877F2),
+                              fontSize: 16,
+                              fontWeight: FontWeight.w600,
+                            ),
                           ),
-                        )
-                      : const Text(
-                          'Send Offer',
-                          style: TextStyle(
-                            color: Colors.black,
-                            fontWeight: FontWeight.bold,
+                  ),
+                ],
+              ),
+            ),
+
+            const Divider(color: Color(0xff2C2C2E), thickness: 1, height: 1),
+
+            // ── Form Body ───────────────────────────────────────────
+            Expanded(
+              child: SingleChildScrollView(
+                padding: const EdgeInsets.symmetric(horizontal: 16),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const SizedBox(height: 24),
+
+                    // ── PRICE ────────────────────────────────────────
+                    const Text(
+                      'PRICE',
+                      style: TextStyle(
+                        color: Color(0xff8E8E93),
+                        fontSize: 12,
+                        fontWeight: FontWeight.w500,
+                        letterSpacing: 0.5,
+                      ),
+                    ),
+                    const SizedBox(height: 8),
+                    Container(
+                      decoration: BoxDecoration(
+                        color: const Color(0xff2C2C2E),
+                        borderRadius: BorderRadius.circular(10),
+                      ),
+                      child: Row(
+                        children: [
+                          const Padding(
+                            padding: EdgeInsets.only(left: 14),
+                            child: Text(
+                              '₦',
+                              style: TextStyle(
+                                color: Color(0xff8E8E93),
+                                fontSize: 17,
+                              ),
+                            ),
                           ),
+                          const SizedBox(width: 6),
+                          Expanded(
+                            child: TextField(
+                              controller: _amountController,
+                              keyboardType: const TextInputType.numberWithOptions(
+                                  decimal: true),
+                              inputFormatters: [
+                                FilteringTextInputFormatter.allow(
+                                    RegExp(r'^\d+\.?\d{0,2}')),
+                              ],
+                              style: const TextStyle(
+                                  color: Colors.white, fontSize: 17),
+                              decoration: const InputDecoration(
+                                hintText: 'Enter amount',
+                                hintStyle: TextStyle(
+                                  color: Color(0xff48484A),
+                                  fontSize: 17,
+                                ),
+                                border: InputBorder.none,
+                                contentPadding: EdgeInsets.symmetric(
+                                    vertical: 14, horizontal: 4),
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+
+                    const SizedBox(height: 24),
+
+                    // ── DELIVERY TIME ────────────────────────────────
+                    const Text(
+                      'DELIVERY TIME',
+                      style: TextStyle(
+                        color: Color(0xff8E8E93),
+                        fontSize: 12,
+                        fontWeight: FontWeight.w500,
+                        letterSpacing: 0.5,
+                      ),
+                    ),
+                    const SizedBox(height: 8),
+                    Container(
+                      decoration: BoxDecoration(
+                        color: const Color(0xff2C2C2E),
+                        borderRadius: BorderRadius.circular(10),
+                      ),
+                      child: TextField(
+                        controller: _durationController,
+                        style: const TextStyle(
+                            color: Colors.white, fontSize: 17),
+                        decoration: const InputDecoration(
+                          hintText: 'e.g. 3 days, 1 week',
+                          hintStyle: TextStyle(
+                            color: Color(0xff48484A),
+                            fontSize: 17,
+                          ),
+                          border: InputBorder.none,
+                          contentPadding: EdgeInsets.symmetric(
+                              vertical: 14, horizontal: 14),
                         ),
+                      ),
+                    ),
+
+                    const SizedBox(height: 24),
+
+                    // ── DESCRIPTION ──────────────────────────────────
+                    const Text(
+                      'DESCRIPTION',
+                      style: TextStyle(
+                        color: Color(0xff8E8E93),
+                        fontSize: 12,
+                        fontWeight: FontWeight.w500,
+                        letterSpacing: 0.5,
+                      ),
+                    ),
+                    const SizedBox(height: 8),
+                    Container(
+                      decoration: BoxDecoration(
+                        color: const Color(0xff2C2C2E),
+                        borderRadius: BorderRadius.circular(10),
+                      ),
+                      child: TextField(
+                        controller: _descriptionController,
+                        maxLines: 5,
+                        style: const TextStyle(
+                            color: Colors.white, fontSize: 17),
+                        decoration: const InputDecoration(
+                          hintText: 'Describe the service you are offering...',
+                          hintStyle: TextStyle(
+                            color: Color(0xff48484A),
+                            fontSize: 17,
+                          ),
+                          border: InputBorder.none,
+                          contentPadding: EdgeInsets.symmetric(
+                              vertical: 14, horizontal: 14),
+                        ),
+                      ),
+                    ),
+
+                    const SizedBox(height: 32),
+                  ],
                 ),
-              ],
+              ),
             ),
           ],
         ),
