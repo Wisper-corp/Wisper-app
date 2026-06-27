@@ -14,6 +14,7 @@ class MemberListTile extends StatelessWidget {
   final String time;
   final String unreadMessageCount;
   final bool isOnline;
+  final int? memberCount;
 
   const MemberListTile({
     super.key,
@@ -26,6 +27,7 @@ class MemberListTile extends StatelessWidget {
     required this.unreadMessageCount,
     required this.isClass,
     required this.isOnline,
+    this.memberCount,
   });
 
   @override
@@ -166,6 +168,11 @@ class MemberListTile extends StatelessWidget {
                         ),
                       ],
                     ),
+                    // Members row for groups/classes
+                    if ((isGroup || isClass) && memberCount != null) ...[
+                      const SizedBox(height: 6),
+                      _buildMembersRow(),
+                    ],
                     const SizedBox(height: 12),
                     Container(height: 0.5, color: Colors.grey.withOpacity(0.5)),
                   ],
@@ -175,6 +182,67 @@ class MemberListTile extends StatelessWidget {
           ),
         ),
       ),
+    );
+  }
+
+  String _formatMemberCount(int count) {
+    if (count >= 1000000) return '${(count / 1000000).toStringAsFixed(1)}M members';
+    if (count >= 1000) return '${(count / 1000).toStringAsFixed(1)}K members';
+    return '$count members';
+  }
+
+  Widget _buildMembersRow() {
+    final List<Color> avatarColors = [
+      const Color(0xff1F7DE9),
+      const Color(0xff11AE46),
+      const Color(0xff9B59B6),
+    ];
+    const double avatarSize = 18;
+    const double overlap = 10;
+    const int showCount = 3;
+
+    return Row(
+      children: [
+        SizedBox(
+          width: avatarSize + (showCount - 1) * (avatarSize - overlap),
+          height: avatarSize,
+          child: Stack(
+            children: List.generate(showCount, (i) {
+              return Positioned(
+                left: i * (avatarSize - overlap).toDouble(),
+                child: Container(
+                  width: avatarSize,
+                  height: avatarSize,
+                  decoration: BoxDecoration(
+                    shape: BoxShape.circle,
+                    color: avatarColors[i % avatarColors.length],
+                    border: Border.all(color: Colors.black, width: 1.5),
+                  ),
+                  child: Center(
+                    child: Text(
+                      String.fromCharCode(65 + i),
+                      style: const TextStyle(
+                        color: Colors.white,
+                        fontSize: 8,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                  ),
+                ),
+              );
+            }),
+          ),
+        ),
+        const SizedBox(width: 6),
+        Text(
+          _formatMemberCount(memberCount!),
+          style: TextStyle(
+            fontSize: 11.sp,
+            color: const Color(0xff98A2B3),
+            fontWeight: FontWeight.w400,
+          ),
+        ),
+      ],
     );
   }
 }

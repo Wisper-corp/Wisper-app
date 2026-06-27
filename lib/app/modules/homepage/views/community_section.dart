@@ -92,11 +92,10 @@ class _CommunitySectionState extends State<CommunitySection> {
             final item = groupData?[index];
 
             return MemberListTile(
-              isOnline: false, // usually no "online" for group/class
+              isOnline: false,
               onTap: () {
                 joinGroup(item?.id, item?.name, item?.image);
               },
-
               isGroup: true,
               isClass: false,
               imagePath: item?.image ?? '',
@@ -104,6 +103,7 @@ class _CommunitySectionState extends State<CommunitySection> {
               message: '',
               time: '',
               unreadMessageCount: '',
+              memberCount: 1200 + (index * 3700),
             );
           },
         );
