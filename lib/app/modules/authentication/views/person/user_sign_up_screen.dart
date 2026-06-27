@@ -5,10 +5,12 @@ import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:get/get.dart';
 import 'package:wisper/app/core/config/theme/light_theme_colors.dart';
 import 'package:wisper/app/core/others/custom_size.dart';
+import 'package:wisper/app/core/utils/show_over_loading.dart';
+import 'package:wisper/app/core/utils/snack_bar.dart';
 import 'package:wisper/app/core/widgets/common/circle_icon.dart';
 import 'package:wisper/app/core/widgets/common/line_widget.dart';
 import 'package:wisper/app/modules/authentication/controller/sign_up_controller.dart';
-import 'package:wisper/app/modules/authentication/views/job_interest_screen.dart';
+import 'package:wisper/app/modules/authentication/views/otp_verification_screen.dart';
 import 'package:wisper/app/modules/authentication/views/person/footer_section.dart';
 import 'package:wisper/app/modules/authentication/views/person/information_section.dart';
 import 'package:wisper/app/modules/authentication/views/person/password_section.dart';
@@ -98,15 +100,28 @@ class _SignUpScreenState extends State<SignUpScreen> {
 
   void _finishSignUp() {
     if (_formKey.currentState!.validate()) {
-      Get.to(
-        () => JobInterestScreen(
-          firstName: _firstNameController.text.trim(),
-          lastName: _lastNameController.text.trim(),
-          email: _emailController.text.trim(),
-          phone: _phoneController.text.trim(),
-          password: _passwordController.text,
-          title: _titleController.text.trim(),
-        ),
+      showLoadingOverLay(
+        asyncFunction: () async {
+          final SignUpController signUpController = Get.put(SignUpController());
+          final bool isSuccess = await signUpController.signUp(
+            firstName: _firstNameController.text.trim(),
+            lastName: _lastNameController.text.trim(),
+            email: _emailController.text.trim(),
+            phone: _phoneController.text.trim(),
+            password: _passwordController.text,
+            confirmPassword: _passwordController.text,
+            title: _titleController.text.trim(),
+            industry: '',
+            address: '',
+          );
+          if (isSuccess) {
+            showSnackBarMessage(context, 'Successfully done');
+            Get.to(() => OtpVerificationScreen(email: _emailController.text.trim()));
+          } else {
+            showSnackBarMessage(context, signUpController.errorMessage, true);
+          }
+        },
+        msg: 'Please wait...',
       );
     }
   }

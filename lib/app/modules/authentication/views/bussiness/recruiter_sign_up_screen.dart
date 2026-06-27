@@ -10,7 +10,8 @@ import 'package:wisper/app/core/widgets/common/custom_button.dart';
 import 'package:wisper/app/core/widgets/common/custom_text_filed.dart';
 import 'package:wisper/app/core/widgets/common/label.dart';
 import 'package:wisper/app/modules/authentication/controller/google_sign_up_controller.dart';
-import 'package:wisper/app/modules/authentication/views/job_interest_screen.dart';
+import 'package:wisper/app/modules/authentication/controller/sign_up_controller.dart';
+import 'package:wisper/app/modules/authentication/views/otp_verification_screen.dart';
 import 'package:wisper/app/modules/authentication/views/sign_in_screen.dart';
 import 'package:wisper/gen/assets.gen.dart';
 
@@ -202,12 +203,25 @@ class _RecruiterSignUpScreenState extends State<RecruiterSignUpScreen> {
                   title: 'Sign Up',
                   onPress: () {
                     if (formKey.currentState!.validate()) {
-                      Get.to(
-                        JobInterestScreen(
-                          bussinessName: nameController.text.trim(),
-                          email: emailController.text.trim(),
-                          password: passwordController.text,
-                        ),
+                      final signUpController = Get.put(SignUpController());
+                      showLoadingOverLay(
+                        asyncFunction: () async {
+                          final bool isSuccess = await signUpController.signUp(
+                            bussinessName: nameController.text.trim(),
+                            email: emailController.text.trim(),
+                            password: passwordController.text,
+                            confirmPassword: passwordController.text,
+                            industry: '',
+                            address: '',
+                          );
+                          if (isSuccess) {
+                            showSnackBarMessage(context, 'Successfully done');
+                            Get.to(() => OtpVerificationScreen(email: emailController.text.trim()));
+                          } else {
+                            showSnackBarMessage(context, signUpController.errorMessage, true);
+                          }
+                        },
+                        msg: 'Please wait...',
                       );
                     }
                   },

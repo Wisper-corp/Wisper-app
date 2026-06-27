@@ -3,7 +3,7 @@ import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:get/get.dart';
 import 'package:wisper/app/core/others/custom_size.dart';
 import 'package:wisper/app/core/widgets/common/circle_icon.dart';
-import 'package:wisper/app/modules/authentication/views/job_interest_screen.dart';
+import 'package:wisper/app/modules/dashboard/views/dashboard_screen.dart';
 import 'package:wisper/gen/assets.gen.dart';
 
 class ProfileImageScreen extends StatefulWidget {
@@ -31,7 +31,7 @@ class _ProfileImageScreenState extends State<ProfileImageScreen> {
                 alignment: Alignment.centerRight,
                 child: GestureDetector(
                   onTap: () {
-                    Get.to(JobInterestScreen());
+                    Get.offAll(() => const MainButtonNavbarScreen());
                   },
                   child: Row(
                     mainAxisAlignment: MainAxisAlignment.end,
