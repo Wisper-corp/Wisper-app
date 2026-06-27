@@ -69,6 +69,11 @@ class _HomeScreenState extends State<HomeScreen> {
             ),
 
             heightBox12,
+
+            // ── Dummy Members Row ────────────────────────────────────────
+            _buildDummyMembersRow(),
+            heightBox12,
+
             SizedBox(
               height: 30.h,
               width: double.infinity,
@@ -122,6 +127,64 @@ class _HomeScreenState extends State<HomeScreen> {
           ],
         ),
       ),
+    );
+  }
+
+  Widget _buildDummyMembersRow() {
+    final List<Color> colors = [
+      const Color(0xff1F7DE9),
+      const Color(0xff11AE46),
+      const Color(0xff9B59B6),
+      const Color(0xffE74C3C),
+      const Color(0xffF39C12),
+    ];
+    final List<String> initials = ['S', 'A', 'K', 'J', 'M'];
+    const double size = 28;
+    const double overlap = 16;
+    const int count = 5;
+
+    return Row(
+      children: [
+        SizedBox(
+          width: size + (count - 1) * (size - overlap),
+          height: size,
+          child: Stack(
+            children: List.generate(count, (i) {
+              return Positioned(
+                left: i * (size - overlap).toDouble(),
+                child: Container(
+                  width: size,
+                  height: size,
+                  decoration: BoxDecoration(
+                    shape: BoxShape.circle,
+                    color: colors[i],
+                    border: Border.all(color: Colors.black, width: 1.5),
+                  ),
+                  child: Center(
+                    child: Text(
+                      initials[i],
+                      style: const TextStyle(
+                        color: Colors.white,
+                        fontSize: 10,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                  ),
+                ),
+              );
+            }),
+          ),
+        ),
+        const SizedBox(width: 8),
+        Text(
+          '23.8K members',
+          style: TextStyle(
+            fontSize: 13.sp,
+            color: Colors.white70,
+            fontWeight: FontWeight.w500,
+          ),
+        ),
+      ],
     );
   }
 }
