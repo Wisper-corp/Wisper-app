@@ -69,7 +69,7 @@ class _HomeScreenState extends State<HomeScreen> {
             ),
 
             heightBox12,
-
+ 
             // ── Dummy Members Row ────────────────────────────────────────
             _buildDummyMembersRow(),
             heightBox12,

@@ -154,7 +154,14 @@ class MonnifyController extends GetxController {
   }
 
   /// Withdraw Funds
-  Future<bool> withdrawFunds({
+  /// Returns a map with keys:
+  ///   'success': bool
+  ///   'status': 'PENDING_OTP' | 'SUCCESS'
+  ///   'reference': String (present when PENDING_OTP)
+  ///   'authorizationCode': String (present when PENDING_OTP)
+  ///   'amount': double (present when PENDING_OTP)
+  ///   'errorMessage': String (present on failure)
+  Future<Map<String, dynamic>> withdrawFunds({
     required double amount,
     required String bankCode,
     required String accountNumber,
@@ -177,19 +184,75 @@ class MonnifyController extends GetxController {
             accessToken: StorageUtil.getData(StorageUtil.userAccessToken),
           );
 
+      _inProgress.value = false;
+
       if (response.isSuccess && response.responseData != null) {
-        await getWalletBalance(); // Refresh balance
+        final data = response.responseData['data'] ?? response.responseData;
+        final status = data['status'] ?? 'SUCCESS';
+
+        if (status == 'PENDING_OTP') {
+          return {
+            'success': true,
+            'status': 'PENDING_OTP',
+            'reference': data['reference'] ?? '',
+            'authorizationCode': data['authorizationCode'] ?? '',
+            'amount': (data['amount'] is int)
+                ? (data['amount'] as int).toDouble()
+                : (data['amount'] ?? amount) as double,
+          };
+        }
+
+        await getWalletBalance();
         _errorMessage.value = '';
-        _inProgress.value = false;
+        return {'success': true, 'status': 'SUCCESS'};
+      } else {
+        _errorMessage.value = response.errorMessage;
+        return {'success': false, 'errorMessage': response.errorMessage};
+      }
+    } catch (e) {
+      _inProgress.value = false;
+      _errorMessage.value = 'Withdrawal failed: ${e.toString()}';
+      return {'success': false, 'errorMessage': _errorMessage.value};
+    }
+  }
+
+  /// Authorize withdrawal with OTP from email
+  Future<bool> authorizeWithdrawal({
+    required String reference,
+    required String otp,
+    required String authorizationCode,
+    required double amount,
+  }) async {
+    _inProgress.value = true;
+
+    try {
+      final Map<String, dynamic> body = {
+        "reference": reference,
+        "otp": otp,
+        "authorizationCode": authorizationCode,
+        "amount": amount,
+      };
+
+      final NetworkResponse response = await Get.find<NetworkCaller>()
+          .postRequest(
+            Urls.monnifyAuthorizeWithdrawalUrl,
+            body: body,
+            accessToken: StorageUtil.getData(StorageUtil.userAccessToken),
+          );
+
+      _inProgress.value = false;
+
+      if (response.isSuccess && response.responseData != null) {
+        await getWalletBalance();
+        _errorMessage.value = '';
         return true;
       } else {
         _errorMessage.value = response.errorMessage;
-        _inProgress.value = false;
         return false;
       }
     } catch (e) {
-      _errorMessage.value = 'Withdrawal failed: ${e.toString()}';
       _inProgress.value = false;
+      _errorMessage.value = 'OTP verification failed: ${e.toString()}';
       return false;
     }
   }

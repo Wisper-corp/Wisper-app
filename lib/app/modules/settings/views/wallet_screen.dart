@@ -730,35 +730,183 @@ class _WalletScreenState extends State<WalletScreen> {
       return;
     }
 
-    final bool success = await _monnifyController.withdrawFunds(
+    final Map<String, dynamic> result = await _monnifyController.withdrawFunds(
       amount: amount,
       bankCode: bankCode,
       accountNumber: accountNumber,
       accountName: accountName,
     );
 
-    if (success) {
-      Get.snackbar(
-        'Success',
-        'Withdrawal request submitted successfully. Funds will be transferred within 24 hours.',
-        snackPosition: SnackPosition.TOP,
-        backgroundColor: Colors.green,
-        colorText: Colors.white,
-        duration: const Duration(seconds: 5),
-      );
-      setState(() => isSelected = 0); // Switch to transactions tab
-      wallletController.getWallet(); // Refresh transactions
+    if (result['success'] == true) {
+      if (result['status'] == 'PENDING_OTP') {
+        // Monnify requires OTP — show OTP dialog
+        _showOtpDialog(
+          reference: result['reference'] as String,
+          authorizationCode: result['authorizationCode'] as String,
+          amount: result['amount'] as double,
+        );
+      } else {
+        // Direct success (no OTP required)
+        Get.snackbar(
+          'Success',
+          'Withdrawal successful! Funds will be in your account shortly.',
+          snackPosition: SnackPosition.TOP,
+          backgroundColor: Colors.green,
+          colorText: Colors.white,
+          duration: const Duration(seconds: 5),
+        );
+        setState(() => isSelected = 0);
+        wallletController.getWallet();
+      }
     } else {
       Get.snackbar(
         'Error',
-        _monnifyController.errorMessage.isNotEmpty 
-          ? _monnifyController.errorMessage 
-          : 'Withdrawal failed. Please try again.',
+        result['errorMessage'] ?? 'Withdrawal failed. Please try again.',
         snackPosition: SnackPosition.TOP,
         backgroundColor: Colors.red,
         colorText: Colors.white,
       );
     }
+  }
+
+  /// OTP dialog — shown when Monnify returns PENDING_AUTHORIZATION
+  void _showOtpDialog({
+    required String reference,
+    required String authorizationCode,
+    required double amount,
+  }) {
+    final TextEditingController otpController = TextEditingController();
+
+    Get.dialog(
+      barrierDismissible: false,
+      AlertDialog(
+        backgroundColor: const Color(0xFF1E1E1E),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16.r)),
+        title: Row(
+          children: [
+            Icon(Icons.lock_outline, color: LightThemeColors.blueColor, size: 24.sp),
+            SizedBox(width: 8.w),
+            Text(
+              'Enter OTP',
+              style: TextStyle(color: Colors.white, fontSize: 18.sp, fontWeight: FontWeight.bold),
+            ),
+          ],
+        ),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              'Monnify sent an OTP to your registered email address to authorize this withdrawal of ₦${amount.toStringAsFixed(2)}.',
+              style: TextStyle(color: Colors.white70, fontSize: 13.sp),
+            ),
+            SizedBox(height: 16.h),
+            TextField(
+              controller: otpController,
+              keyboardType: TextInputType.number,
+              maxLength: 6,
+              autofocus: true,
+              textAlign: TextAlign.center,
+              style: TextStyle(
+                color: Colors.white,
+                fontSize: 24.sp,
+                fontWeight: FontWeight.bold,
+                letterSpacing: 8,
+              ),
+              decoration: InputDecoration(
+                hintText: '------',
+                hintStyle: TextStyle(color: Colors.grey.withOpacity(0.5), letterSpacing: 8),
+                filled: true,
+                fillColor: const Color(0xFF2A2A2A),
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(8.r),
+                  borderSide: BorderSide(color: LightThemeColors.blueColor),
+                ),
+                focusedBorder: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(8.r),
+                  borderSide: BorderSide(color: LightThemeColors.blueColor, width: 2),
+                ),
+                counterText: '',
+              ),
+            ),
+            SizedBox(height: 8.h),
+            Text(
+              'Check your email and enter the 6-digit OTP.',
+              style: TextStyle(color: Colors.grey, fontSize: 11.sp),
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () {
+              otpController.dispose();
+              Get.back();
+            },
+            child: Text('Cancel', style: TextStyle(color: Colors.grey, fontSize: 14.sp)),
+          ),
+          Obx(() => TextButton(
+            onPressed: _monnifyController.inProgress
+                ? null
+                : () async {
+                    final otp = otpController.text.trim();
+                    if (otp.length < 4) {
+                      Get.snackbar('Error', 'Please enter the OTP from your email');
+                      return;
+                    }
+
+                    final bool success = await _monnifyController.authorizeWithdrawal(
+                      reference: reference,
+                      otp: otp,
+                      authorizationCode: authorizationCode,
+                      amount: amount,
+                    );
+
+                    if (success) {
+                      otpController.dispose();
+                      Get.back(); // Close dialog
+                      Get.snackbar(
+                        'Success',
+                        'Withdrawal successful! Funds will be in your account shortly.',
+                        snackPosition: SnackPosition.TOP,
+                        backgroundColor: Colors.green,
+                        colorText: Colors.white,
+                        duration: const Duration(seconds: 5),
+                      );
+                      setState(() => isSelected = 0);
+                      wallletController.getWallet();
+                    } else {
+                      Get.snackbar(
+                        'Invalid OTP',
+                        _monnifyController.errorMessage.isNotEmpty
+                            ? _monnifyController.errorMessage
+                            : 'Incorrect OTP. Please check your email and try again.',
+                        snackPosition: SnackPosition.TOP,
+                        backgroundColor: Colors.red,
+                        colorText: Colors.white,
+                      );
+                    }
+                  },
+            child: _monnifyController.inProgress
+                ? SizedBox(
+                    width: 18.w,
+                    height: 18.h,
+                    child: CircularProgressIndicator(
+                      strokeWidth: 2,
+                      color: LightThemeColors.blueColor,
+                    ),
+                  )
+                : Text(
+                    'Confirm',
+                    style: TextStyle(
+                      color: LightThemeColors.blueColor,
+                      fontSize: 14.sp,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+          )),
+        ],
+      ),
+    );
   }
 
   void _showKycRequiredDialog() {
