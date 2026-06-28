@@ -194,13 +194,14 @@ class _WalletScreenState extends State<WalletScreen> {
                     Expanded(
                       child: GestureDetector(
                         onTap: () {
-                          if (!_kycController.isVerified) {
-                            _showKycRequiredDialog();
-                          } else {
+                          // KYC check temporarily disabled for testing
+                          // if (!_kycController.isVerified) {
+                          //   _showKycRequiredDialog();
+                          // } else {
                             setState(() {
                               isSelected = 2;
                             });
-                          }
+                          // }
                         },
                         child: Container(
                           height: 52.h,
