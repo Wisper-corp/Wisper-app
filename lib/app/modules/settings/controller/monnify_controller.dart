@@ -198,7 +198,7 @@ class MonnifyController extends GetxController {
             'authorizationCode': data['authorizationCode'] ?? '',
             'amount': (data['amount'] is int)
                 ? (data['amount'] as int).toDouble()
-                : (data['amount'] ?? amount) as double,
+                : (data['amount'] != null ? (data['amount'] as num).toDouble() : amount),
           };
         }
 
@@ -217,10 +217,10 @@ class MonnifyController extends GetxController {
   }
 
   /// Authorize withdrawal with OTP from email
+  /// Monnify uses the OTP directly as the authorizationCode
   Future<bool> authorizeWithdrawal({
     required String reference,
     required String otp,
-    required String authorizationCode,
     required double amount,
   }) async {
     _inProgress.value = true;
@@ -229,7 +229,6 @@ class MonnifyController extends GetxController {
       final Map<String, dynamic> body = {
         "reference": reference,
         "otp": otp,
-        "authorizationCode": authorizationCode,
         "amount": amount,
       };
 

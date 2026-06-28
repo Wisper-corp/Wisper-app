@@ -742,7 +742,6 @@ class _WalletScreenState extends State<WalletScreen> {
         // Monnify requires OTP — show OTP dialog
         _showOtpDialog(
           reference: result['reference'] as String,
-          authorizationCode: result['authorizationCode'] as String,
           amount: result['amount'] as double,
         );
       } else {
@@ -772,7 +771,6 @@ class _WalletScreenState extends State<WalletScreen> {
   /// OTP dialog — shown when Monnify returns PENDING_AUTHORIZATION
   void _showOtpDialog({
     required String reference,
-    required String authorizationCode,
     required double amount,
   }) {
     final TextEditingController otpController = TextEditingController();
@@ -857,7 +855,6 @@ class _WalletScreenState extends State<WalletScreen> {
                     final bool success = await _monnifyController.authorizeWithdrawal(
                       reference: reference,
                       otp: otp,
-                      authorizationCode: authorizationCode,
                       amount: amount,
                     );
 
