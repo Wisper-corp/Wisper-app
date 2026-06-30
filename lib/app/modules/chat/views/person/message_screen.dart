@@ -255,7 +255,7 @@ class _ChatScreenState extends State<ChatScreen> {
       alignment: isMe ? Alignment.centerRight : Alignment.centerLeft,
       child: Container(
         margin: EdgeInsets.symmetric(vertical: 4.h, horizontal: 8.w),
-        constraints: BoxConstraints(maxWidth: MediaQuery.of(context).size.width * 0.85),
+        constraints: BoxConstraints(maxWidth: MediaQuery.of(context).size.width * 0.72),
         decoration: BoxDecoration(
           color: isMe ? const Color(0xff2799EA) : const Color(0xff2A2A2A),
           borderRadius: BorderRadius.only(

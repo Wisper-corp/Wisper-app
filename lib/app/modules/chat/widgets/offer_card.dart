@@ -144,7 +144,7 @@ class _OfferCardState extends State<OfferCard> {
         children: [
           // ── Header ──────────────────────────────────────────────
           Container(
-            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
             decoration: BoxDecoration(
               color: const Color(0xff2A2A2A),
               borderRadius: const BorderRadius.vertical(top: Radius.circular(16)),
@@ -152,14 +152,14 @@ class _OfferCardState extends State<OfferCard> {
             child: Row(
               children: [
                 const Icon(Icons.local_offer_rounded,
-                    color: Color(0xff1877F2), size: 18),
-                const SizedBox(width: 8),
+                    color: Color(0xff1877F2), size: 15),
+                const SizedBox(width: 6),
                 const Text(
                   'Service Offer',
                   style: TextStyle(
                     color: Colors.white,
                     fontWeight: FontWeight.w700,
-                    fontSize: 14,
+                    fontSize: 12,
                   ),
                 ),
                 const Spacer(),
@@ -170,7 +170,7 @@ class _OfferCardState extends State<OfferCard> {
 
           // ── Body ────────────────────────────────────────────────
           Padding(
-            padding: const EdgeInsets.all(16),
+            padding: const EdgeInsets.all(12),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
@@ -179,19 +179,19 @@ class _OfferCardState extends State<OfferCard> {
                   widget.offer.description,
                   style: const TextStyle(
                     color: Colors.white,
-                    fontSize: 15,
+                    fontSize: 13,
                     fontWeight: FontWeight.w500,
-                    height: 1.4,
+                    height: 1.3,
                   ),
                 ),
-                const SizedBox(height: 16),
+                const SizedBox(height: 10),
 
                 // Price
                 Row(
                   children: [
                     Container(
-                      width: 32,
-                      height: 32,
+                      width: 26,
+                      height: 26,
                       decoration: BoxDecoration(
                         color: const Color(0xff2A2A2A),
                         shape: BoxShape.circle,
@@ -200,21 +200,21 @@ class _OfferCardState extends State<OfferCard> {
                         child: Text('₦',
                             style: TextStyle(
                                 color: Colors.white70,
-                                fontSize: 14,
+                                fontSize: 12,
                                 fontWeight: FontWeight.bold)),
                       ),
                     ),
-                    const SizedBox(width: 12),
+                    const SizedBox(width: 8),
                     Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         const Text('Offer price',
-                            style: TextStyle(color: Colors.grey, fontSize: 11)),
+                            style: TextStyle(color: Colors.grey, fontSize: 10)),
                         Text(
                           '₦${widget.offer.amount.toStringAsFixed(0)}',
                           style: const TextStyle(
                             color: Colors.white,
-                            fontSize: 18,
+                            fontSize: 15,
                             fontWeight: FontWeight.w700,
                           ),
                         ),
@@ -222,32 +222,32 @@ class _OfferCardState extends State<OfferCard> {
                     ),
                   ],
                 ),
-                const SizedBox(height: 12),
+                const SizedBox(height: 8),
 
                 // Delivery time
                 Row(
                   children: [
                     Container(
-                      width: 32,
-                      height: 32,
+                      width: 26,
+                      height: 26,
                       decoration: BoxDecoration(
                         color: const Color(0xff2A2A2A),
                         shape: BoxShape.circle,
                       ),
                       child: const Icon(Icons.access_time_rounded,
-                          color: Colors.white70, size: 16),
+                          color: Colors.white70, size: 14),
                     ),
-                    const SizedBox(width: 12),
+                    const SizedBox(width: 8),
                     Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         const Text('Delivery time',
-                            style: TextStyle(color: Colors.grey, fontSize: 11)),
+                            style: TextStyle(color: Colors.grey, fontSize: 10)),
                         Text(
                           widget.offer.duration,
                           style: const TextStyle(
                             color: Colors.white,
-                            fontSize: 14,
+                            fontSize: 12,
                             fontWeight: FontWeight.w500,
                           ),
                         ),
@@ -256,9 +256,9 @@ class _OfferCardState extends State<OfferCard> {
                   ],
                 ),
 
-                const SizedBox(height: 16),
+                const SizedBox(height: 10),
                 const Divider(color: Color(0xff2A2A2A), height: 1),
-                const SizedBox(height: 16),
+                const SizedBox(height: 10),
 
                 // ── Action Buttons ───────────────────────────────
                 if (_isLoading)
@@ -338,7 +338,7 @@ class _OfferCardState extends State<OfferCard> {
         break;
     }
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
       decoration: BoxDecoration(
         color: color.withOpacity(0.15),
         borderRadius: BorderRadius.circular(20),
@@ -346,7 +346,7 @@ class _OfferCardState extends State<OfferCard> {
       ),
       child: Text(label,
           style: TextStyle(
-              color: color, fontSize: 11, fontWeight: FontWeight.w600)),
+              color: color, fontSize: 10, fontWeight: FontWeight.w600)),
     );
   }
 
@@ -362,10 +362,10 @@ class _OfferCardState extends State<OfferCard> {
       child: GestureDetector(
         onTap: onTap,
         child: Container(
-          padding: const EdgeInsets.symmetric(vertical: 14),
+          padding: const EdgeInsets.symmetric(vertical: 10),
           decoration: BoxDecoration(
             color: color,
-            borderRadius: BorderRadius.circular(12),
+            borderRadius: BorderRadius.circular(10),
             border: border
                 ? Border.all(color: Colors.grey.withOpacity(0.3))
                 : null,
@@ -376,7 +376,7 @@ class _OfferCardState extends State<OfferCard> {
               style: TextStyle(
                 color: textColor,
                 fontWeight: FontWeight.w600,
-                fontSize: 15,
+                fontSize: 13,
               ),
             ),
           ),
