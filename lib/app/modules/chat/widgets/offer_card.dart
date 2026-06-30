@@ -167,11 +167,11 @@ class _OfferCardState extends State<OfferCard> {
             ),
             child: Row(
               children: [
-                const Icon(Icons.local_offer_rounded,
+                const Icon(Icons.receipt_long_rounded,
                     color: Color(0xff1877F2), size: 15),
                 const SizedBox(width: 6),
                 const Text(
-                  'Service Offer',
+                  'Send Offer',
                   style: TextStyle(
                     color: Colors.white,
                     fontWeight: FontWeight.w700,

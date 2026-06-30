@@ -69,9 +69,10 @@ class AttachmentBottomSheet extends StatelessWidget {
                   Get.back();
                   onOfferSelected();
                 },
-                imagePath: Assets.images.file.keyName, // Will use a money/offer icon
+                imagePath: Assets.images.file.keyName,
                 iconColor: const Color(0xffFFD700),
-                title: 'Offer',
+                title: 'Send Offer',
+                useReceiptIcon: true,
               ),
             ],
           ),
