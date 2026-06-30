@@ -46,8 +46,8 @@ class _CreatePostScreenState extends State<CreatePostScreen> {
               },
               imagePath: Assets.images.gallery02.keyName,
               color: Color(0xffD0DFFF),
-              title: "Media",
-              subtitle: "Share photos, videos, thoughts, or updates",
+              title: "Post on Marketplace",
+              subtitle: "Share product photos, videos or updates.",
             ),
             StorageUtil.getData(StorageUtil.userRole) != "PERSON"
                 ? heightBox12

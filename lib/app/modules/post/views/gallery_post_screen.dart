@@ -216,7 +216,7 @@ class _GalleryPostScreenState extends State<GalleryPostScreen> {
                         ),
                       ),
                       Text(
-                        'Media',
+                        'Post on Marketplace',
                         style: TextStyle(
                           fontSize: 16.sp,
                           fontWeight: FontWeight.w600,
