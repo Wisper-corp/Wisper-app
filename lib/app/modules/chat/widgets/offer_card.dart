@@ -126,18 +126,8 @@ class _OfferCardState extends State<OfferCard> {
     return Container(
       width: double.infinity,
       decoration: BoxDecoration(
-        color: const Color(0xff1E1E1E),
+        color: Colors.transparent,
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(
-          color: isDeclined
-              ? Colors.red.withOpacity(0.4)
-              : isPaid
-                  ? Colors.blue.withOpacity(0.4)
-                  : isAccepted
-                      ? Colors.green.withOpacity(0.4)
-                      : Colors.white.withOpacity(0.12),
-          width: 1,
-        ),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -146,7 +136,7 @@ class _OfferCardState extends State<OfferCard> {
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
             decoration: BoxDecoration(
-              color: const Color(0xff2A2A2A),
+              color: Colors.black.withOpacity(0.2),
               borderRadius: const BorderRadius.vertical(top: Radius.circular(16)),
             ),
             child: Row(
@@ -193,7 +183,7 @@ class _OfferCardState extends State<OfferCard> {
                       width: 26,
                       height: 26,
                       decoration: BoxDecoration(
-                        color: const Color(0xff2A2A2A),
+                        color: Colors.black.withOpacity(0.25),
                         shape: BoxShape.circle,
                       ),
                       child: const Center(
@@ -231,7 +221,7 @@ class _OfferCardState extends State<OfferCard> {
                       width: 26,
                       height: 26,
                       decoration: BoxDecoration(
-                        color: const Color(0xff2A2A2A),
+                        color: Colors.black.withOpacity(0.25),
                         shape: BoxShape.circle,
                       ),
                       child: const Icon(Icons.access_time_rounded,
@@ -257,7 +247,7 @@ class _OfferCardState extends State<OfferCard> {
                 ),
 
                 const SizedBox(height: 10),
-                const Divider(color: Color(0xff2A2A2A), height: 1),
+                Divider(color: Colors.white.withOpacity(0.15), height: 1),
                 const SizedBox(height: 10),
 
                 // ── Action Buttons ───────────────────────────────

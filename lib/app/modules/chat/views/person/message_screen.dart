@@ -253,34 +253,51 @@ class _ChatScreenState extends State<ChatScreen> {
     final currentUserId = StorageUtil.getData(StorageUtil.userId) ?? '';
     return Align(
       alignment: isMe ? Alignment.centerRight : Alignment.centerLeft,
-      child: Container(
-        margin: EdgeInsets.symmetric(vertical: 4.h, horizontal: 8.w),
-        constraints: BoxConstraints(maxWidth: MediaQuery.of(context).size.width * 0.72),
-        decoration: BoxDecoration(
-          color: isMe ? const Color(0xff2799EA) : const Color(0xff2A2A2A),
-          borderRadius: BorderRadius.only(
-            topLeft: Radius.circular(16.r),
-            topRight: Radius.circular(16.r),
-            bottomLeft: isMe ? Radius.circular(16.r) : Radius.circular(0),
-            bottomRight: isMe ? Radius.circular(0) : Radius.circular(16.r),
+      child: Row(
+        mainAxisAlignment: isMe ? MainAxisAlignment.end : MainAxisAlignment.start,
+        crossAxisAlignment: CrossAxisAlignment.end,
+        children: [
+          if (!isMe) ...[
+            SizedBox(width: 8.w),
+          ],
+          Container(
+            margin: EdgeInsets.symmetric(vertical: 4.h, horizontal: 8.w),
+            constraints: BoxConstraints(maxWidth: MediaQuery.of(context).size.width * 0.72),
+            decoration: BoxDecoration(
+              color: isMe ? const Color(0xff2799EA) : const Color(0xff1E1E1E),
+              borderRadius: BorderRadius.only(
+                topLeft: Radius.circular(16.r),
+                topRight: Radius.circular(16.r),
+                bottomLeft: isMe ? Radius.circular(16.r) : Radius.circular(0),
+                bottomRight: isMe ? Radius.circular(0) : Radius.circular(16.r),
+              ),
+              border: Border.all(
+                color: isMe
+                    ? Colors.transparent
+                    : Colors.white.withOpacity(0.08),
+                width: 1,
+              ),
+            ),
+            child: ClipRRect(
+              borderRadius: BorderRadius.only(
+                topLeft: Radius.circular(16.r),
+                topRight: Radius.circular(16.r),
+                bottomLeft: isMe ? Radius.circular(16.r) : Radius.circular(0),
+                bottomRight: isMe ? Radius.circular(0) : Radius.circular(16.r),
+              ),
+              child: OfferCard(
+                offer: offer,
+                currentUserId: currentUserId,
+                onOfferUpdated: (updatedOffer) {
+                  ctrl.injectOfferMessage(updatedOffer);
+                },
+              ),
+            ),
           ),
-        ),
-        padding: EdgeInsets.all(2),
-        child: ClipRRect(
-          borderRadius: BorderRadius.only(
-            topLeft: Radius.circular(15.r),
-            topRight: Radius.circular(15.r),
-            bottomLeft: isMe ? Radius.circular(15.r) : Radius.circular(0),
-            bottomRight: isMe ? Radius.circular(0) : Radius.circular(15.r),
-          ),
-          child: OfferCard(
-            offer: offer,
-            currentUserId: currentUserId,
-            onOfferUpdated: (updatedOffer) {
-              ctrl.injectOfferMessage(updatedOffer);
-            },
-          ),
-        ),
+          if (isMe) ...[
+            SizedBox(width: 8.w),
+          ],
+        ],
       ),
     );
   }
