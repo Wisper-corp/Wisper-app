@@ -20,6 +20,7 @@ class CreatePostController extends GetxController {
     String? description,
     List<File>? images,
     double? price,
+    String? deliveryTime,
   }) async {
     _inProgress.value = true;
 
@@ -28,6 +29,7 @@ class CreatePostController extends GetxController {
         "caption": description,
         "commentAccess": privacy,
         if (price != null) "price": price,
+        if (deliveryTime != null && deliveryTime.isNotEmpty) "deliveryTime": deliveryTime,
       };
       final NetworkResponse response = await Get.find<NetworkCaller>()
           .postRequest(
