@@ -37,16 +37,42 @@ class _OfferCardState extends State<OfferCard> {
   }
 
   Future<void> _acceptOffer() async {
+    // Confirm before deducting money
+    final confirmed = await Get.dialog<bool>(
+      AlertDialog(
+        backgroundColor: const Color(0xff1C1C1E),
+        title: const Text('Confirm Payment',
+            style: TextStyle(color: Colors.white)),
+        content: Text(
+          'Accepting this offer will deduct ₦${widget.offer.amount.toStringAsFixed(0)} from your Wisper wallet and pay it to the seller immediately.',
+          style: const TextStyle(color: Colors.white70),
+        ),
+        actions: [
+          TextButton(
+              onPressed: () => Get.back(result: false),
+              child: const Text('Cancel', style: TextStyle(color: Colors.grey))),
+          ElevatedButton(
+              onPressed: () => Get.back(result: true),
+              style: ElevatedButton.styleFrom(backgroundColor: const Color(0xff1877F2)),
+              child: const Text('Accept & Pay', style: TextStyle(color: Colors.white))),
+        ],
+      ),
+    );
+    if (confirmed != true) return;
+
     setState(() => _isLoading = true);
     try {
       final updated = await _offerService.acceptOffer(widget.offer.id);
       widget.onOfferUpdated(updated);
-      Get.snackbar('Offer Accepted', 'You can now proceed to payment.',
-          backgroundColor: Colors.green,
-          colorText: Colors.white,
-          snackPosition: SnackPosition.BOTTOM);
+      Get.snackbar(
+        'Payment Successful',
+        '₦${widget.offer.amount.toStringAsFixed(0)} paid to seller from your wallet.',
+        backgroundColor: Colors.green,
+        colorText: Colors.white,
+        snackPosition: SnackPosition.BOTTOM,
+      );
     } catch (e) {
-      Get.snackbar('Error', 'Failed to accept offer',
+      Get.snackbar('Error', e.toString().replaceAll('Exception:', '').trim(),
           backgroundColor: Colors.red,
           colorText: Colors.white,
           snackPosition: SnackPosition.BOTTOM);
@@ -257,7 +283,7 @@ class _OfferCardState extends State<OfferCard> {
                 // Receiver sees Accept/Decline when PENDING
                 else if (_isReceiver && isPending) ...[
                   _buildButton(
-                    label: 'Accept Offer',
+                    label: 'Accept & Pay ₦${widget.offer.amount.toStringAsFixed(0)}',
                     color: const Color(0xff1877F2),
                     textColor: Colors.white,
                     onTap: _acceptOffer,
@@ -271,15 +297,6 @@ class _OfferCardState extends State<OfferCard> {
                     border: true,
                   ),
                 ]
-
-                // Receiver sees Pay when ACCEPTED
-                else if (_isReceiver && isAccepted)
-                  _buildButton(
-                    label: 'Pay ₦${widget.offer.amount.toStringAsFixed(0)}',
-                    color: Colors.green,
-                    textColor: Colors.white,
-                    onTap: _payOffer,
-                  )
 
                 // Sender sees Cancel when PENDING
                 else if (_isSender && isPending)
@@ -296,8 +313,8 @@ class _OfferCardState extends State<OfferCard> {
                   _buildStatusRow(Icons.check_circle, 'Payment Completed', Colors.green)
                 else if (isDeclined)
                   _buildStatusRow(Icons.cancel, 'Offer Declined', Colors.red)
-                else if (isAccepted && _isSender)
-                  _buildStatusRow(Icons.hourglass_top, 'Waiting for payment', Colors.orange),
+                else if (isAccepted)
+                  _buildStatusRow(Icons.check_circle, 'Offer Accepted', Colors.green),
               ],
             ),
           ),
