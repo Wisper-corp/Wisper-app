@@ -251,22 +251,21 @@ class _ChatScreenState extends State<ChatScreen> {
     final offer = msg[SocketMessageKeys.offerData];
     if (offer == null) return const SizedBox.shrink();
     final currentUserId = StorageUtil.getData(StorageUtil.userId) ?? '';
+    final time = DateFormatter(msg[SocketMessageKeys.createdAt]).getRelativeTimeFormat();
+    final seen = msg['seen'] == true;
+
     return Align(
       alignment: isMe ? Alignment.centerRight : Alignment.centerLeft,
-      child: Row(
-        mainAxisAlignment: isMe ? MainAxisAlignment.end : MainAxisAlignment.start,
-        crossAxisAlignment: CrossAxisAlignment.end,
+      child: Column(
+        crossAxisAlignment: isMe ? CrossAxisAlignment.end : CrossAxisAlignment.start,
         children: [
-          if (!isMe) ...[
-            SizedBox(width: 8.w),
-          ],
           Container(
             margin: EdgeInsets.only(
-            top: 4.h,
-            bottom: 4.h,
-            left: isMe ? 50.w : 8.w,
-            right: isMe ? 8.w : 50.w,
-          ),
+              top: 4.h,
+              bottom: 2.h,
+              left: isMe ? 50.w : 8.w,
+              right: isMe ? 8.w : 50.w,
+            ),
             constraints: BoxConstraints(maxWidth: MediaQuery.of(context).size.width * 0.80),
             decoration: BoxDecoration(
               color: isMe ? const Color(0xff2799EA) : const Color(0xff1E1E1E),
@@ -299,9 +298,35 @@ class _ChatScreenState extends State<ChatScreen> {
               ),
             ),
           ),
-          if (isMe) ...[
-            SizedBox(width: 8.w),
-          ],
+
+          // Time + seen tick stamp below the offer card
+          Padding(
+            padding: EdgeInsets.only(
+              bottom: 4.h,
+              left: isMe ? 0 : 12.w,
+              right: isMe ? 12.w : 0,
+            ),
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Text(
+                  time,
+                  style: TextStyle(
+                    fontSize: 10.sp,
+                    color: Colors.grey[500],
+                  ),
+                ),
+                if (isMe) ...[
+                  SizedBox(width: 4.w),
+                  Icon(
+                    seen ? Icons.check_circle : Icons.check,
+                    size: 14.sp,
+                    color: seen ? Colors.cyan : Colors.white70,
+                  ),
+                ],
+              ],
+            ),
+          ),
         ],
       ),
     );
