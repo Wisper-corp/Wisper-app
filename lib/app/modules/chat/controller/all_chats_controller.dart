@@ -251,8 +251,16 @@ class AllChatsController extends GetxController {
             "type": type,
             "latestMessageAt": chat.latestMessageAt?.toIso8601String() ?? '',
             "lastMessage": chat.messages.isNotEmpty
-                ? chat.messages.first.text ?? '📁 file'  
-                : 'No message yet', 
+                ? (chat.messages.first.fileType == 'OFFER'
+                    ? '🧾 Sent an offer'
+                    : chat.messages.first.fileType == 'IMAGE'
+                    ? '📷 Photo'
+                    : chat.messages.first.fileType == 'VIDEO'
+                    ? '🎥 Video'
+                    : chat.messages.first.fileType != null && chat.messages.first.fileType != ''
+                    ? '📄 File'
+                    : chat.messages.first.text ?? 'No message yet')
+                : 'No message yet',
             "unreadMessageCount": chat.count?.messages ?? 0,
             "group": chat.group != null
                 ? {"name": chat.group?.name, "image": chat.group?.image}
