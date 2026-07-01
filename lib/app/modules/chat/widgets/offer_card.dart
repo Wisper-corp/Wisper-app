@@ -292,7 +292,7 @@ class _OfferCardState extends State<OfferCard> {
                   _buildButton(
                     label: 'Decline',
                     color: Colors.transparent,
-                    textColor: Colors.grey,
+                    textColor: Colors.white,
                     onTap: _declineOffer,
                     border: true,
                   ),
@@ -303,7 +303,7 @@ class _OfferCardState extends State<OfferCard> {
                   _buildButton(
                     label: 'Cancel Offer',
                     color: Colors.transparent,
-                    textColor: Colors.grey,
+                    textColor: Colors.white,
                     onTap: _declineOffer,
                     border: true,
                   )
@@ -374,7 +374,7 @@ class _OfferCardState extends State<OfferCard> {
             color: color,
             borderRadius: BorderRadius.circular(10),
             border: border
-                ? Border.all(color: Colors.grey.withOpacity(0.3))
+                ? Border.all(color: Colors.white.withOpacity(0.5))
                 : null,
           ),
           child: Center(

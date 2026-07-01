@@ -261,8 +261,13 @@ class _ChatScreenState extends State<ChatScreen> {
             SizedBox(width: 8.w),
           ],
           Container(
-            margin: EdgeInsets.symmetric(vertical: 4.h, horizontal: 8.w),
-            constraints: BoxConstraints(maxWidth: MediaQuery.of(context).size.width * 0.72),
+            margin: EdgeInsets.only(
+            top: 4.h,
+            bottom: 4.h,
+            left: isMe ? 50.w : 8.w,
+            right: isMe ? 8.w : 50.w,
+          ),
+            constraints: BoxConstraints(maxWidth: MediaQuery.of(context).size.width * 0.80),
             decoration: BoxDecoration(
               color: isMe ? const Color(0xff2799EA) : const Color(0xff1E1E1E),
               borderRadius: BorderRadius.only(
