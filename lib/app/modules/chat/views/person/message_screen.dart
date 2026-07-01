@@ -253,80 +253,115 @@ class _ChatScreenState extends State<ChatScreen> {
     final currentUserId = StorageUtil.getData(StorageUtil.userId) ?? '';
     final time = DateFormatter(msg[SocketMessageKeys.createdAt]).getRelativeTimeFormat();
     final seen = msg['seen'] == true;
+    final senderName = msg[SocketMessageKeys.senderName] ?? '';
+    final senderImage = msg[SocketMessageKeys.senderImage] ?? '';
 
     return Align(
       alignment: isMe ? Alignment.centerRight : Alignment.centerLeft,
-      child: Column(
-        crossAxisAlignment: isMe ? CrossAxisAlignment.end : CrossAxisAlignment.start,
+      child: Row(
+        mainAxisAlignment: isMe ? MainAxisAlignment.end : MainAxisAlignment.start,
+        crossAxisAlignment: CrossAxisAlignment.end,
         children: [
-          Container(
-            margin: EdgeInsets.only(
-              top: 4.h,
-              bottom: 2.h,
-              left: isMe ? 50.w : 8.w,
-              right: isMe ? 8.w : 50.w,
+          // Profile avatar on left for receiver
+          if (!isMe) ...[
+            CircleAvatar(
+              radius: 16.r,
+              backgroundImage: senderImage.isNotEmpty ? NetworkImage(senderImage) : null,
+              child: senderImage.isEmpty
+                  ? Text(
+                      senderName.isNotEmpty ? senderName[0].toUpperCase() : '?',
+                      style: TextStyle(fontSize: 12.sp, fontWeight: FontWeight.bold),
+                    )
+                  : null,
             ),
-            constraints: BoxConstraints(maxWidth: MediaQuery.of(context).size.width * 0.80),
-            decoration: BoxDecoration(
-              color: isMe ? const Color(0xff2799EA) : const Color(0xff1E1E1E),
-              borderRadius: BorderRadius.only(
-                topLeft: Radius.circular(16.r),
-                topRight: Radius.circular(16.r),
-                bottomLeft: isMe ? Radius.circular(16.r) : Radius.circular(0),
-                bottomRight: isMe ? Radius.circular(0) : Radius.circular(16.r),
-              ),
-              border: Border.all(
-                color: isMe
-                    ? Colors.transparent
-                    : Colors.white.withOpacity(0.08),
-                width: 1,
-              ),
-            ),
-            child: ClipRRect(
-              borderRadius: BorderRadius.only(
-                topLeft: Radius.circular(16.r),
-                topRight: Radius.circular(16.r),
-                bottomLeft: isMe ? Radius.circular(16.r) : Radius.circular(0),
-                bottomRight: isMe ? Radius.circular(0) : Radius.circular(16.r),
-              ),
-              child: OfferCard(
-                offer: offer,
-                currentUserId: currentUserId,
-                onOfferUpdated: (updatedOffer) {
-                  ctrl.injectOfferMessage(updatedOffer);
-                },
-              ),
-            ),
-          ),
+            SizedBox(width: 8.w),
+          ],
 
-          // Time + seen tick stamp below the offer card
-          Padding(
-            padding: EdgeInsets.only(
-              bottom: 4.h,
-              left: isMe ? 0 : 12.w,
-              right: isMe ? 12.w : 0,
-            ),
-            child: Row(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Text(
-                  time,
-                  style: TextStyle(
-                    fontSize: 10.sp,
-                    color: Colors.grey[500],
+          Column(
+            crossAxisAlignment: isMe ? CrossAxisAlignment.end : CrossAxisAlignment.start,
+            children: [
+              // Sender name on top for receiver (just like normal messages)
+              if (!isMe)
+                Padding(
+                  padding: EdgeInsets.only(left: 2.w, bottom: 2.h),
+                  child: Text(
+                    senderName,
+                    style: TextStyle(
+                      fontSize: 12.sp,
+                      fontWeight: FontWeight.w500,
+                      color: Colors.white70,
+                    ),
                   ),
                 ),
-                if (isMe) ...[
-                  SizedBox(width: 4.w),
-                  Icon(
-                    seen ? Icons.check_circle : Icons.check,
-                    size: 14.sp,
-                    color: seen ? Colors.cyan : Colors.white70,
+
+              Container(
+                margin: EdgeInsets.only(
+                  bottom: 2.h,
+                  right: isMe ? 0 : 40.w,
+                ),
+                constraints: BoxConstraints(maxWidth: MediaQuery.of(context).size.width * 0.72),
+                decoration: BoxDecoration(
+                  color: isMe ? const Color(0xff2799EA) : const Color(0xff1E1E1E),
+                  borderRadius: BorderRadius.only(
+                    topLeft: Radius.circular(16.r),
+                    topRight: Radius.circular(16.r),
+                    bottomLeft: isMe ? Radius.circular(16.r) : Radius.circular(0),
+                    bottomRight: isMe ? Radius.circular(0) : Radius.circular(16.r),
                   ),
-                ],
-              ],
-            ),
+                  border: Border.all(
+                    color: isMe ? Colors.transparent : Colors.white.withOpacity(0.08),
+                    width: 1,
+                  ),
+                ),
+                child: ClipRRect(
+                  borderRadius: BorderRadius.only(
+                    topLeft: Radius.circular(16.r),
+                    topRight: Radius.circular(16.r),
+                    bottomLeft: isMe ? Radius.circular(16.r) : Radius.circular(0),
+                    bottomRight: isMe ? Radius.circular(0) : Radius.circular(16.r),
+                  ),
+                  child: OfferCard(
+                    offer: offer,
+                    currentUserId: currentUserId,
+                    onOfferUpdated: (updatedOffer) {
+                      ctrl.injectOfferMessage(updatedOffer);
+                    },
+                  ),
+                ),
+              ),
+
+              // Time + seen tick stamp below
+              Padding(
+                padding: EdgeInsets.only(
+                  bottom: 4.h,
+                  left: isMe ? 0 : 2.w,
+                  right: isMe ? 2.w : 0,
+                ),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Text(
+                      time,
+                      style: TextStyle(
+                        fontSize: 10.sp,
+                        color: Colors.grey[500],
+                      ),
+                    ),
+                    if (isMe) ...[
+                      SizedBox(width: 4.w),
+                      Icon(
+                        seen ? Icons.check_circle : Icons.check,
+                        size: 14.sp,
+                        color: seen ? Colors.cyan : Colors.white70,
+                      ),
+                    ],
+                  ],
+                ),
+              ),
+            ],
           ),
+
+          if (isMe) SizedBox(width: 8.w),
         ],
       ),
     );
