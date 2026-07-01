@@ -24,6 +24,7 @@ class _CreateOfferDialogState extends State<CreateOfferDialog> {
   final TextEditingController _amountController = TextEditingController();
   final TextEditingController _descriptionController = TextEditingController();
   final TextEditingController _durationController = TextEditingController();
+  String _durationUnit = 'Days'; // 'Hours' or 'Days'
   late final OfferService _offerService;
   bool _isLoading = false;
 
@@ -79,7 +80,7 @@ class _CreateOfferDialogState extends State<CreateOfferDialog> {
         chatId: widget.chatId,
         amount: amount,
         description: _descriptionController.text.trim(),
-        duration: _durationController.text.trim(),
+        duration: '${_durationController.text.trim()} $_durationUnit',
       );
 
       if (mounted) {
@@ -269,20 +270,81 @@ class _CreateOfferDialogState extends State<CreateOfferDialog> {
                         color: const Color(0xff2C2C2E),
                         borderRadius: BorderRadius.circular(10),
                       ),
-                      child: TextField(
-                        controller: _durationController,
-                        style: const TextStyle(
-                            color: Colors.white, fontSize: 17),
-                        decoration: const InputDecoration(
-                          hintText: 'e.g. 3 days, 1 week',
-                          hintStyle: TextStyle(
-                            color: Color(0xff48484A),
-                            fontSize: 17,
+                      child: Row(
+                        children: [
+                          // Number input
+                          Expanded(
+                            child: TextField(
+                              controller: _durationController,
+                              keyboardType: TextInputType.number,
+                              inputFormatters: [
+                                FilteringTextInputFormatter.digitsOnly,
+                              ],
+                              style: const TextStyle(
+                                  color: Colors.white, fontSize: 17),
+                              decoration: const InputDecoration(
+                                hintText: 'e.g. 3',
+                                hintStyle: TextStyle(
+                                  color: Color(0xff48484A),
+                                  fontSize: 17,
+                                ),
+                                border: InputBorder.none,
+                                contentPadding: EdgeInsets.symmetric(
+                                    vertical: 14, horizontal: 14),
+                              ),
+                            ),
                           ),
-                          border: InputBorder.none,
-                          contentPadding: EdgeInsets.symmetric(
-                              vertical: 14, horizontal: 14),
-                        ),
+
+                          // Divider
+                          Container(
+                            width: 1,
+                            height: 32,
+                            color: const Color(0xff3C3C3E),
+                          ),
+
+                          // Hours / Days toggle
+                          StatefulBuilder(
+                            builder: (context, setInnerState) {
+                              return Row(
+                                children: ['Hours', 'Days'].map((unit) {
+                                  final selected = _durationUnit == unit;
+                                  return GestureDetector(
+                                    onTap: () {
+                                      setState(() => _durationUnit = unit);
+                                      setInnerState(() {});
+                                    },
+                                    child: AnimatedContainer(
+                                      duration: const Duration(milliseconds: 200),
+                                      margin: const EdgeInsets.symmetric(
+                                          horizontal: 4, vertical: 6),
+                                      padding: const EdgeInsets.symmetric(
+                                          horizontal: 14, vertical: 6),
+                                      decoration: BoxDecoration(
+                                        color: selected
+                                            ? const Color(0xff1877F2)
+                                            : Colors.transparent,
+                                        borderRadius: BorderRadius.circular(8),
+                                      ),
+                                      child: Text(
+                                        unit,
+                                        style: TextStyle(
+                                          color: selected
+                                              ? Colors.white
+                                              : const Color(0xff8E8E93),
+                                          fontSize: 14,
+                                          fontWeight: selected
+                                              ? FontWeight.w600
+                                              : FontWeight.normal,
+                                        ),
+                                      ),
+                                    ),
+                                  );
+                                }).toList(),
+                              );
+                            },
+                          ),
+                          const SizedBox(width: 4),
+                        ],
                       ),
                     ),
 
