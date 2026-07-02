@@ -215,7 +215,7 @@ class _NotificationBellState extends State<_NotificationBell> {
   }
 
   Future<void> _loadPendingCount() async {
-    await _connectionController.getAllConnection('PENDING');
+    await _connectionController.getAllConnection('PENDING', null);
     final all = _connectionController.allConnectionData ?? [];
     _pendingCount.value = all.length;
   }

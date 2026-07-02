@@ -3,13 +3,15 @@ import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:get/get.dart';
 import 'package:wisper/app/core/config/theme/light_theme_colors.dart';
 import 'package:wisper/app/core/others/custom_size.dart';
+import 'package:wisper/app/core/utils/date_formatter.dart';
 import 'package:wisper/app/core/widgets/common/custom_text_filed.dart';
 import 'package:wisper/app/core/widgets/common/line_widget.dart';
-import 'package:wisper/app/modules/chat/controller/all_connection_controller.dart';
 import 'package:wisper/app/modules/chat/widgets/select_option_widget.dart';
 import 'package:wisper/app/modules/job/controller/feed_job_controller.dart';
 import 'package:wisper/app/modules/job/views/job_section.dart';
 import 'package:wisper/app/modules/homepage/views/role_section.dart';
+import 'package:wisper/app/modules/post/controller/gig_market_search_controller.dart';
+import 'package:wisper/app/modules/post/widgets/post_card.dart';
 
 class SearchScreen extends StatefulWidget {
   const SearchScreen({super.key});
@@ -21,20 +23,20 @@ class SearchScreen extends StatefulWidget {
 class _SearchScreenState extends State<SearchScreen> {
   final TextEditingController searchController = TextEditingController();
   final AllFeedJobController jobController = Get.find<AllFeedJobController>();
-  // final AllConnectionController allConnectionController = Get.put(AllConnectionController());
+  final GigMarketSearchController gigController =
+      Get.put(GigMarketSearchController());
 
+  // 0 = Jobs, 1 = Gig Market, 2 = Roles
   int selectedIndex = 0;
 
-  String? selectedLocationType; // null = Any, 'REMOTE', 'ON_SITE', 'HYBRID'
-
+  String? selectedLocationType;
   String _previousSearch = '';
   String? _previousLocation;
 
   @override
   void initState() {
     super.initState();
-    // Optional: load initial jobs when screen opens
-    _fetchJobsIfNeeded();
+    _fetchIfNeeded();
   }
 
   @override
@@ -43,19 +45,20 @@ class _SearchScreenState extends State<SearchScreen> {
     super.dispose();
   }
 
-  void _fetchJobsIfNeeded() {
-    final currentSearch = searchController.text.trim();
-    final currentLocation = selectedLocationType;
-
-    if (currentSearch != _previousSearch ||
-        currentLocation != _previousLocation) {
-      jobController.resetPagination();
-      jobController.getJobs(
-        searchQuery: currentSearch.isEmpty ? null : currentSearch,
-        locationType: currentLocation,
-      );
-      _previousSearch = currentSearch;
-      _previousLocation = currentLocation;
+  void _fetchIfNeeded() {
+    final q = searchController.text.trim();
+    if (selectedIndex == 0) {
+      if (q != _previousSearch || selectedLocationType != _previousLocation) {
+        jobController.resetPagination();
+        jobController.getJobs(
+          searchQuery: q.isEmpty ? null : q,
+          locationType: selectedLocationType,
+        );
+        _previousSearch = q;
+        _previousLocation = selectedLocationType;
+      }
+    } else if (selectedIndex == 1) {
+      gigController.search(q);
     }
   }
 
@@ -67,6 +70,7 @@ class _SearchScreenState extends State<SearchScreen> {
         child: Column(
           children: [
             heightBox30,
+            // Search bar
             Row(
               children: [
                 IconButton(
@@ -78,11 +82,13 @@ class _SearchScreenState extends State<SearchScreen> {
                 ),
                 Expanded(
                   child: CustomTextField(
-                    hintText: 'Search jobs...',
+                    hintText: selectedIndex == 1
+                        ? 'Search gig market...'
+                        : 'Search jobs...',
                     controller: searchController,
                     onChanged: (value) {
                       setState(() {});
-                      _fetchJobsIfNeeded();
+                      _fetchIfNeeded();
                     },
                   ),
                 ),
@@ -91,34 +97,25 @@ class _SearchScreenState extends State<SearchScreen> {
 
             heightBox12,
 
-            // Location filter ── only for Jobs tab
+            // Location filter — only for Jobs tab
             if (selectedIndex == 0)
               Align(
                 alignment: Alignment.centerRight,
                 child: SizedBox(
                   height: 44.h,
                   width: MediaQuery.of(context).size.width * 0.79,
-                  child: CustomTextField( 
+                  child: CustomTextField(
                     hintText: 'Location type',
                     value: selectedLocationType,
-
                     items: const [
-                      DropdownMenuItem(
-                        value: null,
-                        child: Text('Any location'),
-                      ),
+                      DropdownMenuItem(value: null, child: Text('Any location')),
                       DropdownMenuItem(value: 'REMOTE', child: Text('Remote')),
-                      DropdownMenuItem(
-                        value: 'ON_SITE',
-                        child: Text('On-site'),
-                      ),
+                      DropdownMenuItem(value: 'ON_SITE', child: Text('On-site')),
                       DropdownMenuItem(value: 'HYBRID', child: Text('Hybrid')),
                     ],
                     onChanged: (String? newValue) {
-                      setState(() {
-                        selectedLocationType = newValue;
-                      });
-                      _fetchJobsIfNeeded();
+                      setState(() => selectedLocationType = newValue);
+                      _fetchIfNeeded();
                     },
                   ),
                 ),
@@ -126,12 +123,15 @@ class _SearchScreenState extends State<SearchScreen> {
 
             if (selectedIndex == 0) heightBox20,
 
-            // Tabs
+            // Tabs: Jobs | Gig Market | Roles
             Row(
               mainAxisAlignment: MainAxisAlignment.start,
               children: [
                 GestureDetector(
-                  onTap: () => setState(() => selectedIndex = 0),
+                  onTap: () {
+                    setState(() => selectedIndex = 0);
+                    _fetchIfNeeded();
+                  },
                   child: SelectOptionWidget(
                     currentIndex: 0,
                     selectedIndex: selectedIndex,
@@ -141,9 +141,22 @@ class _SearchScreenState extends State<SearchScreen> {
                 ),
                 SizedBox(width: 24.w),
                 GestureDetector(
-                  onTap: () => setState(() => selectedIndex = 1),
+                  onTap: () {
+                    setState(() => selectedIndex = 1);
+                    _fetchIfNeeded();
+                  },
                   child: SelectOptionWidget(
                     currentIndex: 1,
+                    selectedIndex: selectedIndex,
+                    title: 'Gig Market',
+                    lineColor: LightThemeColors.blueColor,
+                  ),
+                ),
+                SizedBox(width: 24.w),
+                GestureDetector(
+                  onTap: () => setState(() => selectedIndex = 2),
+                  child: SelectOptionWidget(
+                    currentIndex: 2,
                     selectedIndex: selectedIndex,
                     title: 'Roles',
                     lineColor: LightThemeColors.blueColor,
@@ -155,17 +168,96 @@ class _SearchScreenState extends State<SearchScreen> {
             const StraightLiner(height: 0.5, color: Color(0xff454545)),
             SizedBox(height: 12.h),
 
+            // Content
             Expanded(
               child: selectedIndex == 0
                   ? JobSection(
                       searchQuery: searchController.text.trim(),
                       jobType: selectedLocationType,
                     )
-                  : RoleSection(searchQuery: searchController.text.trim()),
+                  : selectedIndex == 1
+                      ? _GigMarketResults(controller: gigController)
+                      : RoleSection(
+                          searchQuery: searchController.text.trim()),
             ),
           ],
         ),
       ),
     );
+  }
+}
+
+// Gig Market search results widget
+class _GigMarketResults extends StatelessWidget {
+  final GigMarketSearchController controller;
+  const _GigMarketResults({required this.controller});
+
+  @override
+  Widget build(BuildContext context) {
+    return Obx(() {
+      if (controller.inProgress.value) {
+        return const Center(child: CircularProgressIndicator());
+      }
+
+      if (controller.results.isEmpty) {
+        return Center(
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Icon(Icons.storefront_outlined, size: 48, color: Colors.grey.shade600),
+              const SizedBox(height: 12),
+              Text(
+                'Search gigs by job title e.g "Web Developer"',
+                textAlign: TextAlign.center,
+                style: TextStyle(color: Colors.grey.shade500, fontSize: 14),
+              ),
+            ],
+          ),
+        );
+      }
+
+      return ListView.separated(
+        padding: EdgeInsets.zero,
+        itemCount: controller.results.length,
+        separatorBuilder: (_, __) => const StraightLiner(
+          height: 0.5,
+          color: Color(0xff2A2A2A),
+        ),
+        itemBuilder: (context, index) {
+          final post = controller.results[index];
+          final time = DateFormatter(post.createdAt).getRelativeTimeFormat();
+          return Padding(
+            padding: const EdgeInsets.symmetric(vertical: 8.0),
+            child: PostCard(
+              isPerson: post.author?.person != null,
+              onTapComment: () {},
+              ownerId: post.author?.id ?? '',
+              trailing: Text(
+                time,
+                style: TextStyle(
+                  fontSize: 10,
+                  color: LightThemeColors.themeGreyColor,
+                ),
+              ),
+              ownerName: post.author?.person != null
+                  ? post.author?.person?.name ?? ''
+                  : post.author?.business?.name ?? '',
+              ownerImage: post.author?.person != null
+                  ? post.author?.person?.image ?? ''
+                  : post.author?.business?.image ?? '',
+              ownerProfession: post.author?.person != null
+                  ? post.author?.person?.title ?? ''
+                  : post.author?.business?.industry ?? '',
+              postImage: post.images.isNotEmpty ? post.images : [],
+              postDescription: post.caption ?? '',
+              postTime: time,
+              views: post.views.toString(),
+              price: post.price,
+              deliveryTime: post.deliveryTime,
+            ),
+          );
+        },
+      );
+    });
   }
 }

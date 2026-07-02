@@ -99,6 +99,11 @@ class Urls {
   static const String walletBalanceUrl = '$_baseUrl/wallet/balance';
   static const String monnifyWithdrawUrl = '$_baseUrl/wallet/withdraw';
   static const String monnifyAuthorizeWithdrawalUrl = '$_baseUrl/wallet/authorize-withdrawal';
+
+  // Gig Market search
+  static String gigMarketSearchUrl(String q) {
+    return '$_baseUrl/posts/search/gig-market?q=${Uri.encodeComponent(q)}&limit=20';
+  }
  
   static String editPostId(String id) {
     return '$_baseUrl/posts/$id';
