@@ -7,6 +7,7 @@ import 'package:wisper/app/core/config/theme/light_theme_colors.dart';
 import 'package:wisper/app/core/others/custom_size.dart';
 import 'package:wisper/app/core/widgets/common/circle_icon.dart';
 import 'package:wisper/app/modules/homepage/views/connection_screen.dart';
+import 'package:wisper/app/core/services/network_caller/demo_controller.dart';
 import 'package:wisper/gen/assets.gen.dart';
 
 class InfoCard extends StatelessWidget {
@@ -171,14 +172,7 @@ class InfoCard extends StatelessWidget {
                   ? Row(
                       children: [
                         isShowNotification == true
-                            ? CircleIconWidget(
-                                radius: 14,
-                                iconRadius: 18,
-                                imagePath: Assets.images.notification.keyName,
-                                onTap: () {
-                                  Get.to(() => const ConnectionScreen());
-                                },
-                              )
+                            ? _NotificationBell()
                             : Container(),
                         widthBox10,
                         CircleIconWidget(
@@ -194,6 +188,81 @@ class InfoCard extends StatelessWidget {
             ],
           ),
         ),
+      ),
+    );
+  }
+}
+
+/// Bell icon with a red badge showing pending connection request count
+class _NotificationBell extends StatefulWidget {
+  @override
+  State<_NotificationBell> createState() => _NotificationBellState();
+}
+
+class _NotificationBellState extends State<_NotificationBell> {
+  late final AllConnectionController _connectionController;
+  final RxInt _pendingCount = 0.obs;
+
+  @override
+  void initState() {
+    super.initState();
+    try {
+      _connectionController = Get.find<AllConnectionController>();
+    } catch (_) {
+      _connectionController = Get.put(AllConnectionController());
+    }
+    _loadPendingCount();
+  }
+
+  Future<void> _loadPendingCount() async {
+    await _connectionController.getAllConnection('PENDING');
+    final all = _connectionController.allConnectionData ?? [];
+    _pendingCount.value = all.length;
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      onTap: () {
+        Get.to(() => const ConnectionScreen());
+      },
+      child: Stack(
+        clipBehavior: Clip.none,
+        children: [
+          CircleIconWidget(
+            radius: 14,
+            iconRadius: 18,
+            imagePath: Assets.images.notification.keyName,
+            onTap: () {
+              Get.to(() => const ConnectionScreen());
+            },
+          ),
+          Obx(() {
+            if (_pendingCount.value <= 0) return const SizedBox.shrink();
+            return Positioned(
+              top: -4,
+              right: -4,
+              child: Container(
+                padding: const EdgeInsets.all(3),
+                decoration: const BoxDecoration(
+                  color: Colors.red,
+                  shape: BoxShape.circle,
+                ),
+                constraints: const BoxConstraints(minWidth: 16, minHeight: 16),
+                child: Center(
+                  child: Text(
+                    _pendingCount.value > 99 ? '99+' : '${_pendingCount.value}',
+                    style: const TextStyle(
+                      color: Colors.white,
+                      fontSize: 9,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                ),
+              ),
+            );
+          }),
+        ],
       ),
     );
   }

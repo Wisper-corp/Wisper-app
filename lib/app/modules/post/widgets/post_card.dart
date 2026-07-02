@@ -16,11 +16,13 @@ class PostCard extends StatelessWidget {
   final String? ownerName;
   final String? ownerImage; 
   final String? ownerProfession;
-  final List<String>? postImage;        // লিস্ট
+  final List<String>? postImage;
   final String? postDescription;
   final String? postTime;
   final String? views;
   final bool? isComment;
+  final double? price;
+  final String? deliveryTime;
   final VoidCallback onTapComment;
 
   const PostCard({
@@ -35,6 +37,8 @@ class PostCard extends StatelessWidget {
     this.views,
     this.ownerId,
     this.isComment = false,
+    this.price,
+    this.deliveryTime,
     required this.onTapComment,
     this.isPerson = true,
   });
@@ -129,6 +133,58 @@ class PostCard extends StatelessWidget {
                             fontWeight: FontWeight.w500,
                             fontSize: 13,
                           ),
+                        ),
+                      ),
+
+                    // Price + Delivery time row (below caption, above images)
+                    if (price != null || (deliveryTime != null && deliveryTime!.isNotEmpty))
+                      Padding(
+                        padding: const EdgeInsets.fromLTRB(12, 0, 12, 8),
+                        child: Row(
+                          children: [
+                            if (price != null) ...[
+                              Container(
+                                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                                decoration: BoxDecoration(
+                                  color: const Color(0xff1877F2).withOpacity(0.12),
+                                  borderRadius: BorderRadius.circular(6),
+                                  border: Border.all(color: const Color(0xff1877F2).withOpacity(0.3)),
+                                ),
+                                child: Row(
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: [
+                                    const Text('₦', style: TextStyle(fontSize: 11, color: Color(0xff1877F2), fontWeight: FontWeight.w600)),
+                                    const SizedBox(width: 2),
+                                    Text(
+                                      price! % 1 == 0 ? price!.toInt().toString() : price!.toStringAsFixed(2),
+                                      style: const TextStyle(fontSize: 11, color: Color(0xff1877F2), fontWeight: FontWeight.w600),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                              const SizedBox(width: 8),
+                            ],
+                            if (deliveryTime != null && deliveryTime!.isNotEmpty)
+                              Container(
+                                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                                decoration: BoxDecoration(
+                                  color: Colors.grey.withOpacity(0.1),
+                                  borderRadius: BorderRadius.circular(6),
+                                  border: Border.all(color: Colors.grey.withOpacity(0.3)),
+                                ),
+                                child: Row(
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: [
+                                    Icon(Icons.access_time, size: 11, color: LightThemeColors.themeGreyColor),
+                                    const SizedBox(width: 3),
+                                    Text(
+                                      deliveryTime!,
+                                      style: TextStyle(fontSize: 11, color: LightThemeColors.themeGreyColor),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                          ],
                         ),
                       ),
 

@@ -122,6 +122,8 @@ class _PostItemState extends State<_PostItem> {
         postDescription: post.caption ?? '',
         postTime: widget.formattedTime,
         views: post.views.toString(),
+        price: post.price,
+        deliveryTime: post.deliveryTime,
       ),
     );
   }

@@ -295,14 +295,12 @@ class MessageBubble extends StatelessWidget {
                           : [const Color(0xffF3F3F5), const Color(0xffF3F3F5)],
                     ),
                     borderRadius: BorderRadius.only(
-                      topLeft: Radius.circular(16.r),
+                      // Sender (me): tail at bottom-right → top corners rounded, bottom-left rounded, bottom-right sharp
+                      // Receiver: tail at top-left → bottom corners rounded, top-right rounded, top-left sharp
+                      topLeft: isMe ? Radius.circular(16.r) : Radius.circular(0),
                       topRight: Radius.circular(16.r),
-                      bottomLeft: isMe
-                          ? Radius.circular(16.r)
-                          : Radius.circular(0),
-                      bottomRight: isMe
-                          ? Radius.circular(0)
-                          : Radius.circular(16.r),
+                      bottomLeft: Radius.circular(16.r),
+                      bottomRight: isMe ? Radius.circular(0) : Radius.circular(16.r),
                     ),
                   ),
                   child: Column(

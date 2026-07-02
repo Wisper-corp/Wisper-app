@@ -57,6 +57,8 @@ class FeedPostItemModel {
     required this.createdAt,
     required this.commentAccess,
     required this.author,
+    this.price,
+    this.deliveryTime,
   });
 
   final String? id;
@@ -66,6 +68,8 @@ class FeedPostItemModel {
   final DateTime? createdAt;
   final String? commentAccess;
   final Author? author;
+  final double? price;
+  final String? deliveryTime;
 
   factory FeedPostItemModel.fromJson(Map<String, dynamic> json) {
     return FeedPostItemModel(
@@ -78,6 +82,8 @@ class FeedPostItemModel {
       createdAt: DateTime.tryParse(json["createdAt"] ?? ""),
       commentAccess: json["commentAccess"],
       author: json["author"] == null ? null : Author.fromJson(json["author"]),
+      price: json["price"] != null ? (json["price"] as num).toDouble() : null,
+      deliveryTime: json["deliveryTime"],
     );
   }
 }
