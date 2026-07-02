@@ -28,81 +28,112 @@ class ImageContainer extends StatelessWidget {
 
     return GestureDetector(
       onTap: () {
-        // সব ছবি পাঠিয়ে দিচ্ছি → index 0 থেকে শুরু হবে
         Get.to(() => FullScreenImageViewer(
               imageUrls: validImages,
               initialIndex: 0,
             ));
       },
-      child: Container(
-        height: height.h,
-        width: width,
-        decoration: BoxDecoration(
-          borderRadius: BorderRadius.circular(borderRadius.r),
-        ),
-        child: ClipRRect(
-          borderRadius: BorderRadius.circular(borderRadius.r),
-          child: _buildImageLayout(displayCount, validImages),
-        ),
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(borderRadius.r),
+        child: _buildImageLayout(displayCount, validImages),
       ),
     );
   }
 
   Widget _buildImageLayout(int count, List<String> images) {
     if (count == 1) {
-      return _singleImage(images[0]);
+      // Single image — taller, full width
+      return AspectRatio(
+        aspectRatio: 16 / 10,
+        child: _image(images[0]),
+      );
     } else if (count == 2) {
-      return Row(
-        children: [
-          Expanded(child: _singleImage(images[0])),
-          SizedBox(width: 4.w),
-          Expanded(child: _singleImage(images[1])),
-        ],
+      // Two images — side by side, equal width
+      return AspectRatio(
+        aspectRatio: 16 / 9,
+        child: Row(
+          children: [
+            Expanded(child: _image(images[0])),
+            const SizedBox(width: 3),
+            Expanded(child: _image(images[1])),
+          ],
+        ),
       );
     } else if (count == 3) {
-      return Row(
-        children: [
-          Expanded(
-            flex: 2,
-            child: _singleImage(images[0]),
-          ),
-          SizedBox(width: 4.w),
-          Expanded(
-            child: Column(
-              children: [
-                Expanded(child: _singleImage(images[1])),
-                SizedBox(height: 4.h),
-                Expanded(child: _singleImage(images[2])),
-              ],
+      // Twitter/X style: 1 large on left, 2 stacked on right
+      return AspectRatio(
+        aspectRatio: 16 / 10,
+        child: Row(
+          children: [
+            // Large left image
+            Expanded(
+              flex: 6,
+              child: _image(images[0]),
             ),
-          ),
-        ],
+            const SizedBox(width: 3),
+            // Two stacked right
+            Expanded(
+              flex: 5,
+              child: Column(
+                children: [
+                  Expanded(child: _image(images[1])),
+                  const SizedBox(height: 3),
+                  Expanded(child: _image(images[2])),
+                ],
+              ),
+            ),
+          ],
+        ),
       );
     } else {
-      // 4 images → grid
-      return GridView.builder(
-        physics: const NeverScrollableScrollPhysics(),
-        gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-          crossAxisCount: 2,
-          mainAxisSpacing: 4.w,
-          crossAxisSpacing: 4.w,
+      // 4 images — 2x2 grid (Twitter style)
+      return AspectRatio(
+        aspectRatio: 1,
+        child: Column(
+          children: [
+            Expanded(
+              child: Row(
+                children: [
+                  Expanded(child: _image(images[0])),
+                  const SizedBox(width: 3),
+                  Expanded(child: _image(images[1])),
+                ],
+              ),
+            ),
+            const SizedBox(height: 3),
+            Expanded(
+              child: Row(
+                children: [
+                  Expanded(child: _image(images[2])),
+                  const SizedBox(width: 3),
+                  Expanded(child: _image(images[3])),
+                ],
+              ),
+            ),
+          ],
         ),
-        itemCount: 4,
-        itemBuilder: (context, index) {
-          return _singleImage(images[index]);
-        },
       );
     }
   }
 
-  Widget _singleImage(String url) {
-    return Container(
-      decoration: BoxDecoration(
-        color: Colors.grey.shade200,
-        borderRadius: BorderRadius.circular(borderRadius.r),
-        image: DecorationImage(
-          image: NetworkImage(url),
-          fit: BoxFit.cover,
+  Widget _image(String url) {
+    return GestureDetector(
+      onTap: () {
+        final List<String> validImages =
+            images?.where((u) => u.isNotEmpty).toList() ?? [];
+        final int index = validImages.indexOf(url);
+        Get.to(() => FullScreenImageViewer(
+              imageUrls: validImages,
+              initialIndex: index >= 0 ? index : 0,
+            ));
+      },
+      child: Container(
+        decoration: BoxDecoration(
+          color: Colors.grey.shade800,
+          image: DecorationImage(
+            image: NetworkImage(url),
+            fit: BoxFit.cover,
+          ),
         ),
       ),
     );

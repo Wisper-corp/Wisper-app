@@ -119,27 +119,29 @@ class PostCard extends StatelessWidget {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    // নতুন ImageContainer — লিস্ট পাস করছি
+                    // Caption FIRST (top) — like Twitter/X layout
+                    if (postDescription != null && postDescription!.isNotEmpty)
+                      Padding(
+                        padding: const EdgeInsets.fromLTRB(12, 12, 12, 8),
+                        child: Text(
+                          postDescription!,
+                          style: const TextStyle(
+                            fontWeight: FontWeight.w500,
+                            fontSize: 13,
+                          ),
+                        ),
+                      ),
+
+                    // Images below caption
                     if (postImage != null && postImage!.isNotEmpty)
                       ImageContainer(
                         images: postImage,
-                        height: 200, // তোমার পছন্দমতো, 168 থেকে 200 ভালো দেখায়
+                        height: 200,
                         width: double.infinity,
                         borderRadius: 8,
                       )
                     else
                       const SizedBox.shrink(),
-
-                    Padding(
-                      padding: const EdgeInsets.all(12.0),
-                      child: Text(
-                        postDescription ?? '',
-                        style: const TextStyle(
-                          fontWeight: FontWeight.w500,
-                          fontSize: 12,
-                        ),
-                      ),
-                    ),
                   ],
                 ),
               ),
