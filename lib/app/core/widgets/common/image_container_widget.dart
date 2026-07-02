@@ -86,24 +86,24 @@ class ImageContainer extends StatelessWidget {
         ),
       );
     } else {
-      // 4 images — 2x2 grid (Twitter style)
+      // 4 images — 1 large top + 3 in a row below (like Twitter/X)
       return AspectRatio(
-        aspectRatio: 1,
+        aspectRatio: 4 / 5,
         child: Column(
           children: [
+            // Top large image
             Expanded(
-              child: Row(
-                children: [
-                  Expanded(child: _image(images[0])),
-                  const SizedBox(width: 3),
-                  Expanded(child: _image(images[1])),
-                ],
-              ),
+              flex: 3,
+              child: _image(images[0]),
             ),
             const SizedBox(height: 3),
+            // Bottom 3 images in a row
             Expanded(
+              flex: 2,
               child: Row(
                 children: [
+                  Expanded(child: _image(images[1])),
+                  const SizedBox(width: 3),
                   Expanded(child: _image(images[2])),
                   const SizedBox(width: 3),
                   Expanded(child: _image(images[3])),
