@@ -1,6 +1,8 @@
 import 'package:crash_safe_image/crash_safe_image.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
+import 'package:geocoding/geocoding.dart';
+import 'package:geolocator/geolocator.dart';
 import 'package:get/get.dart';
 import 'package:wisper/app/core/config/theme/light_theme_colors.dart';
 import 'package:wisper/app/core/others/custom_size.dart';
@@ -11,7 +13,8 @@ import 'package:wisper/app/core/widgets/common/custom_button.dart';
 import 'package:wisper/app/core/widgets/common/custom_text_filed.dart';
 import 'package:wisper/app/core/widgets/common/label.dart';
 import 'package:wisper/app/modules/authentication/controller/google_sign_up_controller.dart';
-import 'package:wisper/app/modules/authentication/views/job_interest_screen.dart';
+import 'package:wisper/app/modules/authentication/controller/sign_up_controller.dart';
+import 'package:wisper/app/modules/authentication/views/otp_verification_screen.dart';
 import 'package:wisper/app/modules/authentication/views/sign_in_screen.dart';
 import 'package:wisper/gen/assets.gen.dart';
 
@@ -21,14 +24,16 @@ class RecruiterSignUpScreen extends StatefulWidget {
   @override
   State<RecruiterSignUpScreen> createState() => _RecruiterSignUpScreenState();
 }
-
+ 
 class _RecruiterSignUpScreenState extends State<RecruiterSignUpScreen> {
   final TextEditingController nameController = TextEditingController();
+  final TextEditingController organizationController = TextEditingController();
   final TextEditingController emailController = TextEditingController();
   final TextEditingController passwordController = TextEditingController();
   final GoogleSignUpAuthController googleAuthController = Get.put(
     GoogleSignUpAuthController(),
   );
+  final SignUpController signUpController = Get.put(SignUpController());
   final formKey = GlobalKey<FormState>();
 
   void signInGoogle() {
@@ -47,6 +52,102 @@ class _RecruiterSignUpScreenState extends State<RecruiterSignUpScreen> {
     } else {
       showSnackBarMessage(context, 'Failed to sign in', true);
     }
+  }
+
+  void _finishSignUp() {
+    if (formKey.currentState!.validate()) {
+      showLoadingOverLay(
+        asyncFunction: _submitSignUp,
+        msg: 'Please wait...',
+      );
+    }
+  }
+
+  Future<void> _submitSignUp() async {
+    final address = await _getCurrentCityCountry();
+    if (!mounted) return;
+
+    final isSuccess = await signUpController.signUp(
+      bussinessName: nameController.text.trim(),
+      email: emailController.text.trim(),
+      password: passwordController.text,
+      confirmPassword: passwordController.text,
+      industry: organizationController.text.trim(),
+      address: address,
+    );
+
+    if (!mounted) return;
+    if (isSuccess) {
+      showSnackBarMessage(context, 'Successfully done');
+      Get.to(() => OtpVerificationScreen(email: emailController.text.trim()));
+    } else {
+      showSnackBarMessage(context, signUpController.errorMessage, true);
+    }
+  }
+
+  Future<String> _getCurrentCityCountry() async {
+    try {
+      final serviceEnabled = await Geolocator.isLocationServiceEnabled();
+      if (!serviceEnabled) {
+        if (mounted) {
+          showSnackBarMessage(context, 'Please enable location services', true);
+        }
+        return '';
+      }
+
+      var permission = await Geolocator.checkPermission();
+      if (permission == LocationPermission.denied) {
+        permission = await Geolocator.requestPermission();
+      }
+
+      if (permission == LocationPermission.denied) {
+        if (mounted) {
+          showSnackBarMessage(context, 'Location permission denied', true);
+        }
+        return '';
+      }
+
+      if (permission == LocationPermission.deniedForever) {
+        if (mounted) {
+          showSnackBarMessage(
+            context,
+            'Location permission permanently denied. Please enable from settings.',
+            true,
+          );
+        }
+        return '';
+      }
+
+      final position = await Geolocator.getCurrentPosition(
+        desiredAccuracy: LocationAccuracy.medium,
+      ).timeout(const Duration(seconds: 10));
+      final placemarks = await placemarkFromCoordinates(
+        position.latitude,
+        position.longitude,
+      );
+
+      if (placemarks.isEmpty) return '';
+      final place = placemarks.first;
+      final city = place.locality?.trim().isNotEmpty == true
+          ? place.locality!
+          : (place.subAdministrativeArea ?? 'Unknown city');
+      return '$city, ${place.country ?? 'Unknown country'}';
+    } catch (error) {
+      debugPrint('Location error: $error');
+      if (mounted) {
+        showSnackBarMessage(context, 'Could not get current location', true);
+      }
+      return '';
+    }
+  }
+
+  @override
+  void dispose() {
+    nameController.dispose();
+    organizationController.dispose();
+    emailController.dispose();
+    passwordController.dispose();
+    super.dispose();
   }
 
   @override
@@ -96,6 +197,15 @@ class _RecruiterSignUpScreenState extends State<RecruiterSignUpScreen> {
                   validator: ValidatorService.validateSimpleField,
                 ),
                 heightBox16,
+                Label(label: 'Organization'),
+                heightBox10,
+                CustomTextField(
+                  controller: organizationController,
+                  hintText: 'Organization',
+                  keyboardType: TextInputType.text,
+                  validator: ValidatorService.validateSimpleField,
+                ),
+                heightBox16,
                 Label(label: 'Email'),
                 heightBox10,
                 CustomTextField(
@@ -121,40 +231,41 @@ class _RecruiterSignUpScreenState extends State<RecruiterSignUpScreen> {
                   ),
                 ),
 
-                heightBox80,
-                Column(
-                  crossAxisAlignment: CrossAxisAlignment.center,
-                  children: [
-                    Text(
-                      "Sign Up With",
-                      style: TextStyle(
-                        color: const Color(0xff8C8C8C),
-                        fontSize: 16.sp,
-                      ),
-                    ),
-                    heightBox10,
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        GestureDetector(
-                          onTap: signInGoogle,
-                          child: CrashSafeImage(
-                            Assets.images.gmail.keyName,
-                            height: 30.h,
-                          ),
-                        ),
-                        // widthBox14,
-                        // CrashSafeImage(
-                        //   Assets.images.facebook.keyName,
-                        //   height: 30.h,
-                        // ),
-                      ],
-                    ),
-                  ],
-                ),
+                // heightBox80,
+                // Column(
+                //   crossAxisAlignment: CrossAxisAlignment.center,
+                //   children: [
+                //     Text(
+                //       "Sign Up With",
+                //       style: TextStyle(
+                //         color: const Color(0xff8C8C8C),
+                //         fontSize: 16.sp,
+                //       ),
+                //     ),
+                //     heightBox10,
+                //     Row(
+                //       mainAxisAlignment: MainAxisAlignment.center,
+                //       children: [
+                //         GestureDetector(
+                //           onTap: signInGoogle,
+                //           child: CrashSafeImage(
+                //             Assets.images.gmail.keyName,
+                //             height: 30.h,
+                //           ),
+                //         ),
+                //         // widthBox14,
+                //         // CrashSafeImage(
+                //         //   Assets.images.facebook.keyName,
+                //         //   height: 30.h,
+                //         // ),
+                //       ],
+                //     ),
+                //   ],
+                // ),
 
                 heightBox100,
-                heightBox20,
+                heightBox60,
+               
 
                 RichText(
                   textAlign: TextAlign.center,
@@ -201,17 +312,7 @@ class _RecruiterSignUpScreenState extends State<RecruiterSignUpScreen> {
                 CustomElevatedButton(
                   height: 56,
                   title: 'Sign Up',
-                  onPress: () {
-                    if (formKey.currentState!.validate()) {
-                      Get.to(
-                        JobInterestScreen(
-                          bussinessName: nameController.text.trim(),
-                          email: emailController.text.trim(),
-                          password: passwordController.text,
-                        ),
-                      );
-                    }
-                  },
+                  onPress: _finishSignUp,
                 ),
 
                 heightBox16

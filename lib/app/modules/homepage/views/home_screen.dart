@@ -14,14 +14,14 @@ import 'package:wisper/gen/assets.gen.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
-
+ 
   @override
   State<HomeScreen> createState() => _HomeScreenState();
-} 
+}
 
 class _HomeScreenState extends State<HomeScreen> {
-  static const String _generalChatId = '56cbc5ab-78ed-4ec7-9847-0120558f9c62';
-  static const String _generalGroupId = '56cbc5ab-78ed-4ec7-9847-01205585862'; 
+  static const String _generalChatId = 'd3139d42-5671-41d1-9824-6162be10125a';
+  static const String _generalGroupId = 'd3139d42-5671-41d1-9824-6162be10125a';
 
   int selectedIndex = 0;
 
@@ -95,16 +95,16 @@ class _HomeScreenState extends State<HomeScreen> {
                   // Tab 0: General Chat
                   SizedBox.expand(
                     child: (_generalChatId.isEmpty || _generalGroupId.isEmpty)
-                        ? const Center(
+                        ? const Center( 
                             child: Text(
                               'General Chat is not configured',
                               style: TextStyle(color: Colors.white70),
                             ),
                           )
                         : GroupChatScreen(
-                            isGeneralChat: true, 
+                            isGeneralChat: true,
                             chatId: _generalChatId,
-                            groupId: _generalGroupId,
+                            groupId: '',
                             groupName: 'General Chat',
                             groupImage: '',
                           ),

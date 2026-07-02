@@ -20,6 +20,7 @@ import 'package:wisper/app/modules/homepage/views/create_post_screen.dart';
 import 'package:wisper/app/modules/homepage/views/home_screen.dart';
 import 'package:wisper/app/modules/profile/controller/buisness/buisness_controller.dart';
 import 'package:wisper/app/modules/profile/controller/person/profile_controller.dart';
+import 'package:wisper/app/modules/profile/views/person/edit_person_profile_screen.dart';
 import 'package:wisper/app/modules/profile/views/profile_screen.dart';
 import 'package:wisper/gen/assets.gen.dart';
 
@@ -35,6 +36,7 @@ class MainButtonNavbarScreen extends StatefulWidget {
 class _MainButtonNavbarScreenState extends State<MainButtonNavbarScreen>
     with WidgetsBindingObserver {
   late int selectedKey;
+  bool _hasCheckedRequiredJobTitle = false;
 
   final ProfileController profileController = Get.put(ProfileController());
   final BusinessController businessController = Get.put(BusinessController());
@@ -101,15 +103,34 @@ class _MainButtonNavbarScreenState extends State<MainButtonNavbarScreen>
     myFeedJobController.resetPagination();
     myFeedPostController.resetPagination();
 
-    await Future.wait([
+    final otherDataFuture = Future.wait([
       allFeedJobController.getJobs(),
       allFeedPostController.getAllPost(),
       myFeedJobController.getJobs(),
       myFeedPostController.getAllPost(),
       allRoleController.getAllRole('', null),
       businessController.getMyProfile(),
-      profileController.getMyProfile(),
     ]);
+
+    await profileController.getMyProfile();
+    await _redirectToJobTitleSetupIfNeeded();
+    await otherDataFuture;
+  }
+
+  Future<void> _redirectToJobTitleSetupIfNeeded() async {
+    if (_hasCheckedRequiredJobTitle || !mounted) return;
+    _hasCheckedRequiredJobTitle = true;
+
+    final role = StorageUtil.getData(StorageUtil.userRole)
+        ?.toString()
+        .toUpperCase();
+    final isPersonUser = role == 'PERSON' || role == 'USER';
+    final title = profileController.profileData?.auth?.person?.title?.trim();
+
+    if (isPersonUser &&
+        (title == null || title.isEmpty || title.toLowerCase() == 'null')) {
+      await Get.to(() => const EditPersonProfileScreen());
+    }
   }
 
   String _getProfileImageUrl() {

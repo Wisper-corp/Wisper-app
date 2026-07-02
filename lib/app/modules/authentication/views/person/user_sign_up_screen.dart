@@ -2,13 +2,17 @@
 
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
+import 'package:geocoding/geocoding.dart';
+import 'package:geolocator/geolocator.dart';
 import 'package:get/get.dart';
 import 'package:wisper/app/core/config/theme/light_theme_colors.dart';
 import 'package:wisper/app/core/others/custom_size.dart';
+import 'package:wisper/app/core/utils/show_over_loading.dart';
+import 'package:wisper/app/core/utils/snack_bar.dart';
 import 'package:wisper/app/core/widgets/common/circle_icon.dart';
 import 'package:wisper/app/core/widgets/common/line_widget.dart';
 import 'package:wisper/app/modules/authentication/controller/sign_up_controller.dart';
-import 'package:wisper/app/modules/authentication/views/job_interest_screen.dart';
+import 'package:wisper/app/modules/authentication/views/otp_verification_screen.dart';
 import 'package:wisper/app/modules/authentication/views/person/footer_section.dart';
 import 'package:wisper/app/modules/authentication/views/person/information_section.dart';
 import 'package:wisper/app/modules/authentication/views/person/password_section.dart';
@@ -97,16 +101,93 @@ class _SignUpScreenState extends State<SignUpScreen> {
 
   void _finishSignUp() {
     if (_formKey.currentState!.validate()) {
-      Get.to(
-        () => JobInterestScreen(
-          firstName: _firstNameController.text.trim(),
-          lastName: _lastNameController.text.trim(),
-          email: _emailController.text.trim(),
-          phone: _phoneController.text.trim(),
-          password: _passwordController.text,
-          title: _titleController.text.trim(),
-        ),
+      showLoadingOverLay(
+        asyncFunction: _submitSignUp,
+        msg: 'Please wait...',
       );
+    }
+  }
+
+  Future<void> _submitSignUp() async {
+    final address = await _getCurrentCityCountry();
+    if (!mounted) return;
+
+    final isSuccess = await signUpController.signUp(
+      firstName: _firstNameController.text.trim(),
+      lastName: _lastNameController.text.trim(),
+      email: _emailController.text.trim(),
+      phone: _phoneController.text.trim(),
+      password: _passwordController.text,
+      confirmPassword: _confirmPasswordController.text,
+      title: _titleController.text.trim(),
+      industry: '',
+      address: address,
+    );
+
+    if (!mounted) return;
+    if (isSuccess) {
+      showSnackBarMessage(context, 'Successfully done');
+      Get.to(
+        () => OtpVerificationScreen(email: _emailController.text.trim()),
+      );
+    } else {
+      showSnackBarMessage(context, signUpController.errorMessage, true);
+    }
+  }
+
+  Future<String> _getCurrentCityCountry() async {
+    try {
+      final serviceEnabled = await Geolocator.isLocationServiceEnabled();
+      if (!serviceEnabled) {
+        if (mounted) {
+          showSnackBarMessage(context, 'Please enable location services', true);
+        }
+        return '';
+      }
+
+      var permission = await Geolocator.checkPermission();
+      if (permission == LocationPermission.denied) {
+        permission = await Geolocator.requestPermission();
+      }
+
+      if (permission == LocationPermission.denied) {
+        if (mounted) {
+          showSnackBarMessage(context, 'Location permission denied', true);
+        }
+        return '';
+      }
+
+      if (permission == LocationPermission.deniedForever) {
+        if (mounted) {
+          showSnackBarMessage(
+            context,
+            'Location permission permanently denied. Please enable from settings.',
+            true,
+          );
+        }
+        return '';
+      }
+
+      final position = await Geolocator.getCurrentPosition(
+        desiredAccuracy: LocationAccuracy.medium,
+      ).timeout(const Duration(seconds: 10));
+      final placemarks = await placemarkFromCoordinates(
+        position.latitude,
+        position.longitude,
+      );
+
+      if (placemarks.isEmpty) return '';
+      final place = placemarks.first;
+      final city = place.locality?.trim().isNotEmpty == true
+          ? place.locality!
+          : (place.subAdministrativeArea ?? 'Unknown city');
+      return '$city, ${place.country ?? 'Unknown country'}';
+    } catch (error) {
+      debugPrint('Location error: $error');
+      if (mounted) {
+        showSnackBarMessage(context, 'Could not get current location', true);
+      }
+      return '';
     }
   }
 
