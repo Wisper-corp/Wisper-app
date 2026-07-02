@@ -104,11 +104,24 @@ class AllChatsController extends GetxController {
 
         final String type = chat['type'] ?? 'INDIVIDUAL';
 
-        // last message
-        final String lastMessage =
-            chat['messages'] != null && (chat['messages'] as List).isNotEmpty
-            ? (chat['messages'].first['text'] ?? '')
-            : 'No messages';
+        // last message — check fileType for offers, images, etc.
+        String lastMessage = 'No messages';
+        if (chat['messages'] != null && (chat['messages'] as List).isNotEmpty) {
+          final firstMsg = chat['messages'].first;
+          final fileType = firstMsg['fileType'] ?? '';
+          final text = firstMsg['text'] ?? '';
+          if (fileType == 'OFFER') {
+            lastMessage = '🧾 Sent an offer';
+          } else if (fileType == 'IMAGE') {
+            lastMessage = '📷 Photo';
+          } else if (fileType == 'VIDEO') {
+            lastMessage = '🎥 Video';
+          } else if (fileType != null && fileType != '') {
+            lastMessage = '📄 File';
+          } else {
+            lastMessage = text.isNotEmpty ? text : 'No messages';
+          }
+        }
 
         // latest time
         final String latestMessageAt = chat['latestMessageAt'] ?? '';
@@ -149,7 +162,7 @@ class AllChatsController extends GetxController {
         if (index != -1) {
           // Existing chat → শুধু আপডেট করো
           socketService.socketFriendList[index]
-            ..['lastMessage'] = lastMessage == '' ? '📷 photo' : lastMessage
+            ..['lastMessage'] = lastMessage
             ..['latestMessageAt'] = latestMessageAt
             ..['unreadMessageCount'] = unreadCount;
 
