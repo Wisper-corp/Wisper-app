@@ -48,9 +48,9 @@ class ImageContainer extends StatelessWidget {
         child: _image(images[0]),
       );
     } else if (count == 2) {
-      // Two images — side by side, equal width
+      // Two images — side by side, equal width, taller (like Twitter/X)
       return AspectRatio(
-        aspectRatio: 16 / 9,
+        aspectRatio: 16 / 12,
         child: Row(
           children: [
             Expanded(child: _image(images[0])),
