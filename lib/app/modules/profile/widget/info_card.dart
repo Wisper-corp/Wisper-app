@@ -7,7 +7,7 @@ import 'package:wisper/app/core/config/theme/light_theme_colors.dart';
 import 'package:wisper/app/core/others/custom_size.dart';
 import 'package:wisper/app/core/widgets/common/circle_icon.dart';
 import 'package:wisper/app/modules/homepage/views/connection_screen.dart';
-import 'package:wisper/app/core/services/network_caller/demo_controller.dart';
+import 'package:wisper/app/modules/chat/controller/all_connection_controller.dart';
 import 'package:wisper/gen/assets.gen.dart';
 
 class InfoCard extends StatelessWidget {
