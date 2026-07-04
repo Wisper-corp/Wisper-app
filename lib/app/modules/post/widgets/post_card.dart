@@ -5,7 +5,7 @@ import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:get/get.dart';
 import 'package:wisper/app/core/config/theme/light_theme_colors.dart';
 import 'package:wisper/app/core/others/custom_size.dart';
-import 'package:wisper/app/core/widgets/common/image_container_widget.dart'; // নতুনটা
+import 'package:wisper/app/core/widgets/common/initials_avatar.dart';
 import 'package:wisper/app/modules/profile/views/business/others_business_screen.dart';
 import 'package:wisper/app/modules/profile/views/person/others_person_screen.dart';
 
@@ -68,15 +68,11 @@ class PostCard extends StatelessWidget {
               Get.to(() => OthersBusinessScreen(userId: ownerId ?? ''));
             }
           },
-          child: CircleAvatar(
-            backgroundColor: Colors.grey.shade800,
+          child: InitialsAvatar(
+            name: ownerName ?? '',
+            imageUrl: ownerImage,
             radius: 20.r,
-            backgroundImage: ownerImage != null && ownerImage!.isNotEmpty
-                ? NetworkImage(ownerImage!)
-                : null,
-            child: ownerImage == null || ownerImage!.isEmpty
-                ? Icon(Icons.person, color: Colors.white, size: 20.r)
-                : null,
+            fontSize: 14,
           ),
         ),
         widthBox8,

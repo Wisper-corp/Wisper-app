@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:wisper/app/core/others/custom_size.dart';
+import 'package:wisper/app/core/widgets/common/initials_avatar.dart';
 import 'package:wisper/gen/assets.gen.dart';
 
 class MemberListTile extends StatelessWidget {
@@ -66,10 +67,11 @@ class MemberListTile extends StatelessWidget {
                             color: const Color(0xff11AE46),
                             height: 22.h,
                           )
-                        : CircleAvatar(
+                        : InitialsAvatar(
+                            name: name,
+                            imageUrl: imagePath.startsWith('http') ? imagePath : null,
                             radius: 25.r,
-                            backgroundImage: NetworkImage(imagePath),
-                            backgroundColor: Colors.transparent,
+                            fontSize: 16,
                           ),
                   ),
 

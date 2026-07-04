@@ -13,6 +13,7 @@ import 'package:wisper/app/modules/chat/model/offer_model.dart';
 import 'package:wisper/app/modules/chat/views/person/message_input_bar.dart';
 import 'package:wisper/app/modules/chat/widgets/chatting_header.dart';
 import 'package:wisper/app/modules/chat/widgets/message_bubble.dart';
+import 'package:wisper/app/core/widgets/common/initials_avatar.dart';
 import 'package:wisper/app/modules/chat/widgets/offer_card.dart';
 
 class ChatScreen extends StatefulWidget {
@@ -264,15 +265,11 @@ class _ChatScreenState extends State<ChatScreen> {
         children: [
           // Profile avatar on left for receiver
           if (!isMe) ...[
-            CircleAvatar(
+            InitialsAvatar(
+              name: senderName,
+              imageUrl: senderImage.isNotEmpty ? senderImage : null,
               radius: 16.r,
-              backgroundImage: senderImage.isNotEmpty ? NetworkImage(senderImage) : null,
-              child: senderImage.isEmpty
-                  ? Text(
-                      senderName.isNotEmpty ? senderName[0].toUpperCase() : '?',
-                      style: TextStyle(fontSize: 12.sp, fontWeight: FontWeight.bold),
-                    )
-                  : null,
+              fontSize: 12,
             ),
             SizedBox(width: 8.w),
           ],

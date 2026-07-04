@@ -8,7 +8,7 @@ import 'package:syncfusion_flutter_pdfviewer/pdfviewer.dart';
 import 'package:wisper/app/core/others/custom_size.dart';
 import 'package:wisper/app/core/utils/snack_bar.dart';
 import 'package:wisper/app/core/utils/video_player.dart';
-import 'package:wisper/app/core/widgets/common/circle_icon.dart';
+import 'package:wisper/app/core/widgets/common/initials_avatar.dart';
 import 'package:wisper/gen/assets.gen.dart';
 
 class MessageBubble extends StatelessWidget {
@@ -248,20 +248,12 @@ class MessageBubble extends StatelessWidget {
             : CrossAxisAlignment.start,
         children: [
           if (!isMe)
-            CircleAvatar(
+            InitialsAvatar(
+              name: senderName,
+              imageUrl: senderImage,
               radius: 16.r,
-              backgroundImage: senderImage != null && senderImage!.isNotEmpty
-                  ? NetworkImage(senderImage!)
-                  : null,
-              child: senderImage == null || senderImage!.isEmpty
-                  ? Text(
-                      senderName.isNotEmpty ? senderName[0].toUpperCase() : '?',
-                      style: TextStyle(
-                        fontSize: 14.sp,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    )
-                  : null,
+              fontSize: 12,
+            ),
             ),
           if (!isMe) widthBox8 else widthBox10,
 

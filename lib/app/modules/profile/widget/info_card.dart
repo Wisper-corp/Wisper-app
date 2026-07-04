@@ -8,6 +8,7 @@ import 'package:wisper/app/core/others/custom_size.dart';
 import 'package:wisper/app/core/widgets/common/circle_icon.dart';
 import 'package:wisper/app/modules/homepage/views/connection_screen.dart';
 import 'package:wisper/app/modules/chat/controller/all_connection_controller.dart';
+import 'package:wisper/app/core/widgets/common/initials_avatar.dart';
 import 'package:wisper/gen/assets.gen.dart';
 
 class InfoCard extends StatelessWidget {
@@ -107,15 +108,21 @@ class InfoCard extends StatelessWidget {
                         radius: 40.r,
                         backgroundColor: Colors.grey.shade800,
                         child: Padding(
-                          // যদি ডিফল্ট অ্যাসেট হয়, তাহলে padding যোগ করা হবে
                           padding: EdgeInsets.all(
                             imageInfo.isDefault ? 12.0.r : 0.0,
                           ),
-                          child: CircleAvatar(
-                            radius: 40.r,
-                            backgroundImage: imageInfo.provider,
-                            backgroundColor: Colors.transparent,
-                          ),
+                          child: imageInfo.isDefault
+                              ? InitialsAvatar(
+                                  name: title,
+                                  imageUrl: null,
+                                  radius: 40.r,
+                                  fontSize: 22,
+                                )
+                              : CircleAvatar(
+                                  radius: 40.r,
+                                  backgroundImage: imageInfo.provider,
+                                  backgroundColor: Colors.transparent,
+                                ),
                         ),
                       ),
                       if (isEditImage == true)
