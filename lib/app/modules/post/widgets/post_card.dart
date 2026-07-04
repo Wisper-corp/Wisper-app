@@ -118,7 +118,6 @@ class PostCard extends StatelessWidget {
                 decoration: BoxDecoration(
                   color: Colors.transparent,
                   borderRadius: BorderRadius.circular(8.r),
-                  border: Border.all(color: Colors.grey.shade400, width: 0.4),
                 ),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,

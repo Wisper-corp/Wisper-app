@@ -493,6 +493,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
       context: context,
       title: "Logout?",
       message: "Are you sure you want to logout from your account?",
+      cancelButtonText: "Cancel",
+      deleteButtonText: "Log Out",
       onDelete: () {
         Get.delete<ProfileController>(force: true);
         StorageUtil.deleteData(StorageUtil.userAccessToken);

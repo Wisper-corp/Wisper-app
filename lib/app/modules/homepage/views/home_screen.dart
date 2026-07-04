@@ -115,7 +115,7 @@ class _HomeScreenState extends State<HomeScreen> {
             ),
             StraightLiner(height: 0.4, color: const Color(0xff454545)),
 
-            heightBox14,
+            heightBox8,
 
             // 0=Announcement 1=Gig Market 2=Jobs 3=Community
             // Role tab hidden - will re-enable at 5k users
