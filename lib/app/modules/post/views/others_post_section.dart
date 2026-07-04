@@ -89,6 +89,8 @@ class _OthersPostSectionState extends State<OthersPostSection> {
                 postDescription: post.caption ?? '',
                 postTime: formattedTime,
                 views: post.views.toString(),
+                price: post.price,
+                deliveryTime: post.deliveryTime,
               ),
             );
           },
