@@ -3,6 +3,7 @@ import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:get/get.dart';
 import 'package:wisper/app/core/config/theme/light_theme_colors.dart';
 import 'package:wisper/app/core/others/custom_size.dart';
+import 'package:wisper/app/core/widgets/common/initials_avatar.dart';
 import 'package:wisper/app/core/widgets/common/label_data.dart';
 import 'package:wisper/app/core/widgets/common/line_widget.dart';
 import 'package:wisper/app/modules/job/views/job_details_screen.dart';
@@ -11,7 +12,7 @@ import 'package:wisper/gen/assets.gen.dart';
 class JobCard extends StatelessWidget {
   final bool? showAction;
   final VoidCallback? ontap;
-  final GlobalKey? suffixIconKey; // This is the key for CustomPopupMenu
+  final GlobalKey? suffixIconKey;
 
   final String? postId;
   final String? ownerName;
@@ -21,6 +22,7 @@ class JobCard extends StatelessWidget {
   final String? salary;
   final String? location;
   final String? jobType;
+  final String? locationType;
   final String? shiftType;
   final String? jobDescription;
   final String? date;
@@ -35,17 +37,24 @@ class JobCard extends StatelessWidget {
     this.salary,
     this.location,
     this.jobType,
+    this.locationType,
     this.shiftType,
     this.jobDescription,
     this.date,
     this.showAction = false,
     this.ontap,
-    this.suffixIconKey, // Add this parameter
+    this.suffixIconKey,
   });
 
   @override
   Widget build(BuildContext context) {
     final String shift = shiftType == 'MONTHLY' ? 'mo' : 'hr';
+    // Show "Negotiable" if salary is 0 or the default 1000 placeholder
+    final double? salaryNum = double.tryParse(salary ?? '0');
+    final bool hasRealSalary = salaryNum != null && salaryNum > 1000;
+    final String salaryDisplay = hasRealSalary
+        ? '\$${salaryNum.toStringAsFixed(0)}/$shift'
+        : 'Salary Negotiable';
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -58,15 +67,11 @@ class JobCard extends StatelessWidget {
           child: Row(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              CircleAvatar(
-                backgroundColor: Colors.grey.shade800,
+              InitialsAvatar(
+                name: ownerName ?? 'Company',
+                imageUrl: ownerImage,
                 radius: 21.r,
-                backgroundImage: ownerImage != null && ownerImage!.isNotEmpty
-                    ? NetworkImage(ownerImage!)
-                    : null,
-                child: ownerImage == null || ownerImage!.isEmpty
-                    ? Icon(Icons.business, color: Colors.white, size: 24.r)
-                    : null,
+                fontSize: 14,
               ),
               widthBox8,
               Expanded(
@@ -118,10 +123,11 @@ class JobCard extends StatelessWidget {
                     ),
                     heightBox4,
                     Text(
-                      '\$${salary ?? 'Negotiable'}/$shift',
+                      salaryDisplay,
                       style: TextStyle(
                         fontWeight: FontWeight.w600,
                         fontSize: 14.sp,
+                        color: hasRealSalary ? Colors.white : LightThemeColors.themeGreyColor,
                       ),
                     ),
                     heightBox8,
@@ -143,28 +149,26 @@ class JobCard extends StatelessWidget {
                       ],
                     ),
                     heightBox12,
-                    Row(
+                    // Show only tags relevant to what was selected
+                    Wrap(
+                      spacing: 8.w,
+                      runSpacing: 6.h,
                       children: [
-                        LabelData(
-                          title: 'Part-time',
-                          bgColor: jobType == 'PART_TIME'
-                              ? LightThemeColors.blueColor
-                              : null,
-                        ),
-                        widthBox10,
-                        LabelData(
-                          title: 'Full-time',
-                          bgColor: jobType == 'FULL_TIME'
-                              ? LightThemeColors.blueColor
-                              : null,
-                        ),
-                        widthBox10,
-                        LabelData(
-                          title: 'Contract',
-                          bgColor: jobType == 'CONTRACT'
-                              ? LightThemeColors.blueColor
-                              : null,
-                        ),
+                        // Employment type
+                        if (jobType == 'FULL_TIME')
+                          LabelData(title: 'Full-time', bgColor: LightThemeColors.blueColor),
+                        if (jobType == 'PART_TIME')
+                          LabelData(title: 'Part-time', bgColor: LightThemeColors.blueColor),
+                        if (jobType == 'CONTRACT')
+                          LabelData(title: 'Freelance', bgColor: LightThemeColors.blueColor),
+
+                        // Location type
+                        if (locationType == 'REMOTE')
+                          LabelData(title: 'Remote', bgColor: const Color(0xff1A6B3C)),
+                        if (locationType == 'ON_SITE')
+                          LabelData(title: 'On-site', bgColor: const Color(0xff5B3A8A)),
+                        if (locationType == 'HYBRID')
+                          LabelData(title: 'Hybrid', bgColor: const Color(0xff8A5B3A)),
                       ],
                     ),
                     heightBox12,

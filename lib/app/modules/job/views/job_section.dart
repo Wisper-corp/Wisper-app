@@ -64,22 +64,16 @@ class _JobSectionState extends State<JobSection> {
                 padding: const EdgeInsets.symmetric(vertical: 8.0),
                 child: JobCard(
                   postId: controller.allJobData[index].id,
-                  ownerImage:
-                      controller.allJobData[index].author!.business?.image ??
-                      '',
-                  ownerName:
-                      controller.allJobData[index].author!.business?.name ?? '',
-                  ownerDesignation:
-                      controller.allJobData[index].author!.business?.industry ??
-                      '',
+                  ownerImage: controller.allJobData[index].author!.business?.image ?? '',
+                  ownerName: controller.allJobData[index].author!.business?.name ?? '',
+                  ownerDesignation: controller.allJobData[index].author!.business?.industry ?? '',
                   jobTitle: controller.allJobData[index].title ?? '',
                   salary: controller.allJobData[index].salary.toString(),
                   location: controller.allJobData[index].location ?? 'Not Mentioned',
                   jobType: controller.allJobData[index].type ?? '',
-                  jobDescription:
-                      controller.allJobData[index].description ?? '',
-                  shiftType:
-                      controller.allJobData[index].compensationType ?? '',
+                  locationType: controller.allJobData[index].locationType ?? '',
+                  jobDescription: controller.allJobData[index].description ?? '',
+                  shiftType: controller.allJobData[index].compensationType ?? '',
                   date: formattedTime.getRelativeTimeFormat(),
                 ),
               );

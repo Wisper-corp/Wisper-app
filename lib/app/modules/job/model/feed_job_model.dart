@@ -52,6 +52,8 @@ class FeedJobItemModel {
     required this.location,
     required this.type,
     required this.createdAt,
+    this.locationType,
+    this.isScraped,
   });
 
   final String? id;
@@ -68,6 +70,8 @@ class FeedJobItemModel {
   final String? location;
   final String? type;
   final DateTime? createdAt;
+  final String? locationType;
+  final bool? isScraped;
 
   factory FeedJobItemModel.fromJson(Map<String, dynamic> json) {
     return FeedJobItemModel(
@@ -89,6 +93,8 @@ class FeedJobItemModel {
       location: json["location"],
       type: json["type"],
       createdAt: DateTime.tryParse(json["createdAt"] ?? ""),
+      locationType: json["locationType"],
+      isScraped: json["isScraped"] as bool?,
     );
   }
 }
