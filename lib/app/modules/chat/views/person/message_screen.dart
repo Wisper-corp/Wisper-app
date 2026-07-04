@@ -257,13 +257,13 @@ class _ChatScreenState extends State<ChatScreen> {
     final senderName = msg[SocketMessageKeys.senderName] ?? '';
     final senderImage = msg[SocketMessageKeys.senderImage] ?? '';
 
-    return Align(
-      alignment: isMe ? Alignment.centerRight : Alignment.centerLeft,
+    return Padding(
+      padding: EdgeInsets.symmetric(vertical: 4.h, horizontal: 8.w),
       child: Row(
         mainAxisAlignment: isMe ? MainAxisAlignment.end : MainAxisAlignment.start,
-        crossAxisAlignment: CrossAxisAlignment.end,
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // Profile avatar on left for receiver
+          // Avatar on left for receiver
           if (!isMe) ...[
             InitialsAvatar(
               name: senderName,
@@ -274,36 +274,39 @@ class _ChatScreenState extends State<ChatScreen> {
             SizedBox(width: 8.w),
           ],
 
+          // Bubble column
           Column(
             crossAxisAlignment: isMe ? CrossAxisAlignment.end : CrossAxisAlignment.start,
             children: [
-              // Sender name on top for receiver (just like normal messages)
-              if (!isMe)
-                Padding(
-                  padding: EdgeInsets.only(left: 2.w, bottom: 2.h),
-                  child: Text(
-                    senderName,
-                    style: TextStyle(
-                      fontSize: 12.sp,
-                      fontWeight: FontWeight.w500,
-                      color: Colors.white70,
-                    ),
+              // Sender name always on top (both sides)
+              Padding(
+                padding: EdgeInsets.only(
+                  left: isMe ? 0 : 2.w,
+                  right: isMe ? 2.w : 0,
+                  bottom: 3.h,
+                ),
+                child: Text(
+                  senderName,
+                  style: TextStyle(
+                    fontSize: 12.sp,
+                    fontWeight: FontWeight.w600,
+                    color: Colors.white70,
                   ),
                 ),
+              ),
 
+              // Offer card bubble
               Container(
-                margin: EdgeInsets.only(
-                  bottom: 2.h,
-                  right: isMe ? 0 : 40.w,
+                constraints: BoxConstraints(
+                  maxWidth: MediaQuery.of(context).size.width * 0.72,
                 ),
-                constraints: BoxConstraints(maxWidth: MediaQuery.of(context).size.width * 0.72),
                 decoration: BoxDecoration(
                   color: isMe ? const Color(0xff2799EA) : const Color(0xff1E1E1E),
                   borderRadius: BorderRadius.only(
-                    topLeft: Radius.circular(16.r),
-                    topRight: Radius.circular(16.r),
-                    bottomLeft: isMe ? Radius.circular(16.r) : Radius.circular(0),
-                    bottomRight: isMe ? Radius.circular(0) : Radius.circular(16.r),
+                    topLeft: isMe ? Radius.circular(16.r) : Radius.circular(0),
+                    topRight: isMe ? Radius.circular(0) : Radius.circular(16.r),
+                    bottomLeft: Radius.circular(16.r),
+                    bottomRight: Radius.circular(16.r),
                   ),
                   border: Border.all(
                     color: isMe ? Colors.transparent : Colors.white.withOpacity(0.08),
@@ -312,10 +315,10 @@ class _ChatScreenState extends State<ChatScreen> {
                 ),
                 child: ClipRRect(
                   borderRadius: BorderRadius.only(
-                    topLeft: Radius.circular(16.r),
-                    topRight: Radius.circular(16.r),
-                    bottomLeft: isMe ? Radius.circular(16.r) : Radius.circular(0),
-                    bottomRight: isMe ? Radius.circular(0) : Radius.circular(16.r),
+                    topLeft: isMe ? Radius.circular(16.r) : Radius.circular(0),
+                    topRight: isMe ? Radius.circular(0) : Radius.circular(16.r),
+                    bottomLeft: Radius.circular(16.r),
+                    bottomRight: Radius.circular(16.r),
                   ),
                   child: OfferCard(
                     offer: offer,
@@ -330,7 +333,7 @@ class _ChatScreenState extends State<ChatScreen> {
               // Time + seen tick stamp below
               Padding(
                 padding: EdgeInsets.only(
-                  bottom: 4.h,
+                  top: 3.h,
                   left: isMe ? 0 : 2.w,
                   right: isMe ? 2.w : 0,
                 ),
@@ -339,10 +342,7 @@ class _ChatScreenState extends State<ChatScreen> {
                   children: [
                     Text(
                       time,
-                      style: TextStyle(
-                        fontSize: 10.sp,
-                        color: Colors.grey[500],
-                      ),
+                      style: TextStyle(fontSize: 10.sp, color: Colors.grey[500]),
                     ),
                     if (isMe) ...[
                       SizedBox(width: 4.w),
@@ -358,12 +358,20 @@ class _ChatScreenState extends State<ChatScreen> {
             ],
           ),
 
-          if (isMe) SizedBox(width: 8.w),
+          // Avatar on right for sender
+          if (isMe) ...[
+            SizedBox(width: 8.w),
+            InitialsAvatar(
+              name: senderName,
+              imageUrl: senderImage.isNotEmpty ? senderImage : null,
+              radius: 16.r,
+              fontSize: 12,
+            ),
+          ],
         ],
       ),
     );
   }
-
   @override
   void dispose() {
     _scrollController.removeListener(_scrollListener);
