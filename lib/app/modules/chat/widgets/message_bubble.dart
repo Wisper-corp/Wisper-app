@@ -8,6 +8,7 @@ import 'package:syncfusion_flutter_pdfviewer/pdfviewer.dart';
 import 'package:wisper/app/core/others/custom_size.dart';
 import 'package:wisper/app/core/utils/snack_bar.dart';
 import 'package:wisper/app/core/utils/video_player.dart';
+import 'package:wisper/app/core/widgets/common/circle_icon.dart';
 import 'package:wisper/app/core/widgets/common/initials_avatar.dart';
 import 'package:wisper/gen/assets.gen.dart';
 
@@ -253,7 +254,6 @@ class MessageBubble extends StatelessWidget {
               imageUrl: senderImage,
               radius: 16.r,
               fontSize: 12,
-            ),
             ),
           if (!isMe) widthBox8 else widthBox10,
 
