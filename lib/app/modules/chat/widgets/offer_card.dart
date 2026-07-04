@@ -209,7 +209,7 @@ class _OfferCardState extends State<OfferCard> {
                       width: 26,
                       height: 26,
                       decoration: BoxDecoration(
-                        color: Colors.black.withOpacity(0.25),
+                        color: Colors.white.withOpacity(0.2),
                         shape: BoxShape.circle,
                       ),
                       child: const Center(
@@ -225,7 +225,7 @@ class _OfferCardState extends State<OfferCard> {
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         const Text('Offer price',
-                            style: TextStyle(color: Colors.grey, fontSize: 10)),
+                            style: TextStyle(color: Colors.white70, fontSize: 10)),
                         Text(
                           '₦${widget.offer.amount.toStringAsFixed(0)}',
                           style: const TextStyle(
@@ -247,7 +247,7 @@ class _OfferCardState extends State<OfferCard> {
                       width: 26,
                       height: 26,
                       decoration: BoxDecoration(
-                        color: Colors.black.withOpacity(0.25),
+                        color: Colors.white.withOpacity(0.2),
                         shape: BoxShape.circle,
                       ),
                       child: const Icon(Icons.access_time_rounded,
@@ -258,7 +258,7 @@ class _OfferCardState extends State<OfferCard> {
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         const Text('Delivery time',
-                            style: TextStyle(color: Colors.grey, fontSize: 10)),
+                            style: TextStyle(color: Colors.white70, fontSize: 10)),
                         Text(
                           widget.offer.duration,
                           style: const TextStyle(
