@@ -82,57 +82,41 @@ class PostCard extends StatelessWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                // Header row: name · profession · time · trailing
+                // Header row: name + trailing (more icon)
                 Row(
-                  crossAxisAlignment: CrossAxisAlignment.center,
+                  crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Expanded(
-                      child: Row(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          Flexible(
-                            child: Text(
-                              ownerName ?? '',
-                              overflow: TextOverflow.ellipsis,
-                              style: TextStyle(
-                                fontWeight: FontWeight.w700,
-                                fontSize: 14.sp,
-                                color: Colors.white,
-                              ),
+                          // Name
+                          Text(
+                            ownerName ?? '',
+                            overflow: TextOverflow.ellipsis,
+                            style: TextStyle(
+                              fontWeight: FontWeight.w700,
+                              fontSize: 14.sp,
+                              color: Colors.white,
                             ),
                           ),
-                          if (ownerProfession != null && ownerProfession!.isNotEmpty) ...[
-                            SizedBox(width: 4.w),
-                            Text('·', style: TextStyle(color: Colors.grey, fontSize: 13.sp)),
-                            SizedBox(width: 4.w),
-                            Flexible(
-                              child: Text(
-                                ownerProfession!,
-                                overflow: TextOverflow.ellipsis,
-                                style: TextStyle(
-                                  fontSize: 12.sp,
-                                  color: Colors.grey,
-                                  fontWeight: FontWeight.w400,
-                                ),
-                              ),
-                            ),
-                          ],
-                          if (postTime != null && postTime!.isNotEmpty) ...[
-                            SizedBox(width: 4.w),
-                            Text('·', style: TextStyle(color: Colors.grey, fontSize: 13.sp)),
-                            SizedBox(width: 4.w),
+                          // Profession under name
+                          if (ownerProfession != null && ownerProfession!.isNotEmpty)
                             Text(
-                              postTime!,
+                              ownerProfession!,
+                              overflow: TextOverflow.ellipsis,
                               style: TextStyle(
                                 fontSize: 12.sp,
                                 color: Colors.grey,
                                 fontWeight: FontWeight.w400,
                               ),
                             ),
-                          ],
                         ],
                       ),
                     ),
-                    trailing,
+                    // Trailing (more icon only, no sponsor)
+                    if (trailing is! Text)
+                      trailing,
                   ],
                 ),
 
@@ -211,7 +195,7 @@ class PostCard extends StatelessWidget {
                   ),
                 ],
 
-                // Action row: comment · retweet · like · views
+                // Action row: comment · views · bookmark + timestamp
                 SizedBox(height: 10.h),
                 Row(
                   children: [
@@ -229,7 +213,14 @@ class PostCard extends StatelessWidget {
                       onTap: () {},
                     ),
                     const Spacer(),
-                    // Bookmark placeholder
+                    // Timestamp on the right
+                    if (postTime != null && postTime!.isNotEmpty)
+                      Text(
+                        postTime!,
+                        style: TextStyle(fontSize: 11.sp, color: Colors.grey),
+                      ),
+                    SizedBox(width: 10.w),
+                    // Bookmark
                     Icon(Icons.bookmark_border_rounded, size: 16.sp, color: Colors.grey),
                   ],
                 ),

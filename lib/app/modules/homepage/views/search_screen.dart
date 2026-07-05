@@ -232,13 +232,7 @@ class _GigMarketResults extends StatelessWidget {
               isPerson: post.author?.person != null,
               onTapComment: () {},
               ownerId: post.author?.id ?? '',
-              trailing: Text(
-                time,
-                style: TextStyle(
-                  fontSize: 10,
-                  color: LightThemeColors.themeGreyColor,
-                ),
-              ),
+              trailing: const SizedBox.shrink(),
               ownerName: post.author?.person != null
                   ? post.author?.person?.name ?? ''
                   : post.author?.business?.name ?? '',

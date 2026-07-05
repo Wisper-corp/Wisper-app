@@ -101,14 +101,7 @@ class _PostItemState extends State<_PostItem> {
         },
         isComment: false,
         ownerId: post.author?.id ?? '',
-        trailing: const Text(
-          'Sponsor',
-          style: TextStyle(
-            fontWeight: FontWeight.w400,
-            fontSize: 12,
-            color: LightThemeColors.themeGreyColor,
-          ),
-        ),
+        trailing: const SizedBox.shrink(),
         ownerName: post.author?.person != null
             ? post.author?.person?.name ?? 'Unknown User'
             : post.author?.business?.name ?? 'Unknown Business',

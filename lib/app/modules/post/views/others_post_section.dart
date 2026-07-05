@@ -68,14 +68,7 @@ class _OthersPostSectionState extends State<OthersPostSection> {
                    Get.to(CommentScreen(postId: post.id ?? ''));
                 },
                 ownerId: post.author?.id ?? '',
-                trailing: const Text(
-                  'Sponsor',
-                  style: TextStyle(
-                    fontWeight: FontWeight.w400,
-                    fontSize: 12,
-                    color: LightThemeColors.themeGreyColor,
-                  ),
-                ),
+                trailing: const SizedBox.shrink(),
                 ownerName: post.author?.person != null
                     ? post.author?.person?.name ?? ''
                     : post.author?.business?.name ?? '',
