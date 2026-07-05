@@ -123,105 +123,108 @@ class _ChattingFieldWidgetState extends State<ChattingFieldWidget> {
 
         // Main input area with preview
         Expanded(
-          child: Stack(
-            clipBehavior: Clip.none,
-            alignment: Alignment.bottomLeft,
-            children: [
-              // Text field – always visible at bottom
-              TextFormField(
-                controller: widget.controller,
-                focusNode: _focusNode,
-                minLines: 1,
-                maxLines: 5,
-                textAlignVertical: TextAlignVertical.center,
-                decoration: InputDecoration(
-                  hintText: 'Type here...',
-                  hintStyle: TextStyle(color: Colors.grey[400], fontSize: 15),
-                  filled: true,
-                  fillColor: Colors.grey.shade800,
-                  contentPadding: const EdgeInsets.symmetric(
-                    horizontal: 16,
-                    vertical: 12,
+          child: Obx(() {
+            final hasAttachment = fileDecodeController.imageUrl.isNotEmpty || fileDecodeController.inProgress;
+            return Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                // Attachment preview — only shown when there's something
+                if (hasAttachment)
+                  Padding(
+                    padding: const EdgeInsets.only(bottom: 6),
+                    child: _buildAttachmentPreview(),
                   ),
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(999),
-                    borderSide: BorderSide.none,
-                  ),
-                  isDense: true,
-                ),
-                style: const TextStyle(color: Colors.white, fontSize: 16),
-              ),
 
-              // Attachment preview – floating above the text field
-              Positioned(
-                left: 0,
-                bottom: 56, // ≈ text field height + small overlap
-                child: Obx(() {
-                  if (fileDecodeController.inProgress) {
-                    return _buildPreviewContainer(
-                      child: const SizedBox(
-                        width: 80,
-                        height: 80,
-                        child: Center(child: CircularProgressIndicator(strokeWidth: 3)),
-                      ),
-                    );
-                  }
-
-                  if (fileDecodeController.imageUrl.isEmpty) {
-                    return const SizedBox.shrink();
-                  }
-
-                  final url = fileDecodeController.imageUrl;
-                  String type = 'image';
-                  if (url.contains('.mp4')) type = 'video';
-                  if (url.contains('.pdf')) type = 'pdf';
-
-                  return _buildPreviewContainer(
-                    child: Stack(
-                      children: [
-                        Container(
-                          width: 80,
-                          height: 80,
-                          decoration: BoxDecoration(
-                            borderRadius: BorderRadius.circular(12),
-                            color: Colors.grey.shade700,
-                          ),
-                          child: type == 'image'
-                              ? ClipRRect(
-                                  borderRadius: BorderRadius.circular(12),
-                                  child: Image.network(
-                                    url,
-                                    fit: BoxFit.cover,
-                                    errorBuilder: (_, __, ___) => const Icon(Icons.broken_image),
-                                  ),
-                                )
-                              : Center(
-                                  child: Icon(
-                                    type == 'video' ? Icons.play_circle_fill : Icons.picture_as_pdf,
-                                    size: 40,
-                                    color: Colors.white70,
-                                  ),
-                                ),
-                        ),
-                        Positioned(
-                          top: -6,
-                          right: -6,
-                          child: CircleIconWidget(
-                            imagePath: Assets.images.cross.keyName,
-                            radius: 14,
-                            iconRadius: 12,
-                            onTap: _clearAllAttachments,
-                          ),
-                        ),
-                      ],
+                // Text field
+                TextFormField(
+                  controller: widget.controller,
+                  focusNode: _focusNode,
+                  minLines: 1,
+                  maxLines: 5,
+                  textAlignVertical: TextAlignVertical.center,
+                  decoration: InputDecoration(
+                    hintText: 'Type here...',
+                    hintStyle: TextStyle(color: Colors.grey[400], fontSize: 15),
+                    filled: true,
+                    fillColor: Colors.grey.shade800,
+                    contentPadding: const EdgeInsets.symmetric(
+                      horizontal: 16,
+                      vertical: 12,
                     ),
-                  );
-                }),
-              ),
-            ],
-          ),
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(999),
+                      borderSide: BorderSide.none,
+                    ),
+                    isDense: true,
+                  ),
+                  style: const TextStyle(color: Colors.white, fontSize: 16),
+                ),
+              ],
+            );
+          }),
         ),
       ],
+    );
+  }
+
+  Widget _buildAttachmentPreview() {
+    if (fileDecodeController.inProgress) {
+      return _buildPreviewContainer(
+        child: const SizedBox(
+          width: 80,
+          height: 80,
+          child: Center(child: CircularProgressIndicator(strokeWidth: 3)),
+        ),
+      );
+    }
+
+    final url = fileDecodeController.imageUrl;
+    if (url.isEmpty) return const SizedBox.shrink();
+
+    String type = 'image';
+    if (url.contains('.mp4')) type = 'video';
+    if (url.contains('.pdf')) type = 'pdf';
+
+    return _buildPreviewContainer(
+      child: Stack(
+        children: [
+          Container(
+            width: 80,
+            height: 80,
+            decoration: BoxDecoration(
+              borderRadius: BorderRadius.circular(12),
+              color: Colors.grey.shade700,
+            ),
+            child: type == 'image'
+                ? ClipRRect(
+                    borderRadius: BorderRadius.circular(12),
+                    child: Image.network(
+                      url,
+                      fit: BoxFit.cover,
+                      errorBuilder: (_, __, ___) => const Icon(Icons.broken_image),
+                    ),
+                  )
+                : Center(
+                    child: Icon(
+                      type == 'video' ? Icons.play_circle_fill : Icons.picture_as_pdf,
+                      size: 40,
+                      color: Colors.white70,
+                    ),
+                  ),
+          ),
+          Positioned(
+            top: -6,
+            right: -6,
+            child: CircleIconWidget(
+              imagePath: Assets.images.cross.keyName,
+              radius: 14,
+              iconRadius: 12,
+              onTap: _clearAllAttachments,
+            ),
+          ),
+        ],
+      ),
     );
   }
 
