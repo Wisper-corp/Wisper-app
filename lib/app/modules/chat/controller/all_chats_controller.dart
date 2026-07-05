@@ -111,7 +111,8 @@ class AllChatsController extends GetxController {
           final fileType = firstMsg['fileType'] ?? '';
           final text = firstMsg['text'] ?? '';
           if (fileType == 'OFFER') {
-            lastMessage = '🧾 Sent an offer';
+            // Show actual offer description text
+            lastMessage = text.isNotEmpty ? text : '📩 Offer sent';
           } else if (fileType == 'IMAGE') {
             lastMessage = '📷 Photo';
           } else if (fileType == 'VIDEO') {
@@ -265,7 +266,9 @@ class AllChatsController extends GetxController {
             "latestMessageAt": chat.latestMessageAt?.toIso8601String() ?? '',
             "lastMessage": chat.messages.isNotEmpty
                 ? (chat.messages.first.fileType == 'OFFER'
-                    ? '🧾 Sent an offer'
+                    ? (chat.messages.first.text?.isNotEmpty == true
+                        ? chat.messages.first.text!
+                        : '📩 Offer sent')
                     : chat.messages.first.fileType == 'IMAGE'
                     ? '📷 Photo'
                     : chat.messages.first.fileType == 'VIDEO'

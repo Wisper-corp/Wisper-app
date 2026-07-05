@@ -64,7 +64,9 @@ class _JobSectionState extends State<JobSection> {
                 padding: const EdgeInsets.symmetric(vertical: 8.0),
                 child: JobCard(
                   postId: controller.allJobData[index].id,
-                  ownerImage: controller.allJobData[index].author!.business?.image ?? '',
+                  ownerImage: controller.allJobData[index].companyLogo?.isNotEmpty == true
+                      ? controller.allJobData[index].companyLogo
+                      : controller.allJobData[index].author!.business?.image ?? '',
                   ownerName: controller.allJobData[index].author!.business?.name ?? '',
                   ownerDesignation: controller.allJobData[index].author!.business?.industry ?? '',
                   jobTitle: controller.allJobData[index].title ?? '',
