@@ -134,46 +134,61 @@ class PostCard extends StatelessWidget {
                   ),
                 ],
 
-                // Price + Delivery badges
+                // Price + Delivery badges with icons (no box borders)
                 if (price != null || (deliveryTime != null && deliveryTime!.isNotEmpty)) ...[
-                  SizedBox(height: 6.h),
+                  SizedBox(height: 8.h),
                   Row(
                     children: [
-                      if (price != null)
-                        Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-                          margin: const EdgeInsets.only(right: 8),
-                          decoration: BoxDecoration(
-                            color: const Color(0xff1877F2).withOpacity(0.12),
-                            borderRadius: BorderRadius.circular(6),
-                            border: Border.all(color: const Color(0xff1877F2).withOpacity(0.3)),
-                          ),
-                          child: Row(
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              const Text('₦', style: TextStyle(fontSize: 11, color: Color(0xff1877F2), fontWeight: FontWeight.w600)),
-                              const SizedBox(width: 2),
-                              Text(
-                                price! % 1 == 0 ? price!.toInt().toString() : price!.toStringAsFixed(2),
-                                style: const TextStyle(fontSize: 11, color: Color(0xff1877F2), fontWeight: FontWeight.w600),
+                      if (price != null) ...[
+                        Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Container(
+                              padding: EdgeInsets.symmetric(horizontal: 10.w, vertical: 5.h),
+                              decoration: BoxDecoration(
+                                color: const Color(0xff1E1E1E),
+                                borderRadius: BorderRadius.circular(20.r),
                               ),
-                            ],
-                          ),
+                              child: Row(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  Icon(Icons.payments_outlined, size: 14.sp, color: Colors.white70),
+                                  SizedBox(width: 4.w),
+                                  Text(
+                                    'from ₦${price! % 1 == 0 ? price!.toInt().toString() : price!.toStringAsFixed(2)}',
+                                    style: TextStyle(
+                                      fontSize: 12.sp,
+                                      color: Colors.white,
+                                      fontWeight: FontWeight.w600,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                            SizedBox(width: 8.w),
+                          ],
                         ),
+                      ],
                       if (deliveryTime != null && deliveryTime!.isNotEmpty)
                         Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                          padding: EdgeInsets.symmetric(horizontal: 10.w, vertical: 5.h),
                           decoration: BoxDecoration(
-                            color: Colors.grey.withOpacity(0.1),
-                            borderRadius: BorderRadius.circular(6),
-                            border: Border.all(color: Colors.grey.withOpacity(0.3)),
+                            color: const Color(0xff1E1E1E),
+                            borderRadius: BorderRadius.circular(20.r),
                           ),
                           child: Row(
                             mainAxisSize: MainAxisSize.min,
                             children: [
-                              Icon(Icons.access_time, size: 11, color: Colors.grey),
-                              const SizedBox(width: 3),
-                              Text(deliveryTime!, style: const TextStyle(fontSize: 11, color: Colors.grey)),
+                              Icon(Icons.schedule_outlined, size: 14.sp, color: Colors.white70),
+                              SizedBox(width: 4.w),
+                              Text(
+                                deliveryTime!,
+                                style: TextStyle(
+                                  fontSize: 12.sp,
+                                  color: Colors.white,
+                                  fontWeight: FontWeight.w600,
+                                ),
+                              ),
                             ],
                           ),
                         ),
