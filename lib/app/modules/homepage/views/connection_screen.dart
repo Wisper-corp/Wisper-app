@@ -7,6 +7,7 @@ import 'package:wisper/app/core/others/get_storage.dart';
 import 'package:wisper/app/core/utils/show_over_loading.dart';
 import 'package:wisper/app/core/utils/snack_bar.dart';
 import 'package:wisper/app/core/widgets/common/custom_button.dart';
+import 'package:wisper/app/core/widgets/common/initials_avatar.dart';
 import 'package:wisper/app/core/widgets/shimmer/member_list_shimmer.dart';
 import 'package:wisper/app/modules/chat/controller/all_connection_controller.dart';
 import 'package:wisper/app/modules/chat/controller/update_connection_controller.dart';
@@ -181,9 +182,11 @@ class _ConnectionScreenState extends State<ConnectionScreen> {
                                           ),
                                   );
                                 },
-                                child: CircleAvatar(
-                                  backgroundImage: NetworkImage(avatar ?? ''),
+                                child: InitialsAvatar(
+                                  name: name ?? '',
+                                  imageUrl: avatar,
                                   radius: 20.r,
+                                  fontSize: 14,
                                 ),
                               ),
                               title: Text(
