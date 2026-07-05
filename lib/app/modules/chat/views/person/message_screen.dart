@@ -278,22 +278,23 @@ class _ChatScreenState extends State<ChatScreen> {
           Column(
             crossAxisAlignment: isMe ? CrossAxisAlignment.end : CrossAxisAlignment.start,
             children: [
-              // Sender name always on top (both sides)
-              Padding(
-                padding: EdgeInsets.only(
-                  left: isMe ? 0 : 2.w,
-                  right: isMe ? 2.w : 0,
-                  bottom: 3.h,
-                ),
-                child: Text(
-                  senderName,
-                  style: TextStyle(
-                    fontSize: 12.sp,
-                    fontWeight: FontWeight.w600,
-                    color: Colors.white70,
+              // Sender name only on top for RECEIVER side, not sender
+              if (!isMe)
+                Padding(
+                  padding: EdgeInsets.only(
+                    left: 2.w,
+                    right: 2.w,
+                    bottom: 3.h,
+                  ),
+                  child: Text(
+                    senderName,
+                    style: TextStyle(
+                      fontSize: 12.sp,
+                      fontWeight: FontWeight.w600,
+                      color: Colors.white70,
+                    ),
                   ),
                 ),
-              ),
 
               // Offer card bubble
               Container(
@@ -358,16 +359,8 @@ class _ChatScreenState extends State<ChatScreen> {
             ],
           ),
 
-          // Avatar on right for sender
-          if (isMe) ...[
-            SizedBox(width: 8.w),
-            InitialsAvatar(
-              name: senderName,
-              imageUrl: senderImage.isNotEmpty ? senderImage : null,
-              radius: 16.r,
-              fontSize: 12,
-            ),
-          ],
+          // No avatar on sender side
+
         ],
       ),
     );
