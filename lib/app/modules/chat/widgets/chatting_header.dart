@@ -8,6 +8,7 @@ import 'package:wisper/app/core/others/custom_size.dart';
 import 'package:wisper/app/core/utils/show_over_loading.dart';
 import 'package:wisper/app/core/utils/snack_bar.dart';
 import 'package:wisper/app/core/widgets/common/circle_icon.dart';
+import 'package:wisper/app/core/widgets/common/initials_avatar.dart';
 import 'package:wisper/app/core/widgets/common/custom_popup.dart';
 import 'package:wisper/app/core/widgets/common/details_card.dart';
 import 'package:wisper/app/modules/chat/controller/block_user_controller.dart';
@@ -313,9 +314,11 @@ class _ChatHeaderState extends State<ChatHeader> {
                         radius: 13,
                       ),
                       widthBox10,
-                      CircleAvatar(
-                        backgroundImage: NetworkImage(widget.image ?? ''),
+                      InitialsAvatar(
+                        name: widget.name ?? '',
+                        imageUrl: widget.image,
                         radius: 20,
+                        fontSize: 14,
                       ),
                       widthBox10,
                       Column(
