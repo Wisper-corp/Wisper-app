@@ -8,6 +8,10 @@ import 'package:wisper/app/core/others/custom_size.dart';
 import 'package:wisper/app/core/widgets/common/circle_icon.dart';
 import 'package:wisper/app/modules/homepage/views/connection_screen.dart';
 import 'package:wisper/app/modules/chat/controller/all_connection_controller.dart';
+import 'package:wisper/app/core/services/network_caller/network_caller.dart';
+import 'package:wisper/app/core/services/network_caller/network_response.dart';
+import 'package:wisper/app/core/others/get_storage.dart';
+import 'package:wisper/app/urls.dart';
 import 'package:wisper/app/core/widgets/common/initials_avatar.dart';
 import 'package:wisper/gen/assets.gen.dart';
 
@@ -222,9 +226,17 @@ class _NotificationBellState extends State<_NotificationBell> {
   }
 
   Future<void> _loadPendingCount() async {
-    await _connectionController.getAllConnection('PENDING', null);
-    final all = _connectionController.allConnectionData ?? [];
-    _pendingCount.value = all.length;
+    try {
+      final NetworkResponse response = await Get.find<NetworkCaller>().getRequest(
+        '${Urls.baseUrl}/notifications/unseen-count',
+        accessToken: StorageUtil.getData(StorageUtil.userAccessToken),
+      );
+      if (response.isSuccess && response.responseData != null) {
+        final count = response.responseData['data']?['count'] ?? 
+                      response.responseData['count'] ?? 0;
+        _pendingCount.value = count is int ? count : int.tryParse(count.toString()) ?? 0;
+      }
+    } catch (_) {}
   }
 
   @override
