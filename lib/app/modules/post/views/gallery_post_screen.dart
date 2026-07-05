@@ -31,7 +31,7 @@ class _GalleryPostScreenState extends State<GalleryPostScreen> {
   final TextEditingController _captionCtrl = TextEditingController();
   final TextEditingController _priceCtrl = TextEditingController();
   final TextEditingController _deliveryTimeCtrl = TextEditingController();
-  String _deliveryUnit = 'Days';
+  String _deliveryUnit = 'Days'; // Fixed to Days only
   final CreatePostController createPostController = CreatePostController();
   final ProfileController profileController = Get.find<ProfileController>();
   final BusinessController businessController = Get.find<BusinessController>();
@@ -388,36 +388,24 @@ class _GalleryPostScreenState extends State<GalleryPostScreen> {
                           ),
                         ),
                       ),
-                      // Days / Hours toggle
+                      // Days only toggle
                       StatefulBuilder(
                         builder: (context, setInner) {
-                          return Row(
-                            children: ['Days', 'Hours'].map((unit) {
-                              final selected = _deliveryUnit == unit;
-                              return GestureDetector(
-                                onTap: () {
-                                  setState(() => _deliveryUnit = unit);
-                                  setInner(() {});
-                                },
-                                child: AnimatedContainer(
-                                  duration: const Duration(milliseconds: 200),
-                                  margin: EdgeInsets.symmetric(horizontal: 3.w, vertical: 6.h),
-                                  padding: EdgeInsets.symmetric(horizontal: 10.w, vertical: 5.h),
-                                  decoration: BoxDecoration(
-                                    color: selected ? const Color(0xff2799EA) : Colors.transparent,
-                                    borderRadius: BorderRadius.circular(8.r),
-                                  ),
-                                  child: Text(
-                                    unit,
-                                    style: TextStyle(
-                                      color: selected ? Colors.white : Colors.grey,
-                                      fontSize: 12.sp,
-                                      fontWeight: selected ? FontWeight.w600 : FontWeight.normal,
-                                    ),
-                                  ),
-                                ),
-                              );
-                            }).toList(),
+                          return Container(
+                            margin: EdgeInsets.symmetric(horizontal: 6.w, vertical: 6.h),
+                            padding: EdgeInsets.symmetric(horizontal: 12.w, vertical: 5.h),
+                            decoration: BoxDecoration(
+                              color: const Color(0xff2799EA),
+                              borderRadius: BorderRadius.circular(8.r),
+                            ),
+                            child: Text(
+                              'Days',
+                              style: TextStyle(
+                                color: Colors.white,
+                                fontSize: 12.sp,
+                                fontWeight: FontWeight.w600,
+                              ),
+                            ),
                           );
                         },
                       ),

@@ -24,7 +24,7 @@ class _CreateOfferDialogState extends State<CreateOfferDialog> {
   final TextEditingController _amountController = TextEditingController();
   final TextEditingController _descriptionController = TextEditingController();
   final TextEditingController _durationController = TextEditingController();
-  String _durationUnit = 'Days'; // 'Hours' or 'Days'
+  String _durationUnit = 'Days'; // Fixed to Days only
   late final OfferService _offerService;
   bool _isLoading = false;
 
@@ -302,44 +302,26 @@ class _CreateOfferDialogState extends State<CreateOfferDialog> {
                             color: const Color(0xff3C3C3E),
                           ),
 
-                          // Hours / Days toggle
+                          // Days only — no hours option
                           StatefulBuilder(
                             builder: (context, setInnerState) {
-                              return Row(
-                                children: ['Hours', 'Days'].map((unit) {
-                                  final selected = _durationUnit == unit;
-                                  return GestureDetector(
-                                    onTap: () {
-                                      setState(() => _durationUnit = unit);
-                                      setInnerState(() {});
-                                    },
-                                    child: AnimatedContainer(
-                                      duration: const Duration(milliseconds: 200),
-                                      margin: const EdgeInsets.symmetric(
-                                          horizontal: 4, vertical: 6),
-                                      padding: const EdgeInsets.symmetric(
-                                          horizontal: 14, vertical: 6),
-                                      decoration: BoxDecoration(
-                                        color: selected
-                                            ? const Color(0xff1877F2)
-                                            : Colors.transparent,
-                                        borderRadius: BorderRadius.circular(8),
-                                      ),
-                                      child: Text(
-                                        unit,
-                                        style: TextStyle(
-                                          color: selected
-                                              ? Colors.white
-                                              : const Color(0xff8E8E93),
-                                          fontSize: 14,
-                                          fontWeight: selected
-                                              ? FontWeight.w600
-                                              : FontWeight.normal,
-                                        ),
-                                      ),
-                                    ),
-                                  );
-                                }).toList(),
+                              return Container(
+                                margin: const EdgeInsets.symmetric(
+                                    horizontal: 8, vertical: 6),
+                                padding: const EdgeInsets.symmetric(
+                                    horizontal: 14, vertical: 6),
+                                decoration: BoxDecoration(
+                                  color: const Color(0xff1877F2),
+                                  borderRadius: BorderRadius.circular(8),
+                                ),
+                                child: const Text(
+                                  'Days',
+                                  style: TextStyle(
+                                    color: Colors.white,
+                                    fontSize: 14,
+                                    fontWeight: FontWeight.w600,
+                                  ),
+                                ),
                               );
                             },
                           ),
