@@ -304,10 +304,10 @@ class _ChatScreenState extends State<ChatScreen> {
                 decoration: BoxDecoration(
                   color: isMe ? const Color(0xff2799EA) : const Color(0xff1E1E1E),
                   borderRadius: BorderRadius.only(
-                    topLeft: isMe ? Radius.circular(16.r) : Radius.circular(0),
+                    topLeft: Radius.circular(16.r),
                     topRight: isMe ? Radius.circular(0) : Radius.circular(16.r),
                     bottomLeft: Radius.circular(16.r),
-                    bottomRight: Radius.circular(16.r),
+                    bottomRight: isMe ? Radius.circular(16.r) : Radius.circular(0),
                   ),
                   border: Border.all(
                     color: isMe ? Colors.transparent : Colors.white.withOpacity(0.08),
@@ -316,10 +316,10 @@ class _ChatScreenState extends State<ChatScreen> {
                 ),
                 child: ClipRRect(
                   borderRadius: BorderRadius.only(
-                    topLeft: isMe ? Radius.circular(16.r) : Radius.circular(0),
+                    topLeft: Radius.circular(16.r),
                     topRight: isMe ? Radius.circular(0) : Radius.circular(16.r),
                     bottomLeft: Radius.circular(16.r),
-                    bottomRight: Radius.circular(16.r),
+                    bottomRight: isMe ? Radius.circular(16.r) : Radius.circular(0),
                   ),
                   child: OfferCard(
                     offer: offer,
