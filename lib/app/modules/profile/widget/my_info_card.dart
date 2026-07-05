@@ -4,6 +4,7 @@ import 'package:wisper/app/core/config/theme/light_theme_colors.dart';
 import 'package:wisper/app/core/others/custom_size.dart';
 import 'package:wisper/app/core/others/get_storage.dart';
 import 'package:wisper/app/core/widgets/common/custom_button.dart';
+import 'package:wisper/app/core/widgets/common/initials_avatar.dart';
 
 class MyInfoCard extends StatelessWidget {
   final VoidCallback ontap;
@@ -27,10 +28,11 @@ class MyInfoCard extends StatelessWidget {
           onTap: ontap,
           child: Row(
             children: [
-              CircleAvatar(
+              InitialsAvatar(
+                name: name,
+                imageUrl: imagePath.isNotEmpty ? imagePath : null,
                 radius: 18.r,
-                backgroundColor: Colors.grey.shade800,
-                backgroundImage: NetworkImage(imagePath),
+                fontSize: 13,
               ),
               widthBox8,
               Column(
