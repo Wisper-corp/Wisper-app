@@ -38,93 +38,110 @@ class _HomeScreenState extends State<HomeScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      body: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 18.0),
-        child: Column(
-          children: [
-            heightBox40,
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+      body: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // ── Sticky header (does not scroll) ──────────────────────────
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 18.0),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(
-                  'Explore',
-                  style: TextStyle(
-                    fontFamily: "Segoe UI",
-                    fontSize: 24.sp,
-                    fontWeight: FontWeight.w800,
-                  ),
-                ),
+                heightBox40,
                 Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    CircleIconWidget(
-                      imagePath: Assets.images.search.keyName,
-                      onTap: () {
-                        Get.to(() => SearchScreen());
-                      },
-                      iconRadius: 18.r,
+                    Text(
+                      'Explore',
+                      style: TextStyle(
+                        fontFamily: "Segoe UI",
+                        fontSize: 24.sp,
+                        fontWeight: FontWeight.w800,
+                      ),
                     ),
-                  ],
-                ),
-              ],
-            ),
-
-            heightBox12,
- 
-            // ── Dummy Members Row ────────────────────────────────────────
-            _buildDummyMembersRow(),
-            heightBox12,
-
-            SizedBox(
-              height: 30.h,
-              width: double.infinity,
-              child: ListView.separated(
-                scrollDirection: Axis.horizontal,
-                itemCount: _tabs.length,
-                separatorBuilder: (_, __) => widthBox20,
-                itemBuilder: (context, index) {
-                  final tab = _tabs[index];
-                  final isSelected = selectedIndex == index;
-                  return GestureDetector(
-                    onTap: () => setState(() => selectedIndex = index),
-                    child: Column(
+                    Row(
                       children: [
-                        Text(
-                          tab['label'] as String,
-                          style: TextStyle(
-                            fontFamily: "Segoe UI",
-                            fontSize: index == 0 ? 15.sp : 14.sp,
-                            fontWeight: FontWeight.w600,
-                            color: isSelected
-                                ? Colors.white
-                                : const Color(0xff93A4B0),
-                          ),
-                        ),
-                        heightBox4,
-                        Container(
-                          height: 2.h,
-                          width: (tab['width'] as double).w,
-                          color: isSelected
-                              ? Colors.blue
-                              : Colors.transparent,
+                        CircleIconWidget(
+                          imagePath: Assets.images.search.keyName,
+                          onTap: () {
+                            Get.to(() => SearchScreen());
+                          },
+                          iconRadius: 18.r,
                         ),
                       ],
                     ),
-                  );
-                },
-              ),
+                  ],
+                ),
+
+                heightBox12,
+
+                // ── Dummy Members Row ──────────────────────────────────
+                _buildDummyMembersRow(),
+                heightBox12,
+
+                // ── Tabs ──────────────────────────────────────────────
+                SizedBox(
+                  height: 30.h,
+                  width: double.infinity,
+                  child: ListView.separated(
+                    scrollDirection: Axis.horizontal,
+                    itemCount: _tabs.length,
+                    separatorBuilder: (_, __) => widthBox20,
+                    itemBuilder: (context, index) {
+                      final tab = _tabs[index];
+                      final isSelected = selectedIndex == index;
+                      return GestureDetector(
+                        onTap: () => setState(() => selectedIndex = index),
+                        child: Column(
+                          children: [
+                            Text(
+                              tab['label'] as String,
+                              style: TextStyle(
+                                fontFamily: "Segoe UI",
+                                fontSize: index == 0 ? 15.sp : 14.sp,
+                                fontWeight: FontWeight.w600,
+                                color: isSelected
+                                    ? Colors.white
+                                    : const Color(0xff93A4B0),
+                              ),
+                            ),
+                            heightBox4,
+                            Container(
+                              height: 2.h,
+                              width: (tab['width'] as double).w,
+                              color: isSelected
+                                  ? Colors.blue
+                                  : Colors.transparent,
+                            ),
+                          ],
+                        ),
+                      );
+                    },
+                  ),
+                ),
+              ],
             ),
-            StraightLiner(height: 0.4, color: const Color(0xff454545)),
+          ),
 
+          // ── Divider fixed right below tabs ────────────────────────────
+          StraightLiner(height: 0.4, color: const Color(0xff454545)),
 
-            // 0=Announcement 1=Gig Market 2=Jobs 3=Community
-            // Role tab hidden - will re-enable at 5k users
-            if (selectedIndex == 0) const ChatSection(),
-            if (selectedIndex == 1) const PostSection(),
-            if (selectedIndex == 2) const JobSection(),
-            if (selectedIndex == 3) const CommunitySection(),
-            if (selectedIndex > 3) Container(),
-          ],
-        ),
+          // ── Scrollable content ────────────────────────────────────────
+          Expanded(
+            child: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 18.0),
+              child: selectedIndex == 0
+                  ? const ChatSection()
+                  : selectedIndex == 1
+                      ? const PostSection()
+                      : selectedIndex == 2
+                          ? const JobSection()
+                          : selectedIndex == 3
+                              ? const CommunitySection()
+                              : Container(),
+            ),
+          ),
+        ],
       ),
     );
   }
