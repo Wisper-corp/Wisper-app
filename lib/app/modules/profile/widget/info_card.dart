@@ -86,23 +86,46 @@ class InfoCard extends StatelessWidget {
       ),
       child: Padding(
         padding: EdgeInsets.symmetric(horizontal: 0.0, vertical: 20.h),
-        child: Padding(
-          padding: EdgeInsets.symmetric(horizontal: 10.0.w),
-          child: Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              isBack == true
-                  ? CircleIconWidget(
+        child: Stack(
+          children: [
+            // Left button (back arrow)
+            if (isBack == true)
+              Positioned(
+                left: 10.w,
+                top: 0,
+                child: CircleIconWidget(
+                  radius: 14,
+                  iconRadius: 14,
+                  imagePath: Assets.images.arrowBack.keyName,
+                  onTap: () => Navigator.pop(context),
+                ),
+              ),
+
+            // Right buttons (notification + more)
+            if (isTrailing == true)
+              Positioned(
+                right: 10.w,
+                top: 0,
+                child: Row(
+                  children: [
+                    isShowNotification == true
+                        ? _NotificationBell()
+                        : Container(),
+                    widthBox10,
+                    CircleIconWidget(
+                      key: trailingKey,
                       radius: 14,
-                      iconRadius: 14,
-                      imagePath: Assets.images.arrowBack.keyName,
-                      onTap: () {
-                        Navigator.pop(context);
-                      },
-                    )
-                  : Container(width: isShowNotification == true ? 10.w : 10),
-              Column(
+                      iconRadius: 18,
+                      imagePath: Assets.images.moreHor.keyName,
+                      onTap: trailingOnTap ?? () {},
+                    ),
+                  ],
+                ),
+              ),
+
+            // Centered profile content
+            Center(
+              child: Column(
                 mainAxisSize: MainAxisSize.min,
                 mainAxisAlignment: MainAxisAlignment.center,
                 crossAxisAlignment: CrossAxisAlignment.center,
@@ -182,25 +205,8 @@ class InfoCard extends StatelessWidget {
                   child,
                 ],
               ),
-              isTrailing == true
-                  ? Row(
-                      children: [
-                        isShowNotification == true
-                            ? _NotificationBell()
-                            : Container(),
-                        widthBox10,
-                        CircleIconWidget(
-                          key: trailingKey,
-                          radius: 14,
-                          iconRadius: 18,
-                          imagePath: Assets.images.moreHor.keyName,
-                          onTap: trailingOnTap ?? () {},
-                        ),
-                      ],
-                    )
-                  : Container(width: 20),
-            ],
-          ),
+            ),
+          ],
         ),
       ),
     );
