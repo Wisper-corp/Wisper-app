@@ -67,7 +67,9 @@ class _JobSectionState extends State<JobSection> {
                   ownerImage: controller.allJobData[index].companyLogo?.isNotEmpty == true
                       ? controller.allJobData[index].companyLogo
                       : controller.allJobData[index].author!.business?.image ?? '',
-                  ownerName: controller.allJobData[index].author!.business?.name ?? '',
+                  ownerName: controller.allJobData[index].companyName?.isNotEmpty == true
+                      ? controller.allJobData[index].companyName!
+                      : controller.allJobData[index].author!.business?.name ?? '',
                   ownerDesignation: controller.allJobData[index].author!.business?.industry ?? '',
                   jobTitle: controller.allJobData[index].title ?? '',
                   salary: controller.allJobData[index].salary.toString(),

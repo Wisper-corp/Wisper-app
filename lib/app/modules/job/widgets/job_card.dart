@@ -149,26 +149,26 @@ class JobCard extends StatelessWidget {
                       ],
                     ),
                     heightBox12,
-                    // Show only tags relevant to what was selected
+                    // Show only tags relevant to what was selected — grey color
                     Wrap(
                       spacing: 8.w,
                       runSpacing: 6.h,
                       children: [
                         // Employment type
                         if (jobType == 'FULL_TIME')
-                          LabelData(title: 'Full-time', bgColor: LightThemeColors.blueColor),
+                          LabelData(title: 'Full-time', bgColor: const Color(0xff3A3A3A)),
                         if (jobType == 'PART_TIME')
-                          LabelData(title: 'Part-time', bgColor: LightThemeColors.blueColor),
+                          LabelData(title: 'Part-time', bgColor: const Color(0xff3A3A3A)),
                         if (jobType == 'CONTRACT')
-                          LabelData(title: 'Freelance', bgColor: LightThemeColors.blueColor),
+                          LabelData(title: 'Freelance', bgColor: const Color(0xff3A3A3A)),
 
                         // Location type
                         if (locationType == 'REMOTE')
-                          LabelData(title: 'Remote', bgColor: const Color(0xff1A6B3C)),
+                          LabelData(title: 'Remote', bgColor: const Color(0xff3A3A3A)),
                         if (locationType == 'ON_SITE')
-                          LabelData(title: 'On-site', bgColor: const Color(0xff5B3A8A)),
+                          LabelData(title: 'On-site', bgColor: const Color(0xff3A3A3A)),
                         if (locationType == 'HYBRID')
-                          LabelData(title: 'Hybrid', bgColor: const Color(0xff8A5B3A)),
+                          LabelData(title: 'Hybrid', bgColor: const Color(0xff3A3A3A)),
                       ],
                     ),
                     heightBox12,

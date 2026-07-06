@@ -55,6 +55,7 @@ class FeedJobItemModel {
     this.locationType,
     this.isScraped,
     this.companyLogo,
+    this.companyName,
   });
 
   final String? id;
@@ -74,6 +75,7 @@ class FeedJobItemModel {
   final String? locationType;
   final bool? isScraped;
   final String? companyLogo;
+  final String? companyName;
 
   factory FeedJobItemModel.fromJson(Map<String, dynamic> json) {
     return FeedJobItemModel(
@@ -98,6 +100,7 @@ class FeedJobItemModel {
       locationType: json["locationType"],
       isScraped: json["isScraped"] as bool?,
       companyLogo: json["companyLogo"],
+      companyName: json["companyName"],
     );
   }
 }
