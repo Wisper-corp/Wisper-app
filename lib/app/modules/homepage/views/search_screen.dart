@@ -158,7 +158,7 @@ class _SearchScreenState extends State<SearchScreen> {
                   child: SelectOptionWidget(
                     currentIndex: 2,
                     selectedIndex: selectedIndex,
-                    title: 'Roles',
+                    title: 'Members',
                     lineColor: LightThemeColors.blueColor,
                   ),
                 ),
