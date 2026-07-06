@@ -105,6 +105,7 @@ class InfoCard extends StatelessWidget {
               Column(
                 mainAxisSize: MainAxisSize.min,
                 mainAxisAlignment: MainAxisAlignment.center,
+                crossAxisAlignment: CrossAxisAlignment.center,
                 children: [
                   Stack(
                     children: [
@@ -150,6 +151,7 @@ class InfoCard extends StatelessWidget {
                     child: Center(
                       child: Text(
                         title,
+                        textAlign: TextAlign.center,
                         style: TextStyle(
                           fontSize: 16.sp,
                           fontWeight: FontWeight.w600,
@@ -166,6 +168,7 @@ class InfoCard extends StatelessWidget {
                       child: Center(
                         child: Text(
                           memberInfo,
+                          textAlign: TextAlign.center,
                           style: TextStyle(
                             fontSize: 12.sp,
                             fontWeight: FontWeight.w400,
