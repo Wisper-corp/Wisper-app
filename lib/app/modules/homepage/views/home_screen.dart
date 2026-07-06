@@ -126,22 +126,19 @@ class _HomeScreenState extends State<HomeScreen> {
           // ── Divider fixed right below tabs ────────────────────────────
           StraightLiner(height: 0.4, color: const Color(0xff454545)),
 
-          // ── Scrollable content ────────────────────────────────────────
-          Expanded(
-            child: Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 18.0),
-              child: selectedIndex == 0
-                  ? const ChatSection()
-                  : selectedIndex == 1
-                      ? const PostSection()
-                      : selectedIndex == 2
-                          ? const JobSection()
-                          : selectedIndex == 3
-                              ? const CommunitySection()
-                              : Container(),
-            ),
-          ),
-        ],
+          // ── Content ────────────────────────────────────────
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 18.0),
+            child: selectedIndex == 0
+                ? const ChatSection()
+                : selectedIndex == 1
+                    ? const PostSection()
+                    : selectedIndex == 2
+                        ? const JobSection()
+                        : selectedIndex == 3
+                            ? const CommunitySection()
+                            : Container(),
+          ),        ],
       ),
     );
   }
