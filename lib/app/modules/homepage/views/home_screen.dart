@@ -113,7 +113,8 @@ class _HomeScreenState extends State<HomeScreen> {
                 },
               ),
             ),
-            SizedBox(height: 4.h),
+            StraightLiner(height: 0.4, color: const Color(0xff454545)),
+
 
             // 0=Announcement 1=Gig Market 2=Jobs 3=Community
             // Role tab hidden - will re-enable at 5k users
