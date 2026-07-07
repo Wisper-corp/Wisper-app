@@ -141,7 +141,7 @@ class _ChattingFieldWidgetState extends State<ChattingFieldWidget> {
                   controller: widget.controller,
                   focusNode: _focusNode,
                   minLines: 1,
-                  maxLines: 5,
+                  maxLines: 4,
                   textAlignVertical: TextAlignVertical.center,
                   decoration: InputDecoration(
                     hintText: 'Type here...',
@@ -153,7 +153,15 @@ class _ChattingFieldWidgetState extends State<ChattingFieldWidget> {
                       vertical: 12,
                     ),
                     border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(999),
+                      borderRadius: BorderRadius.circular(20),
+                      borderSide: BorderSide.none,
+                    ),
+                    enabledBorder: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(20),
+                      borderSide: BorderSide.none,
+                    ),
+                    focusedBorder: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(20),
                       borderSide: BorderSide.none,
                     ),
                     isDense: true,
