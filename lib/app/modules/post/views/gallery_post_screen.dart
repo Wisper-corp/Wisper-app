@@ -336,7 +336,7 @@ class _GalleryPostScreenState extends State<GalleryPostScreen> {
                   StraightLiner(height: 0.5),
                   heightBox10,
 
-                  // Price field (optional)
+                  // Price field (required)
                   Row(
                     children: [
                       Padding(
@@ -358,6 +358,15 @@ class _GalleryPostScreenState extends State<GalleryPostScreen> {
                             fontSize: 14.sp,
                             color: const Color(0xff8C8C8C),
                           ),
+                          validator: (value) {
+                            if (value == null || value.trim().isEmpty) {
+                              return 'Service price is required';
+                            }
+                            if (double.tryParse(value.trim()) == null) {
+                              return 'Enter a valid price';
+                            }
+                            return null;
+                          },
                         ),
                       ),
                     ],
