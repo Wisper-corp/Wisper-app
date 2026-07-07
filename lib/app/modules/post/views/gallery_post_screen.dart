@@ -353,7 +353,7 @@ class _GalleryPostScreenState extends State<GalleryPostScreen> {
                         child: CustomTextField(
                           controller: _priceCtrl,
                           keyboardType: TextInputType.numberWithOptions(decimal: true),
-                          hintText: 'Price (Optional - for services)',
+                          hintText: 'Service Price',
                           hintStyle: TextStyle(
                             fontSize: 14.sp,
                             color: const Color(0xff8C8C8C),
