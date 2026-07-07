@@ -241,9 +241,10 @@ class _NotificationBellState extends State<_NotificationBell> {
         accessToken: StorageUtil.getData(StorageUtil.userAccessToken),
       );
       if (response.isSuccess && response.responseData != null) {
-        final count = response.responseData['data']?['count'] ?? 
-                      response.responseData['count'] ?? 0;
-        _pendingCount.value = count is int ? count : int.tryParse(count.toString()) ?? 0;
+        final data = response.responseData['data'];
+        // Backend returns the count as a plain integer directly in data
+        final count = data is int ? data : int.tryParse(data.toString()) ?? 0;
+        _pendingCount.value = count;
       }
     } catch (_) {}
   }
