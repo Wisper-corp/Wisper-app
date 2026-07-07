@@ -110,14 +110,11 @@ class AllChatsController extends GetxController {
           final firstMsg = chat['messages'].first;
           final fileType = firstMsg['fileType'] ?? '';
           final text = firstMsg['text'] ?? '';
-          if (fileType == 'OFFER') {
-            // Show actual offer description text
-            lastMessage = text.isNotEmpty ? text : '📩 Offer sent';
-          } else if (fileType == 'IMAGE') {
+          if (fileType == 'IMAGE') {
             lastMessage = '📷 Photo';
           } else if (fileType == 'VIDEO') {
             lastMessage = '🎥 Video';
-          } else if (fileType != null && fileType != '') {
+          } else if (fileType != null && fileType != '' && fileType != 'OFFER') {
             lastMessage = '📄 File';
           } else {
             lastMessage = text.isNotEmpty ? text : 'No messages';
@@ -265,18 +262,16 @@ class AllChatsController extends GetxController {
             "type": type,
             "latestMessageAt": chat.latestMessageAt?.toIso8601String() ?? '',
             "lastMessage": chat.messages.isNotEmpty
-                ? (chat.messages.first.fileType == 'OFFER'
-                    ? (chat.messages.first.text?.isNotEmpty == true
-                        ? chat.messages.first.text!
-                        : '📩 Offer sent')
-                    : chat.messages.first.fileType == 'IMAGE'
+                ? (chat.messages.first.fileType == 'IMAGE'
                     ? '📷 Photo'
                     : chat.messages.first.fileType == 'VIDEO'
                     ? '🎥 Video'
-                    : chat.messages.first.fileType != null && chat.messages.first.fileType != ''
+                    : (chat.messages.first.fileType != null &&
+                          chat.messages.first.fileType != '' &&
+                          chat.messages.first.fileType != 'OFFER')
                     ? '📄 File'
-                    : chat.messages.first.text ?? 'No message yet')
-                : 'No message yet',
+                    : chat.messages.first.text ?? '')
+                : '',
             "unreadMessageCount": chat.count?.messages ?? 0,
             "group": chat.group != null
                 ? {"name": chat.group?.name, "image": chat.group?.image}
