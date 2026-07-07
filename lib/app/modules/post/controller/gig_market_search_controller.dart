@@ -10,8 +10,8 @@ class GigMarketSearchController extends GetxController {
   final RxString errorMessage = ''.obs;
   final RxList<FeedPostItemModel> results = <FeedPostItemModel>[].obs;
 
-  Future<void> search(String query) async {
-    if (query.trim().isEmpty) {
+  Future<void> search(String query, {String? country}) async {
+    if (query.trim().isEmpty && (country == null || country.isEmpty)) {
       results.clear();
       return;
     }
@@ -21,7 +21,7 @@ class GigMarketSearchController extends GetxController {
 
     try {
       final NetworkResponse response = await Get.find<NetworkCaller>().getRequest(
-        Urls.gigMarketSearchUrl(query.trim()),
+        Urls.gigMarketSearchUrl(query.trim(), country: country),
         accessToken: StorageUtil.getData(StorageUtil.userAccessToken),
       );
 

@@ -14,8 +14,9 @@ import 'package:wisper/app/modules/homepage/controller/all_role_controller.dart'
 import 'package:wisper/app/modules/homepage/widget/role_card.dart';
 
 class RoleSection extends StatefulWidget {
-  const RoleSection({super.key, this.searchQuery});
+  const RoleSection({super.key, this.searchQuery, this.country});
   final String? searchQuery;
+  final String? country;
  
   @override
   State<RoleSection> createState() => _RoleSectionState();
@@ -33,7 +34,7 @@ class _RoleSectionState extends State<RoleSection> {
   @override
   void initState() {
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      allRoleController.getAllRole(widget.searchQuery);
+      allRoleController.getAllRole(widget.searchQuery, country: widget.country);
     });
 
     super.initState();
@@ -42,8 +43,9 @@ class _RoleSectionState extends State<RoleSection> {
   @override
   void didUpdateWidget(covariant RoleSection oldWidget) {
     super.didUpdateWidget(oldWidget);
-    if (widget.searchQuery != oldWidget.searchQuery) {
-      allRoleController.getAllRole(widget.searchQuery);
+    if (widget.searchQuery != oldWidget.searchQuery ||
+        widget.country != oldWidget.country) {
+      allRoleController.getAllRole(widget.searchQuery, country: widget.country);
     }
   }
 

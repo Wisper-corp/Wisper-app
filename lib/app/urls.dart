@@ -101,8 +101,12 @@ class Urls {
   static const String monnifyAuthorizeWithdrawalUrl = '$_baseUrl/wallet/authorize-withdrawal';
 
   // Gig Market search
-  static String gigMarketSearchUrl(String q) {
-    return '$_baseUrl/posts/search/gig-market?q=${Uri.encodeComponent(q)}&limit=20';
+  static String gigMarketSearchUrl(String q, {String? country}) {
+    final base = '$_baseUrl/posts/search/gig-market?q=${Uri.encodeComponent(q)}&limit=20';
+    if (country != null && country.isNotEmpty) {
+      return '$base&country=${Uri.encodeComponent(country)}';
+    }
+    return base;
   }
  
   static String editPostId(String id) {

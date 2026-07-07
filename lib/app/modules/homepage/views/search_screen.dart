@@ -9,6 +9,7 @@ import 'package:wisper/app/core/widgets/common/line_widget.dart';
 import 'package:wisper/app/modules/chat/widgets/select_option_widget.dart';
 import 'package:wisper/app/modules/job/controller/feed_job_controller.dart';
 import 'package:wisper/app/modules/job/views/job_section.dart';
+import 'package:wisper/app/modules/homepage/controller/all_role_controller.dart';
 import 'package:wisper/app/modules/homepage/views/role_section.dart';
 import 'package:wisper/app/modules/post/controller/gig_market_search_controller.dart';
 import 'package:wisper/app/modules/post/widgets/post_card.dart';
@@ -30,8 +31,16 @@ class _SearchScreenState extends State<SearchScreen> {
   int selectedIndex = 0;
 
   String? selectedLocationType;
+  String? selectedCountry;
   String _previousSearch = '';
   String? _previousLocation;
+
+  // Countries list
+  static const List<String> _countries = [
+    'Nigeria', 'Pakistan', 'Bangladesh', 'India', 'Ghana',
+    'Kenya', 'South Africa', 'United Kingdom', 'United States',
+    'Canada', 'Australia', 'Germany', 'France', 'UAE',
+  ];
 
   @override
   void initState() {
@@ -58,7 +67,9 @@ class _SearchScreenState extends State<SearchScreen> {
         _previousLocation = selectedLocationType;
       }
     } else if (selectedIndex == 1) {
-      gigController.search(q);
+      gigController.search(q, country: selectedCountry);
+    } else if (selectedIndex == 2) {
+      Get.find<AllRoleController>().getAllRole(q.isEmpty ? null : q, country: selectedCountry);
     }
   }
 
@@ -84,6 +95,8 @@ class _SearchScreenState extends State<SearchScreen> {
                   child: CustomTextField(
                     hintText: selectedIndex == 1
                         ? 'Search gig market...'
+                        : selectedIndex == 2
+                        ? 'Search members...'
                         : 'Search jobs...',
                     controller: searchController,
                     onChanged: (value) {
@@ -97,7 +110,7 @@ class _SearchScreenState extends State<SearchScreen> {
 
             heightBox12,
 
-            // Location filter — only for Jobs tab
+            // Location filter — Jobs tab: locationType dropdown
             if (selectedIndex == 0)
               Align(
                 alignment: Alignment.centerRight,
@@ -121,7 +134,29 @@ class _SearchScreenState extends State<SearchScreen> {
                 ),
               ),
 
-            if (selectedIndex == 0) heightBox20,
+            // Country filter — Gig Market and Members tabs
+            if (selectedIndex == 1 || selectedIndex == 2)
+              Align(
+                alignment: Alignment.centerRight,
+                child: SizedBox(
+                  height: 44.h,
+                  width: MediaQuery.of(context).size.width * 0.79,
+                  child: CustomTextField(
+                    hintText: 'Filter by country',
+                    value: selectedCountry,
+                    items: [
+                      const DropdownMenuItem(value: null, child: Text('All countries')),
+                      ..._countries.map((c) => DropdownMenuItem(value: c, child: Text(c))),
+                    ],
+                    onChanged: (String? newValue) {
+                      setState(() => selectedCountry = newValue);
+                      _fetchIfNeeded();
+                    },
+                  ),
+                ),
+              ),
+
+            if (selectedIndex == 0 || selectedIndex == 1 || selectedIndex == 2) heightBox20,
 
             // Tabs: Jobs | Gig Market | Roles
             Row(
@@ -178,7 +213,9 @@ class _SearchScreenState extends State<SearchScreen> {
                   : selectedIndex == 1
                       ? _GigMarketResults(controller: gigController)
                       : RoleSection(
-                          searchQuery: searchController.text.trim()),
+                          searchQuery: searchController.text.trim(),
+                          country: selectedCountry,
+                        ),
             ),
           ],
         ),

@@ -16,13 +16,16 @@ class AllRoleController extends GetxController {
   final Rx<RolesModel?> _allRoleModel = Rx<RolesModel?>(null);
   List<RoleItemModel>? get allRoleData => _allRoleModel.value?.data?.roles;
 
-  Future<bool> getAllRole(String? searchQuery) async {
+  Future<bool> getAllRole(String? searchQuery, {String? country}) async {
     _inProgress.value = true;
 
     Map<String, dynamic> params = {
       "limit": "9999",
-      "searchTerm": searchQuery,
+      "searchTerm": searchQuery ?? '',
     };
+    if (country != null && country.isNotEmpty) {
+      params["country"] = country;
+    }
     try {
       final NetworkResponse response = await Get.find<NetworkCaller>()
           .getRequest(
