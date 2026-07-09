@@ -14,6 +14,7 @@ import 'package:wisper/app/core/others/get_storage.dart';
 import 'package:wisper/app/core/utils/date_formatter.dart';
 import 'package:wisper/app/core/utils/image_picker.dart';
 import 'package:wisper/app/core/utils/snack_bar.dart';
+import 'package:wisper/app/core/widgets/common/star_rating.dart';
 import 'package:wisper/app/core/widgets/common/custom_button.dart';
 import 'package:wisper/app/core/widgets/common/custom_popup.dart';
 import 'package:wisper/app/core/widgets/common/line_widget.dart';
@@ -308,6 +309,14 @@ class _ProfileScreenState extends State<ProfileScreen> with WidgetsBindingObserv
               {'index': '1', 'title': 'Job'},
             ];
 
+      // Rating data
+      final double avgRating = userRole == 'PERSON'
+          ? (personController.profileData?.avgRating ?? 0.0)
+          : (businessController.buisnessData?.avgRating ?? 0.0);
+      final int ratingCount = userRole == 'PERSON'
+          ? (personController.profileData?.ratingCount ?? 0)
+          : (businessController.buisnessData?.ratingCount ?? 0);
+
       return Scaffold(
         body: Padding(
           padding: EdgeInsets.symmetric(horizontal: 20.w),
@@ -319,6 +328,7 @@ class _ProfileScreenState extends State<ProfileScreen> with WidgetsBindingObserv
               InfoCard(
                 isShowNotification: true,
                 trailingKey: suffixButtonKey,
+                ratingWidget: StarRating(rating: avgRating, count: ratingCount),
                 trailingOnTap: () => CustomPopupMenu(
                   targetKey: suffixButtonKey,
                   options: [

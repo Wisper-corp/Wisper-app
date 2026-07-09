@@ -19,10 +19,17 @@ class BusinessModel {
 }
 
 class BusinessData {
-  BusinessData({required this.auth, required this.connection});
+  BusinessData({
+    required this.auth,
+    required this.connection,
+    this.avgRating = 0.0,
+    this.ratingCount = 0,
+  });
 
   final Auth? auth;
   final Connection? connection;
+  final double avgRating;
+  final int ratingCount;
 
   factory BusinessData.fromJson(Map<String, dynamic> json) {
     return BusinessData(
@@ -30,6 +37,8 @@ class BusinessData {
       connection: json["connection"] == null
           ? null
           : Connection.fromJson(json["connection"]),
+      avgRating: (json["avgRating"] as num?)?.toDouble() ?? 0.0,
+      ratingCount: json["ratingCount"] as int? ?? 0,
     );
   }
 }

@@ -19,10 +19,17 @@ class ProfileModel {
 }
 
 class ProfileData {
-  ProfileData({required this.auth, required this.recommendations});
+  ProfileData({
+    required this.auth,
+    required this.recommendations,
+    this.avgRating = 0.0,
+    this.ratingCount = 0,
+  });
 
   final Auth? auth;
   final List<dynamic> recommendations;
+  final double avgRating;
+  final int ratingCount;
 
   factory ProfileData.fromJson(Map<String, dynamic> json) {
     return ProfileData(
@@ -30,6 +37,8 @@ class ProfileData {
       recommendations: json["recommendations"] == null
           ? []
           : List<dynamic>.from(json["recommendations"]!.map((x) => x)),
+      avgRating: (json["avgRating"] as num?)?.toDouble() ?? 0.0,
+      ratingCount: json["ratingCount"] as int? ?? 0,
     );
   }
 

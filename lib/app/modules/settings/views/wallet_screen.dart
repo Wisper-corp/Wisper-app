@@ -6,7 +6,7 @@ import 'package:wisper/app/core/others/custom_size.dart';
 import 'package:wisper/app/core/others/get_storage.dart';
 import 'package:wisper/app/core/widgets/common/custom_button.dart';
 import 'package:wisper/app/modules/kyc/controller/kyc_controller.dart';
-import 'package:wisper/app/modules/kyc/views/kyc_screen.dart';
+import 'package:wisper/app/modules/kyc/views/kyc_home_screen.dart';
 import 'package:wisper/app/modules/profile/controller/buisness/buisness_controller.dart';
 import 'package:wisper/app/modules/profile/controller/person/profile_controller.dart';
 import 'package:wisper/app/modules/settings/controller/monnify_controller.dart';
@@ -923,7 +923,7 @@ class _WalletScreenState extends State<WalletScreen> {
           TextButton(
             onPressed: () {
               Get.back();
-              Get.to(() => const KycScreen());
+              Get.to(() => const KycHomeScreen());
             },
             child: Text('Verify Now', style: TextStyle(color: LightThemeColors.blueColor)),
           ),

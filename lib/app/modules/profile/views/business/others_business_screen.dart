@@ -7,6 +7,7 @@ import 'package:wisper/app/core/others/get_storage.dart';
 import 'package:wisper/app/core/utils/date_formatter.dart';
 import 'package:wisper/app/core/utils/show_over_loading.dart';
 import 'package:wisper/app/core/utils/snack_bar.dart';
+import 'package:wisper/app/core/widgets/common/star_rating.dart';
 import 'package:wisper/app/core/widgets/common/circle_icon.dart';
 import 'package:wisper/app/core/widgets/common/custom_button.dart';
 import 'package:wisper/app/core/widgets/common/line_widget.dart';
@@ -225,6 +226,10 @@ class _OthersBusinessScreenState extends State<OthersBusinessScreen> {
                 editOnTap: () {},
                 title: business?.name ?? 'No Name',
                 memberInfo: business?.industry ?? 'No Industry',
+                ratingWidget: StarRating(
+                  rating: controller.profileData?.avgRating ?? 0.0,
+                  count: controller.profileData?.ratingCount ?? 0,
+                ),
                 child: Row(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [

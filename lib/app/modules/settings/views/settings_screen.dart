@@ -10,7 +10,7 @@ import 'package:wisper/app/core/widgets/common/line_widget.dart';
 import 'package:wisper/app/modules/authentication/views/sign_in_screen.dart';
 import 'package:wisper/app/modules/chat/widgets/toggle_option.dart';
 import 'package:wisper/app/modules/job/views/favorite_job_screen.dart';
-import 'package:wisper/app/modules/kyc/views/kyc_screen.dart';
+import 'package:wisper/app/modules/kyc/views/kyc_home_screen.dart';
 import 'package:wisper/app/modules/post/views/my_post_section.dart';
 import 'package:wisper/app/modules/profile/controller/buisness/buisness_controller.dart';
 import 'package:wisper/app/modules/profile/controller/person/profile_controller.dart';
@@ -219,7 +219,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                       title: 'KYC Verification',
                       subtitle: 'Complete identity verification',
                       onTap: () {
-                        Get.to(() => const KycScreen());
+                        Get.to(() => const KycHomeScreen());
                       },
                     ),
                   ],

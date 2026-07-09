@@ -23,15 +23,21 @@ class Data {
     Data({
         required this.auth,
         required this.connection,
+        this.avgRating = 0.0,
+        this.ratingCount = 0,
     });
 
     final Auth? auth;
     final Connection? connection;
+    final double avgRating;
+    final int ratingCount;
 
     factory Data.fromJson(Map<String, dynamic> json){ 
         return Data(
             auth: json["auth"] == null ? null : Auth.fromJson(json["auth"]),
             connection: json["connection"] == null ? null : Connection.fromJson(json["connection"]),
+            avgRating: (json["avgRating"] as num?)?.toDouble() ?? 0.0,
+            ratingCount: json["ratingCount"] as int? ?? 0,
         );
     }
 

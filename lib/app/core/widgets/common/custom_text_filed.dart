@@ -1,5 +1,6 @@
 // lib/app/core/widgets/custom_text_filed.dart
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 
 class CustomTextField extends StatefulWidget {
   const CustomTextField({
@@ -42,6 +43,7 @@ class CustomTextField extends StatefulWidget {
     this.pprefixIconColor,
     this.items,
     this.value,
+    this.inputFormatters,
     this.autovalidateMode = AutovalidateMode.onUserInteraction,
   });
   final AutovalidateMode? autovalidateMode;
@@ -78,6 +80,7 @@ class CustomTextField extends StatefulWidget {
   // Dropdown
   final List<DropdownMenuItem<String>>? items;
   final String? value;
+  final List<TextInputFormatter>? inputFormatters;
 
   @override
   State<CustomTextField> createState() => _CustomTextFieldState();
@@ -186,6 +189,7 @@ class _CustomTextFieldState extends State<CustomTextField> {
       enabled: widget.enabled,
       validator: widget.validator,
       onChanged: widget.onChanged,
+      inputFormatters: widget.inputFormatters,
       decoration: widget.decoration ?? _defaultDecoration(),
       clipBehavior: widget.clipBehavior,
     );

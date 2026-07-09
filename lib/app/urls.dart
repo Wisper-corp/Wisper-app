@@ -90,8 +90,15 @@ class Urls {
   static const String allGroupUrl = '$_baseUrl/groups';
 
   // =========================================== KYC Block =========================================== //
-  static const String kycSubmitUrl = '$_baseUrl/kyc/submit';
   static const String kycStatusUrl = '$_baseUrl/kyc/status';
+  static const String kycEmailSendOtpUrl = '$_baseUrl/kyc/email/send-otp';
+  static const String kycEmailVerifyUrl = '$_baseUrl/kyc/email/verify';
+  static const String kycPhoneSendOtpUrl = '$_baseUrl/kyc/phone/send-otp';
+  static const String kycPhoneVerifyUrl = '$_baseUrl/kyc/phone/verify';
+  static const String kycNinVerifyUrl = '$_baseUrl/kyc/nin/verify';
+  static const String kycAddressSubmitUrl = '$_baseUrl/kyc/address/submit';
+  static const String kycBadgeActivateUrl = '$_baseUrl/kyc/badge/activate';
+  static const String kycBadgePayOutstandingUrl = '$_baseUrl/kyc/badge/pay-outstanding';
 
   // =========================================== Monnify Wallet ================================== //
   static const String monnifyInitializeUrl = '$_baseUrl/wallet/monnify/initialize';

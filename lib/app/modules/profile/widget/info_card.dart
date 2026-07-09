@@ -28,6 +28,7 @@ class InfoCard extends StatelessWidget {
   final VoidCallback? showMember;
   final bool? isBack;
   final bool? isShowNotification;
+  final Widget? ratingWidget;
 
   const InfoCard({
     super.key,
@@ -43,6 +44,7 @@ class InfoCard extends StatelessWidget {
     this.isEditImage = true,
     this.isBack = false,
     this.isShowNotification,
+    this.ratingWidget,
   });
 
   // Helper to safely determine the correct ImageProvider and whether it's default
@@ -183,6 +185,10 @@ class InfoCard extends StatelessWidget {
                       ),
                     ),
                   ),
+                  if (ratingWidget != null) ...[
+                    SizedBox(height: 6.h),
+                    ratingWidget!,
+                  ],
                   SizedBox(height: 8.h),
                   GestureDetector(
                     onTap: showMember ?? () {},
