@@ -32,8 +32,8 @@ class _KycEmailScreenState extends State<KycEmailScreen> {
   @override
   void initState() {
     super.initState();
-    // Pre-fill with current auth email
-    _emailCtrl.text = StorageUtil.getData(StorageUtil.userEmail) ?? '';
+    // Pre-fill with current auth email from profile if available
+    _emailCtrl.text = '';
   }
 
   @override

@@ -91,6 +91,7 @@ class Urls {
 
   // =========================================== KYC Block =========================================== //
   static const String kycStatusUrl = '$_baseUrl/kyc/status';
+  static const String kycSubmitUrl = '$_baseUrl/kyc/submit'; // legacy compat
   static const String kycEmailSendOtpUrl = '$_baseUrl/kyc/email/send-otp';
   static const String kycEmailVerifyUrl = '$_baseUrl/kyc/email/verify';
   static const String kycPhoneSendOtpUrl = '$_baseUrl/kyc/phone/send-otp';
