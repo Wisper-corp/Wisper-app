@@ -48,6 +48,7 @@ class MessageInputBar extends StatelessWidget {
                     imagePath: Assets.images.send.keyName,
                     radius: 22,
                     iconRadius: 22,
+                    color: isSendEnabled.value ? const Color(0xFF168DE1) : const Color(0xFF2A2A2A),
                     iconColor: isSendEnabled.value ? Colors.white : Colors.grey[600]!,
                     onTap: isSendEnabled.value ? onSend : () {},
                   ),
