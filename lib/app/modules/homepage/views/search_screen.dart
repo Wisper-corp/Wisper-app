@@ -13,6 +13,7 @@ import 'package:wisper/app/modules/homepage/controller/all_role_controller.dart'
 import 'package:wisper/app/modules/homepage/views/role_section.dart';
 import 'package:wisper/app/modules/post/controller/gig_market_search_controller.dart';
 import 'package:wisper/app/modules/post/widgets/post_card.dart';
+import 'package:wisper/app/core/widgets/common/star_rating.dart';
 
 class SearchScreen extends StatefulWidget {
   const SearchScreen({super.key});
@@ -285,6 +286,9 @@ class _GigMarketResults extends StatelessWidget {
               views: post.views.toString(),
               price: post.price,
               deliveryTime: post.deliveryTime,
+              ratingWidget: post.ratingCount > 0
+                  ? StarRating(rating: post.avgRating, count: post.ratingCount)
+                  : null,
             ),
           );
         },

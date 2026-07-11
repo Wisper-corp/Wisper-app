@@ -23,6 +23,7 @@ class PostCard extends StatelessWidget {
   final double? price;
   final String? deliveryTime;
   final VoidCallback onTapComment;
+  final Widget? ratingWidget;
 
   const PostCard({
     super.key,
@@ -39,6 +40,7 @@ class PostCard extends StatelessWidget {
     this.price,
     this.deliveryTime,
     required this.onTapComment,
+    this.ratingWidget,
     this.isPerson = true,
   });
 
@@ -90,15 +92,25 @@ class PostCard extends StatelessWidget {
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          // Name
-                          Text(
-                            ownerName ?? '',
-                            overflow: TextOverflow.ellipsis,
-                            style: TextStyle(
-                              fontWeight: FontWeight.w700,
-                              fontSize: 14.sp,
-                              color: Colors.white,
-                            ),
+                          // Name + rating inline
+                          Row(
+                            children: [
+                              Flexible(
+                                child: Text(
+                                  ownerName ?? '',
+                                  overflow: TextOverflow.ellipsis,
+                                  style: TextStyle(
+                                    fontWeight: FontWeight.w700,
+                                    fontSize: 14.sp,
+                                    color: Colors.white,
+                                  ),
+                                ),
+                              ),
+                              if (ratingWidget != null) ...[
+                                SizedBox(width: 6.w),
+                                ratingWidget!,
+                              ],
+                            ],
                           ),
                           // Profession under name
                           if (ownerProfession != null && ownerProfession!.isNotEmpty)
