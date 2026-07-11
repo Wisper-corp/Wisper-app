@@ -6,6 +6,7 @@ import 'package:wisper/app/core/widgets/shimmer/gallery_post_shimmer.dart';
 import 'package:wisper/app/modules/post/controller/feed_post_controller.dart';
 import 'package:wisper/app/modules/post/views/comment_screen.dart';
 import 'package:wisper/app/modules/post/widgets/post_card.dart';
+import 'package:wisper/app/core/widgets/common/star_rating.dart';
 
 class PostSection extends StatefulWidget {
   const PostSection({super.key});
@@ -117,6 +118,9 @@ class _PostItemState extends State<_PostItem> {
         views: post.views.toString(),
         price: post.price,
         deliveryTime: post.deliveryTime,
+        ratingWidget: post.ratingCount > 0
+            ? StarRating(rating: post.avgRating, count: post.ratingCount)
+            : null,
       ),
     );
   }
