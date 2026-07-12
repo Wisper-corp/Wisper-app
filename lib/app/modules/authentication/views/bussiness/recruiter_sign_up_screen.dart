@@ -327,7 +327,10 @@ class _RecruiterSignUpScreenState extends State<RecruiterSignUpScreen> {
                           );
                           if (isSuccess) {
                             showSnackBarMessage(context, 'Successfully done');
-                            Get.to(() => OtpVerificationScreen(email: emailController.text.trim()));
+                            Get.to(() => OtpVerificationScreen(
+                              email: emailController.text.trim(),
+                              password: passwordController.text,
+                            ));
                           } else {
                             showSnackBarMessage(context, signUpController.errorMessage, true);
                           }

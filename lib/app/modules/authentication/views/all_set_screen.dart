@@ -3,7 +3,7 @@ import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:get/get.dart';
 import 'package:wisper/app/core/config/theme/light_theme_colors.dart';
 import 'package:wisper/app/core/others/custom_size.dart';
-import 'package:wisper/app/modules/authentication/views/sign_in_screen.dart';
+import 'package:wisper/app/modules/homepage/views/main_button_navbar_screen.dart';
 import 'package:wisper/gen/assets.gen.dart';
 
 class AllSetScreen extends StatefulWidget {
@@ -28,7 +28,7 @@ class _AllSetScreenState extends State<AllSetScreen> {
             mainAxisSize: MainAxisSize.min,
             children: [
               GestureDetector(
-                onTap: () => Get.to(const SignInScreen()),
+                onTap: () => Get.offAll(() => MainButtonNavbarScreen()),
                 child: Row(
                   mainAxisAlignment: MainAxisAlignment.end,
                   crossAxisAlignment: CrossAxisAlignment.center,

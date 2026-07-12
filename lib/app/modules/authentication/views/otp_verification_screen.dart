@@ -10,17 +10,22 @@ import 'package:wisper/app/core/widgets/common/custom_button.dart';
 import 'package:wisper/app/core/widgets/common/details_card.dart';
 import 'package:wisper/app/modules/authentication/controller/otp_verify_controller.dart';
 import 'package:wisper/app/modules/authentication/controller/resend_otp_controller.dart';
+import 'package:wisper/app/modules/authentication/controller/sign_in_controller.dart';
 import 'package:wisper/app/modules/authentication/views/reset_password_screen.dart';
 import 'package:wisper/app/modules/authentication/views/sign_in_screen.dart';
 import 'package:wisper/app/modules/authentication/widget/auth_header.dart';
+import 'package:wisper/app/modules/homepage/views/main_button_navbar_screen.dart';
 
 class OtpVerificationScreen extends StatefulWidget {
   final String email;
   final bool isResetpassword;
+  final String? password; // for auto sign-in after registration OTP
+
   const OtpVerificationScreen({
     super.key,
     this.isResetpassword = false,
     required this.email,
+    this.password,
   });
 
   @override
@@ -90,9 +95,24 @@ class _OtpVerificationScreenState extends State<OtpVerificationScreen> {
 
     if (isSuccess) {
       showSnackBarMessage(context, 'Successfully done');
-      widget.isResetpassword
-          ? Get.to(() => ResetPasswordScreen(email: widget.email))
-          : Get.to(() => SignInScreen());
+      if (widget.isResetpassword) {
+        Get.to(() => ResetPasswordScreen(email: widget.email));
+      } else if (widget.password != null && widget.password!.isNotEmpty) {
+        // Auto sign-in after registration — go directly to home
+        final signInController = Get.put(SignInController());
+        final loggedIn = await signInController.signIn(
+          email: widget.email,
+          password: widget.password,
+        );
+        if (loggedIn) {
+          Get.offAll(() => MainButtonNavbarScreen());
+        } else {
+          // Sign-in failed — fallback to sign-in screen
+          Get.offAll(() => const SignInScreen());
+        }
+      } else {
+        Get.offAll(() => const SignInScreen());
+      }
     } else {
       showSnackBarMessage(context, otpVerifyController.errorMessage, true);
     }
