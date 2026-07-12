@@ -65,6 +65,7 @@ class SignUpController extends GetxController {
           "name": bussinessName,
           "industry": industry,
           "address": address,
+          "phone": phone,
         },
       };
 

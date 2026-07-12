@@ -28,6 +28,7 @@ class RecruiterSignUpScreen extends StatefulWidget {
 class _RecruiterSignUpScreenState extends State<RecruiterSignUpScreen> {
   final TextEditingController nameController = TextEditingController();
   final TextEditingController emailController = TextEditingController();
+  final TextEditingController phoneController = TextEditingController();
   final TextEditingController passwordController = TextEditingController();
   final TextEditingController industryController = TextEditingController();
   final GoogleSignUpAuthController googleAuthController = Get.put(
@@ -124,6 +125,23 @@ class _RecruiterSignUpScreenState extends State<RecruiterSignUpScreen> {
                   hintText: 'Bussiness Name',
                   keyboardType: TextInputType.text,
                   validator: ValidatorService.validateSimpleField,
+                ),
+                heightBox16,
+                Label(label: 'Phone Number'),
+                heightBox10,
+                CustomTextField(
+                  controller: phoneController,
+                  hintText: 'e.g. +2348012345678',
+                  keyboardType: TextInputType.phone,
+                  validator: (value) {
+                    if (value == null || value.trim().isEmpty) {
+                      return 'Phone number is required';
+                    }
+                    if (value.trim().length < 10) {
+                      return 'Enter a valid phone number';
+                    }
+                    return null;
+                  },
                 ),
                 heightBox16,
                 Label(label: 'Email'),
@@ -320,6 +338,7 @@ class _RecruiterSignUpScreenState extends State<RecruiterSignUpScreen> {
                           final bool isSuccess = await signUpController.signUp(
                             bussinessName: nameController.text.trim(),
                             email: emailController.text.trim(),
+                            phone: phoneController.text.trim(),
                             password: passwordController.text,
                             confirmPassword: passwordController.text,
                             industry: _selectedIndustry,
