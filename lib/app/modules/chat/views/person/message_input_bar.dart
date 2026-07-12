@@ -1,8 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
-import 'package:wisper/app/core/widgets/common/circle_icon.dart';
 import 'package:wisper/app/modules/chat/widgets/chatting_field.dart';
-import 'package:wisper/gen/assets.gen.dart';
 
 class MessageInputBar extends StatelessWidget {
   final TextEditingController controller;
@@ -44,13 +42,27 @@ class MessageInputBar extends StatelessWidget {
                 ),
                 const SizedBox(width: 8),
                 Obx(
-                  () => CircleIconWidget(
-                    imagePath: Assets.images.send.keyName,
-                    radius: 22,
-                    iconRadius: 22,
-                    color: isSendEnabled.value ? const Color(0xFF168DE1) : const Color(0xFF2A2A2A),
-                    iconColor: isSendEnabled.value ? Colors.white : Colors.grey[600]!,
-                    onTap: isSendEnabled.value ? onSend : () {},
+                  () => GestureDetector(
+                    onTap: isSendEnabled.value ? onSend : null,
+                    child: Container(
+                      width: 44,
+                      height: 44,
+                      decoration: BoxDecoration(
+                        color: isSendEnabled.value
+                            ? const Color(0xFF168DE1)
+                            : const Color(0xFF2A2A2A),
+                        shape: BoxShape.circle,
+                      ),
+                      child: Center(
+                        child: Icon(
+                          Icons.arrow_upward_rounded,
+                          color: isSendEnabled.value
+                              ? Colors.white
+                              : Colors.grey[600],
+                          size: 22,
+                        ),
+                      ),
+                    ),
                   ),
                 ),
               ],
