@@ -67,7 +67,8 @@ class Urls {
     return '$_baseUrl/connections/$id';
   }
 
-  static String favoriteJobById(String id) {
+  static String offerReleaseUrl(String id) => '$_baseUrl/offers/$id/release';
+  static String offerDisputeUrl(String id) => '$_baseUrl/offers/$id/dispute';
     return '$_baseUrl/favorites/$id';
   }
 

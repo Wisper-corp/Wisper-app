@@ -148,4 +148,46 @@ class OfferService extends GetxService {
       throw Exception('Error paying for offer: $e');
     }
   }
+
+  // Release payment from escrow to seller (buyer confirms job done)
+  Future<OfferModel> releaseOffer(String id) async {
+    try {
+      final response = await GetConnect().post(
+        Urls.offerReleaseUrl(id),
+        {},
+        headers: {
+          'Authorization': 'Bearer $_token',
+          'Content-Type': 'application/json',
+        },
+      );
+      if (response.statusCode == 200) {
+        return OfferModel.fromJson(response.body['data']);
+      } else {
+        throw Exception(response.body['message'] ?? 'Failed to release payment');
+      }
+    } catch (e) {
+      throw Exception('Error releasing payment: $e');
+    }
+  }
+
+  // Open dispute
+  Future<OfferModel> disputeOffer(String id) async {
+    try {
+      final response = await GetConnect().post(
+        Urls.offerDisputeUrl(id),
+        {},
+        headers: {
+          'Authorization': 'Bearer $_token',
+          'Content-Type': 'application/json',
+        },
+      );
+      if (response.statusCode == 200) {
+        return OfferModel.fromJson(response.body['data']);
+      } else {
+        throw Exception(response.body['message'] ?? 'Failed to open dispute');
+      }
+    } catch (e) {
+      throw Exception('Error opening dispute: $e');
+    }
+  }
 }

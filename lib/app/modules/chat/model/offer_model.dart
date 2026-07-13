@@ -81,4 +81,6 @@ enum OfferStatus {
   ACCEPTED,
   DECLINED,
   PAID,
+  RELEASED,
+  DISPUTED,
 }
