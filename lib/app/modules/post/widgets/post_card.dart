@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:get/get.dart';
+import 'package:wisper/app/core/utils/currency_helper.dart';
 import 'package:wisper/app/core/config/theme/light_theme_colors.dart';
 import 'package:wisper/app/core/others/custom_size.dart';
 import 'package:wisper/app/core/widgets/common/image_container_widget.dart';
@@ -24,6 +25,7 @@ class PostCard extends StatelessWidget {
   final String? deliveryTime;
   final VoidCallback onTapComment;
   final Widget? ratingWidget;
+  final String? currency; // "NGN" or "USD"
 
   const PostCard({
     super.key,
@@ -41,6 +43,7 @@ class PostCard extends StatelessWidget {
     this.deliveryTime,
     required this.onTapComment,
     this.ratingWidget,
+    this.currency,
     this.isPerson = true,
   });
 
@@ -167,7 +170,7 @@ class PostCard extends StatelessWidget {
                                   Icon(Icons.payments_outlined, size: 14.sp, color: Colors.white70),
                                   SizedBox(width: 4.w),
                                   Text(
-                                    'from ₦${price! % 1 == 0 ? price!.toInt().toString() : price!.toStringAsFixed(2)}',
+                                    CurrencyHelper.format(price!, currency: currency),
                                     style: TextStyle(
                                       fontSize: 12.sp,
                                       color: Colors.white,

@@ -8,6 +8,7 @@ import 'package:wisper/app/core/others/custom_size.dart';
 import 'package:wisper/app/core/others/get_storage.dart';
 import 'package:wisper/app/core/utils/show_over_loading.dart';
 import 'package:wisper/app/core/utils/snack_bar.dart';
+import 'package:wisper/app/core/utils/currency_helper.dart';
 import 'package:wisper/app/core/utils/validator_service.dart';
 import 'package:wisper/app/core/widgets/common/custom_button.dart';
 import 'package:wisper/app/core/widgets/common/custom_text_filed.dart';
@@ -342,7 +343,7 @@ class _GalleryPostScreenState extends State<GalleryPostScreen> {
                       Padding(
                         padding: EdgeInsets.symmetric(horizontal: 12.w, vertical: 12.h),
                         child: Text(
-                          '₦',
+                          CurrencyHelper.inputPrefix,
                           style: TextStyle(
                             fontSize: 14.sp,
                             color: Colors.white,

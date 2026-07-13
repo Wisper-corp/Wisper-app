@@ -59,6 +59,7 @@ class FeedPostItemModel {
     required this.author,
     this.price,
     this.deliveryTime,
+    this.currency,
     this.avgRating = 0.0,
     this.ratingCount = 0,
   });
@@ -72,6 +73,7 @@ class FeedPostItemModel {
   final Author? author;
   final double? price;
   final String? deliveryTime;
+  final String? currency; // "NGN" or "USD"
   final double avgRating;
   final int ratingCount;
 
@@ -88,6 +90,7 @@ class FeedPostItemModel {
       author: json["author"] == null ? null : Author.fromJson(json["author"]),
       price: json["price"] != null ? (json["price"] as num).toDouble() : null,
       deliveryTime: json["deliveryTime"],
+      currency: json["currency"] as String?,
       avgRating: (json["avgRating"] as num?)?.toDouble() ?? 0.0,
       ratingCount: json["ratingCount"] as int? ?? 0,
     );

@@ -177,6 +177,7 @@ class _MyPostSectionState extends State<MyPostSection> {
               postTime: formattedTime.getRelativeTimeFormat(),
               views: post.views?.toString() ?? '0',
               price: post.price,
+              currency: post.currency,
               deliveryTime: post.deliveryTime,
             ),
           );

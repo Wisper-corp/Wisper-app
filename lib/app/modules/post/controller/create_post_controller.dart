@@ -7,6 +7,7 @@ import 'package:wisper/app/core/others/get_storage.dart';
 import 'package:wisper/app/core/services/network_caller/network_caller.dart';
 import 'package:wisper/app/core/services/network_caller/network_response.dart';
 import 'package:wisper/app/urls.dart';
+import 'package:wisper/app/core/utils/currency_helper.dart';
 
 class CreatePostController extends GetxController {
   final RxBool _inProgress = false.obs;
@@ -29,6 +30,7 @@ class CreatePostController extends GetxController {
         "caption": description,
         "commentAccess": privacy,
         if (price != null) "price": price,
+        "currency": CurrencyHelper.isNaira ? "NGN" : "USD",
         if (deliveryTime != null && deliveryTime.isNotEmpty) "deliveryTime": deliveryTime,
       };
       final NetworkResponse response = await Get.find<NetworkCaller>()

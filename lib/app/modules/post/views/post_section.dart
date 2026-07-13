@@ -118,6 +118,7 @@ class _PostItemState extends State<_PostItem> {
         views: post.views.toString(),
         price: post.price,
         deliveryTime: post.deliveryTime,
+        currency: post.currency,
         ratingWidget: post.ratingCount > 0
             ? StarRating(rating: post.avgRating, count: post.ratingCount)
             : null,

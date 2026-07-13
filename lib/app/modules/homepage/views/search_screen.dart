@@ -285,6 +285,7 @@ class _GigMarketResults extends StatelessWidget {
               postTime: time,
               views: post.views.toString(),
               price: post.price,
+              currency: post.currency,
               deliveryTime: post.deliveryTime,
               ratingWidget: post.ratingCount > 0
                   ? StarRating(rating: post.avgRating, count: post.ratingCount)
