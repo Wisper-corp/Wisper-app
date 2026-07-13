@@ -27,8 +27,11 @@ class _WalletScreenState extends State<WalletScreen> {
   final BusinessController businessController = Get.find<BusinessController>();
   final KycController _kycController = Get.put(KycController());
   final MonnifyController _monnifyController = Get.put(MonnifyController());
-  
+
   int isSelected = 1;
+
+  // 'NGN' = Nigerian Naira wallet, 'USD' = US Dollar wallet (UI placeholder)
+  String _selectedWallet = 'NGN';
 
   @override
   void initState() {
@@ -101,7 +104,9 @@ class _WalletScreenState extends State<WalletScreen> {
                                         ),
                                       ),
                                       Text(
-                                        '₦${_monnifyController.walletBalance.toStringAsFixed(2)}',
+                                        _selectedWallet == 'NGN'
+                                            ? '₦${_monnifyController.walletBalance.toStringAsFixed(2)}'
+                                            : '\$0.00',
                                         style: TextStyle(
                                           fontSize: 26.sp,
                                           fontWeight: FontWeight.w800,
@@ -112,23 +117,60 @@ class _WalletScreenState extends State<WalletScreen> {
                                   ),
                                 ],
                               ),
-                              CircleAvatar(
-                                radius: 21.r,
-                                backgroundImage: NetworkImage(
-                                  isPerson
-                                      ? profileController
-                                                .profileData
-                                                ?.auth
-                                                ?.person
-                                                ?.image ??
-                                            ''
-                                      : businessController
-                                                .buisnessData
-                                                ?.auth
-                                                ?.business
-                                                ?.image ??
-                                            '',
-                                ),
+                              // Wallet toggle + avatar
+                              Row(
+                                children: [
+                                  // NGN / USD toggle pill
+                                  GestureDetector(
+                                    onTap: () {
+                                      setState(() {
+                                        _selectedWallet = _selectedWallet == 'NGN' ? 'USD' : 'NGN';
+                                      });
+                                    },
+                                    child: Container(
+                                      padding: EdgeInsets.symmetric(horizontal: 6.w, vertical: 4.h),
+                                      decoration: BoxDecoration(
+                                        color: Colors.black.withOpacity(0.3),
+                                        borderRadius: BorderRadius.circular(30.r),
+                                      ),
+                                      child: Row(
+                                        mainAxisSize: MainAxisSize.min,
+                                        children: [
+                                          // Flag emoji
+                                          Text(
+                                            _selectedWallet == 'NGN' ? '🇳🇬' : '🇺🇸',
+                                            style: TextStyle(fontSize: 20.sp),
+                                          ),
+                                          SizedBox(width: 4.w),
+                                          Icon(
+                                            Icons.keyboard_arrow_down,
+                                            color: Colors.white,
+                                            size: 18.sp,
+                                          ),
+                                        ],
+                                      ),
+                                    ),
+                                  ),
+                                  SizedBox(width: 8.w),
+                                  CircleAvatar(
+                                    radius: 21.r,
+                                    backgroundImage: NetworkImage(
+                                      isPerson
+                                          ? profileController
+                                                    .profileData
+                                                    ?.auth
+                                                    ?.person
+                                                    ?.image ??
+                                                ''
+                                          : businessController
+                                                    .buisnessData
+                                                    ?.auth
+                                                    ?.business
+                                                    ?.image ??
+                                                '',
+                                    ),
+                                  ),
+                                ],
                               ),
                             ],
                           );
@@ -143,113 +185,156 @@ class _WalletScreenState extends State<WalletScreen> {
               heightBox20,
               Padding(
                 padding: EdgeInsets.symmetric(horizontal: 16.w),
-                child: Row(
+                child: Column(
                   children: [
-                    // Add Fund button
-                    Expanded(
-                      child: GestureDetector(
-                        onTap: () {
-                          setState(() {
-                            isSelected = 1;
-                          });
-                        },
-                        child: Container(
-                          height: 52.h,
-                          decoration: BoxDecoration(
-                            color: isSelected == 1
-                                ? LightThemeColors.blueColor
-                                : Colors.transparent,
-                            borderRadius: BorderRadius.circular(30.r),
-                            border: Border.all(
-                              color: isSelected == 1
-                                  ? Colors.transparent
-                                  : Colors.white.withOpacity(0.30),
-                              width: 1.5,
+                    // USD coming soon banner
+                    if (_selectedWallet == 'USD')
+                      Container(
+                        width: double.infinity,
+                        margin: EdgeInsets.only(bottom: 12.h),
+                        padding: EdgeInsets.all(12.w),
+                        decoration: BoxDecoration(
+                          color: Colors.blue.withOpacity(0.1),
+                          borderRadius: BorderRadius.circular(10.r),
+                          border: Border.all(color: Colors.blue.withOpacity(0.3)),
+                        ),
+                        child: Row(
+                          children: [
+                            const Text('🇺🇸', style: TextStyle(fontSize: 18)),
+                            SizedBox(width: 8.w),
+                            Expanded(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text(
+                                    'USD Wallet',
+                                    style: TextStyle(
+                                      color: Colors.white,
+                                      fontSize: 14.sp,
+                                      fontWeight: FontWeight.w700,
+                                    ),
+                                  ),
+                                  Text(
+                                    'Coming soon — Stripe integration launching next month.',
+                                    style: TextStyle(
+                                      color: Colors.white70,
+                                      fontSize: 11.sp,
+                                    ),
+                                  ),
+                                ],
+                              ),
                             ),
-                          ),
-                          child: Row(
-                            mainAxisAlignment: MainAxisAlignment.center,
-                            children: [
-                              Icon(
-                                Icons.add_circle_outline,
-                                color: Colors.white,
-                                size: 18.sp,
-                              ),
-                              SizedBox(width: 6.w),
-                              Text(
-                                'Add Fund',
-                                style: TextStyle(
-                                  color: Colors.white,
-                                  fontSize: 15.sp,
-                                  fontWeight: FontWeight.w600,
-                                ),
-                              ),
-                            ],
-                          ),
+                          ],
                         ),
                       ),
-                    ),
-                    SizedBox(width: 12.w),
-                    // Withdraw button
-                    Expanded(
-                      child: GestureDetector(
-                        onTap: () {
-                          // KYC check temporarily disabled for testing
-                          // if (!_kycController.isVerified) {
-                          //   _showKycRequiredDialog();
-                          // } else {
-                            setState(() {
-                              isSelected = 2;
-                            });
-                          // }
-                        },
-                        child: Container(
-                          height: 52.h,
-                          decoration: BoxDecoration(
-                            color: isSelected == 2
-                                ? LightThemeColors.blueColor
-                                : Colors.transparent,
-                            borderRadius: BorderRadius.circular(30.r),
-                            border: Border.all(
-                              color: isSelected == 2
-                                  ? Colors.transparent
-                                  : Colors.white.withOpacity(0.30),
-                              width: 1.5,
-                            ),
-                          ),
-                          child: Row(
-                            mainAxisAlignment: MainAxisAlignment.center,
-                            children: [
-                              Icon(
-                                Icons.arrow_upward_rounded,
-                                color: Colors.white,
-                                size: 18.sp,
-                              ),
-                              SizedBox(width: 6.w),
-                              Text(
-                                'Withdraw',
-                                style: TextStyle(
-                                  color: Colors.white,
-                                  fontSize: 15.sp,
-                                  fontWeight: FontWeight.w600,
+                    Row(
+                      children: [
+                        // Add Fund button — disabled for USD wallet
+                        Expanded(
+                          child: GestureDetector(
+                            onTap: _selectedWallet == 'USD' ? null : () {
+                              setState(() { isSelected = 1; });
+                            },
+                            child: Container(
+                              height: 52.h,
+                              decoration: BoxDecoration(
+                                color: _selectedWallet == 'USD'
+                                    ? Colors.grey.withOpacity(0.2)
+                                    : isSelected == 1
+                                        ? LightThemeColors.blueColor
+                                        : Colors.transparent,
+                                borderRadius: BorderRadius.circular(30.r),
+                                border: Border.all(
+                                  color: _selectedWallet == 'USD'
+                                      ? Colors.grey.withOpacity(0.2)
+                                      : isSelected == 1
+                                          ? Colors.transparent
+                                          : Colors.white.withOpacity(0.30),
+                                  width: 1.5,
                                 ),
                               ),
-                            ],
+                              child: Row(
+                                mainAxisAlignment: MainAxisAlignment.center,
+                                children: [
+                                  Icon(Icons.add_circle_outline,
+                                      color: _selectedWallet == 'USD'
+                                          ? Colors.grey
+                                          : Colors.white,
+                                      size: 18.sp),
+                                  SizedBox(width: 6.w),
+                                  Text('Add Fund',
+                                      style: TextStyle(
+                                        color: _selectedWallet == 'USD'
+                                            ? Colors.grey
+                                            : Colors.white,
+                                        fontSize: 15.sp,
+                                        fontWeight: FontWeight.w600,
+                                      )),
+                                ],
+                              ),
+                            ),
                           ),
                         ),
-                      ),
+                        SizedBox(width: 12.w),
+                        // Withdraw button — disabled for USD wallet
+                        Expanded(
+                          child: GestureDetector(
+                            onTap: _selectedWallet == 'USD' ? null : () {
+                              setState(() { isSelected = 2; });
+                            },
+                            child: Container(
+                              height: 52.h,
+                              decoration: BoxDecoration(
+                                color: _selectedWallet == 'USD'
+                                    ? Colors.grey.withOpacity(0.2)
+                                    : isSelected == 2
+                                        ? LightThemeColors.blueColor
+                                        : Colors.transparent,
+                                borderRadius: BorderRadius.circular(30.r),
+                                border: Border.all(
+                                  color: _selectedWallet == 'USD'
+                                      ? Colors.grey.withOpacity(0.2)
+                                      : isSelected == 2
+                                          ? Colors.transparent
+                                          : Colors.white.withOpacity(0.30),
+                                  width: 1.5,
+                                ),
+                              ),
+                              child: Row(
+                                mainAxisAlignment: MainAxisAlignment.center,
+                                children: [
+                                  Icon(Icons.arrow_upward_rounded,
+                                      color: _selectedWallet == 'USD'
+                                          ? Colors.grey
+                                          : Colors.white,
+                                      size: 18.sp),
+                                  SizedBox(width: 6.w),
+                                  Text('Withdraw',
+                                      style: TextStyle(
+                                        color: _selectedWallet == 'USD'
+                                            ? Colors.grey
+                                            : Colors.white,
+                                        fontSize: 15.sp,
+                                        fontWeight: FontWeight.w600,
+                                      )),
+                                ],
+                              ),
+                            ),
+                          ),
+                        ),
+                      ],
                     ),
                   ],
                 ),
               ),
-
               heightBox10,
               Expanded(
                 child: SingleChildScrollView(
                   child: Column(
                     children: [
-                      if (isSelected == 1) _buildFundWalletSection(),
-                      if (isSelected == 2) _buildWithdrawSection(),
+                      if (_selectedWallet == 'NGN' && isSelected == 1) _buildFundWalletSection(),
+                      if (_selectedWallet == 'NGN' && isSelected == 2) _buildWithdrawSection(),
+                      if (_selectedWallet == 'USD') _buildUsdWalletPlaceholder(),
                     ],
                   ),
                 ),
@@ -258,6 +343,83 @@ class _WalletScreenState extends State<WalletScreen> {
           );
         }
       }),
+    );
+  }
+
+  // ── USD Wallet Placeholder ─────────────────────────────────────────────────
+  Widget _buildUsdWalletPlaceholder() {
+    return Padding(
+      padding: EdgeInsets.all(16.w),
+      child: Column(
+        children: [
+          Container(
+            width: double.infinity,
+            padding: EdgeInsets.all(24.w),
+            decoration: BoxDecoration(
+              color: const Color(0xFF1E1E1E),
+              borderRadius: BorderRadius.circular(16.r),
+              border: Border.all(color: Colors.blue.withOpacity(0.3)),
+            ),
+            child: Column(
+              children: [
+                const Text('🇺🇸', style: TextStyle(fontSize: 48)),
+                SizedBox(height: 16.h),
+                Text(
+                  'USD Wallet',
+                  style: TextStyle(
+                    color: Colors.white,
+                    fontSize: 22.sp,
+                    fontWeight: FontWeight.w800,
+                  ),
+                ),
+                SizedBox(height: 8.h),
+                Text(
+                  '\$0.00',
+                  style: TextStyle(
+                    color: Colors.white70,
+                    fontSize: 32.sp,
+                    fontWeight: FontWeight.w300,
+                  ),
+                ),
+                SizedBox(height: 16.h),
+                Container(
+                  padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 10.h),
+                  decoration: BoxDecoration(
+                    color: Colors.blue.withOpacity(0.1),
+                    borderRadius: BorderRadius.circular(20.r),
+                    border: Border.all(color: Colors.blue.withOpacity(0.4)),
+                  ),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Icon(Icons.access_time, color: Colors.blue, size: 16.sp),
+                      SizedBox(width: 6.w),
+                      Text(
+                        'Stripe integration coming soon',
+                        style: TextStyle(
+                          color: Colors.blue,
+                          fontSize: 12.sp,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                SizedBox(height: 20.h),
+                Text(
+                  'You will be able to fund and withdraw from your USD wallet once Stripe is integrated next month.',
+                  textAlign: TextAlign.center,
+                  style: TextStyle(
+                    color: Colors.white54,
+                    fontSize: 13.sp,
+                    height: 1.5,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
     );
   }
 

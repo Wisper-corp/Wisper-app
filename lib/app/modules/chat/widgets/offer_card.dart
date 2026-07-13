@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import 'package:wisper/app/core/utils/currency_helper.dart';
 import 'package:wisper/app/modules/chat/controller/offer_service.dart';
 import 'package:wisper/app/modules/chat/model/offer_model.dart';
 
@@ -25,6 +26,7 @@ class _OfferCardState extends State<OfferCard> {
 
   bool get _isSender => widget.offer.senderId == widget.currentUserId;
   bool get _isReceiver => widget.offer.receiverId == widget.currentUserId;
+  String get _sym => CurrencyHelper.deviceSymbol;
 
   @override
   void initState() {
@@ -51,17 +53,17 @@ class _OfferCardState extends State<OfferCard> {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text(
-              'Offer amount:  ₦${widget.offer.amount.toStringAsFixed(0)}',
+              'Offer amount:  $_sym${widget.offer.amount.toStringAsFixed(0)}',
               style: const TextStyle(color: Colors.white70),
             ),
             const SizedBox(height: 4),
             Text(
-              'Platform fee (5%):  ₦${buyerFee.toStringAsFixed(2)}',
+              'Platform fee (5%):  $_sym${buyerFee.toStringAsFixed(2)}',
               style: const TextStyle(color: Colors.white70),
             ),
             const Divider(color: Colors.white24, height: 16),
             Text(
-              'Total deducted:  ₦${total.toStringAsFixed(2)}',
+              'Total deducted:  $_sym${total.toStringAsFixed(2)}',
               style: const TextStyle(
                   color: Colors.white, fontWeight: FontWeight.w700),
             ),
@@ -93,7 +95,7 @@ class _OfferCardState extends State<OfferCard> {
       widget.onOfferUpdated(updated);
       Get.snackbar(
         'Payment in Escrow ✅',
-        '₦${widget.offer.amount.toStringAsFixed(0)} is held safely in escrow.',
+        '$_sym${widget.offer.amount.toStringAsFixed(0)} is held safely in escrow.',
         backgroundColor: Colors.green,
         colorText: Colors.white,
         snackPosition: SnackPosition.BOTTOM,
@@ -123,17 +125,17 @@ class _OfferCardState extends State<OfferCard> {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text(
-              'Escrow amount:  ₦${widget.offer.amount.toStringAsFixed(0)}',
+              'Escrow amount:  $_sym${widget.offer.amount.toStringAsFixed(0)}',
               style: const TextStyle(color: Colors.white70),
             ),
             const SizedBox(height: 4),
             Text(
-              'Platform fee (5%):  -₦${sellerFee.toStringAsFixed(2)}',
+              'Platform fee (5%):  -$_sym${sellerFee.toStringAsFixed(2)}',
               style: const TextStyle(color: Colors.white70),
             ),
             const Divider(color: Colors.white24, height: 16),
             Text(
-              'Seller receives:  ₦${sellerGets.toStringAsFixed(2)}',
+              'Seller receives:  $_sym${sellerGets.toStringAsFixed(2)}',
               style: const TextStyle(
                   color: Colors.greenAccent, fontWeight: FontWeight.w700),
             ),
@@ -164,7 +166,7 @@ class _OfferCardState extends State<OfferCard> {
       widget.onOfferUpdated(updated);
       Get.snackbar(
         'Payment Released 💰',
-        'Seller has been paid ₦${sellerGets.toStringAsFixed(2)}.',
+        'Seller has been paid $_sym${sellerGets.toStringAsFixed(2)}.',
         backgroundColor: Colors.green,
         colorText: Colors.white,
         snackPosition: SnackPosition.BOTTOM,
@@ -313,7 +315,7 @@ class _OfferCardState extends State<OfferCard> {
                           color: Colors.white.withOpacity(0.2),
                           shape: BoxShape.circle),
                       child: const Center(
-                          child: Text('₦',
+                          child: Text(_sym,
                               style: TextStyle(
                                   color: Colors.white70,
                                   fontSize: 12,
@@ -327,7 +329,7 @@ class _OfferCardState extends State<OfferCard> {
                             style: TextStyle(
                                 color: Colors.white70, fontSize: 10)),
                         Text(
-                          '₦${widget.offer.amount.toStringAsFixed(0)}',
+                          '$_sym${widget.offer.amount.toStringAsFixed(0)}',
                           style: const TextStyle(
                               color: Colors.white,
                               fontSize: 15,
@@ -386,7 +388,7 @@ class _OfferCardState extends State<OfferCard> {
                         const SizedBox(width: 8),
                         Expanded(
                           child: Text(
-                            '₦${widget.offer.amount.toStringAsFixed(0)} is held in escrow. Release when job is done.',
+                            '$_sym${widget.offer.amount.toStringAsFixed(0)} is held in escrow. Release when job is done.',
                             style: const TextStyle(
                                 color: Colors.blueAccent,
                                 fontSize: 11,
