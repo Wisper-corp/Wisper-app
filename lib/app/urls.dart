@@ -67,10 +67,12 @@ class Urls {
     return '$_baseUrl/connections/$id';
   }
 
-  static String offerReleaseUrl(String id) => '$_baseUrl/offers/$id/release';
-  static String offerDisputeUrl(String id) => '$_baseUrl/offers/$id/dispute';
+  static String favoriteJobById(String id) {
     return '$_baseUrl/favorites/$id';
   }
+
+  static String offerReleaseUrl(String id) => '$_baseUrl/offers/$id/release';
+  static String offerDisputeUrl(String id) => '$_baseUrl/offers/$id/dispute';
 
   static String otherBusinessProfileById(String id) {
     return '$_baseUrl/businesses/$id';
