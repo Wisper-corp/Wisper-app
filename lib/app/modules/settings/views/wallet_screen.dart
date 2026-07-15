@@ -335,6 +335,12 @@ class _WalletScreenState extends State<WalletScreen> {
                       if (_selectedWallet == 'NGN' && isSelected == 1) _buildFundWalletSection(),
                       if (_selectedWallet == 'NGN' && isSelected == 2) _buildWithdrawSection(),
                       if (_selectedWallet == 'USD') _buildUsdWalletPlaceholder(),
+                      // Transaction history always visible for NGN wallet
+                      if (_selectedWallet == 'NGN')
+                        Obx(() => TransactionSection(
+                          allTransectionModel: wallletController.allTransectionData,
+                          isLoading: wallletController.inProgress,
+                        )),
                     ],
                   ),
                 ),

@@ -7,34 +7,41 @@ class AllTransectionModel {
 
   final bool? success;
   final String? message;
-  final Data? data;
+  final TransactionData? data;
 
   factory AllTransectionModel.fromJson(Map<String, dynamic> json) {
     return AllTransectionModel(
       success: json["success"],
       message: json["message"],
-      data: json["data"] == null ? null : Data.fromJson(json["data"]),
+      data: json["data"] == null ? null : TransactionData.fromJson(json["data"]),
     );
   }
 }
 
-class Data {
-  Data({required this.meta, required this.payments});
+class TransactionData {
+  TransactionData({required this.meta, required this.payments});
 
   final Meta? meta;
   final List<TransectionItemModel> payments;
 
-  factory Data.fromJson(Map<String, dynamic> json) {
-    return Data(
-      meta: json["meta"] == null ? null : Meta.fromJson(json["meta"]),
-      payments: json["payments"] == null
-          ? []
-          : List<TransectionItemModel>.from(
-              json["payments"]!.map((x) => TransectionItemModel.fromJson(x)),
-            ),
+  factory TransactionData.fromJson(Map<String, dynamic> json) {
+    // Handle both /payments and /wallet/transactions responses
+    final List<dynamic> items = json["transactions"] ?? json["payments"] ?? [];
+    return TransactionData(
+      meta: json["pagination"] != null
+          ? Meta.fromJson(json["pagination"])
+          : json["meta"] != null
+              ? Meta.fromJson(json["meta"])
+              : null,
+      payments: List<TransectionItemModel>.from(
+        items.map((x) => TransectionItemModel.fromJson(x)),
+      ),
     );
   }
 }
+
+// Keep old name for backward compat
+typedef Data = TransactionData;
 
 class Meta {
   Meta({required this.page, required this.limit, required this.total});
@@ -44,7 +51,11 @@ class Meta {
   final int? total;
 
   factory Meta.fromJson(Map<String, dynamic> json) {
-    return Meta(page: json["page"], limit: json["limit"], total: json["total"]);
+    return Meta(
+      page: json["page"],
+      limit: json["limit"] ?? json["pageSize"],
+      total: json["total"],
+    );
   }
 }
 
@@ -53,25 +64,48 @@ class TransectionItemModel {
     required this.id,
     required this.amount,
     required this.date,
-    required this.transactionId,
-    required this.auth,
+    this.type,
+    this.transactionId,
+    this.auth,
   });
 
   final String? id;
-  final int? amount;
+  final double? amount;
   final DateTime? date;
+  final String? type;         // DEPOSIT | WITHDRAW | SPEND
   final String? transactionId;
   final Auth? auth;
 
   factory TransectionItemModel.fromJson(Map<String, dynamic> json) {
     return TransectionItemModel(
       id: json["id"],
-      amount: json["amount"],
+      amount: json["amount"] != null
+          ? (json["amount"] as num).toDouble()
+          : null,
       date: DateTime.tryParse(json["date"] ?? ""),
+      type: json["type"],
       transactionId: json["transactionId"],
       auth: json["auth"] == null ? null : Auth.fromJson(json["auth"]),
     );
   }
+
+  /// Human-readable label for the transaction type
+  String get typeLabel {
+    switch (type) {
+      case 'DEPOSIT':
+        return 'Wallet Funded';
+      case 'WITHDRAW':
+        return 'Withdrawal';
+      case 'SPEND':
+        return 'Payment';
+      default:
+        return 'Transaction';
+    }
+  }
+
+  /// Icon for type
+  bool get isCredit => type == 'DEPOSIT';
+  bool get isDebit => type == 'WITHDRAW' || type == 'SPEND';
 }
 
 class Auth {

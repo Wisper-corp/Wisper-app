@@ -15,24 +15,30 @@ class WallletController extends GetxController {
 
   final Rx<AllTransectionModel?> _allTransectionModel =
       Rx<AllTransectionModel?>(null);
+
   List<TransectionItemModel>? get allTransectionData =>
       _allTransectionModel.value?.data?.payments;
+
+  @override
+  void onInit() {
+    super.onInit();
+    getWallet();
+  }
 
   Future<bool> getWallet() async {
     _inProgress.value = true;
 
-    Map<String, dynamic> params = {"limit": "9999"};
     try {
+      // Fetch real wallet transactions from /wallet/transactions
       final NetworkResponse response = await Get.find<NetworkCaller>()
           .getRequest(
-            Urls.walletUrl,
-            queryParams: params,
+            Urls.walletTransactionsUrl,
+            queryParams: {"page": "1", "limit": "50"},
             accessToken: StorageUtil.getData(StorageUtil.userAccessToken),
           );
 
       if (response.isSuccess && response.responseData != null) {
         _errorMessage.value = '';
-
         _allTransectionModel.value = AllTransectionModel.fromJson(
           response.responseData!,
         );
@@ -40,13 +46,14 @@ class WallletController extends GetxController {
         return true;
       } else {
         _errorMessage.value = response.errorMessage;
-        _errorMessage.value.contains('expired') ? Get.to(SignInScreen()) : null;
+        if (_errorMessage.value.toLowerCase().contains('expired')) {
+          Get.to(SignInScreen());
+        }
         _inProgress.value = false;
         return false;
       }
     } catch (e) {
-      _errorMessage.value = 'Failed to fetch district data: ${e.toString()}';
-      print('Error fetching district data: $e');
+      _errorMessage.value = 'Failed to load transactions: ${e.toString()}';
       _inProgress.value = false;
       return false;
     }

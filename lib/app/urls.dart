@@ -90,6 +90,7 @@ class Urls {
   static const String feedJobUrl = '$_baseUrl/jobs';
   static const String roleUrl = '$_baseUrl/persons/roles';
   static const String walletUrl = '$_baseUrl/payments';
+  static const String walletTransactionsUrl = '$_baseUrl/wallet/transactions';
   static const String allGroupUrl = '$_baseUrl/groups';
 
   // =========================================== KYC Block =========================================== //
