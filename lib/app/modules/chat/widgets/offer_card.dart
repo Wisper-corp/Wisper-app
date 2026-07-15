@@ -314,9 +314,9 @@ class _OfferCardState extends State<OfferCard> {
                       decoration: BoxDecoration(
                           color: Colors.white.withOpacity(0.2),
                           shape: BoxShape.circle),
-                      child: const Center(
+                      child: Center(
                           child: Text(_sym,
-                              style: TextStyle(
+                              style: const TextStyle(
                                   color: Colors.white70,
                                   fontSize: 12,
                                   fontWeight: FontWeight.bold))),

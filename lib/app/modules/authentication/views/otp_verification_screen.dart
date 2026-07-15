@@ -14,7 +14,7 @@ import 'package:wisper/app/modules/authentication/controller/sign_in_controller.
 import 'package:wisper/app/modules/authentication/views/reset_password_screen.dart';
 import 'package:wisper/app/modules/authentication/views/sign_in_screen.dart';
 import 'package:wisper/app/modules/authentication/widget/auth_header.dart';
-import 'package:wisper/app/modules/homepage/views/main_button_navbar_screen.dart';
+import 'package:wisper/app/modules/dashboard/views/dashboard_screen.dart';
 
 class OtpVerificationScreen extends StatefulWidget {
   final String email;
