@@ -81,9 +81,13 @@ class _OfferCardState extends State<OfferCard> {
           ElevatedButton(
               onPressed: () => Get.back(result: true),
               style: ElevatedButton.styleFrom(
-                  backgroundColor: const Color(0xff1877F2)),
+                  backgroundColor: const Color(0xff1877F2),
+                  minimumSize: const Size(double.infinity, 48),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(30),
+                  )),
               child: const Text('Accept & Pay to Escrow',
-                  style: TextStyle(color: Colors.white))),
+                  style: TextStyle(color: Colors.white, fontSize: 14, fontWeight: FontWeight.w600))),
         ],
       ),
     );
@@ -152,9 +156,14 @@ class _OfferCardState extends State<OfferCard> {
               child: const Text('Cancel', style: TextStyle(color: Colors.grey))),
           ElevatedButton(
               onPressed: () => Get.back(result: true),
-              style: ElevatedButton.styleFrom(backgroundColor: Colors.green),
+              style: ElevatedButton.styleFrom(
+                  backgroundColor: Colors.green,
+                  minimumSize: const Size(double.infinity, 48),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(30),
+                  )),
               child: const Text('Release Payment',
-                  style: TextStyle(color: Colors.white))),
+                  style: TextStyle(color: Colors.white, fontSize: 14, fontWeight: FontWeight.w600))),
         ],
       ),
     );
@@ -198,9 +207,14 @@ class _OfferCardState extends State<OfferCard> {
               child: const Text('Cancel', style: TextStyle(color: Colors.grey))),
           ElevatedButton(
               onPressed: () => Get.back(result: true),
-              style: ElevatedButton.styleFrom(backgroundColor: Colors.orange),
+              style: ElevatedButton.styleFrom(
+                  backgroundColor: Colors.orange,
+                  minimumSize: const Size(double.infinity, 48),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(30),
+                  )),
               child: const Text('Open Dispute',
-                  style: TextStyle(color: Colors.white))),
+                  style: TextStyle(color: Colors.white, fontSize: 14, fontWeight: FontWeight.w600))),
         ],
       ),
     );
