@@ -167,10 +167,11 @@ class PostCard extends StatelessWidget {
                               child: Row(
                                 mainAxisSize: MainAxisSize.min,
                                 children: [
-                                  Icon(Icons.payments_outlined, size: 14.sp, color: Colors.white70),
-                                  SizedBox(width: 4.w),
                                   Text(
-                                    CurrencyHelper.format(price!, currency: currency),
+                                    CurrencyHelper.symbolFor(currency) +
+                                        (price! % 1 == 0
+                                            ? price!.toInt().toString()
+                                            : price!.toStringAsFixed(2)),
                                     style: TextStyle(
                                       fontSize: 12.sp,
                                       color: Colors.white,
