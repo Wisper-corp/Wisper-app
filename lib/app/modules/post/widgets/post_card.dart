@@ -254,6 +254,13 @@ class PostCard extends StatelessWidget {
                     Icon(Icons.bookmark_border_rounded, size: 16.sp, color: Colors.grey),
                   ],
                 ),
+                // Divider between posts
+                SizedBox(height: 12.h),
+                Divider(
+                  color: const Color(0xff2A2A2A),
+                  height: 1,
+                  thickness: 0.5,
+                ),
               ],
             ),
           ),
