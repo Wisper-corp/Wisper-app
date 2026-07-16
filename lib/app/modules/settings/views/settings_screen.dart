@@ -411,7 +411,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                         Row(
                           children: [
                             Text(
-                              'Bangladesh',
+                              _getRegion(),
                               style: TextStyle(
                                 fontSize: 12.sp,
                                 fontWeight: FontWeight.w600,
@@ -474,6 +474,38 @@ class _SettingsScreenState extends State<SettingsScreen> {
     );
   }
 
+  /// Get region from user address or device locale
+  String _getRegion() {
+    final role = StorageUtil.getData(StorageUtil.userRole) ?? '';
+    String address = '';
+    try {
+      if (role == 'PERSON') {
+        address = Get.find<ProfileController>().profileData?.auth?.person?.address ?? '';
+      } else {
+        address = Get.find<BusinessController>().buisnessData?.auth?.business?.address ?? '';
+      }
+    } catch (_) {}
+
+    if (address.isNotEmpty) {
+      final parts = address.split(',');
+      if (parts.isNotEmpty) {
+        final country = parts.last.trim();
+        if (country.isNotEmpty) return country;
+      }
+    }
+
+    // Fall back to device locale country
+    final locale = WidgetsBinding.instance.platformDispatcher.locale;
+    final code = locale.countryCode ?? '';
+    const Map<String, String> codes = {
+      'NG': 'Nigeria', 'US': 'United States', 'GB': 'United Kingdom',
+      'PK': 'Pakistan', 'IN': 'India', 'GH': 'Ghana', 'KE': 'Kenya',
+      'ZA': 'South Africa', 'BD': 'Bangladesh', 'CA': 'Canada',
+      'AU': 'Australia', 'DE': 'Germany', 'FR': 'France', 'AE': 'UAE',
+    };
+    return codes[code] ?? (code.isNotEmpty ? code : 'Nigeria');
+  }
+
   void _showDeleteUser() {
     ConfirmationBottomSheet.show(
       context: context,
@@ -488,7 +520,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
     );
   }
 
-  void _showLogout() {
+  void _showDeleteUser() {
     ConfirmationBottomSheet.show(
       context: context,
       title: "Logout?",
