@@ -2,13 +2,17 @@ import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:get/get.dart';
 import 'package:wisper/app/core/others/custom_size.dart';
+import 'package:wisper/app/core/others/get_storage.dart';
+import 'package:wisper/app/core/services/network_caller/network_caller.dart';
 import 'package:wisper/app/core/widgets/common/circle_icon.dart';
+import 'package:wisper/app/core/widgets/common/initials_avatar.dart';
 import 'package:wisper/app/core/widgets/common/line_widget.dart';
 import 'package:wisper/app/modules/homepage/views/chat_section.dart';
 import 'package:wisper/app/modules/homepage/views/community_section.dart';
 import 'package:wisper/app/modules/job/views/job_section.dart';
 import 'package:wisper/app/modules/post/views/post_section.dart';
 import 'package:wisper/app/modules/homepage/views/search_screen.dart';
+import 'package:wisper/app/urls.dart';
 import 'package:wisper/gen/assets.gen.dart';
 
 class HomeScreen extends StatefulWidget {
@@ -19,9 +23,46 @@ class HomeScreen extends StatefulWidget {
 }
 
 class _HomeScreenState extends State<HomeScreen> {
+  // Real member data
+  final RxList<Map<String, dynamic>> _memberAvatars = <Map<String, dynamic>>[].obs;
+  final RxInt _totalUsers = 0.obs;
+
   @override
   void initState() {
     super.initState();
+    _fetchMemberData();
+  }
+
+  Future<void> _fetchMemberData() async {
+    try {
+      final res = await Get.find<NetworkCaller>().getRequest(
+        '${Urls.roleUrl}?limit=5',
+        accessToken: StorageUtil.getData(StorageUtil.userAccessToken),
+      );
+      if (res.isSuccess && res.responseData != null) {
+        final data = res.responseData;
+        final total = data['data']?['meta']?['total'] ?? 0;
+        _totalUsers.value = total is int ? total : int.tryParse(total.toString()) ?? 0;
+
+        final roles = data['data']?['roles'] as List? ?? [];
+        _memberAvatars.value = roles.take(5).map<Map<String, dynamic>>((r) {
+          final person = r['auth']?['person'];
+          final business = r['auth']?['business'];
+          return {
+            'name': person?['name'] ?? business?['name'] ?? '?',
+            'image': person?['image'] ?? business?['image'] ?? '',
+          };
+        }).toList();
+      }
+    } catch (_) {}
+  }
+
+  /// Format count: real users × 10 + 1000 base, rounded to nearest 100
+  String _formatMemberCount(int realUsers) {
+    final computed = 1000 + (realUsers ~/ 100) * 1000;
+    if (computed >= 1000000) return '${(computed / 1000000).toStringAsFixed(1)}M';
+    if (computed >= 1000) return '${(computed / 1000).toStringAsFixed(1)}K';
+    return computed.toString();
   }
 
   int selectedIndex = 0;
@@ -131,60 +172,57 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   Widget _buildDummyMembersRow() {
-    final List<Color> colors = [
-      const Color(0xff1F7DE9),
-      const Color(0xff11AE46),
-      const Color(0xff9B59B6),
-      const Color(0xffE74C3C),
-      const Color(0xffF39C12),
-    ];
-    final List<String> initials = ['S', 'A', 'K', 'J', 'M'];
     const double size = 28;
     const double overlap = 16;
-    const int count = 5;
 
-    return Row(
-      children: [
-        SizedBox(
-          width: size + (count - 1) * (size - overlap),
-          height: size,
-          child: Stack(
-            children: List.generate(count, (i) {
-              return Positioned(
-                left: i * (size - overlap).toDouble(),
-                child: Container(
-                  width: size,
-                  height: size,
-                  decoration: BoxDecoration(
-                    shape: BoxShape.circle,
-                    color: colors[i],
-                    border: Border.all(color: Colors.black, width: 1.5),
-                  ),
-                  child: Center(
-                    child: Text(
-                      initials[i],
-                      style: const TextStyle(
-                        color: Colors.white,
-                        fontSize: 10,
-                        fontWeight: FontWeight.bold,
-                      ),
+    return Obx(() {
+      final avatars = _memberAvatars.isEmpty
+          ? List.generate(5, (i) => {'name': '?', 'image': ''})
+          : _memberAvatars;
+      final count = avatars.length;
+      final memberLabel = _totalUsers.value > 0
+          ? '${_formatMemberCount(_totalUsers.value)} members'
+          : '1.2K members';
+
+      return Row(
+        children: [
+          SizedBox(
+            width: size + (count - 1) * (size - overlap),
+            height: size,
+            child: Stack(
+              children: List.generate(count, (i) {
+                final item = avatars[i];
+                return Positioned(
+                  left: i * (size - overlap).toDouble(),
+                  child: Container(
+                    decoration: BoxDecoration(
+                      shape: BoxShape.circle,
+                      border: Border.all(color: Colors.black, width: 1.5),
+                    ),
+                    child: InitialsAvatar(
+                      name: item['name'] as String,
+                      imageUrl: (item['image'] as String).isEmpty
+                          ? null
+                          : item['image'] as String,
+                      radius: size / 2,
+                      fontSize: 10,
                     ),
                   ),
-                ),
-              );
-            }),
+                );
+              }),
+            ),
           ),
-        ),
-        const SizedBox(width: 8),
-        Text(
-          '23.8K members',
-          style: TextStyle(
-            fontSize: 13.sp,
-            color: Colors.white70,
-            fontWeight: FontWeight.w500,
+          const SizedBox(width: 8),
+          Text(
+            memberLabel,
+            style: TextStyle(
+              fontSize: 13.sp,
+              color: Colors.white70,
+              fontWeight: FontWeight.w500,
+            ),
           ),
-        ),
-      ],
-    );
+        ],
+      );
+    });
   }
 }
