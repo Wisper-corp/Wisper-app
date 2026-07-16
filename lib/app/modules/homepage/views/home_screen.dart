@@ -176,9 +176,9 @@ class _HomeScreenState extends State<HomeScreen> {
     const double overlap = 16;
 
     return Obx(() {
-      final avatars = _memberAvatars.isEmpty
-          ? List.generate(5, (i) => {'name': '?', 'image': ''})
-          : _memberAvatars;
+      final List<Map<String, dynamic>> avatars = _memberAvatars.isEmpty
+          ? List.generate(5, (i) => <String, dynamic>{'name': '?', 'image': ''})
+          : List<Map<String, dynamic>>.from(_memberAvatars);
       final count = avatars.length;
       final memberLabel = _totalUsers.value > 0
           ? '${_formatMemberCount(_totalUsers.value)} members'

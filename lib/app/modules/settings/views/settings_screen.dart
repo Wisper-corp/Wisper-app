@@ -533,28 +533,6 @@ class _SettingsScreenState extends State<SettingsScreen> {
       onDelete: () {
         // Add your delete account logic here
       },
-      // deleteText: "Delete Account", // optional
-      // cancelText: "Keep Account",   // optional
-    );
-  }
-
-  void _showDeleteUser() {
-    ConfirmationBottomSheet.show(
-      context: context,
-      title: "Logout?",
-      message: "Are you sure you want to logout from your account?",
-      cancelButtonText: "Cancel",
-      deleteButtonText: "Log Out",
-      onDelete: () {
-        Get.delete<ProfileController>(force: true);
-        StorageUtil.deleteData(StorageUtil.userAccessToken);
-        StorageUtil.deleteData(StorageUtil.userId);
-        StorageUtil.deleteData(StorageUtil.userRole);
-        StorageUtil.deleteData(StorageUtil.userAuthId);
-        StorageUtil.clear();
-
-        Get.offAll(() => SignInScreen());
-      },
     );
   }
 }
