@@ -506,6 +506,24 @@ class _SettingsScreenState extends State<SettingsScreen> {
     return codes[code] ?? (code.isNotEmpty ? code : 'Nigeria');
   }
 
+  void _showLogout() {
+    ConfirmationBottomSheet.show(
+      context: context,
+      title: "Logout?",
+      message: "Are you sure you want to logout?",
+      cancelButtonText: "Cancel",
+      deleteButtonText: "Log Out",
+      onDelete: () {
+        Get.delete<ProfileController>(force: true);
+        StorageUtil.deleteData(StorageUtil.userAccessToken);
+        StorageUtil.deleteData(StorageUtil.userId);
+        StorageUtil.deleteData(StorageUtil.userRole);
+        StorageUtil.clear();
+        Get.offAll(() => SignInScreen());
+      },
+    );
+  }
+
   void _showDeleteUser() {
     ConfirmationBottomSheet.show(
       context: context,

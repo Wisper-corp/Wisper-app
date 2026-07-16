@@ -1,6 +1,7 @@
 // app/modules/chat/controller/message_controller.dart
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import 'package:wisper/app/modules/chat/model/offer_model.dart';
 import 'package:wisper/app/core/others/get_storage.dart';
 import 'package:wisper/app/core/services/network_caller/network_caller.dart';
 import 'package:wisper/app/core/services/socket/socket_service.dart';

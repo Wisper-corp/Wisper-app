@@ -48,6 +48,7 @@ class Message {
     required this.isEdited,
     required this.createdAt,
     required this.isRead,
+    this.offerData,
   });
 
   final String? id;

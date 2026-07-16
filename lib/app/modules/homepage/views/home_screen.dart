@@ -191,7 +191,7 @@ class _HomeScreenState extends State<HomeScreen> {
             height: size,
             child: Stack(
               children: List.generate(count, (i) {
-                final item = avatars[i];
+                final item = avatars[i] as Map<String, dynamic>;
                 return Positioned(
                   left: i * (size - overlap).toDouble(),
                   child: Container(
