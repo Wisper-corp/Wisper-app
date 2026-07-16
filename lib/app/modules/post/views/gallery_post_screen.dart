@@ -304,7 +304,7 @@ class _GalleryPostScreenState extends State<GalleryPostScreen> {
                     maxLength:
                         maxCaptionLength, // হার্ড লিমিট (ইনপুট বন্ধ করে দেয় ৬০ এর পর)
                     maxLines: 5,
-                    hintText: 'Share your thoughts',
+                    hintText: 'Share your skill',
                     validator: ValidatorService.validateSimpleField,
                     hintStyle: TextStyle(
                       fontSize: 14.sp,
