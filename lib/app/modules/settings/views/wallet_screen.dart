@@ -5,6 +5,7 @@ import 'package:wisper/app/core/config/theme/light_theme_colors.dart';
 import 'package:wisper/app/core/others/custom_size.dart';
 import 'package:wisper/app/core/others/get_storage.dart';
 import 'package:wisper/app/core/widgets/common/custom_button.dart';
+import 'package:wisper/app/core/widgets/common/initials_avatar.dart';
 import 'package:wisper/app/modules/kyc/controller/kyc_controller.dart';
 import 'package:wisper/app/modules/kyc/views/kyc_home_screen.dart';
 import 'package:wisper/app/modules/profile/controller/buisness/buisness_controller.dart';
@@ -152,23 +153,15 @@ class _WalletScreenState extends State<WalletScreen> {
                                     ),
                                   ),
                                   SizedBox(width: 8.w),
-                                  CircleAvatar(
+                                  InitialsAvatar(
+                                    name: isPerson
+                                        ? profileController.profileData?.auth?.person?.name ?? ''
+                                        : businessController.buisnessData?.auth?.business?.name ?? '',
+                                    imageUrl: isPerson
+                                        ? profileController.profileData?.auth?.person?.image
+                                        : businessController.buisnessData?.auth?.business?.image,
                                     radius: 21.r,
-                                    backgroundImage: NetworkImage(
-                                      isPerson
-                                          ? profileController
-                                                    .profileData
-                                                    ?.auth
-                                                    ?.person
-                                                    ?.image ??
-                                                ''
-                                          : businessController
-                                                    .buisnessData
-                                                    ?.auth
-                                                    ?.business
-                                                    ?.image ??
-                                                '',
-                                    ),
+                                    fontSize: 14,
                                   ),
                                 ],
                               ),
