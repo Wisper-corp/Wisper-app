@@ -59,6 +59,7 @@ class Message {
   final bool? isEdited;
   final DateTime? createdAt;
   final bool? isRead;
+  final Map<String, dynamic>? offerData;
 
   factory Message.fromJson(Map<String, dynamic> json) {
     return Message(
@@ -71,6 +72,9 @@ class Message {
       isEdited: json["isEdited"],
       createdAt: DateTime.tryParse(json["createdAt"] ?? ""),
       isRead: json["isRead"],
+      offerData: json["offerData"] != null
+          ? Map<String, dynamic>.from(json["offerData"])
+          : null,
     );
   }
 }

@@ -194,6 +194,9 @@ class MessageController extends GetxController {
               SocketMessageKeys.createdAt:
                   msg.createdAt?.toIso8601String() ??
                   DateTime.now().toIso8601String(),
+              // Embed offer data if present (backend now returns this)
+              if (msg.offerData != null)
+                SocketMessageKeys.offerData: msg.offerData,
             };
 
             if (!messages.any(
@@ -239,21 +242,18 @@ class MessageController extends GetxController {
     };
   }
 
-  /// Inject an offer as a message at the correct position in the list
+  /// Inject or update an offer message in the chat list
   void injectOfferMessage(dynamic offer) {
-    final msgId = 'offer_${offer.id}';
-    // Remove existing entry first (in case of update)
-    messages.removeWhere((m) => m[SocketMessageKeys.id] == msgId);
-    final offerMsg = offerToMessage(offer);
-    // Insert at correct time position
-    int insertIdx = messages.indexWhere((m) {
-      final msgTime = DateTime.tryParse(m[SocketMessageKeys.createdAt] ?? '') ?? DateTime(1970);
-      return msgTime.isBefore(offer.createdAt);
+    final offerId = offer is OfferModel ? offer.id : offer['id'];
+    // Remove existing entry matching this offer
+    messages.removeWhere((m) {
+      if (m[SocketMessageKeys.id] == 'offer_$offerId') return true;
+      final existing = m[SocketMessageKeys.offerData];
+      if (existing is OfferModel) return existing.id == offerId;
+      if (existing is Map) return existing['id'] == offerId;
+      return false;
     });
-    if (insertIdx == -1) {
-      messages.insert(0, offerMsg);
-    } else {
-      messages.insert(insertIdx, offerMsg);
-    }
+    final offerMsg = offerToMessage(offer);
+    messages.insert(0, offerMsg);
   }
 }

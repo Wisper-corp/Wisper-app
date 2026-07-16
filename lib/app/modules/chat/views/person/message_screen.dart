@@ -72,16 +72,11 @@ class _ChatScreenState extends State<ChatScreen> {
   }
 
   /// Load all offers for this chat and inject them as messages
+  /// NOTE: Offers are now embedded in the message response (fileType=OFFER)
+  /// This method is kept for backward compat but does nothing to avoid duplicates
   Future<void> _loadOffers() async {
-    if (widget.chatId == null || widget.chatId!.isEmpty) return;
-    try {
-      final offers = await _offerService.getOffersByChatId(widget.chatId!);
-      for (final offer in offers) {
-        ctrl.injectOfferMessage(offer);
-      }
-    } catch (e) {
-      print('Failed to load offers: $e');
-    }
+    // No-op: offers are now returned as part of getMessages with offerData embedded
+    // Calling getOffersByChatId separately caused race conditions and duplicates
   }
 
   void _scrollListener() {
@@ -249,13 +244,50 @@ class _ChatScreenState extends State<ChatScreen> {
 
   /// Builds a Fiverr-style offer bubble aligned to sender side
   Widget _buildOfferBubble(Map<String, dynamic> msg, bool isMe) {
-    final offer = msg[SocketMessageKeys.offerData];
-    if (offer == null) return const SizedBox.shrink();
+    final rawOffer = msg[SocketMessageKeys.offerData];
     final currentUserId = StorageUtil.getData(StorageUtil.userId) ?? '';
     final time = DateFormatter(msg[SocketMessageKeys.createdAt]).getRelativeTimeFormat();
     final seen = msg['seen'] == true;
     final senderName = msg[SocketMessageKeys.senderName] ?? '';
     final senderImage = msg[SocketMessageKeys.senderImage] ?? '';
+
+    // Build OfferModel from either embedded map or existing OfferModel
+    OfferModel? offer;
+    if (rawOffer is OfferModel) {
+      offer = rawOffer;
+    } else if (rawOffer is Map<String, dynamic>) {
+      try {
+        offer = OfferModel.fromJson(rawOffer);
+      } catch (_) {}
+    }
+
+    // If no offer data yet, show a placeholder card
+    if (offer == null) {
+      return Padding(
+        padding: EdgeInsets.symmetric(vertical: 4.h, horizontal: 8.w),
+        child: Row(
+          mainAxisAlignment: isMe ? MainAxisAlignment.end : MainAxisAlignment.start,
+          children: [
+            Container(
+              width: 220.w,
+              padding: EdgeInsets.all(14.w),
+              decoration: BoxDecoration(
+                color: const Color(0xFF1C1C1E),
+                borderRadius: BorderRadius.circular(16.r),
+                border: Border.all(color: Colors.white12),
+              ),
+              child: Row(
+                children: [
+                  const Icon(Icons.receipt_long_rounded, color: Color(0xff1877F2), size: 18),
+                  SizedBox(width: 8.w),
+                  Text('Offer', style: TextStyle(color: Colors.white70, fontSize: 13.sp)),
+                ],
+              ),
+            ),
+          ],
+        ),
+      );
+    }
 
     return Padding(
       padding: EdgeInsets.symmetric(vertical: 4.h, horizontal: 8.w),
