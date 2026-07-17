@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 
 /// Displays a circular avatar with:
-/// - Network image if [imageUrl] is non-empty
-/// - Initials (first + last letter of each word) on a consistent color background otherwise
+/// - Network image if [imageUrl] is non-empty (with error fallback to initials)
+/// - Initials on a consistent color background otherwise
 class InitialsAvatar extends StatelessWidget {
   final String name;
   final String? imageUrl;
@@ -44,24 +44,11 @@ class InitialsAvatar extends StatelessWidget {
     final trimmed = name.trim();
     if (trimmed.isEmpty) return '?';
     final parts = trimmed.split(RegExp(r'\s+')).where((p) => p.isNotEmpty).toList();
-    if (parts.length == 1) {
-      return parts[0][0].toUpperCase();
-    }
+    if (parts.length == 1) return parts[0][0].toUpperCase();
     return '${parts.first[0]}${parts.last[0]}'.toUpperCase();
   }
 
-  @override
-  Widget build(BuildContext context) {
-    final hasImage = imageUrl != null && imageUrl!.isNotEmpty;
-
-    if (hasImage) {
-      return CircleAvatar(
-        radius: radius,
-        backgroundImage: NetworkImage(imageUrl!),
-        backgroundColor: Colors.grey.shade800,
-      );
-    }
-
+  Widget _initialsWidget() {
     return CircleAvatar(
       radius: radius,
       backgroundColor: _colorFromName(name),
@@ -72,6 +59,34 @@ class InitialsAvatar extends StatelessWidget {
           fontSize: fontSize,
           fontWeight: FontWeight.bold,
           letterSpacing: 0.5,
+        ),
+      ),
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final hasImage = imageUrl != null && imageUrl!.trim().isNotEmpty;
+
+    if (!hasImage) return _initialsWidget();
+
+    return ClipOval(
+      child: SizedBox(
+        width: radius * 2,
+        height: radius * 2,
+        child: Image.network(
+          imageUrl!,
+          fit: BoxFit.cover,
+          // Show initials while loading
+          loadingBuilder: (context, child, progress) {
+            if (progress == null) return child;
+            return _initialsWidget();
+          },
+          // Fall back to initials on any error
+          errorBuilder: (context, error, stackTrace) {
+            debugPrint('[InitialsAvatar] image failed: $imageUrl — $error');
+            return _initialsWidget();
+          },
         ),
       ),
     );
