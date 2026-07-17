@@ -41,20 +41,30 @@ class _HomeScreenState extends State<HomeScreen> {
       );
       if (res.isSuccess && res.responseData != null) {
         final data = res.responseData;
-        final total = data['data']?['meta']?['total'] ?? 0;
+        final meta = data['data']?['meta'];
+        final total = meta?['total'] ?? 0;
         _totalUsers.value = total is int ? total : int.tryParse(total.toString()) ?? 0;
 
         final roles = data['data']?['roles'] as List? ?? [];
-        _memberAvatars.value = roles.take(5).map<Map<String, dynamic>>((r) {
-          final person = r['auth']?['person'];
-          final business = r['auth']?['business'];
+        final parsed = roles.take(5).map<Map<String, dynamic>>((r) {
+          // API returns person directly on each auth object (not nested under auth)
+          final person = r['person'];
+          final business = r['business'];
+          final name = (person?['name'] ?? business?['name'] ?? '').toString().trim();
+          final image = (person?['image'] ?? business?['image'] ?? '').toString().trim();
           return {
-            'name': person?['name'] ?? business?['name'] ?? '?',
-            'image': person?['image'] ?? business?['image'] ?? '',
+            'name': name.isEmpty ? '?' : name,
+            'image': image,
           };
         }).toList();
+
+        if (parsed.isNotEmpty) {
+          _memberAvatars.value = parsed;
+        }
       }
-    } catch (_) {}
+    } catch (e) {
+      debugPrint('[MemberAvatars] fetch error: $e');
+    }
   }
 
   /// Format count: real users × 10 + 1000 base, rounded to nearest 100
@@ -176,10 +186,12 @@ class _HomeScreenState extends State<HomeScreen> {
     const double overlap = 16;
 
     return Obx(() {
-      final List<Map<String, dynamic>> avatars = _memberAvatars.isEmpty
-          ? List.generate(5, (i) => <String, dynamic>{'name': '?', 'image': ''})
-          : List<Map<String, dynamic>>.from(_memberAvatars);
-      final count = avatars.length;
+      final List<Map<String, dynamic>> avatars = List<Map<String, dynamic>>.from(_memberAvatars);
+      // Show placeholder circles while loading
+      final displayAvatars = avatars.isEmpty
+          ? List.generate(5, (i) => <String, dynamic>{'name': '', 'image': ''})
+          : avatars;
+      final count = displayAvatars.length;
       final memberLabel = _totalUsers.value > 0
           ? '${_formatMemberCount(_totalUsers.value)} members'
           : '1.2K members';
@@ -191,7 +203,7 @@ class _HomeScreenState extends State<HomeScreen> {
             height: size,
             child: Stack(
               children: List.generate(count, (i) {
-                final item = avatars[i] as Map<String, dynamic>;
+                final item = displayAvatars[i] as Map<String, dynamic>;
                 return Positioned(
                   left: i * (size - overlap).toDouble(),
                   child: Container(
