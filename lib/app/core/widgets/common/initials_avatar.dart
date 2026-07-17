@@ -17,19 +17,18 @@ class InitialsAvatar extends StatelessWidget {
     this.fontSize = 14,
   });
 
-  /// Generate consistent color from name
   static Color _colorFromName(String name) {
     const colors = [
-      Color(0xff1877F2), // blue
-      Color(0xff11AE46), // green
-      Color(0xff9B59B6), // purple
-      Color(0xffE74C3C), // red
-      Color(0xffF39C12), // orange
-      Color(0xff1ABC9C), // teal
-      Color(0xff2ECC71), // emerald
-      Color(0xff3498DB), // sky blue
-      Color(0xffE67E22), // carrot
-      Color(0xff8E44AD), // wisteria
+      Color(0xff1877F2),
+      Color(0xff11AE46),
+      Color(0xff9B59B6),
+      Color(0xffE74C3C),
+      Color(0xffF39C12),
+      Color(0xff1ABC9C),
+      Color(0xff2ECC71),
+      Color(0xff3498DB),
+      Color(0xffE67E22),
+      Color(0xff8E44AD),
     ];
     if (name.isEmpty) return colors[0];
     int hash = 0;
@@ -39,7 +38,6 @@ class InitialsAvatar extends StatelessWidget {
     return colors[hash.abs() % colors.length];
   }
 
-  /// Extract up to 2 initials from a name
   static String _initials(String name) {
     final trimmed = name.trim();
     if (trimmed.isEmpty) return '?';
@@ -48,45 +46,103 @@ class InitialsAvatar extends StatelessWidget {
     return '${parts.first[0]}${parts.last[0]}'.toUpperCase();
   }
 
-  Widget _initialsWidget() {
+  @override
+  Widget build(BuildContext context) {
+    final hasImage = imageUrl != null && imageUrl!.trim().isNotEmpty;
+
+    if (!hasImage) {
+      return _InitialsCircle(name: name, radius: radius, fontSize: fontSize);
+    }
+
+    return _NetworkImageAvatar(
+      imageUrl: imageUrl!,
+      name: name,
+      radius: radius,
+      fontSize: fontSize,
+    );
+  }
+}
+
+/// Stateful widget so we can swap between image and initials on error
+class _NetworkImageAvatar extends StatefulWidget {
+  final String imageUrl;
+  final String name;
+  final double radius;
+  final double fontSize;
+
+  const _NetworkImageAvatar({
+    required this.imageUrl,
+    required this.name,
+    required this.radius,
+    required this.fontSize,
+  });
+
+  @override
+  State<_NetworkImageAvatar> createState() => _NetworkImageAvatarState();
+}
+
+class _NetworkImageAvatarState extends State<_NetworkImageAvatar> {
+  bool _hasError = false;
+
+  @override
+  Widget build(BuildContext context) {
+    if (_hasError) {
+      return _InitialsCircle(
+        name: widget.name,
+        radius: widget.radius,
+        fontSize: widget.fontSize,
+      );
+    }
+
+    return CircleAvatar(
+      radius: widget.radius,
+      backgroundColor: Colors.grey.shade800,
+      child: ClipOval(
+        child: Image.network(
+          widget.imageUrl,
+          width: widget.radius * 2,
+          height: widget.radius * 2,
+          fit: BoxFit.cover,
+          errorBuilder: (context, error, stack) {
+            // Switch to initials on next frame
+            WidgetsBinding.instance.addPostFrameCallback((_) {
+              if (mounted) setState(() => _hasError = true);
+            });
+            return _InitialsCircle(
+              name: widget.name,
+              radius: widget.radius,
+              fontSize: widget.fontSize,
+            );
+          },
+        ),
+      ),
+    );
+  }
+}
+
+class _InitialsCircle extends StatelessWidget {
+  final String name;
+  final double radius;
+  final double fontSize;
+
+  const _InitialsCircle({
+    required this.name,
+    required this.radius,
+    required this.fontSize,
+  });
+
+  @override
+  Widget build(BuildContext context) {
     return CircleAvatar(
       radius: radius,
-      backgroundColor: _colorFromName(name),
+      backgroundColor: InitialsAvatar._colorFromName(name),
       child: Text(
-        _initials(name),
+        InitialsAvatar._initials(name),
         style: TextStyle(
           color: Colors.white,
           fontSize: fontSize,
           fontWeight: FontWeight.bold,
           letterSpacing: 0.5,
-        ),
-      ),
-    );
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    final hasImage = imageUrl != null && imageUrl!.trim().isNotEmpty;
-
-    if (!hasImage) return _initialsWidget();
-
-    return ClipOval(
-      child: SizedBox(
-        width: radius * 2,
-        height: radius * 2,
-        child: Image.network(
-          imageUrl!,
-          fit: BoxFit.cover,
-          // Show initials while loading
-          loadingBuilder: (context, child, progress) {
-            if (progress == null) return child;
-            return _initialsWidget();
-          },
-          // Fall back to initials on any error
-          errorBuilder: (context, error, stackTrace) {
-            debugPrint('[InitialsAvatar] image failed: $imageUrl — $error');
-            return _initialsWidget();
-          },
         ),
       ),
     );
