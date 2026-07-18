@@ -35,8 +35,9 @@ class _HomeScreenState extends State<HomeScreen> {
 
   Future<void> _fetchMemberData() async {
     try {
+      // Fetch a large batch so we can find at least 5 with real photos
       final res = await Get.find<NetworkCaller>().getRequest(
-        '${Urls.roleUrl}?limit=5',
+        '${Urls.roleUrl}?limit=50',
         accessToken: StorageUtil.getData(StorageUtil.userAccessToken),
       );
       if (res.isSuccess && res.responseData != null) {
@@ -46,20 +47,22 @@ class _HomeScreenState extends State<HomeScreen> {
         _totalUsers.value = total is int ? total : int.tryParse(total.toString()) ?? 0;
 
         final roles = data['data']?['roles'] as List? ?? [];
-        final parsed = roles.take(5).map<Map<String, dynamic>>((r) {
-          // API returns person directly on each auth object (not nested under auth)
+
+        // Only pick users who actually have a profile photo
+        final withImages = <Map<String, dynamic>>[];
+        for (final r in roles) {
           final person = r['person'];
           final business = r['business'];
           final name = (person?['name'] ?? business?['name'] ?? '').toString().trim();
           final image = (person?['image'] ?? business?['image'] ?? '').toString().trim();
-          return {
-            'name': name.isEmpty ? '?' : name,
-            'image': image,
-          };
-        }).toList();
+          if (image.isNotEmpty) {
+            withImages.add({'name': name.isEmpty ? '?' : name, 'image': image});
+            if (withImages.length == 5) break;
+          }
+        }
 
-        if (parsed.isNotEmpty) {
-          _memberAvatars.value = parsed;
+        if (withImages.isNotEmpty) {
+          _memberAvatars.value = withImages;
         }
       }
     } catch (e) {
