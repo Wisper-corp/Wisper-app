@@ -336,10 +336,11 @@ class _ChatScreenState extends State<ChatScreen> {
                 decoration: BoxDecoration(
                   color: isMe ? const Color(0xff2799EA) : const Color(0xff1E1E1E),
                   borderRadius: BorderRadius.only(
-                    topLeft: Radius.circular(16.r),
-                    topRight: isMe ? Radius.circular(0) : Radius.circular(16.r),
+                    // Match regular MessageBubble: receiver tail top-left, sender tail bottom-right
+                    topLeft: isMe ? Radius.circular(16.r) : Radius.circular(0),
+                    topRight: Radius.circular(16.r),
                     bottomLeft: Radius.circular(16.r),
-                    bottomRight: isMe ? Radius.circular(16.r) : Radius.circular(0),
+                    bottomRight: isMe ? Radius.circular(0) : Radius.circular(16.r),
                   ),
                   border: Border.all(
                     color: isMe ? Colors.transparent : Colors.white.withOpacity(0.08),
@@ -348,10 +349,10 @@ class _ChatScreenState extends State<ChatScreen> {
                 ),
                 child: ClipRRect(
                   borderRadius: BorderRadius.only(
-                    topLeft: Radius.circular(16.r),
-                    topRight: isMe ? Radius.circular(0) : Radius.circular(16.r),
+                    topLeft: isMe ? Radius.circular(16.r) : Radius.circular(0),
+                    topRight: Radius.circular(16.r),
                     bottomLeft: Radius.circular(16.r),
-                    bottomRight: isMe ? Radius.circular(16.r) : Radius.circular(0),
+                    bottomRight: isMe ? Radius.circular(0) : Radius.circular(16.r),
                   ),
                   child: OfferCard(
                     offer: offer,
