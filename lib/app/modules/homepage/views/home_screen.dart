@@ -70,9 +70,9 @@ class _HomeScreenState extends State<HomeScreen> {
     }
   }
 
-  /// Format count: real users × 10 + 1000 base, rounded to nearest 100
+  /// Format count: real users × 10 (10 signups = 100, 100 = 1K, 1000 = 10K)
   String _formatMemberCount(int realUsers) {
-    final computed = 1000 + (realUsers ~/ 100) * 1000;
+    final computed = realUsers * 10;
     if (computed >= 1000000) return '${(computed / 1000000).toStringAsFixed(1)}M';
     if (computed >= 1000) return '${(computed / 1000).toStringAsFixed(1)}K';
     return computed.toString();
@@ -197,7 +197,7 @@ class _HomeScreenState extends State<HomeScreen> {
       final count = displayAvatars.length;
       final memberLabel = _totalUsers.value > 0
           ? '${_formatMemberCount(_totalUsers.value)} members'
-          : '1.2K members';
+          : '620 members';
 
       return Row(
         children: [
