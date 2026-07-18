@@ -1,8 +1,9 @@
+import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 
 /// Displays a circular avatar with:
-/// - Network image if [imageUrl] is non-empty (with error fallback to initials)
-/// - Initials on a consistent color background otherwise
+/// - Network image via CachedNetworkImage (handles S3, Google, etc.)
+/// - Initials on a consistent color background as fallback
 class InitialsAvatar extends StatelessWidget {
   final String name;
   final String? imageUrl;
@@ -46,98 +47,12 @@ class InitialsAvatar extends StatelessWidget {
     return '${parts.first[0]}${parts.last[0]}'.toUpperCase();
   }
 
-  @override
-  Widget build(BuildContext context) {
-    final hasImage = imageUrl != null && imageUrl!.trim().isNotEmpty;
-
-    if (!hasImage) {
-      return _InitialsCircle(name: name, radius: radius, fontSize: fontSize);
-    }
-
-    return _NetworkImageAvatar(
-      imageUrl: imageUrl!,
-      name: name,
-      radius: radius,
-      fontSize: fontSize,
-    );
-  }
-}
-
-/// Stateful widget so we can swap between image and initials on error
-class _NetworkImageAvatar extends StatefulWidget {
-  final String imageUrl;
-  final String name;
-  final double radius;
-  final double fontSize;
-
-  const _NetworkImageAvatar({
-    required this.imageUrl,
-    required this.name,
-    required this.radius,
-    required this.fontSize,
-  });
-
-  @override
-  State<_NetworkImageAvatar> createState() => _NetworkImageAvatarState();
-}
-
-class _NetworkImageAvatarState extends State<_NetworkImageAvatar> {
-  bool _hasError = false;
-
-  @override
-  Widget build(BuildContext context) {
-    if (_hasError) {
-      return _InitialsCircle(
-        name: widget.name,
-        radius: widget.radius,
-        fontSize: widget.fontSize,
-      );
-    }
-
-    return CircleAvatar(
-      radius: widget.radius,
-      backgroundColor: Colors.grey.shade800,
-      child: ClipOval(
-        child: Image.network(
-          widget.imageUrl,
-          width: widget.radius * 2,
-          height: widget.radius * 2,
-          fit: BoxFit.cover,
-          errorBuilder: (context, error, stack) {
-            // Switch to initials on next frame
-            WidgetsBinding.instance.addPostFrameCallback((_) {
-              if (mounted) setState(() => _hasError = true);
-            });
-            return _InitialsCircle(
-              name: widget.name,
-              radius: widget.radius,
-              fontSize: widget.fontSize,
-            );
-          },
-        ),
-      ),
-    );
-  }
-}
-
-class _InitialsCircle extends StatelessWidget {
-  final String name;
-  final double radius;
-  final double fontSize;
-
-  const _InitialsCircle({
-    required this.name,
-    required this.radius,
-    required this.fontSize,
-  });
-
-  @override
-  Widget build(BuildContext context) {
+  Widget _initialsCircle() {
     return CircleAvatar(
       radius: radius,
-      backgroundColor: InitialsAvatar._colorFromName(name),
+      backgroundColor: _colorFromName(name),
       child: Text(
-        InitialsAvatar._initials(name),
+        _initials(name),
         style: TextStyle(
           color: Colors.white,
           fontSize: fontSize,
@@ -145,6 +60,25 @@ class _InitialsCircle extends StatelessWidget {
           letterSpacing: 0.5,
         ),
       ),
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final hasImage = imageUrl != null && imageUrl!.trim().isNotEmpty;
+
+    if (!hasImage) return _initialsCircle();
+
+    return CachedNetworkImage(
+      imageUrl: imageUrl!,
+      imageBuilder: (context, imageProvider) => CircleAvatar(
+        radius: radius,
+        backgroundImage: imageProvider,
+      ),
+      placeholder: (context, url) => _initialsCircle(),
+      errorWidget: (context, url, error) => _initialsCircle(),
+      width: radius * 2,
+      height: radius * 2,
     );
   }
 }
