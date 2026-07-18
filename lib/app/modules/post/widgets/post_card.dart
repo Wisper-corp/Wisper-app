@@ -264,11 +264,11 @@ class PostCard extends StatelessWidget {
           ),
         ],
       ),
-          // Divider spans full card width
-          const Divider(
-            color: Color(0xff2A2A2A),
-            height: 1,
-            thickness: 0.5,
+          // Divider spans full screen width (bleeds out of horizontal padding)
+          Container(
+            margin: EdgeInsets.symmetric(horizontal: -12.w),
+            height: 0.5,
+            color: const Color(0xff2A2A2A),
           ),
         ],
       ),
