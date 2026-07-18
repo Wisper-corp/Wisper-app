@@ -50,34 +50,50 @@ class _JobSectionState extends State<JobSection> {
           ),
         );
       } else {
-        print('Length: ${controller.allJobData.length}');
+        // Only show jobs that have a company logo
+        final jobsWithLogo = controller.allJobData.where((job) {
+          final logo = job.companyLogo?.trim() ?? '';
+          final bizImage = job.author?.business?.image?.trim() ?? '';
+          return logo.isNotEmpty || bizImage.isNotEmpty;
+        }).toList();
+
+        if (jobsWithLogo.isEmpty) {
+          return const SizedBox(
+            height: 500,
+            child: Center(
+              child: Text('No jobs available', style: TextStyle(fontSize: 12)),
+            ),
+          );
+        }
 
         return Expanded(
           child: ListView.builder(
             padding: EdgeInsets.all(0),
-            itemCount: controller.allJobData.length,
-
+            itemCount: jobsWithLogo.length,
             itemBuilder: (context, index) {
-              var date = controller.allJobData[index].createdAt;
+              final job = jobsWithLogo[index];
+              final logo = job.companyLogo?.trim() ?? '';
+              final bizImage = job.author?.business?.image?.trim() ?? '';
+              final resolvedLogo = logo.isNotEmpty ? logo : bizImage;
+
+              var date = job.createdAt;
               final DateFormatter formattedTime = DateFormatter(date!);
               return Padding(
                 padding: const EdgeInsets.symmetric(vertical: 8.0),
                 child: JobCard(
-                  postId: controller.allJobData[index].id,
-                  ownerImage: controller.allJobData[index].companyLogo?.isNotEmpty == true
-                      ? controller.allJobData[index].companyLogo
-                      : controller.allJobData[index].author?.business?.image ?? '',
-                  ownerName: controller.allJobData[index].companyName?.isNotEmpty == true
-                      ? controller.allJobData[index].companyName!
-                      : controller.allJobData[index].author?.business?.name ?? '',
-                  ownerDesignation: controller.allJobData[index].author?.business?.industry ?? '',
-                  jobTitle: controller.allJobData[index].title ?? '',
-                  salary: controller.allJobData[index].salary.toString(),
-                  location: controller.allJobData[index].location ?? 'Not Mentioned',
-                  jobType: controller.allJobData[index].type ?? '',
-                  locationType: controller.allJobData[index].locationType ?? '',
-                  jobDescription: controller.allJobData[index].description ?? '',
-                  shiftType: controller.allJobData[index].compensationType ?? '',
+                  postId: job.id,
+                  ownerImage: resolvedLogo,
+                  ownerName: job.companyName?.isNotEmpty == true
+                      ? job.companyName!
+                      : job.author?.business?.name ?? '',
+                  ownerDesignation: job.author?.business?.industry ?? '',
+                  jobTitle: job.title ?? '',
+                  salary: job.salary.toString(),
+                  location: job.location ?? 'Not Mentioned',
+                  jobType: job.type ?? '',
+                  locationType: job.locationType ?? '',
+                  jobDescription: job.description ?? '',
+                  shiftType: job.compensationType ?? '',
                   date: formattedTime.getRelativeTimeFormat(),
                 ),
               );
