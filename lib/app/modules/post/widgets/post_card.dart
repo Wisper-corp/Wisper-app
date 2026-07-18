@@ -60,7 +60,9 @@ class PostCard extends StatelessWidget {
 
     return Padding(
       padding: EdgeInsets.symmetric(horizontal: 12.w, vertical: 8.h),
-      child: Row(
+      child: Column(
+        children: [
+          Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           // ── Left: Avatar ─────────────────────────────────
@@ -257,13 +259,16 @@ class PostCard extends StatelessWidget {
                 ),
                 // Divider between posts
                 SizedBox(height: 12.h),
-                Divider(
-                  color: const Color(0xff2A2A2A),
-                  height: 1,
-                  thickness: 0.5,
-                ),
               ],
             ),
+          ),
+        ],
+      ),
+          // Divider spans full card width
+          const Divider(
+            color: Color(0xff2A2A2A),
+            height: 1,
+            thickness: 0.5,
           ),
         ],
       ),
