@@ -321,16 +321,25 @@ class _JobDetailsScreenState extends State<JobDetailsScreen> {
                       mainAxisAlignment: MainAxisAlignment.start,
                       crossAxisAlignment: CrossAxisAlignment.center,
                       children: [
-                        CircleAvatar(
-                          radius: 20.r,
-                          backgroundImage: job?.author?.business?.image != null
-                              ? NetworkImage(job!.author!.business!.image!)
-                              : AssetImage(Assets.images.icon01.keyName)
-                                    as ImageProvider,
-                        ),
+                        // Use companyLogo for scraped jobs, fall back to business image
+                        (() {
+                          final logoUrl = (job?.companyLogo?.isNotEmpty == true)
+                              ? job!.companyLogo!
+                              : job?.author?.business?.image ?? '';
+                          return CircleAvatar(
+                            radius: 20.r,
+                            backgroundColor: Colors.grey.shade800,
+                            backgroundImage: logoUrl.isNotEmpty
+                                ? NetworkImage(logoUrl)
+                                : AssetImage(Assets.images.icon01.keyName) as ImageProvider,
+                          );
+                        })(),
                         widthBox8,
                         Text(
-                          job?.author?.business?.name ?? '',
+                          // Use companyName for scraped jobs, fall back to business name
+                          (job?.companyName?.isNotEmpty == true)
+                              ? job!.companyName!
+                              : job?.author?.business?.name ?? '',
                           style: TextStyle(
                             fontSize: 14.sp,
                             fontWeight: FontWeight.w600,
