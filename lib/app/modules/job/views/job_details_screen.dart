@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:get/get.dart';
 import 'package:wisper/app/core/config/theme/light_theme_colors.dart';
@@ -311,12 +312,16 @@ class _JobDetailsScreenState extends State<JobDetailsScreen> {
                     ],
                   ),
                   heightBox10,
+                  // For scraped jobs: no tap (no real business profile)
+                  // For user-posted jobs: tap navigates to business profile
                   GestureDetector(
-                    onTap: () {
-                      Get.to(
-                        OthersBusinessScreen(userId: job?.author?.id ?? ''),
-                      );
-                    },
+                    onTap: (job?.isScraped == true)
+                        ? null
+                        : () {
+                            Get.to(
+                              OthersBusinessScreen(userId: job?.author?.id ?? ''),
+                            );
+                          },
                     child: Row(
                       mainAxisAlignment: MainAxisAlignment.start,
                       crossAxisAlignment: CrossAxisAlignment.center,
@@ -330,7 +335,7 @@ class _JobDetailsScreenState extends State<JobDetailsScreen> {
                             radius: 20.r,
                             backgroundColor: Colors.grey.shade800,
                             backgroundImage: logoUrl.isNotEmpty
-                                ? NetworkImage(logoUrl)
+                                ? CachedNetworkImageProvider(logoUrl)
                                 : AssetImage(Assets.images.icon01.keyName) as ImageProvider,
                           );
                         })(),

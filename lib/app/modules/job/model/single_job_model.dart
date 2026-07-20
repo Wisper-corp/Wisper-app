@@ -42,6 +42,7 @@ class JobData {
     required this.isFavorite,
     this.companyName,
     this.companyLogo,
+    this.isScraped,
   });
 
   final String? id;
@@ -66,6 +67,7 @@ class JobData {
   final bool? isFavorite;
   final String? companyName;
   final String? companyLogo;
+  final bool? isScraped;
 
   factory JobData.fromJson(Map<String, dynamic> json) {
     return JobData(
@@ -95,6 +97,7 @@ class JobData {
       isFavorite: json["isFavorite"],
       companyName: json["companyName"],
       companyLogo: json["companyLogo"],
+      isScraped: json["isScraped"] as bool?,
     );
   }
 }
