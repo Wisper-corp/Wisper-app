@@ -40,6 +40,8 @@ class JobData {
     required this.updatedAt,
     required this.author,
     required this.isFavorite,
+    this.companyName,
+    this.companyLogo,
   });
 
   final String? id;
@@ -62,6 +64,8 @@ class JobData {
   final DateTime? updatedAt;
   final Author? author;
   final bool? isFavorite;
+  final String? companyName;
+  final String? companyLogo;
 
   factory JobData.fromJson(Map<String, dynamic> json) {
     return JobData(
@@ -89,6 +93,8 @@ class JobData {
       updatedAt: DateTime.tryParse(json["updatedAt"] ?? ""),
       author: json["author"] == null ? null : Author.fromJson(json["author"]),
       isFavorite: json["isFavorite"],
+      companyName: json["companyName"],
+      companyLogo: json["companyLogo"],
     );
   }
 }
