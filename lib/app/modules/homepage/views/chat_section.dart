@@ -142,6 +142,7 @@ class ChatSection extends StatefulWidget {
                 }
               },
               isGroup: type == 'GROUP',
+              isClass: type == 'CLASS',
               imagePath: image,
               name: name,
               message: lastMessage,
