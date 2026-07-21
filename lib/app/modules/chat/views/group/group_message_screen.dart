@@ -24,6 +24,7 @@ class GroupChatScreen extends StatefulWidget {
   final String? chatId;
   final String? groupId;
   final bool showHeader; // false when embedded in Announcement tab
+  final bool showTabs;  // false when embedded in Announcement tab
 
   const GroupChatScreen({
     super.key,
@@ -32,6 +33,7 @@ class GroupChatScreen extends StatefulWidget {
     this.chatId,
     this.groupId,
     this.showHeader = true,
+    this.showTabs = true,
   });
 
   @override
@@ -325,8 +327,9 @@ class _GroupChatScreenState extends State<GroupChatScreen> {
     final content = Column(
       children: [
         if (widget.showHeader) _buildHeader(),
-        _buildTabs(),
-        if (_tabIndex == 0) ...[
+        if (widget.showTabs) _buildTabs(),
+        // When tabs hidden (Announcement embed), always show chat + input
+        if (!widget.showTabs) ...[
           _buildGeneralChat(),
           MessageInputBar(
             controller: ctrl.textController,
@@ -335,9 +338,21 @@ class _GroupChatScreenState extends State<GroupChatScreen> {
             onSend: () => ctrl.sendMessage(widget.chatId ?? ''),
           ),
         ],
-        if (_tabIndex == 1) Expanded(child: PostSection()),
-        if (_tabIndex == 2) JobSection(),
-        if (_tabIndex == 3) _buildMembers(),
+        // When tabs shown (Community group), switch between tabs
+        if (widget.showTabs) ...[
+          if (_tabIndex == 0) ...[
+            _buildGeneralChat(),
+            MessageInputBar(
+              controller: ctrl.textController,
+              chatId: widget.chatId ?? '',
+              receiverId: '',
+              onSend: () => ctrl.sendMessage(widget.chatId ?? ''),
+            ),
+          ],
+          if (_tabIndex == 1) Expanded(child: PostSection()),
+          if (_tabIndex == 2) JobSection(),
+          if (_tabIndex == 3) _buildMembers(),
+        ],
       ],
     );
 

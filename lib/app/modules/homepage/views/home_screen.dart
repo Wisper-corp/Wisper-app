@@ -184,6 +184,7 @@ class _HomeScreenState extends State<HomeScreen> {
                 groupName: 'Announcement',
                 groupImage: '',
                 showHeader: false,
+                showTabs: false,
               ),
             ),
             if (selectedIndex == 1) const PostSection(),
