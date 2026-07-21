@@ -19,20 +19,19 @@ class ChatSection extends StatefulWidget {
 }
 
  class _ChatSectionState extends State<ChatSection> {
-  final AllChatsController controller = Get.put(AllChatsController());
+  late final AllChatsController controller;
   final SocketService socketService = Get.find<SocketService>();
-
   final TextEditingController _searchController = TextEditingController();
   final RxString searchQuery = ''.obs;
 
   @override
   void initState() {
     super.initState();
-
+    // Use existing singleton — never create a new one here
+    controller = Get.find<AllChatsController>();
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      controller.getAllChats(); // Initial load
+      controller.getAllChats();
     });
-
     _searchController.addListener(() {
       searchQuery.value = _searchController.text.toLowerCase();
     });

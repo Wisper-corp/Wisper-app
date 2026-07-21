@@ -20,7 +20,7 @@ class ChatListScreen extends StatefulWidget {
 }
 
 class _ChatListScreenState extends State<ChatListScreen> {
-  final AllChatsController controller = Get.put(AllChatsController());
+  final AllChatsController controller = Get.find<AllChatsController>();
   final SocketService socketService = Get.find<SocketService>();
 
   final TextEditingController _searchController = TextEditingController();

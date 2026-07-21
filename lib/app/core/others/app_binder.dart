@@ -23,7 +23,7 @@ class ControllerBinder extends Bindings {
     Get.put(CreatePostController());
     Get.put(MyFeedPostController());
     Get.put(MyFeedJobController());
-    // Get.put(AllChatsController());
+    Get.put(AllChatsController());
     Get.put(ProfilePhotoController());
     Get.put(AllConnectionController());
     Get.put(GroupMembersController());
