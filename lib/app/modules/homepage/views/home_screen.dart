@@ -86,7 +86,7 @@ class _HomeScreenState extends State<HomeScreen> {
 
   // Tab config - Role tab hidden until 5k users
   final List<Map<String, dynamic>> _tabs = [
-    {'label': 'General Chat', 'width': 90.0},
+    {'label': 'Announcement', 'width': 110.0},
     {'label': 'Gig Market',   'width': 80.0},
     {'label': 'Jobs',         'width': 40.0},
     // Role tab hidden: {'label': 'Members', 'width': 60.0},
