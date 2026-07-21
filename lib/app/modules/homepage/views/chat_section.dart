@@ -51,26 +51,14 @@ class ChatSection extends StatefulWidget {
         final allChats = socketService.socketFriendList;
         final query = searchQuery.value;
 
-        // Keep only GENERAL chat in Announcement tab
+        // Keep only GROUP and CLASS chats (excluding the general/announcement chat)
         var groupClassChats = allChats.where((item) {
           final type = item['type']?.toString().toUpperCase();
-          return type == 'GENERAL';
+          final id = item['id']?.toString() ?? '';
+          // Exclude the general announcement chat from this list
+          if (id == _kGeneralChatId) return false;
+          return type == 'GROUP' || type == 'CLASS';
         }).toList();
-
-        // Always show the hardcoded announcement chat
-        final hasGeneral = groupClassChats.any(
-          (item) => item['type']?.toString().toUpperCase() == 'GENERAL',
-        );
-        if (!hasGeneral) {
-          groupClassChats.insert(0, {
-            'id': _kGeneralChatId,
-            'type': 'GENERAL',
-            'lastMessage': 'Tap to open announcements',
-            'latestMessageAt': '',
-            'unreadMessageCount': 0,
-            'group': {'name': 'Announcement', 'image': ''},
-          });
-        }
 
         // Apply search filter
         final filteredList = query.isEmpty
@@ -78,7 +66,7 @@ class ChatSection extends StatefulWidget {
             : groupClassChats.where((item) {
                 final type = item['type']?.toString().toUpperCase() ?? '';
                 String name = '';
-                if (type == 'GROUP' || type == 'GENERAL') {
+                if (type == 'GROUP') {
                   name = item['group']?['name']?.toString() ?? '';
                 } else if (type == 'CLASS') {
                   name = item['chatClass']?['name']?.toString() ?? '';
@@ -116,8 +104,8 @@ class ChatSection extends StatefulWidget {
             String name = 'Unknown';
             String image = Assets.images.image.keyName;
 
-            if (type == 'GROUP' || type == 'GENERAL') {
-              name = item['group']?['name'] ?? (type == 'GENERAL' ? 'Announcement' : 'Group Chat');
+            if (type == 'GROUP') {
+              name = item['group']?['name'] ?? 'Group Chat';
               image = item['group']?['image'] ?? image;
             } else if (type == 'CLASS') {
               name = item['chatClass']?['name'] ?? 'Class Chat';
@@ -133,7 +121,7 @@ class ChatSection extends StatefulWidget {
             return MemberListTile(
               isOnline: false,
               onTap: () {
-                if (type == 'GENERAL' || type == 'GROUP') {
+                if (type == 'GROUP') {
                   Get.to(
                     () => GroupChatScreen(
                       chatId: chatId,
@@ -154,7 +142,6 @@ class ChatSection extends StatefulWidget {
                 }
               },
               isGroup: type == 'GROUP',
-              isClass: type == 'CLASS',
               imagePath: image,
               name: name,
               message: lastMessage,
