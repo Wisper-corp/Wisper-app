@@ -6,13 +6,15 @@ class VideoCallPage extends StatefulWidget {
   final String name;
   final String photoUrl;
   final String appID = '7c1109dc675e47f6b2562f2dab6581bd';
-  final String chatId; // genareted token
+  final String chatId;
+  final bool isAudio; // true = voice call, false = video call
 
   const VideoCallPage({
     super.key,
     required this.name,
     required this.photoUrl,
     required this.chatId,
+    this.isAudio = false,
   });
 
   @override
@@ -137,6 +139,13 @@ class _VideoCallPageState extends State<VideoCallPage> {
 
       await agoraEngine.enableVideo();
       await agoraEngine.startPreview();
+
+      // If audio-only call, disable camera
+      if (widget.isAudio) {
+        _cameraEnabled = false;
+        await agoraEngine.enableLocalVideo(false);
+        await agoraEngine.muteLocalVideoStream(true);
+      }
 
       setState(() {
         engineLog = 'Joining channel: ${channelName}...';

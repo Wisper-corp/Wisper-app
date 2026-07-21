@@ -16,7 +16,6 @@ import 'package:wisper/app/modules/chat/controller/group/delete_group_chat_contr
 import 'package:wisper/app/modules/chat/controller/mute_chat_controller.dart';
 import 'package:wisper/app/modules/chat/controller/mute_info_controller.dart';
 import 'package:wisper/app/modules/chat/views/video_call.dart';
-import 'package:wisper/app/modules/calls/views/audio_call_screen.dart';
 import 'package:wisper/app/modules/dashboard/views/dashboard_screen.dart';
 import 'package:wisper/app/modules/post/views/my_post_section.dart';
 import 'package:wisper/app/modules/profile/views/business/others_business_screen.dart';
@@ -353,7 +352,14 @@ class _ChatHeaderState extends State<ChatHeader> {
                     CircleIconWidget(
                       imagePath: Assets.images.call.keyName,
                       onTap: () {
-                        Get.to(() => const AudioCallScreen());
+                        Get.to(
+                          () => VideoCallPage(
+                            name: widget.name ?? '',
+                            photoUrl: widget.image ?? '',
+                            chatId: widget.chatId ?? '',
+                            isAudio: true,
+                          ),
+                        );
                       },
                       radius: 15,
                     ),

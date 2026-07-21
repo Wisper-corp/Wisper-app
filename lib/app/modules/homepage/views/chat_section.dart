@@ -51,14 +51,13 @@ class ChatSection extends StatefulWidget {
         final allChats = socketService.socketFriendList;
         final query = searchQuery.value;
 
-        // Keep GROUP, CLASS, and GENERAL chats
+        // Keep only GENERAL chat in Announcement tab
         var groupClassChats = allChats.where((item) {
           final type = item['type']?.toString().toUpperCase();
-          return type == 'GROUP' || type == 'CLASS' || type == 'GENERAL';
+          return type == 'GENERAL';
         }).toList();
 
-        // If no GENERAL chat came from API, inject the hardcoded one so
-        // the Announcement tab always has something to open
+        // Always show the hardcoded announcement chat
         final hasGeneral = groupClassChats.any(
           (item) => item['type']?.toString().toUpperCase() == 'GENERAL',
         );

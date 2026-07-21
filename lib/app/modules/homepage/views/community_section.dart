@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:get/get.dart';
+import 'package:wisper/app/core/services/socket/socket_service.dart';
 import 'package:wisper/app/core/utils/show_over_loading.dart';
 import 'package:wisper/app/core/utils/snack_bar.dart';
 import 'package:wisper/app/modules/chat/controller/all_group_controller.dart';
@@ -18,6 +19,16 @@ class CommunitySection extends StatefulWidget {
 class _CommunitySectionState extends State<CommunitySection> {
   final AllGroupController controller = Get.put(AllGroupController());
   final JoinGroupController joinGroupController = JoinGroupController();
+  final SocketService socketService = Get.find<SocketService>();
+
+  /// Returns the chatId if the user has already joined this group
+  String? _joinedChatId(String? groupId) {
+    if (groupId == null) return null;
+    final joined = socketService.socketFriendList.firstWhereOrNull(
+      (item) => item['groupId'] == groupId,
+    );
+    return joined?['id'] as String?;
+  }
 
   @override
   void initState() {
@@ -94,7 +105,21 @@ class _CommunitySectionState extends State<CommunitySection> {
             return MemberListTile(
               isOnline: false,
               onTap: () {
-                joinGroup(item?.id, item?.name, item?.image);
+                final existingChatId = _joinedChatId(item?.id);
+                if (existingChatId != null) {
+                  // Already a member — go straight to the chat
+                  Get.to(
+                    () => GroupChatScreen(
+                      chatId: existingChatId,
+                      groupId: item?.id,
+                      groupName: item?.name,
+                      groupImage: item?.image,
+                    ),
+                  );
+                } else {
+                  // Not a member — join first
+                  joinGroup(item?.id, item?.name, item?.image);
+                }
               },
               isGroup: true,
               isClass: false,
