@@ -1,8 +1,10 @@
 
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
+import 'package:get/get.dart';
 import 'package:wisper/app/core/others/custom_size.dart';
 import 'package:wisper/app/core/widgets/common/custom_text_filed.dart';
+import 'package:wisper/app/modules/calls/controller/call_logs_controller.dart';
 import 'package:wisper/app/modules/calls/views/all_calls.dart';
 import 'package:wisper/app/modules/calls/views/missed_calls.dart';
 
@@ -16,8 +18,13 @@ class CallScreen extends StatefulWidget {
 
 class _CallScreenState extends State<CallScreen> {
   int selectIndex = 0;
+  late final CallLogsController _ctrl;
 
   @override
+  void initState() {
+    super.initState();
+    _ctrl = Get.put(CallLogsController());
+  }
   Widget build(BuildContext context) {
     return Scaffold(
       body: Padding(
