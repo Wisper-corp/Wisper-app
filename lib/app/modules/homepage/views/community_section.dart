@@ -4,9 +4,10 @@ import 'package:get/get.dart';
 import 'package:wisper/app/core/services/socket/socket_service.dart';
 import 'package:wisper/app/core/utils/show_over_loading.dart';
 import 'package:wisper/app/core/utils/snack_bar.dart';
+import 'package:wisper/app/core/widgets/common/initials_avatar.dart';
 import 'package:wisper/app/modules/chat/controller/all_group_controller.dart';
+import 'package:wisper/app/modules/chat/model/all_group_model.dart';
 import 'package:wisper/app/modules/chat/views/group/group_message_screen.dart';
-import 'package:wisper/app/modules/chat/widgets/member_list_title.dart';
 import 'package:wisper/app/modules/homepage/controller/join_group_controller.dart';
 
 class CommunitySection extends StatefulWidget {
@@ -33,15 +34,9 @@ class _CommunitySectionState extends State<CommunitySection> {
   @override
   void initState() {
     super.initState();
-
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      controller.getAllGroup(); // Initial load
+      controller.getAllGroup();
     });
-  }
-
-  @override
-  void dispose() {
-    super.dispose();
   }
 
   void joinGroup(String? groupId, String? groupName, String? groupImage) {
@@ -58,10 +53,7 @@ class _CommunitySectionState extends State<CommunitySection> {
     String? name,
     String? image,
   ) async {
-    final bool isSuccess = await joinGroupController.joinGroup(
-      groupId: groupId,
-    );
-
+    final bool isSuccess = await joinGroupController.joinGroup(groupId: groupId);
     if (isSuccess) {
       final groupInfoController = Get.find<AllGroupController>();
       await groupInfoController.getAllGroup();
@@ -86,8 +78,9 @@ class _CommunitySectionState extends State<CommunitySection> {
           return const Center(child: CircularProgressIndicator());
         }
 
-        if (controller.allGroupData == null ||
-            controller.allGroupData!.isEmpty) {
+        final groupData = controller.allGroupData;
+
+        if (groupData == null || groupData.isEmpty) {
           return Center(
             child: Text(
               'No communities yet',
@@ -95,44 +88,146 @@ class _CommunitySectionState extends State<CommunitySection> {
             ),
           );
         }
-        var groupData = controller.allGroupData;
-        return ListView.builder(
-          padding: const EdgeInsets.symmetric(horizontal: 10),
-          itemCount: groupData?.length,
-          itemBuilder: (context, index) {
-            final item = groupData?[index];
 
-            return MemberListTile(
-              isOnline: false,
+        return ListView.separated(
+          padding: EdgeInsets.symmetric(horizontal: 4.w, vertical: 4.h),
+          itemCount: groupData.length,
+          separatorBuilder: (_, __) => Divider(
+            color: const Color(0xff2A2A2A),
+            height: 1,
+            thickness: 0.5,
+          ),
+          itemBuilder: (context, index) {
+            final item = groupData[index];
+            return _CommunityCard(
+              item: item,
               onTap: () {
-                final existingChatId = _joinedChatId(item?.id);
+                final existingChatId = _joinedChatId(item.id);
                 if (existingChatId != null) {
-                  // Already a member — go straight to the chat
                   Get.to(
                     () => GroupChatScreen(
                       chatId: existingChatId,
-                      groupId: item?.id,
-                      groupName: item?.name,
-                      groupImage: item?.image,
+                      groupId: item.id,
+                      groupName: item.name,
+                      groupImage: item.image?.toString(),
                     ),
                   );
                 } else {
-                  // Not a member — join first
-                  joinGroup(item?.id, item?.name, item?.image);
+                  joinGroup(item.id, item.name, item.image?.toString());
                 }
               },
-              isGroup: true,
-              isClass: false,
-              imagePath: item?.image ?? '',
-              name: item?.name ?? '',
-              message: '',
-              time: '',
-              unreadMessageCount: '',
-              memberCount: 1200 + (index * 3700),
             );
           },
         );
       }),
+    );
+  }
+}
+
+class _CommunityCard extends StatelessWidget {
+  final AllGroupItemModel item;
+  final VoidCallback onTap;
+
+  const _CommunityCard({required this.item, required this.onTap});
+
+  @override
+  Widget build(BuildContext context) {
+    final memberCount = item.chat?.count?.participants ?? 0;
+    final participants = item.chat?.participants ?? [];
+
+    return GestureDetector(
+      onTap: onTap,
+      behavior: HitTestBehavior.opaque,
+      child: Padding(
+        padding: EdgeInsets.symmetric(vertical: 12.h, horizontal: 8.w),
+        child: Row(
+          crossAxisAlignment: CrossAxisAlignment.center,
+          children: [
+            // Group avatar
+            InitialsAvatar(
+              name: item.name ?? 'G',
+              imageUrl: item.image?.toString(),
+              radius: 28.r,
+              fontSize: 18,
+            ),
+            SizedBox(width: 14.w),
+
+            // Name + member count + member avatars
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    item.name ?? '',
+                    style: TextStyle(
+                      fontSize: 15.sp,
+                      fontWeight: FontWeight.w600,
+                      color: Colors.white,
+                    ),
+                  ),
+                  SizedBox(height: 3.h),
+                  Text(
+                    '$memberCount ${memberCount == 1 ? 'Member' : 'Members'}',
+                    style: TextStyle(
+                      fontSize: 12.sp,
+                      color: Colors.white54,
+                    ),
+                  ),
+                  if (participants.isNotEmpty) ...[
+                    SizedBox(height: 6.h),
+                    _MemberAvatarRow(participants: participants),
+                  ],
+                ],
+              ),
+            ),
+
+            // Chevron
+            Icon(
+              Icons.chevron_right_rounded,
+              color: Colors.white38,
+              size: 20.sp,
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _MemberAvatarRow extends StatelessWidget {
+  final List<GroupParticipant> participants;
+
+  const _MemberAvatarRow({required this.participants});
+
+  @override
+  Widget build(BuildContext context) {
+    const double size = 22;
+    const double overlap = 10;
+    final count = participants.length.clamp(0, 3);
+
+    return SizedBox(
+      height: size,
+      width: size + (count - 1) * (size - overlap),
+      child: Stack(
+        children: List.generate(count, (i) {
+          final p = participants[i];
+          return Positioned(
+            left: i * (size - overlap).toDouble(),
+            child: Container(
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                border: Border.all(color: const Color(0xff121212), width: 1.5),
+              ),
+              child: InitialsAvatar(
+                name: p.name ?? '?',
+                imageUrl: p.image,
+                radius: size / 2,
+                fontSize: 8,
+              ),
+            ),
+          );
+        }),
+      ),
     );
   }
 }
