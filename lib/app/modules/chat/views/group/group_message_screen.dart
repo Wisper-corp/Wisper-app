@@ -18,6 +18,7 @@ class GroupChatScreen extends StatefulWidget {
   final String? groupImage;
   final String? chatId;
   final String? groupId;
+  final bool showHeader; // false when embedded in Announcement tab
 
   const GroupChatScreen({
     super.key,
@@ -25,6 +26,7 @@ class GroupChatScreen extends StatefulWidget {
     this.groupImage,
     this.chatId,
     this.groupId,
+    this.showHeader = true,
   });
 
   @override
@@ -32,94 +34,100 @@ class GroupChatScreen extends StatefulWidget {
 }
 
 class _GroupChatScreenState extends State<GroupChatScreen> {
-  final MessageController ctrl = Get.put(MessageController());
+  late final MessageController ctrl;
   final SeenMessageController seenMessageController = SeenMessageController();
-  
 
   @override
   void initState() {
+    super.initState();
+    // Use a unique tag when embedded to avoid conflicts with person chat controller
+    final tag = widget.chatId ?? 'group';
+    ctrl = Get.put(MessageController(), tag: tag);
     WidgetsBinding.instance.addPostFrameCallback((_) {
       seenMessageController.seenMessage(widget.chatId!);
       ctrl.setupChat(chatId: widget.chatId);
-    }); 
-    super.initState();
+    });
+  }
+
+  @override
+  void dispose() {
+    final tag = widget.chatId ?? 'group';
+    Get.delete<MessageController>(tag: tag);
+    super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      body: Column(
-        children: [
+    // When embedded (showHeader=false), return just the Column content
+    // without a Scaffold so it fits inside the parent layout
+    final content = Column(
+      children: [
+        if (widget.showHeader)
           GroupChatHeader(
-           
             chatId: widget.chatId ?? '',
             groupName: widget.groupName ?? '',
             groupImage: widget.groupImage ?? '',
             groupId: widget.groupId ?? '',
           ),
 
-          Expanded(
-            child: Obx(() {
-              if (ctrl.isLoading.value) {
-                return const Center(child: ChatShimmerEffectWidget());
-              }
+        Expanded(
+          child: Obx(() {
+            if (ctrl.isLoading.value) {
+              return const Center(child: ChatShimmerEffectWidget());
+            }
 
-              if (ctrl.messages.isEmpty) {
-                return Center(
-                  child: EmptyGroupInfoCard(
-                    isGroup: true,
-                    name: widget.groupName ?? '',
-                    member: '5',
-                  ),
-                );
-              }
-
-              return ListView.builder(
-                reverse: true,
-                controller: ctrl.scrollController,
-                padding: EdgeInsets.all(10.r),
-                itemCount: ctrl.messages.length,
-                itemBuilder: (context, index) {
-                  final msg = ctrl.messages[index];
-                  final isMe =
-                      msg[SocketMessageKeys.senderId] == ctrl.userAuthId;
-
-                  final String senderName =
-                      msg[SocketMessageKeys.senderName] ?? 'Unknown';
-                  final String? senderImage =
-                      msg[SocketMessageKeys.senderImage];
-
-                  final imageUrl = msg[SocketMessageKeys.imageUrl] ?? "";
-                  final time = DateFormatter(
-                    msg[SocketMessageKeys.createdAt],
-                  ).getRelativeTimeFormat();
-
-                  return MessageBubble(
-                    message: msg,
-                    isMe: isMe,
-                    fileUrl:
-                        imageUrl, // পুরানো নাম রেখেছি, কিন্তু এটা এখন সব file-এর URL
-                    fileType: msg[SocketMessageKeys.fileType] ?? '',
-                    senderImage: msg[SocketMessageKeys.senderImage],
-                    senderName: msg[SocketMessageKeys.senderName],
-                    time: DateFormatter(
-                      msg[SocketMessageKeys.createdAt],
-                    ).getRelativeTimeFormat(),
-                    isGroupChat: false,
-                  );
-                },
+            if (ctrl.messages.isEmpty) {
+              return Center(
+                child: EmptyGroupInfoCard(
+                  isGroup: true,
+                  name: widget.groupName ?? '',
+                  member: '5',
+                ),
               );
-            }),
-          ),
+            }
 
-          MessageInputBar(
-            controller: ctrl.textController,
-            chatId: widget.chatId ?? '',
-            receiverId: '', // Group/class chats don't have a single receiver
-            onSend: () => ctrl.sendMessage(widget.chatId ?? ''),
-          ),
-        ],
-      ),
+            return ListView.builder(
+              reverse: true,
+              controller: ctrl.scrollController,
+              padding: EdgeInsets.all(10.r),
+              itemCount: ctrl.messages.length,
+              itemBuilder: (context, index) {
+                final msg = ctrl.messages[index];
+                final isMe =
+                    msg[SocketMessageKeys.senderId] == ctrl.userAuthId;
+
+                final imageUrl = msg[SocketMessageKeys.imageUrl] ?? "";
+
+                return MessageBubble(
+                  message: msg,
+                  isMe: isMe,
+                  fileUrl: imageUrl,
+                  fileType: msg[SocketMessageKeys.fileType] ?? '',
+                  senderImage: msg[SocketMessageKeys.senderImage],
+                  senderName: msg[SocketMessageKeys.senderName],
+                  time: DateFormatter(
+                    msg[SocketMessageKeys.createdAt],
+                  ).getRelativeTimeFormat(),
+                  isGroupChat: true,
+                );
+              },
+            );
+          }),
+        ),
+
+        MessageInputBar(
+          controller: ctrl.textController,
+          chatId: widget.chatId ?? '',
+          receiverId: '',
+          onSend: () => ctrl.sendMessage(widget.chatId ?? ''),
+        ),
+      ],
     );
+
+    if (!widget.showHeader) {
+      return content;
+    }
+
+    return Scaffold(body: content);
   }
 }

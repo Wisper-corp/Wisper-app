@@ -12,8 +12,12 @@ import 'package:wisper/app/modules/homepage/views/community_section.dart';
 import 'package:wisper/app/modules/job/views/job_section.dart';
 import 'package:wisper/app/modules/post/views/post_section.dart';
 import 'package:wisper/app/modules/homepage/views/search_screen.dart';
+import 'package:wisper/app/modules/chat/views/group/group_message_screen.dart';
 import 'package:wisper/app/urls.dart';
 import 'package:wisper/gen/assets.gen.dart';
+
+// General/Announcement chat ID (matches GENERAL_CHAT_ID in server .env)
+const String _kGeneralChatId = '7d1256e7-ad1e-4fd9-ad4b-53dec78b6cb9';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -172,8 +176,16 @@ class _HomeScreenState extends State<HomeScreen> {
             heightBox8,
 
             // 0=Announcement 1=Gig Market 2=Jobs 3=Community
-            // Role tab hidden - will re-enable at 5k users
-            if (selectedIndex == 0) const ChatSection(),
+            // Announcement tab embeds the general group chat directly
+            if (selectedIndex == 0) Expanded(
+              child: GroupChatScreen(
+                chatId: _kGeneralChatId,
+                groupId: '',
+                groupName: 'Announcement',
+                groupImage: '',
+                showHeader: false,
+              ),
+            ),
             if (selectedIndex == 1) const PostSection(),
             if (selectedIndex == 2) const JobSection(),
             if (selectedIndex == 3) const CommunitySection(),
