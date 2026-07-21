@@ -432,7 +432,7 @@ class _ProfileScreenState extends State<ProfileScreen> with WidgetsBindingObserv
               Obx(
                 () => LocationInfo(
                   location: currentCityCountry.value,
-                  date: dateFormatter.getShortDateFormat(),
+                  date: dateFormatter.getFullDateFormat(),
                 ),
               ),
 

@@ -257,13 +257,18 @@ class _OthersPersonScreenState extends State<OthersPersonScreen> {
                 child: Row(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
-                    CircleIconWidget(
-                      imagePath: Assets.images.unselectedChat.keyName,
+                    GestureDetector(
                       onTap: () =>
                           createChat(person?.id, person?.name, person?.image),
-                      radius: 15,
-                      color: LightThemeColors.blueColor,
-                      iconColor: Colors.white,
+                      child: CircleAvatar(
+                        radius: 15.r,
+                        backgroundColor: LightThemeColors.blueColor,
+                        child: Icon(
+                          Icons.message_rounded,
+                          color: Colors.white,
+                          size: 16.r,
+                        ),
+                      ),
                     ),
                     SizedBox(width: 10.w),
 
@@ -404,7 +409,7 @@ class _OthersPersonScreenState extends State<OthersPersonScreen> {
                   : DateFormatter(DateTime.now());
 
               return LocationInfo(
-                date: dateFormatter.getShortDateFormat(),
+                date: dateFormatter.getFullDateFormat(),
                 location:
                     controller.othersProfileData?.auth?.person?.address ??
                     'No Location',

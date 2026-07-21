@@ -318,7 +318,7 @@ class _OthersBusinessScreenState extends State<OthersBusinessScreen> {
               SizedBox(height: 10.h),
               LocationInfo(
                 location: business?.address ?? 'No Address',
-                date: dateFormatter.getShortDateFormat(),
+                date: dateFormatter.getFullDateFormat(),
               ),
               SizedBox(height: 20.h),
               const StraightLiner(height: 0.4, color: Color(0xff454545)),

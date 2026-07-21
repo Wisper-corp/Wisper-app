@@ -43,7 +43,7 @@ class LocationInfo extends StatelessWidget {
                   ),
                   widthBox4,
                   Text(
-                    'Created $date',
+                    'Joined $date',
                     style: TextStyle(
                       fontSize: 12.sp,
                       fontWeight: FontWeight.w400,
