@@ -8,6 +8,7 @@ import 'package:wisper/app/core/utils/date_formatter.dart';
 import 'package:wisper/app/core/widgets/common/initials_avatar.dart';
 import 'package:wisper/app/core/widgets/common/line_widget.dart';
 import 'package:wisper/app/core/widgets/shimmer/chat_shimmer.dart';
+import 'package:wisper/app/core/widgets/common/custom_button.dart';
 import 'package:wisper/app/modules/chat/controller/group/all_group_member_controller.dart';
 import 'package:wisper/app/modules/chat/controller/message_controller.dart';
 import 'package:wisper/app/modules/chat/controller/seen_message_controller.dart';
@@ -15,6 +16,7 @@ import 'package:wisper/app/modules/chat/model/message_keys.dart';
 import 'package:wisper/app/modules/chat/views/person/message_input_bar.dart';
 import 'package:wisper/app/modules/chat/widgets/empty_group_card.dart';
 import 'package:wisper/app/modules/chat/widgets/message_bubble.dart';
+import 'package:wisper/app/modules/post/views/gallery_post_screen.dart';
 import 'package:wisper/app/modules/job/views/job_section.dart';
 import 'package:wisper/app/modules/post/views/post_section.dart';
 
@@ -349,7 +351,25 @@ class _GroupChatScreenState extends State<GroupChatScreen> {
               onSend: () => ctrl.sendMessage(widget.chatId ?? ''),
             ),
           ],
-          if (_tabIndex == 1) Expanded(child: PostSection()),
+          if (_tabIndex == 1) Expanded(
+            child: Stack(
+              children: [
+                PostSection(),
+                // "Post your service" button pinned at bottom
+                Positioned(
+                  bottom: 16.h,
+                  left: 20.w,
+                  right: 20.w,
+                  child: CustomElevatedButton(
+                    title: 'Post your service',
+                    borderRadius: 50,
+                    height: 48,
+                    onPress: () => Get.to(() => const GalleryPostScreen()),
+                  ),
+                ),
+              ],
+            ),
+          ),
           if (_tabIndex == 2) JobSection(),
           if (_tabIndex == 3) _buildMembers(),
         ],
