@@ -178,43 +178,108 @@ class _GroupChatScreenState extends State<GroupChatScreen> {
   Widget _buildTabs() {
     return Column(
       children: [
-        SizedBox(
-          height: 36.h,
-          child: ListView.separated(
-            scrollDirection: Axis.horizontal,
-            padding: EdgeInsets.symmetric(horizontal: 16.w),
-            itemCount: _tabs.length,
-            separatorBuilder: (_, __) => SizedBox(width: 24.w),
-            itemBuilder: (context, i) {
-              final selected = _tabIndex == i;
-              return GestureDetector(
+        Row(
+          children: List.generate(_tabs.length, (i) {
+            final selected = _tabIndex == i;
+            return Expanded(
+              child: GestureDetector(
                 onTap: () => setState(() => _tabIndex = i),
-                child: Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    Text(
-                      _tabs[i],
-                      style: TextStyle(
-                        fontSize: 13.sp,
-                        fontWeight: FontWeight.w600,
-                        color: selected ? Colors.white : Colors.white38,
+                child: Container(
+                  padding: EdgeInsets.symmetric(vertical: 8.h),
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Text(
+                        _tabs[i],
+                        textAlign: TextAlign.center,
+                        style: TextStyle(
+                          fontSize: 13.sp,
+                          fontWeight: FontWeight.w600,
+                          color: selected ? Colors.white : Colors.white38,
+                        ),
                       ),
-                    ),
-                    SizedBox(height: 4.h),
-                    Container(
-                      height: 2,
-                      width: _tabs[i].length * 7.0,
-                      color: selected ? Colors.blue : Colors.transparent,
-                    ),
-                  ],
+                      SizedBox(height: 4.h),
+                      Container(
+                        height: 2,
+                        width: double.infinity,
+                        color: selected ? Colors.blue : Colors.transparent,
+                      ),
+                    ],
+                  ),
                 ),
-              );
-            },
-          ),
+              ),
+            );
+          }),
         ),
         StraightLiner(height: 0.4, color: const Color(0xff454545)),
       ],
     );
+  }
+
+  Widget _buildEncryptionNotice() {
+    return Container(
+      margin: EdgeInsets.only(bottom: 12.h, left: 8.w, right: 8.w),
+      padding: EdgeInsets.symmetric(horizontal: 12.w, vertical: 10.h),
+      decoration: BoxDecoration(
+        color: Colors.white.withOpacity(0.05),
+        borderRadius: BorderRadius.circular(10.r),
+      ),
+      child: Column(
+        children: [
+          Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Icon(Icons.lock_rounded, size: 12.sp, color: Colors.grey[500]),
+              SizedBox(width: 4.w),
+              Text(
+                'Messages and calls are end-to-end encrypted',
+                style: TextStyle(fontSize: 11.sp, color: Colors.grey[500]),
+              ),
+            ],
+          ),
+          SizedBox(height: 2.h),
+          Text(
+            'No one outside of this chat can read or listen to them.',
+            textAlign: TextAlign.center,
+            style: TextStyle(fontSize: 10.sp, color: Colors.grey[600]),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildDateSeparator(String text) {
+    return Align(
+      alignment: Alignment.center,
+      child: Container(
+        margin: EdgeInsets.symmetric(vertical: 12.h),
+        padding: EdgeInsets.symmetric(horizontal: 14.w, vertical: 5.h),
+        decoration: BoxDecoration(
+          color: Colors.grey.withOpacity(0.2),
+          borderRadius: BorderRadius.circular(12.r),
+        ),
+        child: Text(
+          text,
+          style: TextStyle(fontSize: 12.sp, color: Colors.grey[600]),
+        ),
+      ),
+    );
+  }
+
+  String _getDateLabel(String? dateStr) {
+    if (dateStr == null) return '';
+    final dt = DateTime.tryParse(dateStr)?.toLocal();
+    if (dt == null) return '';
+    final now = DateTime.now();
+    if (dt.year == now.year && dt.month == now.month && dt.day == now.day) {
+      return 'Today';
+    }
+    final yesterday = now.subtract(const Duration(days: 1));
+    if (dt.year == yesterday.year && dt.month == yesterday.month && dt.day == yesterday.day) {
+      return 'Yesterday';
+    }
+    const months = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+    return '${dt.day} ${months[dt.month - 1]} ${dt.year}';
   }
 
   Widget _buildGeneralChat() {
@@ -225,37 +290,78 @@ class _GroupChatScreenState extends State<GroupChatScreen> {
 
       if (ctrl.messages.isEmpty) {
         return Expanded(
-          child: Center(
-            child: EmptyGroupInfoCard(
-              isGroup: true,
-              name: widget.groupName ?? '',
-              member: '5',
-            ),
+          child: Column(
+            children: [
+              Padding(
+                padding: EdgeInsets.symmetric(horizontal: 8.w, vertical: 8.h),
+                child: _buildEncryptionNotice(),
+              ),
+              const Spacer(),
+              Center(
+                child: EmptyGroupInfoCard(
+                  isGroup: true,
+                  name: widget.groupName ?? '',
+                  member: '5',
+                ),
+              ),
+              const Spacer(),
+            ],
           ),
         );
       }
 
+      // Messages newest-first from controller — reverse to show oldest at top
+      final displayMessages = ctrl.messages.reversed.toList();
+
       return Expanded(
         child: ListView.builder(
-          reverse: true,
           controller: ctrl.scrollController,
           padding: EdgeInsets.all(10.r),
-          itemCount: ctrl.messages.length,
+          itemCount: displayMessages.length + 2, // +2 for encryption notice + date separator
           itemBuilder: (context, index) {
-            final msg = ctrl.messages[index];
+            // First item: encryption notice
+            if (index == 0) return _buildEncryptionNotice();
+
+            // Second item: date separator for first message
+            if (index == 1) {
+              final firstDate = displayMessages.isNotEmpty
+                  ? displayMessages[0][SocketMessageKeys.createdAt]
+                  : null;
+              return _buildDateSeparator(_getDateLabel(firstDate?.toString()));
+            }
+
+            final msgIndex = index - 2;
+            if (msgIndex >= displayMessages.length) return const SizedBox.shrink();
+
+            final msg = displayMessages[msgIndex];
             final isMe = msg[SocketMessageKeys.senderId] == ctrl.userAuthId;
             final imageUrl = msg[SocketMessageKeys.imageUrl] ?? "";
-            return MessageBubble(
-              message: msg,
-              isMe: isMe,
-              fileUrl: imageUrl,
-              fileType: msg[SocketMessageKeys.fileType] ?? '',
-              senderImage: msg[SocketMessageKeys.senderImage],
-              senderName: msg[SocketMessageKeys.senderName],
-              time: DateFormatter(
-                msg[SocketMessageKeys.createdAt],
-              ).getRelativeTimeFormat(),
-              isGroupChat: true,
+
+            // Show date separator when day changes
+            String? separator;
+            if (msgIndex > 0) {
+              final prevLabel = _getDateLabel(
+                  displayMessages[msgIndex - 1][SocketMessageKeys.createdAt]?.toString());
+              final curLabel = _getDateLabel(msg[SocketMessageKeys.createdAt]?.toString());
+              if (curLabel != prevLabel) separator = curLabel;
+            }
+
+            return Column(
+              children: [
+                if (separator != null) _buildDateSeparator(separator),
+                MessageBubble(
+                  message: msg,
+                  isMe: isMe,
+                  fileUrl: imageUrl,
+                  fileType: msg[SocketMessageKeys.fileType] ?? '',
+                  senderImage: msg[SocketMessageKeys.senderImage],
+                  senderName: msg[SocketMessageKeys.senderName],
+                  time: DateFormatter(
+                    msg[SocketMessageKeys.createdAt],
+                  ).getRelativeTimeFormat(),
+                  isGroupChat: true,
+                ),
+              ],
             );
           },
         ),

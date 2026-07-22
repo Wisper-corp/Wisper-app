@@ -1,176 +1,181 @@
-// import 'dart:io';
-// import 'package:flutter/material.dart';
-// import 'package:firebase_messaging/firebase_messaging.dart';
-// import 'package:flutter_local_notifications/flutter_local_notifications.dart';
+import 'dart:io';
+import 'package:firebase_messaging/firebase_messaging.dart';
+import 'package:flutter/material.dart';
+import 'package:flutter_local_notifications/flutter_local_notifications.dart';
+import 'package:get/get.dart';
+import 'package:wisper/app/core/others/get_storage.dart';
+import 'package:wisper/app/core/services/network_caller/network_caller.dart';
+import 'package:wisper/app/urls.dart';
 
+// Background handler — must be top-level
+@pragma('vm:entry-point')
+Future<void> firebaseMessagingBackgroundHandler(RemoteMessage message) async {
+  debugPrint('🔔 Background message: ${message.notification?.title}');
+}
 
-// class PushNotificationService {
-//   static final PushNotificationService _instance =
-//   PushNotificationService._internal();
-//   factory PushNotificationService() => _instance;
-//   PushNotificationService._internal();
+class PushNotificationService {
+  static final PushNotificationService _instance =
+      PushNotificationService._internal();
+  factory PushNotificationService() => _instance;
+  PushNotificationService._internal();
 
-//   final FlutterLocalNotificationsPlugin _localNotificationsPlugin =
-//   FlutterLocalNotificationsPlugin();
+  final FlutterLocalNotificationsPlugin _localNotifications =
+      FlutterLocalNotificationsPlugin();
 
-//   Future<void> init() async {
-//     // Request permission (iOS)
-//     await _requestPermission();
+  static const AndroidNotificationChannel _channel = AndroidNotificationChannel(
+    'wisper_messages',
+    'Wisper Messages',
+    description: 'Notifications for new messages on Wisper',
+    importance: Importance.high,
+    playSound: true,
+  );
 
-//     // Init local notifications
-//     await _initializeLocalNotifications();
+  Future<void> init() async {
+    // Register background handler
+    FirebaseMessaging.onBackgroundMessage(firebaseMessagingBackgroundHandler);
 
-//     // Register background handler (top-level function)
-//     FirebaseMessaging.onBackgroundMessage(
-//         _firebaseMessagingBackgroundHandler);
+    // Request permission
+    await _requestPermission();
 
-//     // Foreground notifications
-//     FirebaseMessaging.onMessage.listen((RemoteMessage message) {
-//       debugPrint("📩 Foreground: ${message.notification?.title}");
-//       _showNotification(
-//         message.notification?.title,
-//         message.notification?.body,
-//       );
-//     });
+    // Init local notifications
+    await _initLocalNotifications();
 
-//     // App opened from background (user taps notification)
-//     FirebaseMessaging.onMessageOpenedApp.listen((RemoteMessage message) {
-//       debugPrint("📲 Notification opened: ${message.notification?.title}");
-//       _showNotification(
-//         message.notification?.title,
-//         message.notification?.body,
-//       );
-//     });
+    // Foreground message handler
+    FirebaseMessaging.onMessage.listen((RemoteMessage message) {
+      debugPrint('📩 Foreground: ${message.notification?.title}');
+      _showLocalNotification(message);
+    });
 
-//     // App opened from terminated state
-//     RemoteMessage? initialMessage =
-//     await FirebaseMessaging.instance.getInitialMessage();
-//     if (initialMessage != null) {
-//       debugPrint("💀 Terminated state: ${initialMessage.notification?.title}");
-//       _showNotification(
-//         initialMessage.notification?.title,
-//         initialMessage.notification?.body,
-//       );
-//     }
+    // App opened from background notification tap
+    FirebaseMessaging.onMessageOpenedApp.listen((RemoteMessage message) {
+      debugPrint('📲 Opened from notification: ${message.notification?.title}');
+    });
 
-//     // Handle APNs + FCM token flow
-//     await _initFCMToken();
-//   }
+    // Get and save FCM token
+    await _saveFcmToken();
 
-//   Future<void> _requestPermission() async {
-//     NotificationSettings settings =
-//     await FirebaseMessaging.instance.requestPermission(
-//       alert: true,
-//       badge: true,
-//       sound: true,
-//       criticalAlert: true,
-//     );
+    // Listen for token refreshes
+    FirebaseMessaging.instance.onTokenRefresh.listen((newToken) {
+      debugPrint('🔄 FCM Token refreshed: $newToken');
+      _updateFcmTokenOnServer(newToken);
+    });
+  }
 
-//     if (settings.authorizationStatus == AuthorizationStatus.authorized) {
-//       debugPrint("✅ Permission granted");
-//     } else {
-//       debugPrint("❌ Permission denied");
-//     }
-//   }
+  Future<void> _requestPermission() async {
+    if (Platform.isAndroid) {
+      await _localNotifications
+          .resolvePlatformSpecificImplementation<
+              AndroidFlutterLocalNotificationsPlugin>()
+          ?.requestNotificationsPermission();
+    }
+    if (Platform.isIOS) {
+      await FirebaseMessaging.instance.requestPermission(
+        alert: true,
+        badge: true,
+        sound: true,
+      );
+    }
+  }
 
-//   Future<void> _initFCMToken() async {
-//     if (Platform.isIOS) {
-//       // Wait until APNs token is available
-//       String? apnsToken = await FirebaseMessaging.instance.getAPNSToken();
-//       debugPrint("📡 Current APNs token: $apnsToken");
-//       if (apnsToken == null) {
-//         debugPrint("⏳ Waiting for APNs token...");
-//         FirebaseMessaging.instance.onTokenRefresh.listen((newToken) {
-//           debugPrint("📱 iOS FCM Token (via refresh): $newToken");
-//         });
-//         return;
-//       }
-//     }
+  Future<void> _initLocalNotifications() async {
+    // Create Android notification channel
+    await _localNotifications
+        .resolvePlatformSpecificImplementation<
+            AndroidFlutterLocalNotificationsPlugin>()
+        ?.createNotificationChannel(_channel);
 
-//     // Once APNs token exists (or Android), get FCM token
-//     final fcmToken = await FirebaseMessaging.instance.getToken();
-//     debugPrint("📱 FCM Token: $fcmToken");
-//   }
+    const androidSettings =
+        AndroidInitializationSettings('@mipmap/ic_launcher');
+    const iosSettings = DarwinInitializationSettings(
+      requestAlertPermission: true,
+      requestBadgePermission: true,
+      requestSoundPermission: true,
+    );
 
-//   Future<void> _initializeLocalNotifications() async {
-//     const androidSettings = AndroidInitializationSettings('@mipmap/ic_launcher');
-//     const iosSettings = DarwinInitializationSettings();
+    await _localNotifications.initialize(
+      const InitializationSettings(
+        android: androidSettings,
+        iOS: iosSettings,
+      ),
+      onDidReceiveNotificationResponse: (response) {
+        debugPrint('🔔 Notification tapped: ${response.payload}');
+      },
+    );
 
-//     const initSettings = InitializationSettings(
-//       android: androidSettings,
-//       iOS: iosSettings,
-//     );
+    // Show foreground notifications on iOS
+    await FirebaseMessaging.instance
+        .setForegroundNotificationPresentationOptions(
+      alert: true,
+      badge: true,
+      sound: true,
+    );
+  }
 
-//     await _localNotificationsPlugin.initialize(
-//       initSettings,
-//       onDidReceiveNotificationResponse: (response) {
-//         if (response.payload != null) {
-//           debugPrint('🔔 Payload: ${response.payload}');
-//         }
-//       },
-//     );
-//   }
+  void _showLocalNotification(RemoteMessage message) {
+    final notification = message.notification;
+    if (notification == null) return;
 
-//   Future<void> _showNotification(String? title, String? body) async {
-//     const androidDetails = AndroidNotificationDetails(
-//       'default_channel_id',
-//       'Default Channel',
-//       channelDescription: 'For general notifications',
-//       importance: Importance.max,
-//       priority: Priority.high,
-//     );
+    _localNotifications.show(
+      notification.hashCode,
+      notification.title ?? 'Wisper',
+      notification.body ?? '',
+      NotificationDetails(
+        android: AndroidNotificationDetails(
+          _channel.id,
+          _channel.name,
+          channelDescription: _channel.description,
+          importance: Importance.high,
+          priority: Priority.high,
+          icon: '@mipmap/ic_launcher',
+        ),
+        iOS: const DarwinNotificationDetails(
+          presentAlert: true,
+          presentBadge: true,
+          presentSound: true,
+        ),
+      ),
+      payload: message.data['chatId'],
+    );
+  }
 
-//     const iosDetails = DarwinNotificationDetails();
+  Future<void> _saveFcmToken() async {
+    try {
+      String? token;
+      if (Platform.isIOS) {
+        // Wait for APNs token on iOS
+        token = await FirebaseMessaging.instance.getAPNSToken()
+            .timeout(const Duration(seconds: 5))
+            .catchError((_) => null);
+        if (token != null) {
+          token = await FirebaseMessaging.instance.getToken();
+        }
+      } else {
+        token = await FirebaseMessaging.instance.getToken();
+      }
 
-//     const notificationDetails = NotificationDetails(
-//       android: androidDetails,
-//       iOS: iosDetails,
-//     );
+      if (token != null) {
+        debugPrint('✅ FCM Token: ${token.substring(0, 20)}...');
+        await StorageUtil.saveFcmToken(token);
+        await _updateFcmTokenOnServer(token);
+      }
+    } catch (e) {
+      debugPrint('❌ FCM Token error: $e');
+    }
+  }
 
-//     await _localNotificationsPlugin.show(
-//       DateTime.now().millisecondsSinceEpoch ~/ 1000, // unique id
-//       title ?? 'No Title',
-//       body ?? 'No Body',
-//       notificationDetails,
-//     );
-//   }
-// }
+  Future<void> _updateFcmTokenOnServer(String token) async {
+    try {
+      final accessToken = StorageUtil.getData(StorageUtil.userAccessToken);
+      if (accessToken == null || accessToken.isEmpty) return;
 
-// // Background handler (must be a top-level function, outside the class)
-// Future<void> _firebaseMessagingBackgroundHandler(RemoteMessage message) async {
-//   WidgetsFlutterBinding.ensureInitialized();
-
-//   final flutterLocalNotificationsPlugin = FlutterLocalNotificationsPlugin();
-
-//   const androidSettings = AndroidInitializationSettings('@mipmap/ic_launcher');
-//   const iosSettings = DarwinInitializationSettings();
-
-//   const initSettings = InitializationSettings(
-//     android: androidSettings,
-//     iOS: iosSettings,
-//   ); 
-
-//   await flutterLocalNotificationsPlugin.initialize(initSettings);
-
-//   const androidDetails = AndroidNotificationDetails(
-//     'default_channel_id',
-//     'Default Channel',
-//     channelDescription: 'For general notifications',
-//     importance: Importance.max,
-//     priority: Priority.high,
-//   );
-
-//   const iosDetails = DarwinNotificationDetails();
-
-//   const notificationDetails = NotificationDetails(
-//     android: androidDetails,
-//     iOS: iosDetails,
-//   );
-
-//   await flutterLocalNotificationsPlugin.show(
-//     DateTime.now().millisecondsSinceEpoch ~/ 1000, // unique id
-//     message.notification?.title ?? "No Title",
-//     message.notification?.body ?? "No Body",
-//     notificationDetails,
-//   );
-// }
+      await Get.find<NetworkCaller>().patchRequest(
+        Urls.updateFcmTokenUrl,
+        body: {'fcmToken': token},
+        accessToken: accessToken,
+      );
+      debugPrint('✅ FCM token saved to server');
+    } catch (e) {
+      debugPrint('⚠️ Could not save FCM token to server: $e');
+    }
+  }
+}

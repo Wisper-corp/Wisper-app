@@ -70,6 +70,7 @@ dependencies:
   flutter_image_compress: ^2.4.0
   app_links: 
   firebase_messaging:
+  flutter_local_notifications: ^18.0.1
   go_router: ^17.0.1
   share_plus: ^12.0.1
   connectivity_plus: ^7.0.0

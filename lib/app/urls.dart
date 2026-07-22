@@ -35,6 +35,7 @@ class Urls {
   static const String otpVerifyUrl = '$_baseUrl/otps/verify';
   static const String resendOtpUrl = '$_baseUrl/otps/send';
   static const String signInUrl = '$_baseUrl/auths/login';
+  static const String updateFcmTokenUrl = '$_baseUrl/auths/fcm-token';
   static const String forgotPasswordUrl = '$_baseUrl/otps/send';
   static const String changePasswordUrl = '$_baseUrl/auths/change-password';
   static const String deleteAccountUrl = '$_baseUrl/auth/change-password';
