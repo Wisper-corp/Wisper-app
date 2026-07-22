@@ -54,7 +54,7 @@ class _GroupChatScreenState extends State<GroupChatScreen> {
   String? _jobLocationType;
   String _jobSearchQuery = '';
 
-  static const _tabs = ['General Chat', 'Posts', 'Jobs', 'Members'];
+  static const _tabs = ['General Chat', 'Services', 'Jobs', 'Members'];
 
   @override
   void initState() {
