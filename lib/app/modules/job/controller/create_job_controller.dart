@@ -15,17 +15,18 @@ class CreateJobController extends GetxController {
     String? locationType,
     String? title,
     String? description,
-    String? type, // FULL_TIME, PART_TIME, CONTRACT
-    String? experienceLevel, // ENTRY_LEVEL, JUNIOR, MID_LEVEL, SENIOR
-    String? compensationType, // MONTHLY, ONE_OFF
+    String? type,
+    String? experienceLevel,
+    String? compensationType,
     double? salary,
-    String? location, // REMOTE, ON_SITE, HYBRID
-    String? qualification, // BSC, HND, OND, PHD
+    String? location,
+    String? qualification,
     List<String>? requirements,
     List<String>? responsibilities,
     String? applicationType,
-    String? applicationLink, // শুধু EXTERNAL হলে দরকার
+    String? applicationLink,
     String? industry = 'Web Development',
+    String? groupId,
   }) async {
     _inProgress.value = true;
 
@@ -44,6 +45,7 @@ class CreateJobController extends GetxController {
         "requirements": requirements,
         "responsibilities": responsibilities,
         "applicationType": applicationType,
+        if (groupId != null && groupId.isNotEmpty) "groupId": groupId,
       };
       if (applicationType == 'EXTERNAL') {
         if (applicationLink != null || applicationLink != '') {

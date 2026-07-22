@@ -11,6 +11,7 @@ import 'package:wisper/app/core/widgets/shimmer/chat_shimmer.dart';
 import 'package:wisper/app/core/widgets/common/custom_button.dart';
 import 'package:wisper/app/core/widgets/common/custom_text_filed.dart';
 import 'package:wisper/app/modules/chat/controller/group/all_group_member_controller.dart';
+import 'package:wisper/app/modules/job/views/job_post_screen.dart';
 import 'package:wisper/app/modules/chat/controller/message_controller.dart';
 import 'package:wisper/app/modules/chat/controller/seen_message_controller.dart';
 import 'package:wisper/app/modules/chat/model/message_keys.dart';
@@ -512,10 +513,28 @@ class _GroupChatScreenState extends State<GroupChatScreen> {
               ),
             ),
             SizedBox(height: 8.h),
-            JobSection(
-              groupId: widget.groupId,
-              searchQuery: _jobSearchQuery.isEmpty ? null : _jobSearchQuery,
-              jobType: _jobLocationType,
+            Expanded(
+              child: Stack(
+                children: [
+                  JobSection(
+                    groupId: widget.groupId,
+                    searchQuery: _jobSearchQuery.isEmpty ? null : _jobSearchQuery,
+                    jobType: _jobLocationType,
+                  ),
+                  // Post a job button pinned at bottom
+                  Positioned(
+                    bottom: 16.h,
+                    left: 20.w,
+                    right: 20.w,
+                    child: CustomElevatedButton(
+                      title: 'Post a job',
+                      borderRadius: 50,
+                      height: 48,
+                      onPress: () => Get.to(() => JobPostScreen(groupId: widget.groupId)),
+                    ),
+                  ),
+                ],
+              ),
             ),
           ],
           if (_tabIndex == 3) _buildMembers(),
