@@ -9,6 +9,7 @@ import 'package:wisper/app/core/widgets/common/initials_avatar.dart';
 import 'package:wisper/app/core/widgets/common/line_widget.dart';
 import 'package:wisper/app/core/widgets/shimmer/chat_shimmer.dart';
 import 'package:wisper/app/core/widgets/common/custom_button.dart';
+import 'package:wisper/app/core/widgets/common/custom_text_filed.dart';
 import 'package:wisper/app/modules/chat/controller/group/all_group_member_controller.dart';
 import 'package:wisper/app/modules/chat/controller/message_controller.dart';
 import 'package:wisper/app/modules/chat/controller/seen_message_controller.dart';
@@ -48,6 +49,11 @@ class _GroupChatScreenState extends State<GroupChatScreen> {
   final GroupMembersController membersCtrl = Get.put(GroupMembersController());
   int _tabIndex = 0;
 
+  // Search & filter state for Jobs tab
+  final TextEditingController _jobSearchCtrl = TextEditingController();
+  String? _jobLocationType;
+  String _jobSearchQuery = '';
+
   static const _tabs = ['General Chat', 'Posts', 'Jobs', 'Members'];
 
   @override
@@ -66,6 +72,7 @@ class _GroupChatScreenState extends State<GroupChatScreen> {
   void dispose() {
     final tag = widget.chatId ?? 'group';
     Get.delete<MessageController>(tag: tag);
+    _jobSearchCtrl.dispose();
     super.dispose();
   }
 
@@ -369,7 +376,42 @@ class _GroupChatScreenState extends State<GroupChatScreen> {
               ],
             ),
           ),
-          if (_tabIndex == 2) JobSection(groupId: widget.groupId),
+          if (_tabIndex == 2) ...[
+            // Search bar
+            Padding(
+              padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 8.h),
+              child: CustomTextField(
+                controller: _jobSearchCtrl,
+                hintText: 'Search jobs...',
+                onChanged: (val) {
+                  setState(() => _jobSearchQuery = val ?? '');
+                },
+              ),
+            ),
+            // Location type filter dropdown
+            Padding(
+              padding: EdgeInsets.symmetric(horizontal: 16.w),
+              child: CustomTextField(
+                hintText: 'Location type',
+                value: _jobLocationType,
+                items: const [
+                  DropdownMenuItem(value: null, child: Text('Any location')),
+                  DropdownMenuItem(value: 'REMOTE', child: Text('Remote')),
+                  DropdownMenuItem(value: 'ON_SITE', child: Text('On-site')),
+                  DropdownMenuItem(value: 'HYBRID', child: Text('Hybrid')),
+                ],
+                onChanged: (String? val) {
+                  setState(() => _jobLocationType = val);
+                },
+              ),
+            ),
+            SizedBox(height: 8.h),
+            JobSection(
+              groupId: widget.groupId,
+              searchQuery: _jobSearchQuery.isEmpty ? null : _jobSearchQuery,
+              jobType: _jobLocationType,
+            ),
+          ],
           if (_tabIndex == 3) _buildMembers(),
         ],
       ],
