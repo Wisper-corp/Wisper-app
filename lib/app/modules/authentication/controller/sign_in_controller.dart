@@ -1,19 +1,19 @@
 import 'dart:io';
 
 import 'package:firebase_core/firebase_core.dart';
-import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:get/get.dart';
 import 'package:jwt_decoder/jwt_decoder.dart';
 import 'package:wisper/app/core/others/get_storage.dart';
 import 'package:wisper/app/core/services/network_caller/network_caller.dart';
 import 'package:wisper/app/core/services/network_caller/network_response.dart';
 import 'package:wisper/app/urls.dart';
+import 'package:wisper/push_notification.dart';
 
 class SignInController extends GetxController {
   String? _extractAuthIdFromJwt(Map<String, dynamic> decodedToken) {
     // Support common claim names
     final candidates = [
-      decodedToken['id'], 
+      decodedToken['id'],
       decodedToken['authId'],
       decodedToken['userId'],
       decodedToken['sub'],
@@ -40,7 +40,7 @@ class SignInController extends GetxController {
       /// 🔹 Get FCM Token
       String? fcmToken;
       try {
-        fcmToken = await FirebaseMessaging.instance.getToken();
+        fcmToken = await PushNotificationService().getToken();
       } on FirebaseException catch (e) {
         // iOS can throw until APNs token is available; sign-in should still work.
         if (e.code != 'apns-token-not-set') rethrow;

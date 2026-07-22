@@ -6,6 +6,7 @@ import 'package:flutter_callkit_incoming/entities/entities.dart';
 import 'package:flutter_callkit_incoming/flutter_callkit_incoming.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:uuid/uuid.dart';
+import 'package:wisper/app/core/others/get_storage.dart';
 
 // ─────────────────────────────────────────────────────────────
 // BACKGROUND HANDLER — top-level function (must be outside class)
@@ -117,7 +118,7 @@ Future<void> showCallkitIncoming(Map<String, dynamic> data) async {
 // ─────────────────────────────────────────────────────────────
 // PUSH NOTIFICATION SERVICE CLASS
 // ─────────────────────────────────────────────────────────────
-class PushNotificationService { 
+class PushNotificationService {
   static final PushNotificationService _instance =
       PushNotificationService._internal();
   factory PushNotificationService() => _instance;
@@ -152,7 +153,9 @@ class PushNotificationService {
       // Incoming call → callkit দেখাও (socket না থাকলে fallback হিসেবে)
       // সাধারণত app open থাকলে socket handle করবে, তবুও safeguard
       if (message.data['type'] == 'incoming_call') {
-        debugPrint('📞 Foreground call notification — socket should handle this');
+        debugPrint(
+          '📞 Foreground call notification — socket should handle this',
+        );
         // socket service handle করবে, তাই এখানে কিছু করছি না
         return;
       }
@@ -214,39 +217,43 @@ class PushNotificationService {
   }
 
   Future<void> _initFCMToken() async {
-    if (Platform.isIOS) {
-      String? apnsToken;
-      for (int i = 0; i < 3; i++) {
-        apnsToken = await FirebaseMessaging.instance.getAPNSToken();
-        if (apnsToken != null) break;
-        await Future.delayed(const Duration(seconds: 2));
-      }
-      if (apnsToken == null) {
-        debugPrint('⚠️ APNs token not available, listening for refresh...');
-        FirebaseMessaging.instance.onTokenRefresh.listen((t) {
-          debugPrint('📱 FCM Token (refresh): $t');
-          // TODO: server এ পাঠাও
-        });
-        return;
-      }
-    }
-
     try {
-      final token = await FirebaseMessaging.instance.getToken();
+      final token = await getToken();
       debugPrint('📱 FCM Token: $token');
     } catch (e) {
       debugPrint('❌ FCM token error: $e');
       return;
     }
 
-    FirebaseMessaging.instance.onTokenRefresh.listen((t) {
+    FirebaseMessaging.instance.onTokenRefresh.listen((t) async {
       debugPrint('🔄 FCM Token refreshed: $t');
-      // TODO: নতুন token backend এ পাঠাও
+      await StorageUtil.setFcmToken(t);
     });
   }
 
-  Future<String?> getToken() async {
-    return await FirebaseMessaging.instance.getToken();
+  Future<String?> getToken({
+    Duration apnsTimeout = const Duration(seconds: 12),
+  }) async {
+    if (Platform.isIOS) {
+      final deadline = DateTime.now().add(apnsTimeout);
+      while (DateTime.now().isBefore(deadline)) {
+        final apnsToken = await FirebaseMessaging.instance.getAPNSToken();
+        if (apnsToken != null && apnsToken.isNotEmpty) break;
+        await Future.delayed(const Duration(milliseconds: 500));
+      }
+
+      final apnsToken = await FirebaseMessaging.instance.getAPNSToken();
+      if (apnsToken == null || apnsToken.isEmpty) {
+        debugPrint('⚠️ APNs token not available yet');
+        return null;
+      }
+    }
+
+    final token = await FirebaseMessaging.instance.getToken();
+    if (token != null && token.isNotEmpty) {
+      await StorageUtil.setFcmToken(token);
+    }
+    return token;
   }
 
   Future<void> _initLocalNotifications() async {

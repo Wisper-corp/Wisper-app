@@ -1,6 +1,7 @@
 // ignore_for_file: prefer_final_fields, avoid_print
 
 import 'dart:convert';
+import 'dart:io';
 import 'package:get/get.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:google_sign_in/google_sign_in.dart';
@@ -13,6 +14,7 @@ import 'package:wisper/app/modules/dashboard/views/dashboard_screen.dart';
 import 'package:wisper/app/modules/profile/controller/buisness/buisness_controller.dart';
 import 'package:wisper/app/modules/profile/controller/person/profile_controller.dart';
 import 'package:wisper/app/urls.dart';
+import 'package:wisper/push_notification.dart';
 
 /// Controller to handle Google Sign-In + Firebase Authentication + Backend Verification
 class GoogleSignUpAuthController extends GetxController {
@@ -88,6 +90,7 @@ class GoogleSignUpAuthController extends GetxController {
       print('👤 Name: $name');
       print('📧 Email: $email');
 
+      final fcmToken = await PushNotificationService().getToken();
       String? newIdToken = await userCredential.user?.getIdToken(true);
       final parts = newIdToken!.split('.');
       final payload = json.decode(
@@ -100,7 +103,9 @@ class GoogleSignUpAuthController extends GetxController {
         "email": email,
         "name": name,
         "image": imageUrl,
-        "fcmToken": newIdToken,
+        "idToken": newIdToken,
+        "fcmToken": fcmToken,
+        "deviceType": Platform.isIOS ? "ios" : "android",
         "role": role, // "PERSON", "BUSINESS"
       };
 

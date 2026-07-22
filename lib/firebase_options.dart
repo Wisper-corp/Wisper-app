@@ -74,18 +74,19 @@ class DefaultFirebaseOptions {
     messagingSenderId: '667291069508',
     projectId: 'wisper-9f2ab',
     storageBucket: 'wisper-9f2ab.firebasestorage.app',
-    androidClientId: '667291069508-r7221dnl9halhnvt5g2el5ss7ber7p47.apps.googleusercontent.com',
-    iosClientId: '667291069508-tlm46s81fi7fof0cl9b2i0um6do7sues.apps.googleusercontent.com',
+    androidClientId:
+        '667291069508-r7221dnl9halhnvt5g2el5ss7ber7p47.apps.googleusercontent.com',
+    iosClientId:
+        '667291069508-tlm46s81fi7fof0cl9b2i0um6do7sues.apps.googleusercontent.com',
     iosBundleId: 'com.example.wisper',
   );
 
   static const FirebaseOptions ios = FirebaseOptions(
     apiKey: 'AIzaSyB2uz1ZgyG8VvXHcK5zv_ydPHdHa3l4a3I',
-    appId: '1:488154013426:ios:b12401ad8e544661737a6b',
+    appId: '1:488154013426:ios:d0e99e15656cee06737a6b',
     messagingSenderId: '488154013426',
     projectId: 'wisper-bab8d',
     storageBucket: 'wisper-bab8d.firebasestorage.app',
-    iosBundleId: 'com.wisperapplication.app',
+    iosBundleId: 'com.wisperuser.app.mytest',
   );
-
 }
