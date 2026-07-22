@@ -155,7 +155,7 @@ class PushNotificationService {
 
       if (token != null) {
         debugPrint('✅ FCM Token: ${token.substring(0, 20)}...');
-        await StorageUtil.saveFcmToken(token);
+        await StorageUtil.setFcmToken(token);
         await _updateFcmTokenOnServer(token);
       }
     } catch (e) {
