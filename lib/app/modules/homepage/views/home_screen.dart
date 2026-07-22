@@ -187,7 +187,7 @@ class _HomeScreenState extends State<HomeScreen> {
                 showTabs: false,
               ),
             ),
-            if (selectedIndex == 1) const PostSection(),
+            if (selectedIndex == 1) const Expanded(child: PostSection()),
             if (selectedIndex == 2) const JobSection(),
             if (selectedIndex == 3) const CommunitySection(),
             if (selectedIndex > 3) Container(),

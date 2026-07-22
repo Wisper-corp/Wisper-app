@@ -33,8 +33,7 @@ class _PostSectionState extends State<PostSection> {
 
   @override
   Widget build(BuildContext context) {
-    return Expanded(
-      child: Obx(() {
+    return Obx(() {
         if (controller.inProgress) {
           return const Center(child: PostShimmerEffectWidget());
         }
@@ -64,8 +63,7 @@ class _PostSectionState extends State<PostSection> {
             );
           },
         );
-      }),
-    );
+      });
   }
 }
 

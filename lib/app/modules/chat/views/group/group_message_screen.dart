@@ -475,7 +475,9 @@ class _GroupChatScreenState extends State<GroupChatScreen> {
           if (_tabIndex == 1) Expanded(
             child: Stack(
               children: [
-                PostSection(groupId: widget.groupId),
+                Positioned.fill(
+                  child: PostSection(groupId: widget.groupId),
+                ),
                 Positioned(
                   bottom: 16.h,
                   left: 20.w,
