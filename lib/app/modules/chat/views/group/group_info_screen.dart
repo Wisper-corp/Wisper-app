@@ -14,6 +14,8 @@ import 'package:wisper/app/core/widgets/common/circle_icon.dart';
 import 'package:wisper/app/core/widgets/common/custom_button.dart';
 import 'package:wisper/app/core/widgets/common/custom_popup.dart';
 import 'package:wisper/app/core/widgets/common/line_widget.dart';
+import 'package:flutter/services.dart';
+import 'package:share_plus/share_plus.dart';
 import 'package:wisper/app/modules/chat/controller/group/add_group_member.dart';
 import 'package:wisper/app/modules/chat/controller/all_connection_controller.dart';
 import 'package:wisper/app/modules/chat/controller/group/all_group_member_controller.dart';
@@ -229,7 +231,7 @@ class _GroupInfoScreenState extends State<GroupInfoScreen> {
                           textSize: 12,
                           title: 'Add Members',
                           onPress: () {
-                            _showConnectionInfo(widget.groupId);
+                            _showShareGroupLink(widget.groupId);
                           },
                           borderRadius: 50,
                         ),
@@ -352,6 +354,106 @@ class _GroupInfoScreenState extends State<GroupInfoScreen> {
               );
             }
           }),
+        );
+      },
+    );
+  }
+
+  void _showShareGroupLink(String? groupId) {
+    if (groupId == null) return;
+    final groupName = groupInfoController.groupInfoData?.name ?? 'Group';
+    final String inviteLink = 'https://wisperonline.com/groups/$groupId';
+
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: const Color(0xff1A1A1A),
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      builder: (ctx) {
+        return Padding(
+          padding: EdgeInsets.symmetric(horizontal: 24.w, vertical: 20.h),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              // Handle bar
+              Container(
+                width: 40.w,
+                height: 4.h,
+                decoration: BoxDecoration(
+                  color: Colors.white24,
+                  borderRadius: BorderRadius.circular(2),
+                ),
+              ),
+              SizedBox(height: 20.h),
+              Text(
+                'Sharing Link',
+                style: TextStyle(
+                  fontSize: 18.sp,
+                  fontWeight: FontWeight.w700,
+                  color: Colors.white,
+                ),
+              ),
+              SizedBox(height: 16.h),
+              // Link icon
+              Container(
+                padding: EdgeInsets.all(16.r),
+                decoration: BoxDecoration(
+                  color: const Color(0xff1877F2).withOpacity(0.15),
+                  borderRadius: BorderRadius.circular(12.r),
+                ),
+                child: Icon(
+                  Icons.link_rounded,
+                  color: const Color(0xff1877F2),
+                  size: 36.sp,
+                ),
+              ),
+              SizedBox(height: 12.h),
+              // Link text
+              Text(
+                inviteLink,
+                textAlign: TextAlign.center,
+                style: TextStyle(
+                  fontSize: 12.sp,
+                  color: Colors.white70,
+                ),
+              ),
+              SizedBox(height: 16.h),
+              // Copy button
+              SizedBox(
+                width: double.infinity,
+                height: 44.h,
+                child: CustomElevatedButton(
+                  title: 'Copy',
+                  borderRadius: 50,
+                  onPress: () {
+                    Clipboard.setData(ClipboardData(text: inviteLink));
+                    Navigator.pop(ctx);
+                    showSnackBarMessage(context, 'Link copied!', false);
+                  },
+                  color: const Color(0xff2A2A2A),
+                ),
+              ),
+              SizedBox(height: 10.h),
+              // Share via other apps
+              SizedBox(
+                width: double.infinity,
+                height: 44.h,
+                child: CustomElevatedButton(
+                  title: 'Share',
+                  borderRadius: 50,
+                  onPress: () async {
+                    Navigator.pop(ctx);
+                    await Share.share(
+                      'Join "$groupName" on Wisper: $inviteLink',
+                      subject: 'Join my group on Wisper',
+                    );
+                  },
+                ),
+              ),
+              SizedBox(height: 16.h),
+            ],
+          ),
         );
       },
     );
