@@ -8,7 +8,8 @@ import 'package:wisper/app/modules/job/widgets/job_card.dart';
 class JobSection extends StatefulWidget {
   final String? searchQuery;
   final String? jobType;
-  const JobSection({super.key, this.searchQuery, this.jobType});
+  final String? groupId;
+  const JobSection({super.key, this.searchQuery, this.jobType, this.groupId});
 
   @override 
   State<JobSection> createState() => _JobSectionState(); 
@@ -24,7 +25,10 @@ class _JobSectionState extends State<JobSection> {
       if (widget.searchQuery != null || widget.searchQuery != '') {
         controller.resetPagination();
       }
-      controller.getJobs(searchQuery: widget.searchQuery);
+      controller.getJobs(
+        searchQuery: widget.searchQuery,
+        groupId: widget.groupId,
+      );
     });
   }
 
@@ -33,7 +37,10 @@ class _JobSectionState extends State<JobSection> {
     super.didUpdateWidget(oldWidget);
     if (widget.searchQuery != oldWidget.searchQuery) {
       controller.resetPagination();
-      controller.getJobs(searchQuery: widget.searchQuery);
+      controller.getJobs(
+        searchQuery: widget.searchQuery,
+        groupId: widget.groupId,
+      );
     }
   }
 

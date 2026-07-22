@@ -354,8 +354,7 @@ class _GroupChatScreenState extends State<GroupChatScreen> {
           if (_tabIndex == 1) Expanded(
             child: Stack(
               children: [
-                PostSection(),
-                // "Post your service" button pinned at bottom
+                PostSection(groupId: widget.groupId),
                 Positioned(
                   bottom: 16.h,
                   left: 20.w,
@@ -364,13 +363,13 @@ class _GroupChatScreenState extends State<GroupChatScreen> {
                     title: 'Post your service',
                     borderRadius: 50,
                     height: 48,
-                    onPress: () => Get.to(() => const GalleryPostScreen()),
+                    onPress: () => Get.to(() => GalleryPostScreen(groupId: widget.groupId)),
                   ),
                 ),
               ],
             ),
           ),
-          if (_tabIndex == 2) JobSection(),
+          if (_tabIndex == 2) JobSection(groupId: widget.groupId),
           if (_tabIndex == 3) _buildMembers(),
         ],
       ],

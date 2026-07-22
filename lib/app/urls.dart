@@ -88,6 +88,8 @@ class Urls {
   static const String postUrl = '$_baseUrl/posts';
   static const String resumePostUrl = '$_baseUrl/resumes';
   static const String feedJobUrl = '$_baseUrl/jobs';
+  static String groupPostsUrl(String groupId) => '$_baseUrl/posts/group/$groupId';
+  static String groupJobsUrl(String groupId) => '$_baseUrl/jobs/group/$groupId';
   static const String roleUrl = '$_baseUrl/persons/roles';
   static const String myCallsUrl = '$_baseUrl/calls/my';
   static const String walletTransactionsUrl = '$_baseUrl/wallet/transactions';

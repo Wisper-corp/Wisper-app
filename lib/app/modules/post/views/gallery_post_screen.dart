@@ -22,7 +22,8 @@ import 'package:wisper/app/modules/profile/controller/person/profile_controller.
 import 'package:wisper/gen/assets.gen.dart';
 
 class GalleryPostScreen extends StatefulWidget {
-  const GalleryPostScreen({super.key});
+  final String? groupId;
+  const GalleryPostScreen({super.key, this.groupId});
 
   @override
   State<GalleryPostScreen> createState() => _GalleryPostScreenState();
@@ -119,6 +120,7 @@ class _GalleryPostScreenState extends State<GalleryPostScreen> {
       privacy: _selectedPrivacy,
       price: price,
       deliveryTime: deliveryTime,
+      groupId: widget.groupId,
     );
 
     if (isSuccess) {

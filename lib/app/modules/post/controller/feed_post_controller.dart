@@ -31,7 +31,7 @@ class AllFeedPostController extends GetxController {
     update(); // Ensure UI updates
   }
 
-  Future<bool> getAllPost({String? categoryId}) async {
+  Future<bool> getAllPost({String? categoryId, String? groupId}) async {
     if (_inProgress.value) {
       print('Fetch already in progress, skipping');
       return false;
@@ -41,16 +41,15 @@ class AllFeedPostController extends GetxController {
       print('Reached last page: $lastPage');
       _inProgress.value = false;
       update();
-      return false; // Stop if we've reached the last page
+      return false;
     }
 
     _inProgress.value = true;
     update();
 
     try {
-      // Increment page after checking lastPage
       page++;
-      print('Fetching assets for page: $page');
+      print('Fetching posts for page: $page');
 
       Map<String, dynamic> queryParams = {'limit': _limit, 'page': page};
       final effectiveCategoryId = categoryId ?? _selectedCategoryId.value;
@@ -58,10 +57,13 @@ class AllFeedPostController extends GetxController {
         queryParams['category'] = effectiveCategoryId;
       }
 
-      print('Fetching assets with params: $queryParams');
+      // Use group-specific URL if groupId provided
+      final url = (groupId != null && groupId.isNotEmpty)
+          ? Urls.groupPostsUrl(groupId)
+          : Urls.feedPostUrl;
 
       final NetworkResponse response = await networkCaller.getRequest(
-        Urls.feedPostUrl,
+        url,
         queryParams: queryParams,
         accessToken: StorageUtil.getData(StorageUtil.userAccessToken),
       );

@@ -25,6 +25,7 @@ class AllFeedJobController extends GetxController {
   Future<bool> getJobs({
   String? searchQuery,
   String? locationType,
+  String? groupId,
 }) async {
   if (_inProgress.value) {
     print('Fetch already in progress → skipping');
@@ -58,13 +59,18 @@ class AllFeedJobController extends GetxController {
       queryParams['locationType'] = locationType;
     }
 
-    print('Query params: $queryParams');
+    // Use group-specific URL if groupId provided
+    final url = (groupId != null && groupId.isNotEmpty)
+        ? Urls.groupJobsUrl(groupId)
+        : Urls.feedJobUrl;
+
+    print('Query params: $queryParams | URL: $url');
     // Optional: print full URL for debugging
     // final fullUrl = Uri.parse(Urls.feedJobUrl).replace(queryParameters: queryParams);
     // print('Full URL: $fullUrl');
 
     final response = await networkCaller.getRequest(
-      Urls.feedJobUrl,
+      url,
       queryParams: queryParams,
       accessToken: StorageUtil.getData(StorageUtil.userAccessToken),
     );

@@ -22,6 +22,7 @@ class CreatePostController extends GetxController {
     List<File>? images,
     double? price,
     String? deliveryTime,
+    String? groupId,
   }) async {
     _inProgress.value = true;
 
@@ -32,6 +33,7 @@ class CreatePostController extends GetxController {
         if (price != null) "price": price,
         "currency": CurrencyHelper.isNaira ? "NGN" : "USD",
         if (deliveryTime != null && deliveryTime.isNotEmpty) "deliveryTime": deliveryTime,
+        if (groupId != null && groupId.isNotEmpty) "groupId": groupId,
       };
       final NetworkResponse response = await Get.find<NetworkCaller>()
           .postRequest(

@@ -9,7 +9,8 @@ import 'package:wisper/app/modules/post/widgets/post_card.dart';
 import 'package:wisper/app/core/widgets/common/star_rating.dart';
 
 class PostSection extends StatefulWidget {
-  const PostSection({super.key});
+  final String? groupId;
+  const PostSection({super.key, this.groupId});
 
   @override
   State<PostSection> createState() => _PostSectionState();
@@ -22,7 +23,11 @@ class _PostSectionState extends State<PostSection> {
   void initState() {
     super.initState();
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      controller.getAllPost();
+      if (widget.groupId != null && widget.groupId!.isNotEmpty) {
+        controller.getAllPost(groupId: widget.groupId);
+      } else {
+        controller.getAllPost();
+      }
     });
   }
 
