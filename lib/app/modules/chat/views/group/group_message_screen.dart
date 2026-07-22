@@ -12,6 +12,7 @@ import 'package:wisper/app/core/widgets/common/custom_button.dart';
 import 'package:wisper/app/core/widgets/common/custom_text_filed.dart';
 import 'package:wisper/app/modules/chat/controller/group/all_group_member_controller.dart';
 import 'package:wisper/app/modules/job/views/job_post_screen.dart';
+import 'package:wisper/app/modules/chat/views/group/group_info_screen.dart';
 import 'package:wisper/app/modules/chat/controller/message_controller.dart';
 import 'package:wisper/app/modules/chat/controller/seen_message_controller.dart';
 import 'package:wisper/app/modules/chat/model/message_keys.dart';
@@ -83,16 +84,21 @@ class _GroupChatScreenState extends State<GroupChatScreen> {
       final memberCount = members.length;
       final previewMembers = members.take(3).toList();
 
-      return Container(
-        color: Colors.black,
-        padding: EdgeInsets.only(
-          top: MediaQuery.of(context).padding.top + 8.h,
-          left: 16.w,
-          right: 16.w,
-          bottom: 8.h,
-        ),
-        child: Row(
-          children: [
+      return GestureDetector(
+        onTap: () => Get.to(() => GroupInfoScreen(
+              groupId: widget.groupId ?? '',
+              chatId: widget.chatId ?? '',
+            )),
+        child: Container(
+          color: Colors.black,
+          padding: EdgeInsets.only(
+            top: MediaQuery.of(context).padding.top + 8.h,
+            left: 16.w,
+            right: 16.w,
+            bottom: 8.h,
+          ),
+          child: Row(
+            children: [
             // Back button
             GestureDetector(
               onTap: () => Navigator.pop(context),
@@ -171,6 +177,7 @@ class _GroupChatScreenState extends State<GroupChatScreen> {
               ),
             ),
           ],
+        ),
         ),
       );
     });
