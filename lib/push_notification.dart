@@ -213,9 +213,6 @@ class PushNotificationService {
       badge: true,
       sound: true,
     );
-    if (Platform.isIOS) {
-      await FirebaseMessaging.instance.registerDeviceForRemoteMessages();
-    }
     debugPrint('🔔 Permission: ${settings.authorizationStatus}');
   }
 
@@ -238,8 +235,6 @@ class PushNotificationService {
     Duration apnsTimeout = const Duration(seconds: 12),
   }) async {
     if (Platform.isIOS) {
-      await FirebaseMessaging.instance.registerDeviceForRemoteMessages();
-
       final deadline = DateTime.now().add(apnsTimeout);
       while (DateTime.now().isBefore(deadline)) {
         final apnsToken = await FirebaseMessaging.instance.getAPNSToken();
