@@ -214,9 +214,13 @@ class _CreateGroupScreenState extends State<CreateGroupScreen> {
                               });
                             },
                           ),
-                          imagePath: Assets.images.image.keyName,
-                          title: data.partner?.person?.name ?? '',
-                          subtitle: data.partner?.person?.title ?? '',
+                          imagePath: data.partner?.person?.image?.isNotEmpty == true
+                              ? data.partner!.person!.image!
+                              : data.partner?.business?.image?.isNotEmpty == true
+                                  ? data.partner!.business!.image!
+                                  : Assets.images.image.keyName,
+                          title: data.partner?.person?.name ?? data.partner?.business?.name ?? '',
+                          subtitle: data.partner?.person?.title ?? data.partner?.business?.name ?? '',
                           onTap: () {
                             setState(() {
                               if (isSelected) {

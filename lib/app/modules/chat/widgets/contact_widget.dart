@@ -1,7 +1,9 @@
+import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:wisper/app/core/config/theme/light_theme_colors.dart';
 import 'package:wisper/app/core/others/custom_size.dart';
+import 'package:wisper/app/core/widgets/common/initials_avatar.dart';
 
 class ContactWidget extends StatelessWidget {
   final String imagePath;
@@ -20,15 +22,17 @@ class ContactWidget extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final isNetworkUrl = imagePath.startsWith('http');
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children: [
         Row(
           children: [
-            CircleAvatar(
+            InitialsAvatar(
+              name: title,
+              imageUrl: isNetworkUrl ? imagePath : null,
               radius: 18,
-              backgroundImage: NetworkImage(imagePath),
-              backgroundColor: Colors.grey,
+              fontSize: 12,
             ),
             widthBox10,
             Column(
