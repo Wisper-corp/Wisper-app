@@ -49,8 +49,16 @@
                 <action android:name="android.intent.action.VIEW"/>
                 <category android:name="android.intent.category.DEFAULT"/>
                 <category android:name="android.intent.category.BROWSABLE"/>
+            </intent-filter>
 
-     
+            <!-- Production deep links: wisperonline.com -->
+            <intent-filter android:autoVerify="true">
+                <action android:name="android.intent.action.VIEW" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <category android:name="android.intent.category.BROWSABLE" />
+                <data android:scheme="https" android:host="wisperonline.com" android:pathPrefix="/persons/" />
+                <data android:scheme="https" android:host="wisperonline.com" android:pathPrefix="/businesses/" />
+                <data android:scheme="https" android:host="wisperonline.com" android:pathPrefix="/groups/" />
             </intent-filter>
 
             <!-- New: Running Deep Link (for ngrok testing) -->
@@ -58,16 +66,15 @@
                 <action android:name="android.intent.action.VIEW" />
                 <category android:name="android.intent.category.DEFAULT" />
                 <category android:name="android.intent.category.BROWSABLE" />
-
-                <!-- http scheme --> 
                 <data android:scheme="https"
                       android:host="c9f1d48ba47f.ngrok-free.app"
                       android:pathPrefix="/businesses/" />
-
-                <!-- https scheme -->
                 <data android:scheme="https"
                       android:host="c9f1d48ba47f.ngrok-free.app"
                       android:pathPrefix="/persons/" />
+                <data android:scheme="https"
+                      android:host="c9f1d48ba47f.ngrok-free.app"
+                      android:pathPrefix="/groups/" />
             </intent-filter>
 
         </activity>

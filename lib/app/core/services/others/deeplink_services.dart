@@ -58,23 +58,26 @@ class DeepLinkService extends GetxService {
       } else if (firstSegment == 'businesses' || firstSegment == 'business') {
         profileType = 'business';
         userId = uri.pathSegments[1];
+      } else if (firstSegment == 'groups' || firstSegment == 'group') {
+        profileType = 'group';
+        userId = uri.pathSegments[1];
       }
     }
 
     if (userId != null && userId.isNotEmpty && profileType != null) {
       debugPrint("Processing pending deep link → $profileType / $userId");
 
-      // ড্যাশবোর্ডে গিয়ে তারপর প্রোফাইলে যাওয়া
       Get.offAllNamed('/dashboard');
 
       if (profileType == 'person') {
         Get.toNamed('/profile/person/$userId');
       } else if (profileType == 'business') {
         Get.toNamed('/profile/business/$userId');
+      } else if (profileType == 'group') {
+        Get.toNamed('/groups/$userId');
       }
     } else {
       debugPrint("❌ Invalid deep link format: $uri");
-      // Get.snackbar('Invalid Link', 'This profile link is not supported');
     }
 
     // পরিষ্কার করে দাও

@@ -22,6 +22,7 @@ import 'package:wisper/app/modules/onboarding/views/onboarding_view.dart';
 import 'package:wisper/app/modules/onboarding/views/splash_screen.dart';
 import 'package:wisper/app/modules/profile/views/business/others_business_screen.dart';
 import 'package:wisper/app/modules/profile/views/person/others_person_screen.dart';
+import 'package:wisper/app/modules/chat/views/group/group_message_screen.dart';
 
 import 'package:smile_id/smile_id.dart';
 import 'package:wisper/firebase_options.dart';
@@ -91,6 +92,15 @@ void main() async {
                 name: '/profile/business/:id',
                 page: () => OthersBusinessScreen(
                   userId: Get.parameters['id'] ?? '',
+                ),
+              ),
+              GetPage(
+                name: '/groups/:id',
+                page: () => GroupChatScreen(
+                  groupId: Get.parameters['id'] ?? '',
+                  chatId: Get.parameters['id'] ?? '',
+                  groupName: 'Group',
+                  groupImage: '',
                 ),
               ),
               GetPage(name: '/no-internet', page: () => const NoInternetScreen()),
