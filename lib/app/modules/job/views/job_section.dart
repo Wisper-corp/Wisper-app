@@ -73,8 +73,7 @@ class _JobSectionState extends State<JobSection> {
           );
         }
 
-        return Expanded(
-          child: ListView.builder(
+        return ListView.builder(
             padding: EdgeInsets.all(0),
             itemCount: jobsWithLogo.length,
             itemBuilder: (context, index) {
@@ -105,8 +104,7 @@ class _JobSectionState extends State<JobSection> {
                 ),
               );
             },
-          ),
-        );
+          );
       }
     });
   }

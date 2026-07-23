@@ -188,7 +188,7 @@ class _HomeScreenState extends State<HomeScreen> {
               ),
             ),
             if (selectedIndex == 1) const Expanded(child: PostSection()),
-            if (selectedIndex == 2) const JobSection(),
+            if (selectedIndex == 2) const Expanded(child: JobSection()),
             if (selectedIndex == 3) const CommunitySection(),
             if (selectedIndex > 3) Container(),
           ],

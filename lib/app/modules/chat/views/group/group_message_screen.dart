@@ -48,7 +48,7 @@ class GroupChatScreen extends StatefulWidget {
 class _GroupChatScreenState extends State<GroupChatScreen> {
   late final MessageController ctrl;
   final SeenMessageController seenMessageController = SeenMessageController();
-  final GroupMembersController membersCtrl = Get.put(GroupMembersController());
+  late GroupMembersController membersCtrl;
   int _tabIndex = 0;
 
   // Search & filter state for Jobs tab
@@ -63,8 +63,12 @@ class _GroupChatScreenState extends State<GroupChatScreen> {
     super.initState();
     final tag = widget.chatId ?? 'group';
     ctrl = Get.put(MessageController(), tag: tag);
+    // Use unique tag for members controller too
+    membersCtrl = Get.put(GroupMembersController(), tag: 'members_$tag');
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      seenMessageController.seenMessage(widget.chatId!);
+      if (widget.chatId != null) {
+        seenMessageController.seenMessage(widget.chatId!);
+      }
       ctrl.setupChat(chatId: widget.chatId);
       membersCtrl.getGroupMembers(widget.groupId);
     });
@@ -73,7 +77,8 @@ class _GroupChatScreenState extends State<GroupChatScreen> {
   @override
   void dispose() {
     final tag = widget.chatId ?? 'group';
-    Get.delete<MessageController>(tag: tag);
+    Get.delete<MessageController>(tag: tag, force: true);
+    Get.delete<GroupMembersController>(tag: 'members_$tag', force: true);
     _jobSearchCtrl.dispose();
     super.dispose();
   }
@@ -492,60 +497,65 @@ class _GroupChatScreenState extends State<GroupChatScreen> {
               ],
             ),
           ),
-          if (_tabIndex == 2) ...[
-            // Search bar
-            Padding(
-              padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 8.h),
-              child: CustomTextField(
-                controller: _jobSearchCtrl,
-                hintText: 'Search jobs...',
-                onChanged: (val) {
-                  setState(() => _jobSearchQuery = val ?? '');
-                },
-              ),
-            ),
-            // Location type filter dropdown
-            Padding(
-              padding: EdgeInsets.symmetric(horizontal: 16.w),
-              child: CustomTextField(
-                hintText: 'Location type',
-                value: _jobLocationType,
-                items: const [
-                  DropdownMenuItem(value: null, child: Text('Any location')),
-                  DropdownMenuItem(value: 'REMOTE', child: Text('Remote')),
-                  DropdownMenuItem(value: 'ON_SITE', child: Text('On-site')),
-                  DropdownMenuItem(value: 'HYBRID', child: Text('Hybrid')),
-                ],
-                onChanged: (String? val) {
-                  setState(() => _jobLocationType = val);
-                },
-              ),
-            ),
-            SizedBox(height: 8.h),
-            Expanded(
-              child: Stack(
-                children: [
-                  JobSection(
-                    groupId: widget.groupId,
-                    searchQuery: _jobSearchQuery.isEmpty ? null : _jobSearchQuery,
-                    jobType: _jobLocationType,
+          if (_tabIndex == 2) Expanded(
+            child: Column(
+              children: [
+                // Search bar
+                Padding(
+                  padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 8.h),
+                  child: CustomTextField(
+                    controller: _jobSearchCtrl,
+                    hintText: 'Search jobs...',
+                    onChanged: (val) {
+                      setState(() => _jobSearchQuery = val ?? '');
+                    },
                   ),
-                  // Post a job button pinned at bottom
-                  Positioned(
-                    bottom: 16.h,
-                    left: 20.w,
-                    right: 20.w,
-                    child: CustomElevatedButton(
-                      title: 'Post a job',
-                      borderRadius: 50,
-                      height: 48,
-                      onPress: () => Get.to(() => JobPostScreen(groupId: widget.groupId)),
-                    ),
+                ),
+                // Location type filter dropdown
+                Padding(
+                  padding: EdgeInsets.symmetric(horizontal: 16.w),
+                  child: CustomTextField(
+                    hintText: 'Location type',
+                    value: _jobLocationType,
+                    items: const [
+                      DropdownMenuItem(value: null, child: Text('Any location')),
+                      DropdownMenuItem(value: 'REMOTE', child: Text('Remote')),
+                      DropdownMenuItem(value: 'ON_SITE', child: Text('On-site')),
+                      DropdownMenuItem(value: 'HYBRID', child: Text('Hybrid')),
+                    ],
+                    onChanged: (String? val) {
+                      setState(() => _jobLocationType = val);
+                    },
                   ),
-                ],
-              ),
+                ),
+                SizedBox(height: 8.h),
+                Expanded(
+                  child: Stack(
+                    children: [
+                      Positioned.fill(
+                        child: JobSection(
+                          groupId: widget.groupId,
+                          searchQuery: _jobSearchQuery.isEmpty ? null : _jobSearchQuery,
+                          jobType: _jobLocationType,
+                        ),
+                      ),
+                      Positioned(
+                        bottom: 16.h,
+                        left: 20.w,
+                        right: 20.w,
+                        child: CustomElevatedButton(
+                          title: 'Post a job',
+                          borderRadius: 50,
+                          height: 48,
+                          onPress: () => Get.to(() => JobPostScreen(groupId: widget.groupId)),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
             ),
-          ],
+          ),
           if (_tabIndex == 3) _buildMembers(),
         ],
       ],
