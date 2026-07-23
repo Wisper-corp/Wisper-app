@@ -21,6 +21,7 @@ class SignInController extends GetxController {
         "email": email,
         "password": password,
         "isMobileApp": true,
+        "fcmToken": StorageUtil.getFcmToken() ?? '',
       };
       final NetworkResponse response = await Get.find<NetworkCaller>()
           .postRequest(Urls.signInUrl, body: body);

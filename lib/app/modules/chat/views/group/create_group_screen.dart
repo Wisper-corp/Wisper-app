@@ -240,12 +240,7 @@ class _CreateGroupScreenState extends State<CreateGroupScreen> {
   }
 
   void _showCreateGroup() {
-    showModalBottomSheet(
-      context: context,
-      isScrollControlled: true,
-      builder: (BuildContext context) {
-        return CreateGroupButtomSheet(selectedMemberIds: selectedMemberIds);
-      },
-    );
+    // Navigate to full screen instead of bottom sheet
+    Get.to(() => CreateGroupButtomSheet(selectedMemberIds: selectedMemberIds));
   }
 }
