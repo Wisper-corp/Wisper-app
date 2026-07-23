@@ -66,13 +66,12 @@ class _JobPostScreenState extends State<JobPostScreen> {
     final salaryText = _salaryC.text.trim();
     final salary = double.tryParse(salaryText) ?? 0;
 
+    // Only require title, description and salary — requirements/responsibilities are optional
     final newValidState =
         title.isNotEmpty &&
         desc.isNotEmpty &&
         salaryText.isNotEmpty &&
-        salary > 0 &&
-        requirements.isNotEmpty &&
-        responsibilities.isNotEmpty;
+        salary > 0;
 
     if (newValidState != isFormValid) {
       setState(() {
