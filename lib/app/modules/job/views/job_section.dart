@@ -66,14 +66,17 @@ class _JobSectionState extends State<JobSection> {
           ),
         );
       } else {
-        // Only show jobs that have a company logo
-        final jobsWithLogo = controller.allJobData.where((job) {
-          final logo = job.companyLogo?.trim() ?? '';
-          final bizImage = job.author?.business?.image?.trim() ?? '';
-          return logo.isNotEmpty || bizImage.isNotEmpty;
-        }).toList();
+        // For group jobs — show ALL jobs (no logo filter)
+        // For global feed — only show scraped jobs with logos
+        final jobsToShow = (widget.groupId != null && widget.groupId!.isNotEmpty)
+            ? controller.allJobData.toList()
+            : controller.allJobData.where((job) {
+                final logo = job.companyLogo?.trim() ?? '';
+                final bizImage = job.author?.business?.image?.trim() ?? '';
+                return logo.isNotEmpty || bizImage.isNotEmpty;
+              }).toList();
 
-        if (jobsWithLogo.isEmpty) {
+        if (jobsToShow.isEmpty) {
           return const SizedBox.expand(
             child: Center(
               child: Text('No jobs available', style: TextStyle(fontSize: 12)),
@@ -83,9 +86,9 @@ class _JobSectionState extends State<JobSection> {
 
         return ListView.builder(
             padding: EdgeInsets.all(0),
-            itemCount: jobsWithLogo.length,
+            itemCount: jobsToShow.length,
             itemBuilder: (context, index) {
-              final job = jobsWithLogo[index];
+              final job = jobsToShow[index];
               final logo = job.companyLogo?.trim() ?? '';
               final bizImage = job.author?.business?.image?.trim() ?? '';
               final resolvedLogo = logo.isNotEmpty ? logo : bizImage;
