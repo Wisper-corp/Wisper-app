@@ -180,21 +180,75 @@ class _VideoCallPageState extends State<VideoCallPage> {
   }
 
   Future<bool> _ensurePermissions() async {
-    final statuses = await [
-      Permission.microphone,
-      Permission.camera,
-    ].request();
+    var micStatus = await Permission.microphone.status;
+    var camStatus = await Permission.camera.status;
 
-    final micOk = statuses[Permission.microphone]?.isGranted ?? false;
-    final camOk = statuses[Permission.camera]?.isGranted ?? false;
-    if (!micOk || !camOk) {
-      Get.snackbar(
-        'Permission Required',
-        'Camera and Microphone permissions are needed.',
+    if (micStatus.isGranted && camStatus.isGranted) return true;
+
+    final permissionsToRequest = <Permission>[];
+    if (!micStatus.isGranted &&
+        !micStatus.isPermanentlyDenied &&
+        !micStatus.isRestricted) {
+      permissionsToRequest.add(Permission.microphone);
+    }
+    if (!camStatus.isGranted &&
+        !camStatus.isPermanentlyDenied &&
+        !camStatus.isRestricted) {
+      permissionsToRequest.add(Permission.camera);
+    }
+
+    if (permissionsToRequest.isNotEmpty) {
+      final statuses = await permissionsToRequest.request();
+      micStatus = statuses[Permission.microphone] ?? micStatus;
+      camStatus = statuses[Permission.camera] ?? camStatus;
+      if (micStatus.isGranted && camStatus.isGranted) return true;
+    }
+
+    if (micStatus.isPermanentlyDenied ||
+        micStatus.isRestricted ||
+        camStatus.isPermanentlyDenied ||
+        camStatus.isRestricted) {
+      await _showPermissionSettingsDialog(
+        title: 'Camera and Microphone Required',
+        message:
+            'Please enable camera and microphone permissions from Settings to make video calls.',
       );
       return false;
     }
-    return true;
+
+    Get.snackbar(
+      'Permission Required',
+      'Camera and Microphone permissions are needed.',
+    );
+    return false;
+  }
+
+  Future<void> _showPermissionSettingsDialog({
+    required String title,
+    required String message,
+  }) async {
+    if (!mounted) return;
+
+    await showDialog<void>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: Text(title),
+        content: Text(message),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(),
+            child: const Text('Cancel'),
+          ),
+          TextButton(
+            onPressed: () async {
+              Navigator.of(context).pop();
+              await openAppSettings();
+            },
+            child: const Text('Open Settings'),
+          ),
+        ],
+      ),
+    );
   }
 
   Future<void> ringtone() async {

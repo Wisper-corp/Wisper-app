@@ -186,21 +186,61 @@ class _AudioCallPageState extends State<AudioCallPage> {
   // }
 
   Future<bool> _ensurePermissions() async {
-    final micStatus = await Permission.microphone.request();
-    if (!micStatus.isGranted) {
-      // ✅ সমাধান: Get.snackbar এর বদলে Flutter এর নিজস্ব ScaffoldMessenger ব্যবহার করা হয়েছে
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Microphone permission is needed for audio calls.'),
-            backgroundColor: Colors.redAccent,
-            duration: Duration(seconds: 3),
-          ),
-        );
-      }
+    var micStatus = await Permission.microphone.status;
+    if (micStatus.isGranted) return true;
+
+    if (!micStatus.isPermanentlyDenied && !micStatus.isRestricted) {
+      micStatus = await Permission.microphone.request();
+      if (micStatus.isGranted) return true;
+    }
+
+    if (micStatus.isPermanentlyDenied || micStatus.isRestricted) {
+      await _showPermissionSettingsDialog(
+        title: 'Microphone Permission Required',
+        message:
+            'Please enable microphone permission from Settings to make audio calls.',
+      );
       return false;
     }
-    return true;
+
+    if (mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Microphone permission is needed for audio calls.'),
+          backgroundColor: Colors.redAccent,
+          duration: Duration(seconds: 3),
+        ),
+      );
+    }
+    return false;
+  }
+
+  Future<void> _showPermissionSettingsDialog({
+    required String title,
+    required String message,
+  }) async {
+    if (!mounted) return;
+
+    await showDialog<void>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: Text(title),
+        content: Text(message),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(),
+            child: const Text('Cancel'),
+          ),
+          TextButton(
+            onPressed: () async {
+              Navigator.of(context).pop();
+              await openAppSettings();
+            },
+            child: const Text('Open Settings'),
+          ),
+        ],
+      ),
+    );
   }
 
   Future<void> ringtone() async {
