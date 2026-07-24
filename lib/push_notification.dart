@@ -194,18 +194,29 @@ class PushNotificationService {
 
   // ── iOS VoIP token নাও ──
   Future<void> _initVoipToken() async {
+    final voipToken = await getVoipToken();
+    if (voipToken != null && voipToken.isNotEmpty) {
+      onVoipToken?.call(voipToken);
+    }
+  }
+
+  Future<String?> getVoipToken() async {
+    if (!Platform.isIOS) return null;
+
     try {
       final voipToken = await FlutterCallkitIncoming.getDevicePushTokenVoIP();
       if (voipToken != null && voipToken.isNotEmpty) {
         debugPrint('📱 VoIP Token: $voipToken');
         await StorageUtil.setVoipToken(voipToken);
-        onVoipToken?.call(voipToken);
+        return voipToken;
       } else {
         debugPrint('⚠️ VoIP token empty, will retry on refresh');
       }
     } catch (e) {
       debugPrint('❌ VoIP token error: $e');
     }
+
+    return StorageUtil.getVoipToken();
   }
 
   Future<void> _requestPermission() async {

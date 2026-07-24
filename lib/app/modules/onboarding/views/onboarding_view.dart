@@ -1,5 +1,7 @@
 // ignore_for_file: unused_field
 
+import 'dart:io';
+
 import 'package:crash_safe_image/crash_safe_image.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
@@ -137,29 +139,31 @@ class _OnboardingViewState extends State<OnboardingView> {
                     activeDotColor: LightThemeColors.blueColor,
                   ),
                 ),
-                heightBox40, // Reduced from heightBox50 to minimize gap
-                Text(
-                  "Sign Up With",
-                  style: TextStyle(
-                    color: const Color(0xff8C8C8C),
-                    fontSize: 16.sp,
-                  ),
-                ),
-                heightBox10,
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    GestureDetector(
-                      onTap: signInGoogle,
-                      child: CrashSafeImage(
-                        Assets.images.gmail.keyName,
-                        height: 30.h,
-                      ),
+                if (Platform.isAndroid) ...[
+                  heightBox40, // Reduced from heightBox50 to minimize gap
+                  Text(
+                    "Sign Up With",
+                    style: TextStyle(
+                      color: const Color(0xff8C8C8C),
+                      fontSize: 16.sp,
                     ),
-                    // widthBox14,
-                    // CrashSafeImage(Assets.images.facebook.keyName, height: 30.h),
-                  ],
-                ),
+                  ),
+                  heightBox10,
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      GestureDetector(
+                        onTap: signInGoogle,
+                        child: CrashSafeImage(
+                          Assets.images.gmail.keyName,
+                          height: 30.h,
+                        ),
+                      ),
+                      // widthBox14,
+                      // CrashSafeImage(Assets.images.facebook.keyName, height: 30.h),
+                    ],
+                  ),
+                ],
               ],
             ),
             heightBox30,

@@ -1,3 +1,5 @@
+import 'dart:io';
+
 import 'package:crash_safe_image/crash_safe_image.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
@@ -172,41 +174,43 @@ class _SignInScreenState extends State<SignInScreen> {
                     ),
                   ),
                 ),
-                heightBox100,
-                Column(
-                  crossAxisAlignment: CrossAxisAlignment.center,
-                  children: [
-                    Text(
-                      "Sign Up With",
-                      style: TextStyle(
-                        color: const Color(0xff8C8C8C),
-                        fontSize: 16.sp,
-                      ),
-                    ),
-                    heightBox10,
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        GestureDetector(
-                          onTap: () {
-                            signInGoogle();
-                          },
-                          child: CrashSafeImage(
-                            Assets.images.gmail.keyName,
-                            height: 30.h,
-                          ),
+                if (Platform.isAndroid) ...[
+                  heightBox100,
+                  Column(
+                    crossAxisAlignment: CrossAxisAlignment.center,
+                    children: [
+                      Text(
+                        "Sign Up With",
+                        style: TextStyle(
+                          color: const Color(0xff8C8C8C),
+                          fontSize: 16.sp,
                         ),
-                        // widthBox14,
-                        // CrashSafeImage(
-                        //   Assets.images.facebook.keyName,
-                        //   height: 30.h,
-                        // ),
-                      ],
-                    ),
-                  ],
-                ),
-
-                heightBox100,
+                      ),
+                      heightBox10,
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          GestureDetector(
+                            onTap: () {
+                              signInGoogle();
+                            },
+                            child: CrashSafeImage(
+                              Assets.images.gmail.keyName,
+                              height: 30.h,
+                            ),
+                          ),
+                          // widthBox14,
+                          // CrashSafeImage(
+                          //   Assets.images.facebook.keyName,
+                          //   height: 30.h,
+                          // ),
+                        ],
+                      ),
+                    ],
+                  ),
+                  heightBox100,
+                ] else
+                  heightBox100,
                 heightBox80,
 
                 RichText(
