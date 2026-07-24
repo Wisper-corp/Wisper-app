@@ -63,8 +63,11 @@ class _GroupChatScreenState extends State<GroupChatScreen> {
     super.initState();
     final tag = widget.chatId ?? 'group';
     ctrl = Get.put(MessageController(), tag: tag);
-    // Use unique tag for members controller too
-    membersCtrl = Get.put(GroupMembersController(), tag: 'members_$tag');
+    // Reuse existing members controller if available, create new one if not
+    final membersTag = 'members_$tag';
+    membersCtrl = Get.isRegistered<GroupMembersController>(tag: membersTag)
+        ? Get.find<GroupMembersController>(tag: membersTag)
+        : Get.put(GroupMembersController(), tag: membersTag);
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (widget.chatId != null) {
         seenMessageController.seenMessage(widget.chatId!);
@@ -562,7 +565,7 @@ class _GroupChatScreenState extends State<GroupChatScreen> {
       ],
     );
 
-    if (!widget.showHeader) return content;
-    return Scaffold(body: content);
+    if (!widget.showHeader) return Material(color: Colors.black, child: content);
+    return Scaffold(backgroundColor: Colors.black, body: content);
   }
 }
