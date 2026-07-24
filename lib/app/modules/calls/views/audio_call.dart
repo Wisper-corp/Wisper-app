@@ -105,7 +105,11 @@ class _AudioCallPageState extends State<AudioCallPage> {
       if (name.isNotEmpty) return name;
     }
     // Fallback: 1-to-1 call এ widget.name use করো
-    if (!_isMultiParty && widget.name.isNotEmpty) return widget.name;
+    if (!_isMultiParty) {
+      if (widget.name.isNotEmpty) return widget.name;
+      final callerName = widget.callerName ?? '';
+      if (callerName.isNotEmpty) return callerName;
+    }
     return 'User';
   }
 
@@ -357,8 +361,11 @@ class _AudioCallPageState extends State<AudioCallPage> {
               setState(() {
                 if (!_remoteUids.contains(rUid)) {
                   _remoteUids.add(rUid);
-                  // ✅ group call হলে forceMultiParty set করো
-                  if (callService.participantInfo[rUid] == null) {
+                  // Only treat missing participant info as multi-party for
+                  // group/class calls. In 1-to-1 calls the remote uid can
+                  // arrive before participantInfo, so keep widget.name fallback.
+                  if ((_isGroupCall || _isClassCall) &&
+                      callService.participantInfo[rUid] == null) {
                     _forceMultiParty = true;
                   }
                 }

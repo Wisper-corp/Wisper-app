@@ -1,4 +1,4 @@
-﻿import 'dart:async';
+import 'dart:async';
 
 import 'package:agora_rtc_engine/agora_rtc_engine.dart';
 import 'package:audioplayers/audioplayers.dart';
@@ -70,10 +70,12 @@ class _VideoCallPageState extends State<VideoCallPage> {
       ? Get.find<CallService>()
       : Get.put(CallService());
   final CallController _callController = CallController();
-  final GroupMembersController _groupMembersController =
-      Get.put(GroupMembersController());
-  final ClassMembersController _classMembersController =
-      Get.put(ClassMembersController());
+  final GroupMembersController _groupMembersController = Get.put(
+    GroupMembersController(),
+  );
+  final ClassMembersController _classMembersController = Get.put(
+    ClassMembersController(),
+  );
 
   Worker? _declinedWorker;
   Worker? _endedWorker;
@@ -110,7 +112,11 @@ class _VideoCallPageState extends State<VideoCallPage> {
       if (name.isNotEmpty) return name;
     }
     // Fallback: 1-to-1 call এ widget.name use করো
-    if (!_isMultiParty && widget.name.isNotEmpty) return widget.name;
+    if (!_isMultiParty) {
+      if (widget.name.isNotEmpty) return widget.name;
+      final callerName = widget.callerName ?? '';
+      if (callerName.isNotEmpty) return callerName;
+    }
     return 'User';
   }
 
@@ -294,11 +300,10 @@ class _VideoCallPageState extends State<VideoCallPage> {
 
     if (emitCallEnd) {
       final duration = _getCallDuration();
-      socketService.socket.emitWithAck(
-        'callEnd',
-        {'callId': widget.callId, 'duration': duration},
-        ack: (response) => print('callEnd ack: $response'),
-      );
+      socketService.socket.emitWithAck('callEnd', {
+        'callId': widget.callId,
+        'duration': duration,
+      }, ack: (response) => print('callEnd ack: $response'));
     }
 
     try {
@@ -345,8 +350,11 @@ class _VideoCallPageState extends State<VideoCallPage> {
               setState(() {
                 if (!_remoteUids.contains(rUid)) {
                   _remoteUids.add(rUid);
-                  // ✅ participantInfo-এ না থাকলে group/call log থেকে load করার চেষ্টা
-                  if (callService.participantInfo[rUid] == null) {
+                  // Only treat missing participant info as multi-party for
+                  // group/class calls. In 1-to-1 calls the remote uid can
+                  // arrive before participantInfo, so keep widget.name fallback.
+                  if ((_isGroupCall || _isClassCall) &&
+                      callService.participantInfo[rUid] == null) {
                     _forceMultiParty = true;
                   }
                 }
@@ -354,7 +362,9 @@ class _VideoCallPageState extends State<VideoCallPage> {
               final keys = callService.participantInfo.keys.toList();
               print('🔎 [VideoCall] onUserJoined uid=$rUid');
               print('🔎 [VideoCall] participantInfo keys=$keys');
-              print('🔎 [VideoCall] uid match in participantInfo: ${keys.contains(rUid)}');
+              print(
+                '🔎 [VideoCall] uid match in participantInfo: ${keys.contains(rUid)}',
+              );
               final incoming = callService.incomingCall.value;
               if (incoming != null && incoming['participants'] is List) {
                 final list = incoming['participants'] as List;
@@ -363,7 +373,9 @@ class _VideoCallPageState extends State<VideoCallPage> {
                     .where((v) => v != null)
                     .toList();
                 print('🔎 [VideoCall] incoming participant uids=$uids');
-                print('🔎 [VideoCall] uid match in incoming list: ${uids.contains(rUid)}');
+                print(
+                  '🔎 [VideoCall] uid match in incoming list: ${uids.contains(rUid)}',
+                );
                 for (final p in list) {
                   if (p is! Map) continue;
                   final rawUid = p['uid'];
@@ -387,48 +399,49 @@ class _VideoCallPageState extends State<VideoCallPage> {
               setState(() {});
             });
           },
-          onUserOffline: (
-            RtcConnection connection,
-            int rUid,
-            UserOfflineReasonType reason,
-          ) {
-            if (mounted) {
-              setState(() {
-                _remoteUids.remove(rUid);
-                _remoteVideoMuted.remove(rUid);
-              });
-              if (_remoteUids.isEmpty && !_isLeavingCall) {
-                socketService.socket.emitWithAck(
-                  'callEnd',
-                  {'callId': widget.callId, 'duration': _getCallDuration()},
-                  ack: (_) {},
-                );
-                _leaveAndPop();
-              }
-            }
-          },
+          onUserOffline:
+              (
+                RtcConnection connection,
+                int rUid,
+                UserOfflineReasonType reason,
+              ) {
+                if (mounted) {
+                  setState(() {
+                    _remoteUids.remove(rUid);
+                    _remoteVideoMuted.remove(rUid);
+                  });
+                  if (_remoteUids.isEmpty && !_isLeavingCall) {
+                    socketService.socket.emitWithAck('callEnd', {
+                      'callId': widget.callId,
+                      'duration': _getCallDuration(),
+                    }, ack: (_) {});
+                    _leaveAndPop();
+                  }
+                }
+              },
           onConnectionStateChanged: (c, state, reason) {
             if (mounted) setState(() {});
           },
-          onRemoteVideoStateChanged: (
-            RtcConnection connection,
-            int rUid,
-            RemoteVideoState state,
-            RemoteVideoStateReason reason,
-            int elapsed,
-          ) {
-            if (!mounted) return;
-            final bool muted =
-                state == RemoteVideoState.remoteVideoStateStopped ||
-                state == RemoteVideoState.remoteVideoStateFrozen;
-            setState(() {
-              if (muted) {
-                _remoteVideoMuted.add(rUid);
-              } else {
-                _remoteVideoMuted.remove(rUid);
-              }
-            });
-          },
+          onRemoteVideoStateChanged:
+              (
+                RtcConnection connection,
+                int rUid,
+                RemoteVideoState state,
+                RemoteVideoStateReason reason,
+                int elapsed,
+              ) {
+                if (!mounted) return;
+                final bool muted =
+                    state == RemoteVideoState.remoteVideoStateStopped ||
+                    state == RemoteVideoState.remoteVideoStateFrozen;
+                setState(() {
+                  if (muted) {
+                    _remoteVideoMuted.add(rUid);
+                  } else {
+                    _remoteVideoMuted.remove(rUid);
+                  }
+                });
+              },
           onError: (err, msg) {
             if (mounted) setState(() {});
             if (err == ErrorCodeType.errInvalidToken) {
@@ -525,8 +538,7 @@ class _VideoCallPageState extends State<VideoCallPage> {
   Widget _videoTile(int uid, {String? label, double? radius}) {
     final bool isLocal = uid == 0;
     final bool showLocalAvatar = isLocal && !_cameraEnabled;
-    final bool showRemoteAvatar =
-        !isLocal && _remoteVideoMuted.contains(uid);
+    final bool showRemoteAvatar = !isLocal && _remoteVideoMuted.contains(uid);
     final String localName =
         StorageUtil.getData(StorageUtil.cachedUserName)?.toString() ?? 'Me';
     final String localImage =
@@ -549,8 +561,9 @@ class _VideoCallPageState extends State<VideoCallPage> {
                     CircleAvatar(
                       radius: 36,
                       backgroundColor: Colors.white12,
-                      backgroundImage:
-                          localImage.isNotEmpty ? NetworkImage(localImage) : null,
+                      backgroundImage: localImage.isNotEmpty
+                          ? NetworkImage(localImage)
+                          : null,
                       child: localImage.isEmpty
                           ? Text(
                               localName.isNotEmpty ? localName[0] : 'M',
@@ -627,8 +640,7 @@ class _VideoCallPageState extends State<VideoCallPage> {
               bottom: 6,
               left: 6,
               child: Container(
-                padding:
-                    const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
                 decoration: BoxDecoration(
                   color: Colors.black54,
                   borderRadius: BorderRadius.circular(6),
@@ -697,7 +709,7 @@ class _VideoCallPageState extends State<VideoCallPage> {
               borderRadius: BorderRadius.circular(12),
               border: Border.all(color: Colors.white, width: 2),
               boxShadow: const [
-                BoxShadow(color: Colors.black45, blurRadius: 8)
+                BoxShadow(color: Colors.black45, blurRadius: 8),
               ],
             ),
             child: ClipRRect(
@@ -720,13 +732,19 @@ class _VideoCallPageState extends State<VideoCallPage> {
           child: Row(
             children: [
               Expanded(
-                child: _videoTile(_remoteUids[0],
-                    label: _nameForUid(_remoteUids[0]), radius: 0),
+                child: _videoTile(
+                  _remoteUids[0],
+                  label: _nameForUid(_remoteUids[0]),
+                  radius: 0,
+                ),
               ),
               const SizedBox(width: 2),
               Expanded(
-                child: _videoTile(_remoteUids[1],
-                    label: _nameForUid(_remoteUids[1]), radius: 0),
+                child: _videoTile(
+                  _remoteUids[1],
+                  label: _nameForUid(_remoteUids[1]),
+                  radius: 0,
+                ),
               ),
             ],
           ),
@@ -747,13 +765,19 @@ class _VideoCallPageState extends State<VideoCallPage> {
           child: Row(
             children: [
               Expanded(
-                child: _videoTile(_remoteUids[0],
-                    label: _nameForUid(_remoteUids[0]), radius: 0),
+                child: _videoTile(
+                  _remoteUids[0],
+                  label: _nameForUid(_remoteUids[0]),
+                  radius: 0,
+                ),
               ),
               const SizedBox(width: 2),
               Expanded(
-                child: _videoTile(_remoteUids[1],
-                    label: _nameForUid(_remoteUids[1]), radius: 0),
+                child: _videoTile(
+                  _remoteUids[1],
+                  label: _nameForUid(_remoteUids[1]),
+                  radius: 0,
+                ),
               ),
             ],
           ),
@@ -763,8 +787,11 @@ class _VideoCallPageState extends State<VideoCallPage> {
           child: Row(
             children: [
               Expanded(
-                child: _videoTile(_remoteUids[2],
-                    label: _nameForUid(_remoteUids[2]), radius: 0),
+                child: _videoTile(
+                  _remoteUids[2],
+                  label: _nameForUid(_remoteUids[2]),
+                  radius: 0,
+                ),
               ),
               const SizedBox(width: 2),
               Expanded(child: _videoTile(0, label: 'Me', radius: 0)),
@@ -789,13 +816,19 @@ class _VideoCallPageState extends State<VideoCallPage> {
                 child: Row(
                   children: [
                     Expanded(
-                      child: _videoTile(_remoteUids[0],
-                          label: _nameForUid(_remoteUids[0]), radius: 0),
+                      child: _videoTile(
+                        _remoteUids[0],
+                        label: _nameForUid(_remoteUids[0]),
+                        radius: 0,
+                      ),
                     ),
                     const SizedBox(width: 2),
                     Expanded(
-                      child: _videoTile(_remoteUids[1],
-                          label: _nameForUid(_remoteUids[1]), radius: 0),
+                      child: _videoTile(
+                        _remoteUids[1],
+                        label: _nameForUid(_remoteUids[1]),
+                        radius: 0,
+                      ),
                     ),
                   ],
                 ),
@@ -805,13 +838,19 @@ class _VideoCallPageState extends State<VideoCallPage> {
                 child: Row(
                   children: [
                     Expanded(
-                      child: _videoTile(_remoteUids[2],
-                          label: _nameForUid(_remoteUids[2]), radius: 0),
+                      child: _videoTile(
+                        _remoteUids[2],
+                        label: _nameForUid(_remoteUids[2]),
+                        radius: 0,
+                      ),
                     ),
                     const SizedBox(width: 2),
                     Expanded(
-                      child: _videoTile(_remoteUids[3],
-                          label: _nameForUid(_remoteUids[3]), radius: 0),
+                      child: _videoTile(
+                        _remoteUids[3],
+                        label: _nameForUid(_remoteUids[3]),
+                        radius: 0,
+                      ),
                     ),
                   ],
                 ),
@@ -847,13 +886,19 @@ class _VideoCallPageState extends State<VideoCallPage> {
                 child: Row(
                   children: [
                     Expanded(
-                      child: _videoTile(_remoteUids[0],
-                          label: _nameForUid(_remoteUids[0]), radius: 0),
+                      child: _videoTile(
+                        _remoteUids[0],
+                        label: _nameForUid(_remoteUids[0]),
+                        radius: 0,
+                      ),
                     ),
                     const SizedBox(width: 2),
                     Expanded(
-                      child: _videoTile(_remoteUids[1],
-                          label: _nameForUid(_remoteUids[1]), radius: 0),
+                      child: _videoTile(
+                        _remoteUids[1],
+                        label: _nameForUid(_remoteUids[1]),
+                        radius: 0,
+                      ),
                     ),
                   ],
                 ),
@@ -863,13 +908,19 @@ class _VideoCallPageState extends State<VideoCallPage> {
                 child: Row(
                   children: [
                     Expanded(
-                      child: _videoTile(_remoteUids[2],
-                          label: _nameForUid(_remoteUids[2]), radius: 0),
+                      child: _videoTile(
+                        _remoteUids[2],
+                        label: _nameForUid(_remoteUids[2]),
+                        radius: 0,
+                      ),
                     ),
                     const SizedBox(width: 2),
                     Expanded(
-                      child: _videoTile(_remoteUids[3],
-                          label: _nameForUid(_remoteUids[3]), radius: 0),
+                      child: _videoTile(
+                        _remoteUids[3],
+                        label: _nameForUid(_remoteUids[3]),
+                        radius: 0,
+                      ),
                     ),
                   ],
                 ),
@@ -882,8 +933,11 @@ class _VideoCallPageState extends State<VideoCallPage> {
           child: Row(
             children: [
               Expanded(
-                child: _videoTile(_remoteUids[4],
-                    label: _nameForUid(_remoteUids[4]), radius: 0),
+                child: _videoTile(
+                  _remoteUids[4],
+                  label: _nameForUid(_remoteUids[4]),
+                  radius: 0,
+                ),
               ),
               const SizedBox(width: 2),
               Expanded(child: _videoTile(0, label: 'Me', radius: 0)),
@@ -1038,7 +1092,9 @@ class _VideoCallPageState extends State<VideoCallPage> {
                   child: Obx(
                     () => Container(
                       padding: const EdgeInsets.symmetric(
-                          horizontal: 8, vertical: 3),
+                        horizontal: 8,
+                        vertical: 3,
+                      ),
                       decoration: BoxDecoration(
                         color: Colors.black54,
                         borderRadius: BorderRadius.circular(20),
@@ -1046,8 +1102,7 @@ class _VideoCallPageState extends State<VideoCallPage> {
                       child: Row(
                         mainAxisSize: MainAxisSize.min,
                         children: [
-                          const Icon(Icons.circle,
-                              color: Colors.red, size: 4),
+                          const Icon(Icons.circle, color: Colors.red, size: 4),
                           const SizedBox(width: 5),
                           Text(
                             time.value,
@@ -1085,8 +1140,7 @@ class _VideoCallPageState extends State<VideoCallPage> {
                         active: _micEnabled,
                         onTap: () async {
                           setState(() => _micEnabled = !_micEnabled);
-                          await agoraEngine
-                              .muteLocalAudioStream(!_micEnabled);
+                          await agoraEngine.muteLocalAudioStream(!_micEnabled);
                         },
                       ),
                       _controlBtn(
@@ -1096,8 +1150,9 @@ class _VideoCallPageState extends State<VideoCallPage> {
                         active: _cameraEnabled,
                         onTap: () async {
                           setState(() => _cameraEnabled = !_cameraEnabled);
-                          await agoraEngine
-                              .muteLocalVideoStream(!_cameraEnabled);
+                          await agoraEngine.muteLocalVideoStream(
+                            !_cameraEnabled,
+                          );
                         },
                       ),
                       GestureDetector(
@@ -1125,8 +1180,7 @@ class _VideoCallPageState extends State<VideoCallPage> {
                       _controlBtn(
                         icon: Icons.flip_camera_ios_rounded,
                         active: true,
-                        onTap: () async =>
-                            await agoraEngine.switchCamera(),
+                        onTap: () async => await agoraEngine.switchCamera(),
                       ),
                       _controlBtn(
                         icon: _speakerEnabled
@@ -1134,10 +1188,10 @@ class _VideoCallPageState extends State<VideoCallPage> {
                             : Icons.volume_off_rounded,
                         active: _speakerEnabled,
                         onTap: () async {
-                          setState(
-                              () => _speakerEnabled = !_speakerEnabled);
-                          await agoraEngine
-                              .setEnableSpeakerphone(_speakerEnabled);
+                          setState(() => _speakerEnabled = !_speakerEnabled);
+                          await agoraEngine.setEnableSpeakerphone(
+                            _speakerEnabled,
+                          );
                         },
                       ),
                     ],
