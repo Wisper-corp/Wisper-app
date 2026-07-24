@@ -16,15 +16,22 @@ class JobSection extends StatefulWidget {
 }
 
 class _JobSectionState extends State<JobSection> {
-  final AllFeedJobController controller = Get.put(AllFeedJobController());
+  late final AllFeedJobController controller;
+
+  String get _tag => widget.groupId != null && widget.groupId!.isNotEmpty
+      ? 'jobs_group_${widget.groupId}'
+      : 'jobs_global';
 
   @override
   void initState() {
     super.initState();
+    // Use tagged controller so group jobs don't overwrite global feed
+    controller = Get.isRegistered<AllFeedJobController>(tag: _tag)
+        ? Get.find<AllFeedJobController>(tag: _tag)
+        : Get.put(AllFeedJobController(), tag: _tag);
+
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (widget.searchQuery != null || widget.searchQuery != '') {
-        controller.resetPagination();
-      }
+      controller.resetPagination();
       controller.getJobs(
         searchQuery: widget.searchQuery,
         groupId: widget.groupId,
@@ -35,7 +42,8 @@ class _JobSectionState extends State<JobSection> {
   @override
   void didUpdateWidget(covariant JobSection oldWidget) {
     super.didUpdateWidget(oldWidget);
-    if (widget.searchQuery != oldWidget.searchQuery) {
+    if (widget.searchQuery != oldWidget.searchQuery ||
+        widget.jobType != oldWidget.jobType) {
       controller.resetPagination();
       controller.getJobs(
         searchQuery: widget.searchQuery,

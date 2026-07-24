@@ -137,16 +137,22 @@ class _JobPostScreenState extends State<JobPostScreen> {
     );
 
     if (isSuccess) {
-      final MyFeedJobController myFeedJobController =
-          Get.find<MyFeedJobController>();
-      final AllFeedJobController allFeedJobController =
-          Get.find<AllFeedJobController>();
-
-      allFeedJobController.resetPagination();
+      // Refresh the correct job list after posting
+      if (widget.groupId != null && widget.groupId!.isNotEmpty) {
+        final tag = 'jobs_group_${widget.groupId}';
+        if (Get.isRegistered<AllFeedJobController>(tag: tag)) {
+          final ctrl = Get.find<AllFeedJobController>(tag: tag);
+          ctrl.resetPagination();
+          await ctrl.getJobs(groupId: widget.groupId);
+        }
+      } else {
+        final allFeedJobController = Get.find<AllFeedJobController>(tag: 'jobs_global');
+        allFeedJobController.resetPagination();
+        await allFeedJobController.getJobs();
+      }
+      final MyFeedJobController myFeedJobController = Get.find<MyFeedJobController>();
       myFeedJobController.resetPagination();
-
       await myFeedJobController.getJobs();
-      await allFeedJobController.getJobs();
 
       if (context.mounted) {
         Navigator.pop(context);
