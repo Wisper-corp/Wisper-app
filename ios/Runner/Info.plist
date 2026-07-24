@@ -41,8 +41,14 @@
 	<true/>
 	<key>NSCameraUsageDescription</key>
 	<string>This app needs camera access to allow users to take and upload photos.</string>
+	<key>NSLocalNetworkUsageDescription</key>
+	<string>This app uses the local network to connect calls and realtime communication features.</string>
+	<key>NSLocationWhenInUseUsageDescription</key>
+	<string>This app needs location access to show and update your current location.</string>
 	<key>NSMicrophoneUsageDescription</key>
 	<string>This app needs microphone access for voice and video calls.</string>
+	<key>NSPhotoLibraryAddUsageDescription</key>
+	<string>This app needs permission to save selected or downloaded media to your photo library.</string>
 	<key>NSPhotoLibraryUsageDescription</key>
 	<string>This app needs photo library access to let users select and upload images from their device.</string>
 	<key>UIBackgroundModes</key>
