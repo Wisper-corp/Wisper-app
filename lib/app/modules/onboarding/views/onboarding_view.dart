@@ -125,46 +125,50 @@ class _OnboardingViewState extends State<OnboardingView> {
                 ],
               ),
             ),
-            Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                SmoothPageIndicator(
-                  controller: _pageController,
-                  count: 3,
-                  effect: WormEffect(
-                    dotHeight: 6.0.h,
-                    dotWidth: 34.0.w,
-                    spacing: 10.0,
-                    dotColor: LightThemeColors.darkGreyColor,
-                    activeDotColor: LightThemeColors.blueColor,
-                  ),
-                ),
-                if (Platform.isAndroid) ...[
-                  heightBox40, // Reduced from heightBox50 to minimize gap
-                  Text(
-                    "Sign Up With",
-                    style: TextStyle(
-                      color: const Color(0xff8C8C8C),
-                      fontSize: 16.sp,
+            SizedBox(
+              width: double.infinity,
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.center,
+                children: [
+                  SmoothPageIndicator(
+                    controller: _pageController,
+                    count: 3,
+                    effect: WormEffect(
+                      dotHeight: 6.0.h,
+                      dotWidth: 34.0.w,
+                      spacing: 10.0,
+                      dotColor: LightThemeColors.darkGreyColor,
+                      activeDotColor: LightThemeColors.blueColor,
                     ),
                   ),
-                  heightBox10,
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      GestureDetector(
-                        onTap: signInGoogle,
-                        child: CrashSafeImage(
-                          Assets.images.gmail.keyName,
-                          height: 30.h,
-                        ),
+                  if (Platform.isAndroid) ...[
+                    heightBox40, // Reduced from heightBox50 to minimize gap
+                    Text(
+                      "Sign Up With",
+                      style: TextStyle(
+                        color: const Color(0xff8C8C8C),
+                        fontSize: 16.sp,
                       ),
-                      // widthBox14,
-                      // CrashSafeImage(Assets.images.facebook.keyName, height: 30.h),
-                    ],
-                  ),
+                    ),
+                    heightBox10,
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        GestureDetector(
+                          onTap: signInGoogle,
+                          child: CrashSafeImage(
+                            Assets.images.gmail.keyName,
+                            height: 30.h,
+                          ),
+                        ),
+                        // widthBox14,
+                        // CrashSafeImage(Assets.images.facebook.keyName, height: 30.h),
+                      ],
+                    ),
+                  ],
                 ],
-              ],
+              ),
             ),
             heightBox30,
             Padding(
