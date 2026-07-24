@@ -91,7 +91,6 @@ class GoogleSignUpAuthController extends GetxController {
       print('📧 Email: $email');
 
       final fcmToken = await PushNotificationService().getToken();
-      final voipToken = await PushNotificationService().getVoipToken();
       String? newIdToken = await userCredential.user?.getIdToken(true);
       final parts = newIdToken!.split('.');
       final payload = json.decode(
@@ -106,10 +105,14 @@ class GoogleSignUpAuthController extends GetxController {
         "image": imageUrl,
         "idToken": newIdToken,
         "fcmToken": fcmToken,
-        "voipToken": voipToken,
         "deviceType": Platform.isIOS ? "ios" : "android",
         "role": role, // "PERSON", "BUSINESS"
       };
+
+      if (Platform.isIOS) {
+        requestBody["voipToken"] = await PushNotificationService()
+            .getVoipToken();
+      }
 
       final NetworkResponse response = await Get.find<NetworkCaller>()
           .postRequest(Urls.googleAuthUrl, body: requestBody);

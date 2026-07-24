@@ -48,16 +48,18 @@ class SignInController extends GetxController {
       }
 
       print("FCM TOKEN: $fcmToken");
-      final voipToken = await PushNotificationService().getVoipToken();
 
       Map<String, dynamic> body = {
         "email": email,
         "password": password,
         "isMobileApp": true,
         "fcmToken": fcmToken,
-        "voipToken": voipToken,
         "deviceType": Platform.isIOS ? "ios" : "android",
       };
+
+      if (Platform.isIOS) {
+        body["voipToken"] = await PushNotificationService().getVoipToken();
+      }
 
       final NetworkResponse response = await Get.find<NetworkCaller>()
           .postRequest(Urls.signInUrl, body: body);
