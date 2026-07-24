@@ -524,6 +524,7 @@ class CallService extends GetxController {
           final newToken = event.body['deviceTokenVoIP'];
           if (newToken != null) {
             print('📱 VoIP token updated: $newToken');
+            await StorageUtil.setVoipToken(newToken.toString());
           }
           break;
 

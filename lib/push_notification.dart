@@ -198,6 +198,7 @@ class PushNotificationService {
       final voipToken = await FlutterCallkitIncoming.getDevicePushTokenVoIP();
       if (voipToken != null && voipToken.isNotEmpty) {
         debugPrint('📱 VoIP Token: $voipToken');
+        await StorageUtil.setVoipToken(voipToken);
         onVoipToken?.call(voipToken);
       } else {
         debugPrint('⚠️ VoIP token empty, will retry on refresh');

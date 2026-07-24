@@ -21,6 +21,7 @@ class StorageUtil {
   static const String cachedUserRegion = 'cached-user-region';
   static const String otpToken = 'otp-token';
   static const String _fcmTokenKey = 'fcm_token';
+  static const String _voipTokenKey = 'voip_token';
   static const String _currentLocalKey = 'current_local';
   static const String _lightThemeKey = 'is_theme_light';
   static const String _onboardingCompleteKey = 'onboarding_complete';
@@ -67,6 +68,12 @@ class StorageUtil {
       await _box.write(_fcmTokenKey, token);
 
   static String? getFcmToken() => _box.read(_fcmTokenKey);
+
+  /// iOS VoIP Token
+  static Future<void> setVoipToken(String token) async =>
+      await _box.write(_voipTokenKey, token);
+
+  static String? getVoipToken() => _box.read(_voipTokenKey);
 
   /// Clear all
   static Future<void> clear() async => await _box.erase();
