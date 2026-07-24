@@ -1,4 +1,4 @@
-﻿// ignore_for_file: library_prefixes, avoid_print
+// ignore_for_file: library_prefixes, avoid_print
 
 import 'package:get/get.dart';
 import 'package:socket_io_client/socket_io_client.dart' as IO;
@@ -12,7 +12,7 @@ class SocketService extends GetxController {
   late IO.Socket _socket;
 
   RxBool isConnected = false.obs;
- 
+
   final _messageList = <Map<String, dynamic>>[].obs;
   final _socketFriendList = <Map<String, dynamic>>[].obs;
   final _notificationsList = <Map<String, dynamic>>[].obs;
@@ -176,7 +176,7 @@ class SocketService extends GetxController {
   void _handleNewMessageForList(dynamic data) {
     print('📨📨 newMessage called from socket services');
     try {
-      final String chatId = (data['chatId'] ?? data['chat'] ?? '').toString();
+      final String chatId = _extractChatId(data);
       if (chatId.isEmpty) return;
 
       final int index = _socketFriendList.indexWhere(
@@ -188,8 +188,8 @@ class SocketService extends GetxController {
       final String lastMessage = text.isNotEmpty
           ? text
           : (file == null || file.toString().isEmpty)
-              ? 'file'
-              : 'photo';
+          ? 'file'
+          : 'photo';
 
       final String createdAt =
           (data['createdAt'] ?? DateTime.now().toIso8601String()).toString();
@@ -213,8 +213,8 @@ class SocketService extends GetxController {
       _listRefreshInFlight = true;
       if (Get.isRegistered<AllChatsController>()) {
         Get.find<AllChatsController>().getAllChats().whenComplete(
-              () => _listRefreshInFlight = false,
-            );
+          () => _listRefreshInFlight = false,
+        );
       } else {
         _listRefreshInFlight = false;
       }
@@ -222,6 +222,19 @@ class SocketService extends GetxController {
       _listRefreshInFlight = false;
       print('SocketService newMessage list update failed: $e');
     }
+  }
+
+  String _extractChatId(dynamic data) {
+    if (data is! Map) return '';
+    final dynamic direct = data['chatId'] ?? data['conversationId'];
+    if (direct != null && direct.toString().trim().isNotEmpty) {
+      return direct.toString();
+    }
+    final dynamic chat = data['chat'];
+    if (chat is Map) {
+      return (chat['id'] ?? chat['_id'] ?? '').toString();
+    }
+    return (chat ?? '').toString();
   }
 
   void disconnect() {

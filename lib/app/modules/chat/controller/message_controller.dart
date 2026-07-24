@@ -1,4 +1,4 @@
-﻿// app/modules/chat/controller/message_controller.dart
+// app/modules/chat/controller/message_controller.dart
 import 'dart:convert';
 
 import 'package:flutter/material.dart';
@@ -40,47 +40,70 @@ class MessageController extends GetxController {
   Future<void> setupChat({required String? chatId}) async {
     if (chatId == null || chatId.isEmpty) return;
 
-    // Avoid duplicate setup for the same chat
-    if (currentChatId == chatId) {
-      print('Already setup for chat $chatId → skipping duplicate');
-      return;
-    }
-
+    final bool isSameChat = currentChatId == chatId;
     currentChatId = chatId;
-    _lastChatListLatestAt = null;
-    messages.clear();
-    isLoading.value = true;
+    if (!isSameChat) {
+      _lastChatListLatestAt = null;
+      messages.clear();
+      isLoading.value = true;
+    }
 
     // Load cached messages first for instant UI (offline friendly).
     final cached = ChatCacheService.getCachedMessages(chatId);
-    if (cached.isNotEmpty) {
+    if (!isSameChat && cached.isNotEmpty) {
       messages.assignAll(cached);
     }
 
     // Wait for socket connection
     await socketService.waitUntilConnected(timeout: const Duration(seconds: 5));
     socketService.emitConnection();
+    _joinCurrentChat();
+    _bindSocketListeners();
 
-    // Join the chat room (multiple variants — depending on backend)
+    // Fetch historical messages only when switching chats. For same chat,
+    // setupChat still re-joins/re-binds so realtime survives reopen/reconnect.
+    if (!isSameChat) {
+      await getMessages(chatId: chatId);
+      scrollToBottom();
+    }
+  }
+
+  void _joinCurrentChat() {
+    if (currentChatId == null || currentChatId!.isEmpty) return;
     print('Joining chat room for chatId: $currentChatId');
     socketService.socket.emit('join', {'chatId': currentChatId});
     socketService.socket.emit('joinChat', {'chatId': currentChatId});
     socketService.socket.emit('join_room', currentChatId);
+  }
 
-    // IMPORTANT: Remove previous listeners first, then add new ones
-    // This prevents stacking listeners when switching chats
+  void _bindSocketListeners() {
     socketService.socket.off('newMessage', _handleIncomingMessage);
     socketService.socket.off('typingStatus', _handleTypingStatus);
     socketService.socket.off('chatList', _handleChatListSync);
+    socketService.socket.off('connect', _handleSocketConnect);
 
     socketService.socket.on('newMessage', _handleIncomingMessage);
     socketService.socket.on('typingStatus', _handleTypingStatus);
     socketService.socket.on('chatList', _handleChatListSync);
+    socketService.socket.on('connect', _handleSocketConnect);
+  }
 
-    // Fetch historical messages
-    await getMessages(chatId: chatId);
+  void _handleSocketConnect([dynamic _]) {
+    socketService.emitConnection();
+    _joinCurrentChat();
+  }
 
-    scrollToBottom();
+  String _extractChatId(dynamic data) {
+    if (data is! Map) return '';
+    final dynamic direct = data['chatId'] ?? data['conversationId'];
+    if (direct != null && direct.toString().trim().isNotEmpty) {
+      return direct.toString();
+    }
+    final dynamic chat = data['chat'];
+    if (chat is Map) {
+      return (chat['id'] ?? chat['_id'] ?? '').toString();
+    }
+    return (chat ?? '').toString();
   }
 
   void _sortSocketList() {
@@ -114,7 +137,7 @@ class MessageController extends GetxController {
       if (data is! Map) return;
 
       final String msgId = data['id'] ?? '';
-      final String msgChatId = (data['chatId'] ?? data['chat'] ?? '').toString();
+      final String msgChatId = _extractChatId(data);
 
       // If message belongs to different chat → just update list, don't add to messages
       if (currentChatId != null &&
@@ -143,12 +166,13 @@ class MessageController extends GetxController {
           senderType = 'BUSINESS';
         }
       } else {
-        final rawType = (data['senderType'] ??
-                data['sender_role'] ??
-                data['senderRole'] ??
-                data['role'])
-            ?.toString()
-            .toUpperCase();
+        final rawType =
+            (data['senderType'] ??
+                    data['sender_role'] ??
+                    data['senderRole'] ??
+                    data['role'])
+                ?.toString()
+                .toUpperCase();
         if (rawType == 'BUSINESS') {
           senderType = 'BUSINESS';
         }
@@ -174,10 +198,10 @@ class MessageController extends GetxController {
       messages.sort((a, b) {
         final DateTime aTime =
             DateTime.tryParse(a[SocketMessageKeys.createdAt] ?? '') ??
-                DateTime(1970);
+            DateTime(1970);
         final DateTime bTime =
             DateTime.tryParse(b[SocketMessageKeys.createdAt] ?? '') ??
-                DateTime(1970);
+            DateTime(1970);
         return aTime.compareTo(bTime); // oldest -> newest
       });
       _upsertChatListFromMessage(data);
@@ -390,7 +414,8 @@ class MessageController extends GetxController {
           if (resp is! Map<String, dynamic>) return;
 
           // Try to extract new chatId from different possible keys
-          final String? newChatId = resp['chatId'] ??
+          final String? newChatId =
+              resp['chatId'] ??
               resp['id'] ??
               resp['chat']?.toString() ??
               resp['newChatId'];
@@ -399,13 +424,6 @@ class MessageController extends GetxController {
               newChatId.isNotEmpty &&
               newChatId != currentChatId) {
             print('→ New chat created! Switching to chatId: $newChatId');
-
-            currentChatId = newChatId;
-
-            // Immediately join the new chat room
-            socketService.socket.emit('join', {'chatId': newChatId});
-            socketService.socket.emit('joinChat', {'chatId': newChatId});
-            socketService.socket.emit('join_room', newChatId);
 
             // Full setup (fetch messages + ensure listeners)
             await setupChat(chatId: newChatId);
@@ -482,7 +500,7 @@ class MessageController extends GetxController {
               SocketMessageKeys.chat: msg.chatId ?? "",
               SocketMessageKeys.createdAt:
                   msg.createdAt?.toIso8601String() ??
-                      DateTime.now().toIso8601String(),
+                  DateTime.now().toIso8601String(),
             };
 
             if (!messages.any(
@@ -495,10 +513,10 @@ class MessageController extends GetxController {
         messages.sort((a, b) {
           final DateTime aTime =
               DateTime.tryParse(a[SocketMessageKeys.createdAt] ?? '') ??
-                  DateTime(1970);
+              DateTime(1970);
           final DateTime bTime =
               DateTime.tryParse(b[SocketMessageKeys.createdAt] ?? '') ??
-                  DateTime(1970);
+              DateTime(1970);
           return aTime.compareTo(bTime); // oldest -> newest
         });
         // Cache latest messages after API success.
@@ -520,6 +538,7 @@ class MessageController extends GetxController {
     socketService.socket.off('newMessage', _handleIncomingMessage);
     socketService.socket.off('typingStatus', _handleTypingStatus);
     socketService.socket.off('chatList', _handleChatListSync);
+    socketService.socket.off('connect', _handleSocketConnect);
 
     if (currentChatId != null && currentChatId!.isNotEmpty) {
       socketService.socket.emit('leave', {'chatId': currentChatId});
@@ -534,7 +553,7 @@ class MessageController extends GetxController {
 
   void _upsertChatListFromMessage(dynamic data) {
     try {
-      final String chatId = (data['chatId'] ?? data['chat'] ?? '').toString();
+      final String chatId = _extractChatId(data);
       if (chatId.isEmpty) return;
 
       final int index = socketService.socketFriendList.indexWhere(
@@ -572,8 +591,8 @@ class MessageController extends GetxController {
 
       if (Get.isRegistered<AllChatsController>()) {
         Get.find<AllChatsController>().getAllChats().whenComplete(
-              () => _chatListRefreshInFlight = false,
-            );
+          () => _chatListRefreshInFlight = false,
+        );
       } else {
         _chatListRefreshInFlight = false;
       }
@@ -583,4 +602,3 @@ class MessageController extends GetxController {
     }
   }
 }
- 
