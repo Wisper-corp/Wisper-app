@@ -48,12 +48,13 @@ class _JobSectionState extends State<JobSection> {
   Widget build(BuildContext context) {
     return Obx(() {
       if (controller.inProgress) {
-        return const Center(child: PostShimmerEffectWidget());
+        return const SizedBox.expand(
+          child: Center(child: PostShimmerEffectWidget()),
+        );
       } else if (controller.allJobData.isEmpty) {
-        return SizedBox(
-          height: 500,
-          child: const Center(
-            child: Text('Not available', style: TextStyle(fontSize: 12)), 
+        return const SizedBox.expand(
+          child: Center(
+            child: Text('No jobs available', style: TextStyle(fontSize: 12)),
           ),
         );
       } else {
@@ -65,8 +66,7 @@ class _JobSectionState extends State<JobSection> {
         }).toList();
 
         if (jobsWithLogo.isEmpty) {
-          return const SizedBox(
-            height: 500,
+          return const SizedBox.expand(
             child: Center(
               child: Text('No jobs available', style: TextStyle(fontSize: 12)),
             ),

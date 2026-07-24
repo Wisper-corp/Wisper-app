@@ -39,10 +39,12 @@ class _PostSectionState extends State<PostSection> {
         }
 
         if (controller.allPostData.isEmpty) {
-          return const Center(
-            child: Text(
-              'No posts yet',
-              style: TextStyle(color: Colors.white70, fontSize: 16),
+          return const SizedBox.expand(
+            child: Center(
+              child: Text(
+                'No posts yet',
+                style: TextStyle(color: Colors.white70, fontSize: 16),
+              ),
             ),
           );
         }

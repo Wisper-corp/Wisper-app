@@ -534,6 +534,7 @@ class _GroupChatScreenState extends State<GroupChatScreen> {
                     children: [
                       Positioned.fill(
                         child: JobSection(
+                          key: ValueKey('jobs_${widget.groupId}_$_jobSearchQuery$_jobLocationType'),
                           groupId: widget.groupId,
                           searchQuery: _jobSearchQuery.isEmpty ? null : _jobSearchQuery,
                           jobType: _jobLocationType,
