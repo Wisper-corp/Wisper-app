@@ -15,6 +15,9 @@ import 'package:wisper/app/modules/chat/model/message_model.dart';
 import 'package:wisper/app/urls.dart';
 
 class MessageController extends GetxController {
+  static const String _homeGeneralChatId =
+      'd3139d42-5671-41d1-9824-6162be10125a';
+
   final SocketService socketService = Get.find<SocketService>();
   final FileDecodeController imageDecodeController =
       Get.find<FileDecodeController>();
@@ -29,11 +32,20 @@ class MessageController extends GetxController {
   String? currentChatId;
   String? _lastChatListLatestAt;
   bool _chatListSyncInFlight = false;
+  Worker? _chatListPayloadWorker;
 
   @override
   void onInit() {
     super.onInit();
     userAuthId = StorageUtil.getData(StorageUtil.userId) ?? "";
+    _chatListPayloadWorker = ever(socketService.chatListPayload, (payload) {
+      if (payload == null) return;
+      _handleChatListSync(
+        payload is Map && payload.containsKey('payload')
+            ? payload['payload']
+            : payload,
+      );
+    });
   }
 
   /// Setup chat — now async so ChatListScreen can await it
@@ -106,6 +118,157 @@ class MessageController extends GetxController {
     return (chat ?? '').toString();
   }
 
+  bool _matchesCurrentChat(String chatId) {
+    if (currentChatId == null || currentChatId!.isEmpty || chatId.isEmpty) {
+      return true;
+    }
+    if (chatId == currentChatId) return true;
+    return _isHomeGeneralChatAlias(chatId);
+  }
+
+  bool _isHomeGeneralChatAlias(String chatId) {
+    if (currentChatId != _homeGeneralChatId) return false;
+
+    for (final item in socketService.socketFriendList) {
+      final id = (item['id'] ?? '').toString();
+      if (id != chatId) continue;
+
+      final type = (item['type'] ?? '').toString().toUpperCase();
+      final groupId = (item['groupId'] ?? '').toString();
+      final classId = (item['classId'] ?? '').toString();
+      final group = item['group'];
+      final groupName = (item['group']?['name'] ?? '').toString();
+
+      return type == 'GROUP' &&
+          groupId == id &&
+          classId.isEmpty &&
+          (group == null || groupName.isEmpty);
+    }
+
+    return false;
+  }
+
+  bool _looksLikeHomeGeneralChat(dynamic data) {
+    if (data is! Map) return false;
+
+    final id = (data['id'] ?? '').toString();
+    final type = (data['type'] ?? '').toString().toUpperCase();
+    final groupId = (data['groupId'] ?? '').toString();
+    final classId = (data['classId'] ?? '').toString();
+    final group = data['group'];
+    final groupName = (data['group']?['name'] ?? '').toString();
+
+    return id.isNotEmpty &&
+        type == 'GROUP' &&
+        groupId == id &&
+        classId.isEmpty &&
+        (group == null || groupName.isEmpty);
+  }
+
+  bool _matchesCurrentChatData(dynamic data) {
+    if (data is! Map) return false;
+    final chatId = (data['id'] ?? '').toString();
+    if (_matchesCurrentChat(chatId)) return true;
+    return currentChatId == _homeGeneralChatId &&
+        _looksLikeHomeGeneralChat(data);
+  }
+
+  Map<String, dynamic>? _messagePayload(dynamic rawData) {
+    dynamic data = rawData;
+    if (data is String) data = jsonDecode(data);
+    if (data is! Map) return null;
+
+    final wrapper = data['message'] ?? data['data'];
+    if (wrapper is Map) return Map<String, dynamic>.from(wrapper);
+    return Map<String, dynamic>.from(data);
+  }
+
+  Map<String, dynamic>? _buildMessageMap(
+    Map<String, dynamic> data, {
+    String? fallbackChatId,
+    String? fallbackCreatedAt,
+  }) {
+    final String msgChatId = _extractChatId(data).isNotEmpty
+        ? _extractChatId(data)
+        : (fallbackChatId ?? '');
+    if (msgChatId.isEmpty) return null;
+
+    String senderName = 'Unknown';
+    String? senderImage;
+    String senderType = 'PERSON';
+
+    final sender = data['sender'];
+    if (sender is Map) {
+      if (sender['person'] != null) {
+        senderName = sender['person']['name'] ?? 'Unknown';
+        senderImage = sender['person']['image'];
+        senderType = 'PERSON';
+      } else if (sender['business'] != null) {
+        senderName = sender['business']['name'] ?? 'Unknown';
+        senderImage = sender['business']['image'];
+        senderType = 'BUSINESS';
+      }
+    } else {
+      final rawType =
+          (data['senderType'] ??
+                  data['sender_role'] ??
+                  data['senderRole'] ??
+                  data['role'])
+              ?.toString()
+              .toUpperCase();
+      if (rawType == 'BUSINESS') {
+        senderType = 'BUSINESS';
+      }
+    }
+
+    final dynamic senderId =
+        data['sender']?['id'] ?? data['senderId'] ?? data['sender_id'] ?? '';
+    final String createdAt =
+        (data['createdAt'] ?? fallbackCreatedAt ?? DateTime.now()).toString();
+    final String text = (data['text'] ?? '').toString();
+    final String fileUrl = _safeImageUrl(data['file']);
+    final String id = (data['id'] ?? data['_id'] ?? '').toString().isNotEmpty
+        ? (data['id'] ?? data['_id']).toString()
+        : '$msgChatId-$senderId-$createdAt-$text-$fileUrl';
+
+    return {
+      SocketMessageKeys.id: id,
+      SocketMessageKeys.text: text,
+      SocketMessageKeys.imageUrl: fileUrl,
+      SocketMessageKeys.senderId: senderId,
+      SocketMessageKeys.senderName: senderName,
+      SocketMessageKeys.senderImage: senderImage,
+      SocketMessageKeys.senderType: senderType,
+      SocketMessageKeys.chat: msgChatId,
+      SocketMessageKeys.createdAt: createdAt,
+      SocketMessageKeys.seen: data['isRead'] ?? false,
+      SocketMessageKeys.fileType: data['fileType'] ?? '',
+    };
+  }
+
+  bool _upsertMessageMap(Map<String, dynamic> msg) {
+    final index = messages.indexWhere(
+      (e) => e[SocketMessageKeys.id] == msg[SocketMessageKeys.id],
+    );
+    if (index != -1) {
+      messages[index] = msg;
+      return false;
+    }
+
+    messages.add(msg);
+    messages.sort((a, b) {
+      final DateTime aTime =
+          DateTime.tryParse(a[SocketMessageKeys.createdAt] ?? '') ??
+          DateTime(1970);
+      final DateTime bTime =
+          DateTime.tryParse(b[SocketMessageKeys.createdAt] ?? '') ??
+          DateTime(1970);
+      return aTime.compareTo(bTime);
+    });
+    messages.refresh();
+    return true;
+  }
+
   void _sortSocketList() {
     socketService.socketFriendList.sort((a, b) {
       final DateTime aTime =
@@ -130,82 +293,22 @@ class MessageController extends GetxController {
     print('📨 newMessage received in MessageController');
 
     try {
-      // Handle possible string payload
-      if (data is String) {
-        data = jsonDecode(data);
-      }
-      if (data is! Map) return;
-
-      final String msgId = data['id'] ?? '';
+      data = _messagePayload(data);
+      if (data == null) return;
       final String msgChatId = _extractChatId(data);
 
       // If message belongs to different chat → just update list, don't add to messages
-      if (currentChatId != null &&
-          msgChatId.isNotEmpty &&
-          msgChatId != currentChatId) {
+      if (!_matchesCurrentChat(msgChatId)) {
         _upsertChatListFromMessage(data);
         return;
       }
 
-      // Avoid duplicate messages
-      if (messages.any((e) => e[SocketMessageKeys.id] == msgId)) return;
+      final msg = _buildMessageMap(data);
+      if (msg == null) return;
 
-      String senderName = 'Unknown';
-      String? senderImage;
-      String senderType = 'PERSON';
-
-      if (data['sender'] != null) {
-        final sender = data['sender'];
-        if (sender['person'] != null) {
-          senderName = sender['person']['name'] ?? 'Unknown';
-          senderImage = sender['person']['image'];
-          senderType = 'PERSON';
-        } else if (sender['business'] != null) {
-          senderName = sender['business']['name'] ?? 'Unknown';
-          senderImage = sender['business']['image'];
-          senderType = 'BUSINESS';
-        }
-      } else {
-        final rawType =
-            (data['senderType'] ??
-                    data['sender_role'] ??
-                    data['senderRole'] ??
-                    data['role'])
-                ?.toString()
-                .toUpperCase();
-        if (rawType == 'BUSINESS') {
-          senderType = 'BUSINESS';
-        }
-      }
-
-      final msg = {
-        SocketMessageKeys.id: msgId,
-        SocketMessageKeys.text: (data['text'] ?? "").toString(),
-        SocketMessageKeys.imageUrl: _safeImageUrl(data['file']),
-        SocketMessageKeys.senderId:
-            data['sender']?['id'] ?? data['senderId'] ?? '',
-        SocketMessageKeys.senderName: senderName,
-        SocketMessageKeys.senderImage: senderImage,
-        SocketMessageKeys.senderType: senderType,
-        SocketMessageKeys.chat: msgChatId,
-        SocketMessageKeys.createdAt: (data['createdAt'] ?? DateTime.now())
-            .toString(),
-        SocketMessageKeys.seen: data['isRead'] ?? false,
-        SocketMessageKeys.fileType: data['fileType'] ?? '',
-      };
-
-      messages.add(msg);
-      messages.sort((a, b) {
-        final DateTime aTime =
-            DateTime.tryParse(a[SocketMessageKeys.createdAt] ?? '') ??
-            DateTime(1970);
-        final DateTime bTime =
-            DateTime.tryParse(b[SocketMessageKeys.createdAt] ?? '') ??
-            DateTime(1970);
-        return aTime.compareTo(bTime); // oldest -> newest
-      });
+      final added = _upsertMessageMap(msg);
       _upsertChatListFromMessage(data);
-      scrollToBottom();
+      if (added) scrollToBottom();
       // Cache updated messages when realtime arrives.
       if (currentChatId != null && currentChatId!.isNotEmpty) {
         ChatCacheService.saveMessages(
@@ -234,13 +337,36 @@ class MessageController extends GetxController {
           : (payload['id'] != null ? [payload] : []);
 
       final chat = chats.firstWhere(
-        (c) => c is Map && (c['id']?.toString() ?? '') == currentChatId,
+        _matchesCurrentChatData,
         orElse: () => null,
       );
 
       if (chat == null || chat is! Map) return;
 
       final latestAt = (chat['latestMessageAt'] ?? '').toString();
+      final embeddedMessages = chat['messages'];
+      bool addedAny = false;
+      if (embeddedMessages is List) {
+        for (final item in embeddedMessages) {
+          if (item is! Map) continue;
+          final msg = _buildMessageMap(
+            Map<String, dynamic>.from(item),
+            fallbackChatId: (chat['id'] ?? currentChatId).toString(),
+            fallbackCreatedAt: latestAt,
+          );
+          if (msg == null) continue;
+          addedAny = _upsertMessageMap(msg) || addedAny;
+        }
+
+        if (addedAny) {
+          scrollToBottom();
+          ChatCacheService.saveMessages(
+            currentChatId!,
+            messages.map((e) => Map<String, dynamic>.from(e)).toList(),
+          );
+        }
+      }
+
       if (latestAt.isEmpty) return;
 
       if (_lastChatListLatestAt == latestAt) return;
@@ -255,6 +381,10 @@ class MessageController extends GetxController {
       _chatListSyncInFlight = false;
       print('chatList sync error: $e');
     }
+  }
+
+  void handleRealtimeChatList(dynamic rawData) {
+    _handleChatListSync(rawData);
   }
 
   String _safeImageUrl(dynamic file) {
@@ -539,6 +669,7 @@ class MessageController extends GetxController {
     socketService.socket.off('typingStatus', _handleTypingStatus);
     socketService.socket.off('chatList', _handleChatListSync);
     socketService.socket.off('connect', _handleSocketConnect);
+    _chatListPayloadWorker?.dispose();
 
     if (currentChatId != null && currentChatId!.isNotEmpty) {
       socketService.socket.emit('leave', {'chatId': currentChatId});

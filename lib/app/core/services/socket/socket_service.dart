@@ -16,6 +16,7 @@ class SocketService extends GetxController {
   final _messageList = <Map<String, dynamic>>[].obs;
   final _socketFriendList = <Map<String, dynamic>>[].obs;
   final _notificationsList = <Map<String, dynamic>>[].obs;
+  final Rxn<dynamic> chatListPayload = Rxn<dynamic>();
 
   RxList<Map<String, dynamic>> get messageList => _messageList;
   RxList<Map<String, dynamic>> get socketFriendList => _socketFriendList;
@@ -98,6 +99,12 @@ class SocketService extends GetxController {
     });
 
     _socket.on('newMessage', _handleNewMessageForList);
+    _socket.on('chatList', (data) {
+      chatListPayload.value = {
+        'receivedAt': DateTime.now().microsecondsSinceEpoch,
+        'payload': data,
+      };
+    });
 
     final callService = Get.isRegistered<CallService>()
         ? Get.put(CallService())

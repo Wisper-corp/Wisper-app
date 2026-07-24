@@ -5,6 +5,7 @@ import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:get/get.dart';
 import 'package:wisper/app/core/utils/date_formatter.dart';
 import 'package:wisper/app/core/utils/connectivity_services.dart';
+import 'package:wisper/app/core/services/socket/socket_service.dart';
 import 'package:wisper/app/modules/chat/controller/all_chats_controller.dart';
 import 'package:wisper/app/modules/chat/controller/message_controller.dart';
 import 'package:wisper/app/modules/chat/controller/seen_message_controller.dart';
@@ -51,6 +52,7 @@ class _GroupChatScreenState extends State<GroupChatScreen> {
   bool _initialScrollDone = false;
   String? _lastDateSeparator;
   Worker? _messagesWorker;
+  Worker? _chatListPayloadWorker;
   String? _lastEnsuredChatId;
   String? _controllerTag;
 
@@ -93,6 +95,16 @@ class _GroupChatScreenState extends State<GroupChatScreen> {
       if (!mounted) return;
       _handleNewMessages();
     });
+
+    final socketService = Get.find<SocketService>();
+    _chatListPayloadWorker = ever(socketService.chatListPayload, (payload) {
+      if (payload == null) return;
+      ctrl.handleRealtimeChatList(
+        payload is Map && payload.containsKey('payload')
+            ? payload['payload']
+            : payload,
+      );
+    });
   }
 
   void _scrollListener() {
@@ -125,9 +137,7 @@ class _GroupChatScreenState extends State<GroupChatScreen> {
         curve: Curves.easeOut,
       );
     } else {
-      _scrollController.jumpTo(
-        _scrollController.position.maxScrollExtent,
-      );
+      _scrollController.jumpTo(_scrollController.position.maxScrollExtent);
     }
 
     if (mounted) {
@@ -198,8 +208,18 @@ class _GroupChatScreenState extends State<GroupChatScreen> {
       return 'Yesterday';
     } else {
       const monthNames = [
-        'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun',
-        'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec',
+        'Jan',
+        'Feb',
+        'Mar',
+        'Apr',
+        'May',
+        'Jun',
+        'Jul',
+        'Aug',
+        'Sep',
+        'Oct',
+        'Nov',
+        'Dec',
       ];
       return '${date.day} ${monthNames[date.month - 1]} ${date.year}';
     }
@@ -226,8 +246,7 @@ class _GroupChatScreenState extends State<GroupChatScreen> {
         DateTime.tryParse(prevMsg[SocketMessageKeys.createdAt]) ??
         DateTime.now();
 
-    if (_getDateSeparatorText(currentDate) !=
-        _getDateSeparatorText(prevDate)) {
+    if (_getDateSeparatorText(currentDate) != _getDateSeparatorText(prevDate)) {
       _lastDateSeparator = _getDateSeparatorText(currentDate);
       return true;
     }
@@ -284,6 +303,7 @@ class _GroupChatScreenState extends State<GroupChatScreen> {
     _scrollController.removeListener(_scrollListener);
     _scrollController.dispose();
     _messagesWorker?.dispose();
+    _chatListPayloadWorker?.dispose();
     super.dispose();
   }
 
@@ -334,7 +354,8 @@ class _GroupChatScreenState extends State<GroupChatScreen> {
                     controller: _scrollController, // ✅ নিজস্ব controller
                     reverse: false,
                     padding: EdgeInsets.all(10.r),
-                    itemCount: displayedMessages.length + 1, // +1 encryption notice
+                    itemCount:
+                        displayedMessages.length + 1, // +1 encryption notice
                     itemBuilder: (context, index) {
                       if (index == 0) return _buildEncryptionNotice();
 

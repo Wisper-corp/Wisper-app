@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:get/get.dart';
 import 'package:wisper/app/core/others/custom_size.dart';
+import 'package:wisper/app/core/services/socket/socket_service.dart';
 import 'package:wisper/app/core/widgets/common/circle_icon.dart';
 import 'package:wisper/app/core/widgets/common/line_widget.dart';
 import 'package:wisper/app/modules/chat/views/group/group_message_screen.dart';
@@ -14,7 +15,7 @@ import 'package:wisper/gen/assets.gen.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
- 
+
   @override
   State<HomeScreen> createState() => _HomeScreenState();
 }
@@ -22,6 +23,7 @@ class HomeScreen extends StatefulWidget {
 class _HomeScreenState extends State<HomeScreen> {
   static const String _generalChatId = 'd3139d42-5671-41d1-9824-6162be10125a';
   static const String _generalGroupId = 'd3139d42-5671-41d1-9824-6162be10125a';
+  final SocketService socketService = Get.find<SocketService>();
 
   int selectedIndex = 0;
 
@@ -94,20 +96,34 @@ class _HomeScreenState extends State<HomeScreen> {
                 children: [
                   // Tab 0: General Chat
                   SizedBox.expand(
-                    child: (_generalChatId.isEmpty || _generalGroupId.isEmpty)
-                        ? const Center( 
-                            child: Text(
-                              'General Chat is not configured',
-                              style: TextStyle(color: Colors.white70),
-                            ),
-                          )
-                        : GroupChatScreen(
-                            isGeneralChat: true,
-                            chatId: _generalChatId,
-                            groupId: '',
-                            groupName: 'General Chat',
-                            groupImage: '',
+                    child: Obx(() {
+                      final generalChat = _resolveGeneralChat();
+                      final chatId = (generalChat?['id'] ?? _generalChatId)
+                          .toString();
+                      final groupId =
+                          (generalChat?['groupId'] ?? _generalGroupId)
+                              .toString();
+                      final groupImage = (generalChat?['group']?['image'] ?? '')
+                          .toString();
+
+                      if (chatId.isEmpty || groupId.isEmpty) {
+                        return const Center(
+                          child: Text(
+                            'General Chat is not configured',
+                            style: TextStyle(color: Colors.white70),
                           ),
+                        );
+                      }
+
+                      return GroupChatScreen(
+                        key: ValueKey('home_general_chat_$chatId'),
+                        isGeneralChat: true,
+                        chatId: chatId,
+                        groupId: groupId,
+                        groupName: 'General Chat',
+                        groupImage: groupImage,
+                      );
+                    }),
                   ),
 
                   // Tab 1: Posts
@@ -128,6 +144,32 @@ class _HomeScreenState extends State<HomeScreen> {
         ),
       ),
     );
+  }
+
+  Map<String, dynamic>? _resolveGeneralChat() {
+    for (final item in socketService.socketFriendList) {
+      final type = (item['type'] ?? '').toString().toUpperCase();
+      if (type != 'GROUP') continue;
+
+      final id = (item['id'] ?? '').toString();
+      final groupId = (item['groupId'] ?? '').toString();
+      final classId = (item['classId'] ?? '').toString();
+      final group = item['group'];
+      final groupName = (item['group']?['name'] ?? '').toString();
+      final bool looksLikeSystemGeneralGroup =
+          id.isNotEmpty &&
+          groupId == id &&
+          classId.isEmpty &&
+          (group == null || groupName.isEmpty);
+
+      if (id == _generalChatId ||
+          groupId == _generalGroupId ||
+          groupName.toLowerCase() == 'general chat' ||
+          looksLikeSystemGeneralGroup) {
+        return item;
+      }
+    }
+    return null;
   }
 
   Widget _buildTab(String label, int index, double underlineWidth) {
