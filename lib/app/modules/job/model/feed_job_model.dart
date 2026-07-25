@@ -106,10 +106,11 @@ class FeedJobItemModel {
 }
 
 class Author {
-  Author({required this.id, required this.business});
+  Author({required this.id, required this.business, this.person});
 
   final String? id;
   final Business? business;
+  final PersonJob? person;
 
   factory Author.fromJson(Map<String, dynamic> json) {
     return Author(
@@ -117,6 +118,24 @@ class Author {
       business: json["business"] == null
           ? null
           : Business.fromJson(json["business"]),
+      person: json["person"] == null
+          ? null
+          : PersonJob.fromJson(json["person"]),
+    );
+  }
+}
+
+class PersonJob {
+  PersonJob({this.name, this.image, this.title});
+  final String? name;
+  final String? image;
+  final String? title;
+
+  factory PersonJob.fromJson(Map<String, dynamic> json) {
+    return PersonJob(
+      name: json["name"],
+      image: json["image"],
+      title: json["title"],
     );
   }
 }

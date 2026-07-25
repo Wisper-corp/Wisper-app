@@ -102,8 +102,14 @@ class _JobSectionState extends State<JobSection> {
                   ownerImage: resolvedLogo,
                   ownerName: job.companyName?.isNotEmpty == true
                       ? job.companyName!
-                      : job.author?.business?.name ?? '',
-                  ownerDesignation: job.author?.business?.industry ?? '',
+                      : job.author?.business?.name?.isNotEmpty == true
+                          ? job.author!.business!.name!
+                          : job.author?.person?.name?.isNotEmpty == true
+                              ? job.author!.person!.name!
+                              : 'Unknown',
+                  ownerDesignation: job.author?.business?.industry ??
+                      job.author?.person?.title ??
+                      '',
                   jobTitle: job.title ?? '',
                   salary: job.salary.toString(),
                   location: job.location ?? 'Not Mentioned',
