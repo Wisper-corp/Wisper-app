@@ -10,25 +10,48 @@ import 'package:wisper/app/core/widgets/common/star_rating.dart';
 
 class PostSection extends StatefulWidget {
   final String? groupId;
-  const PostSection({super.key, this.groupId});
+  final String? searchQuery;
+  const PostSection({super.key, this.groupId, this.searchQuery});
 
   @override
   State<PostSection> createState() => _PostSectionState();
 }
 
 class _PostSectionState extends State<PostSection> {
-  final AllFeedPostController controller = Get.find<AllFeedPostController>();
+  late final AllFeedPostController controller;
+
+  String get _tag => widget.groupId != null && widget.groupId!.isNotEmpty
+      ? 'posts_group_${widget.groupId}'
+      : 'posts_global';
 
   @override
   void initState() {
     super.initState();
+    // Use tagged controller so group posts don't overwrite global feed
+    controller = Get.isRegistered<AllFeedPostController>(tag: _tag)
+        ? Get.find<AllFeedPostController>(tag: _tag)
+        : Get.put(AllFeedPostController(), tag: _tag);
+
     WidgetsBinding.instance.addPostFrameCallback((_) {
+      controller.resetPagination();
       if (widget.groupId != null && widget.groupId!.isNotEmpty) {
-        controller.getAllPost(groupId: widget.groupId);
+        controller.getAllPost(groupId: widget.groupId, searchQuery: widget.searchQuery);
       } else {
-        controller.getAllPost();
+        controller.getAllPost(searchQuery: widget.searchQuery);
       }
     });
+  }
+
+  @override
+  void didUpdateWidget(covariant PostSection oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (widget.searchQuery != oldWidget.searchQuery) {
+      controller.resetPagination();
+      controller.getAllPost(
+        groupId: widget.groupId,
+        searchQuery: widget.searchQuery,
+      );
+    }
   }
 
   @override

@@ -116,24 +116,18 @@ class GroupMembersItemModel {
 }
 
 class Auth {
-    Auth({
-        required this.id,
-        required this.person,
-        required this.business,
-    });
-
+    Auth({required this.id, required this.person, required this.business});
     final String? id;
     final Person? person;
-    final dynamic business;
+    final Business? business;
 
     factory Auth.fromJson(Map<String, dynamic> json){ 
         return Auth(
             id: json["id"],
             person: json["person"] == null ? null : Person.fromJson(json["person"]),
-            business: json["business"],
+            business: json["business"] == null ? null : Business.fromJson(json["business"]),
         );
     }
-
 }
 
 class Person {
@@ -141,20 +135,39 @@ class Person {
         required this.name,
         required this.email,
         required this.image,
+        this.title,
     });
 
     final String? name;
     final String? email;
     final String? image;
+    final String? title;
 
     factory Person.fromJson(Map<String, dynamic> json){ 
         return Person(
             name: json["name"],
             email: json["email"],
             image: json["image"],
+            title: json["title"],
         );
     }
+}
 
+class Business {
+    Business({this.name, this.email, this.image, this.industry});
+    final String? name;
+    final String? email;
+    final String? image;
+    final String? industry;
+
+    factory Business.fromJson(Map<String, dynamic> json) {
+        return Business(
+            name: json["name"],
+            email: json["email"],
+            image: json["image"],
+            industry: json["industry"],
+        );
+    }
 }
 
 class Meta {

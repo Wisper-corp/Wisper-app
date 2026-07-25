@@ -218,17 +218,6 @@ class _GroupInfoScreenState extends State<GroupInfoScreen> {
                         width: 116.w,
                         child: CustomElevatedButton(
                           textSize: 12,
-                          title: 'Share Profile',
-                          onPress: () {},
-                          borderRadius: 50,
-                        ),
-                      ),
-                      widthBox10,
-                      SizedBox(
-                        height: 31.h,
-                        width: 116.w,
-                        child: CustomElevatedButton(
-                          textSize: 12,
                           title: 'Add Members',
                           onPress: () {
                             _showShareGroupLink(widget.groupId);
@@ -239,8 +228,6 @@ class _GroupInfoScreenState extends State<GroupInfoScreen> {
                     ],
                   ),
                 ),
-                heightBox20,
-                LocationInfo(date: dateFormatter.getFullDateFormat()),
                 heightBox20,
                 StraightLiner(height: 0.4, color: const Color(0xff454545)),
                 heightBox10,

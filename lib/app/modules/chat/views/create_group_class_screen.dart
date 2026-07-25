@@ -68,7 +68,7 @@ class _CreateGroupClassScreenState extends State<CreateGroupClassScreen> {
               ontap: () {
                 Get.to(() => CreateGroupScreen());
               },
-              imagePath: Assets.images.education.keyName,
+              imagePath: Assets.images.userGroup.keyName,
               bgColor: Color(0xff102B19),
               iconColor: Color(0xff11AE46),
               title: 'Create New Community',

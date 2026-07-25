@@ -31,7 +31,7 @@ class AllFeedPostController extends GetxController {
     update(); // Ensure UI updates
   }
 
-  Future<bool> getAllPost({String? categoryId, String? groupId}) async {
+  Future<bool> getAllPost({String? categoryId, String? groupId, String? searchQuery}) async {
     if (_inProgress.value) {
       print('Fetch already in progress, skipping');
       return false;
@@ -55,6 +55,9 @@ class AllFeedPostController extends GetxController {
       final effectiveCategoryId = categoryId ?? _selectedCategoryId.value;
       if (effectiveCategoryId.isNotEmpty) {
         queryParams['category'] = effectiveCategoryId;
+      }
+      if (searchQuery != null && searchQuery.isNotEmpty) {
+        queryParams['searchTerm'] = searchQuery;
       }
 
       // Use group-specific URL if groupId provided

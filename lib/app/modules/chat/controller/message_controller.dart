@@ -17,6 +17,7 @@ class MessageController extends GetxController {
 
   var isLoading = false.obs;
   var messages = <Map<String, dynamic>>[].obs; // newest first
+  String _currentChatId = '';
 
   final ScrollController scrollController = ScrollController();
   final TextEditingController textController = TextEditingController();
@@ -29,6 +30,7 @@ class MessageController extends GetxController {
   }
 
   void setupChat({required String? chatId}) {
+    _currentChatId = chatId ?? '';
     messages.clear();
     isLoading.value = true;
 
@@ -69,6 +71,13 @@ class MessageController extends GetxController {
       print('Real-time message event received from message controller: $data');
       final String msgId = data['id'] ?? '';
       if (messages.any((e) => e[SocketMessageKeys.id] == msgId)) return;
+
+      // Only handle messages for THIS chat — ignore messages from other chats/groups
+      final String incomingChatId = data['chatId'] ?? '';
+      if (incomingChatId.isNotEmpty && _currentChatId.isNotEmpty && incomingChatId != _currentChatId) {
+        print('Ignoring message from different chat: $incomingChatId (current: $_currentChatId)');
+        return;
+      }
 
       // Sender name & image (Group + Personal দুটোতেই কাজ করবে)
       String senderName = 'Unknown';

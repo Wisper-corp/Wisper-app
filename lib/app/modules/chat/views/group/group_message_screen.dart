@@ -51,6 +51,10 @@ class _GroupChatScreenState extends State<GroupChatScreen> {
   late GroupMembersController membersCtrl;
   int _tabIndex = 0;
 
+  // Search state for Services tab
+  final TextEditingController _serviceSearchCtrl = TextEditingController();
+  String _serviceSearchQuery = '';
+
   // Search & filter state for Jobs tab
   final TextEditingController _jobSearchCtrl = TextEditingController();
   String? _jobLocationType;
@@ -85,6 +89,7 @@ class _GroupChatScreenState extends State<GroupChatScreen> {
     final tag = widget.chatId ?? 'group';
     Get.delete<MessageController>(tag: tag, force: true);
     Get.delete<GroupMembersController>(tag: 'members_$tag', force: true);
+    _serviceSearchCtrl.dispose();
     _jobSearchCtrl.dispose();
     super.dispose();
   }
@@ -443,7 +448,26 @@ class _GroupChatScreenState extends State<GroupChatScreen> {
                               fontSize: 11.sp,
                               color: Colors.blue,
                             ),
-                          ),
+                          )
+                        else ...[
+                          // Show career title or industry
+                          if ((m.auth?.person?.title ?? '').isNotEmpty)
+                            Text(
+                              m.auth!.person!.title!,
+                              style: TextStyle(
+                                fontSize: 11.sp,
+                                color: Colors.white54,
+                              ),
+                            )
+                          else if ((m.auth?.business?.industry ?? '').isNotEmpty)
+                            Text(
+                              m.auth!.business!.industry!,
+                              style: TextStyle(
+                                fontSize: 11.sp,
+                                color: Colors.white54,
+                              ),
+                            ),
+                        ],
                       ],
                     ),
                   ),
@@ -484,20 +508,40 @@ class _GroupChatScreenState extends State<GroupChatScreen> {
             ),
           ],
           if (_tabIndex == 1) Expanded(
-            child: Stack(
+            child: Column(
               children: [
-                Positioned.fill(
-                  child: PostSection(groupId: widget.groupId),
+                // Search bar for services
+                Padding(
+                  padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 8.h),
+                  child: CustomTextField(
+                    controller: _serviceSearchCtrl,
+                    hintText: 'Search services...',
+                    onChanged: (val) {
+                      setState(() => _serviceSearchQuery = val ?? '');
+                    },
+                  ),
                 ),
-                Positioned(
-                  bottom: 16.h,
-                  left: 20.w,
-                  right: 20.w,
-                  child: CustomElevatedButton(
-                    title: 'Post your service',
-                    borderRadius: 50,
-                    height: 48,
-                    onPress: () => Get.to(() => GalleryPostScreen(groupId: widget.groupId)),
+                Expanded(
+                  child: Stack(
+                    children: [
+                      Positioned.fill(
+                        child: PostSection(
+                          groupId: widget.groupId,
+                          searchQuery: _serviceSearchQuery.isEmpty ? null : _serviceSearchQuery,
+                        ),
+                      ),
+                      Positioned(
+                        bottom: 16.h,
+                        left: 20.w,
+                        right: 20.w,
+                        child: CustomElevatedButton(
+                          title: 'Post your service',
+                          borderRadius: 50,
+                          height: 48,
+                          onPress: () => Get.to(() => GalleryPostScreen(groupId: widget.groupId)),
+                        ),
+                      ),
+                    ],
                   ),
                 ),
               ],

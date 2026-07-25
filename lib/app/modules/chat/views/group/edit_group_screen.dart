@@ -153,88 +153,99 @@ class _EditGroupScreenState extends State<EditGroupScreen> {
     }
   }
 
-  Widget _buildChipSelector({
+  void _showSelectionSheet({
     required String title,
     required List<String> options,
     required String? selected,
     required void Function(String) onSelect,
+  }) {
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: const Color(0xff1A1A1A),
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
+      ),
+      builder: (ctx) => Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          SizedBox(height: 12.h),
+          Container(width: 40.w, height: 4.h,
+            decoration: BoxDecoration(color: Colors.white24, borderRadius: BorderRadius.circular(2))),
+          SizedBox(height: 16.h),
+          Text(title, style: TextStyle(fontSize: 16.sp, fontWeight: FontWeight.w700, color: Colors.white)),
+          SizedBox(height: 8.h),
+          Flexible(
+            child: ListView.separated(
+              shrinkWrap: true,
+              padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 8.h),
+              itemCount: options.length,
+              separatorBuilder: (_, __) => const Divider(color: Color(0xff2A2A2A), height: 1),
+              itemBuilder: (ctx, i) {
+                final opt = options[i];
+                final isSelected = selected == opt;
+                return ListTile(
+                  title: Text(opt, style: TextStyle(
+                    fontSize: 14.sp, color: isSelected ? const Color(0xff1877F2) : Colors.white,
+                    fontWeight: isSelected ? FontWeight.w600 : FontWeight.w400,
+                  )),
+                  trailing: isSelected ? const Icon(Icons.check, color: Color(0xff1877F2)) : null,
+                  onTap: () {
+                    onSelect(opt);
+                    _tagsChanged = true;
+                    Navigator.pop(ctx);
+                  },
+                );
+              },
+            ),
+          ),
+          SizedBox(height: 16.h),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildTagRow({
+    required String label,
+    required String? selected,
+    required List<String> options,
+    required void Function(String) onSelect,
     required bool enabled,
   }) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Row(
+    return GestureDetector(
+      onTap: enabled
+          ? () => _showSelectionSheet(title: label, options: options, selected: selected, onSelect: onSelect)
+          : () => showSnackBarMessage(context,
+              _lastTagEditDate != null
+                  ? 'Tags locked. Editable in ${30 - DateTime.now().difference(_lastTagEditDate!).inDays} days'
+                  : 'Tags locked (once per month)', true),
+      child: Container(
+        padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 14.h),
+        margin: EdgeInsets.only(bottom: 1.h),
+        decoration: BoxDecoration(
+          color: const Color(0xff1E1E1E),
+          borderRadius: BorderRadius.circular(12.r),
+        ),
+        child: Row(
           children: [
+            Expanded(
+              child: Text(label, style: TextStyle(fontSize: 14.sp, color: Colors.white)),
+            ),
             Text(
-              title,
+              selected ?? 'Select',
               style: TextStyle(
                 fontSize: 13.sp,
-                fontWeight: FontWeight.w600,
-                color: enabled ? Colors.white70 : Colors.white30,
+                color: selected != null ? const Color(0xff1877F2) : Colors.white38,
               ),
             ),
-            if (!enabled) ...[
-              SizedBox(width: 8.w),
-              Container(
-                padding: EdgeInsets.symmetric(horizontal: 8.w, vertical: 3.h),
-                decoration: BoxDecoration(
-                  color: Colors.orange.withOpacity(0.15),
-                  borderRadius: BorderRadius.circular(8.r),
-                ),
-                child: Text(
-                  'Editable in ${30 - DateTime.now().difference(_lastTagEditDate!).inDays} days',
-                  style: TextStyle(fontSize: 10.sp, color: Colors.orange),
-                ),
-              ),
-            ],
+            SizedBox(width: 6.w),
+            Icon(
+              enabled ? Icons.chevron_right : Icons.lock_outline,
+              color: enabled ? Colors.white38 : Colors.orange,
+              size: 18.sp,
+            ),
           ],
         ),
-        SizedBox(height: 8.h),
-        Wrap(
-          spacing: 8.w,
-          runSpacing: 8.h,
-          children: options.map((option) {
-            final isSelected = selected == option;
-            return GestureDetector(
-              onTap: enabled
-                  ? () {
-                      onSelect(option);
-                      _tagsChanged = true;
-                    }
-                  : null,
-              child: Container(
-                padding: EdgeInsets.symmetric(horizontal: 14.w, vertical: 8.h),
-                decoration: BoxDecoration(
-                  color: isSelected
-                      ? const Color(0xff1877F2)
-                      : const Color(0xff1E1E1E),
-                  borderRadius: BorderRadius.circular(20.r),
-                  border: Border.all(
-                    color: isSelected
-                        ? const Color(0xff1877F2)
-                        : enabled
-                            ? const Color(0xff3A3A3A)
-                            : const Color(0xff2A2A2A),
-                  ),
-                ),
-                child: Text(
-                  option,
-                  style: TextStyle(
-                    fontSize: 12.sp,
-                    color: isSelected
-                        ? Colors.white
-                        : enabled
-                            ? Colors.white70
-                            : Colors.white24,
-                    fontWeight: isSelected ? FontWeight.w600 : FontWeight.w400,
-                  ),
-                ),
-              ),
-            );
-          }).toList(),
-        ),
-        SizedBox(height: 16.h),
-      ],
+      ),
     );
   }
 
@@ -311,28 +322,39 @@ class _EditGroupScreenState extends State<EditGroupScreen> {
               ),
               heightBox16,
 
-              _buildChipSelector(
-                title: '1. Trade Type',
-                options: _tradeTypes,
-                selected: _selectedTradeType,
-                onSelect: (v) => setState(() => _selectedTradeType = v),
-                enabled: _canEditTags,
-              ),
-
-              _buildChipSelector(
-                title: '2. Market Type',
-                options: _marketTypes,
-                selected: _selectedMarketType,
-                onSelect: (v) => setState(() => _selectedMarketType = v),
-                enabled: _canEditTags,
-              ),
-
-              _buildChipSelector(
-                title: '3. Business Category',
-                options: _businessCategories,
-                selected: _selectedCategory,
-                onSelect: (v) => setState(() => _selectedCategory = v),
-                enabled: _canEditTags,
+              // Tag rows — settings style
+              Container(
+                decoration: BoxDecoration(
+                  borderRadius: BorderRadius.circular(12.r),
+                  color: const Color(0xff1E1E1E),
+                ),
+                child: Column(
+                  children: [
+                    _buildTagRow(
+                      label: 'Trade Type',
+                      selected: _selectedTradeType,
+                      options: _tradeTypes,
+                      onSelect: (v) => setState(() => _selectedTradeType = v),
+                      enabled: _canEditTags,
+                    ),
+                    const Divider(color: Color(0xff2A2A2A), height: 1, indent: 16),
+                    _buildTagRow(
+                      label: 'Market Type',
+                      selected: _selectedMarketType,
+                      options: _marketTypes,
+                      onSelect: (v) => setState(() => _selectedMarketType = v),
+                      enabled: _canEditTags,
+                    ),
+                    const Divider(color: Color(0xff2A2A2A), height: 1, indent: 16),
+                    _buildTagRow(
+                      label: 'Business Category',
+                      selected: _selectedCategory,
+                      options: _businessCategories,
+                      onSelect: (v) => setState(() => _selectedCategory = v),
+                      enabled: _canEditTags,
+                    ),
+                  ],
+                ),
               ),
 
               heightBox20,
