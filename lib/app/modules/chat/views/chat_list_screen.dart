@@ -92,11 +92,11 @@ class _ChatListScreenState extends State<ChatListScreen> {
             final String chatId = item['id'] ?? '';
             final String type = item['type'] ?? 'INDIVIDUAL';
             final String name = item['type'] == 'INDIVIDUAL'
-                ? item['receiverName']
+                ? (item['receiverName'] ?? '')
                 : item['type'] == 'GROUP'
-                ? item['group']['name']
+                ? (item['group']?['name'] ?? 'Group Chat')
                 : item['type'] == 'CLASS'
-                ? item['chatClass']['name'] ?? 'Unknown'
+                ? (item['chatClass']?['name'] ?? 'Class Chat')
                 : '';
             final String image =
                 item['receiverImage'] ?? Assets.images.image.keyName;

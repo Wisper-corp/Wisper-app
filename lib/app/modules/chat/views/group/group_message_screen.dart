@@ -61,9 +61,12 @@ class _GroupChatScreenState extends State<GroupChatScreen> {
   @override
   void initState() {
     super.initState();
-    final tag = widget.chatId ?? 'group';
-    ctrl = Get.put(MessageController(), tag: tag);
-    // Reuse existing members controller if available, create new one if not
+    final tag = (widget.chatId != null && widget.chatId!.isNotEmpty)
+        ? widget.chatId!
+        : 'group_${widget.groupId ?? DateTime.now().millisecondsSinceEpoch}';
+    ctrl = Get.isRegistered<MessageController>(tag: tag)
+        ? Get.find<MessageController>(tag: tag)
+        : Get.put(MessageController(), tag: tag);
     final membersTag = 'members_$tag';
     membersCtrl = Get.isRegistered<GroupMembersController>(tag: membersTag)
         ? Get.find<GroupMembersController>(tag: membersTag)
