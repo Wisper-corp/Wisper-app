@@ -14,6 +14,7 @@ import 'package:wisper/app/core/widgets/common/label.dart';
 import 'package:wisper/app/modules/authentication/widget/auth_header.dart';
 import 'package:wisper/app/modules/chat/controller/group/edit_group_controller.dart';
 import 'package:wisper/app/modules/chat/controller/group/group_info_controller.dart';
+import 'package:wisper/app/core/widgets/common/searchable_tag_field.dart';
 import 'package:wisper/app/modules/chat/widgets/toggle_option.dart';
 
 // ── Community Tag Options ────────────────────────────────────────────────────
@@ -322,39 +323,39 @@ class _EditGroupScreenState extends State<EditGroupScreen> {
               ),
               heightBox16,
 
-              // Tag rows — settings style
-              Container(
-                decoration: BoxDecoration(
-                  borderRadius: BorderRadius.circular(12.r),
-                  color: const Color(0xff1E1E1E),
-                ),
-                child: Column(
-                  children: [
-                    _buildTagRow(
-                      label: 'Trade Type',
-                      selected: _selectedTradeType,
-                      options: _tradeTypes,
-                      onSelect: (v) => setState(() => _selectedTradeType = v),
-                      enabled: _canEditTags,
-                    ),
-                    const Divider(color: Color(0xff2A2A2A), height: 1, indent: 16),
-                    _buildTagRow(
-                      label: 'Market Type',
-                      selected: _selectedMarketType,
-                      options: _marketTypes,
-                      onSelect: (v) => setState(() => _selectedMarketType = v),
-                      enabled: _canEditTags,
-                    ),
-                    const Divider(color: Color(0xff2A2A2A), height: 1, indent: 16),
-                    _buildTagRow(
-                      label: 'Business Category',
-                      selected: _selectedCategory,
-                      options: _businessCategories,
-                      onSelect: (v) => setState(() => _selectedCategory = v),
-                      enabled: _canEditTags,
-                    ),
-                  ],
-                ),
+              // Tag rows — searchable dropdowns
+              SearchableTagField(
+                label: '1. Trade Type',
+                hint: 'Search trade type (e.g. Local B2B)',
+                options: _tradeTypes,
+                selected: _selectedTradeType,
+                enabled: _canEditTags,
+                onSelect: (v) => setState(() {
+                  _selectedTradeType = v;
+                  _tagsChanged = true;
+                }),
+              ),
+              SearchableTagField(
+                label: '2. Market Type',
+                hint: 'Search market type (e.g. Wholesale)',
+                options: _marketTypes,
+                selected: _selectedMarketType,
+                enabled: _canEditTags,
+                onSelect: (v) => setState(() {
+                  _selectedMarketType = v;
+                  _tagsChanged = true;
+                }),
+              ),
+              SearchableTagField(
+                label: '3. Business Category',
+                hint: 'Search category (e.g. Food & Beverages)',
+                options: _businessCategories,
+                selected: _selectedCategory,
+                enabled: _canEditTags,
+                onSelect: (v) => setState(() {
+                  _selectedCategory = v;
+                  _tagsChanged = true;
+                }),
               ),
 
               heightBox20,

@@ -19,6 +19,7 @@ import 'package:wisper/app/modules/dashboard/views/dashboard_screen.dart';
 import 'package:wisper/gen/assets.gen.dart';
 
 import 'package:wisper/app/core/services/network_caller/network_caller.dart';
+import 'package:wisper/app/core/widgets/common/searchable_tag_field.dart';
 import 'package:wisper/app/urls.dart';
 
 // ── Community Tag Options ─────────────────────────────────────────────────────
@@ -286,119 +287,31 @@ class _CreateGroupButtomSheetState extends State<CreateGroupButtomSheet> {
                         heightBox16,
 
                         // ── Tag 1: Trade Type ────────────────────────────────
-                        _buildChipSelector(
-                          title: '1. Trade Type',
+                        SearchableTagField(
+                          label: '1. Trade Type',
+                          hint: 'Search trade type (e.g. Local B2B)',
                           options: _tradeTypes,
                           selected: _selectedTradeType,
-                          onSelect: (v) =>
-                              setState(() => _selectedTradeType = v),
+                          onSelect: (v) => setState(() => _selectedTradeType = v),
                         ),
 
                         // ── Tag 2: Market Type ───────────────────────────────
-                        _buildChipSelector(
-                          title: '2. Market Type',
+                        SearchableTagField(
+                          label: '2. Market Type',
+                          hint: 'Search market type (e.g. Wholesale)',
                           options: _marketTypes,
                           selected: _selectedMarketType,
-                          onSelect: (v) =>
-                              setState(() => _selectedMarketType = v),
+                          onSelect: (v) => setState(() => _selectedMarketType = v),
                         ),
 
                         // ── Tag 3: Business Category (searchable) ────────────
-                        _buildSectionTitle('3. Business Category'),
-                        // Search field
-                        TextFormField(
-                          controller: _categorySearchCtrl,
-                          style: const TextStyle(color: Colors.white, fontSize: 14),
-                          decoration: InputDecoration(
-                            hintText: 'Search category (e.g. Food & Beverages)',
-                            hintStyle: const TextStyle(color: Color(0xff8C8C8C), fontSize: 13),
-                            filled: true,
-                            fillColor: const Color(0xff1E1E1E),
-                            border: OutlineInputBorder(
-                              borderRadius: BorderRadius.circular(12.r),
-                              borderSide: BorderSide.none,
-                            ),
-                            enabledBorder: OutlineInputBorder(
-                              borderRadius: BorderRadius.circular(12.r),
-                              borderSide: const BorderSide(color: Color(0xff2C2C2E)),
-                            ),
-                            focusedBorder: OutlineInputBorder(
-                              borderRadius: BorderRadius.circular(12.r),
-                              borderSide: const BorderSide(color: Color(0xff2799EA)),
-                            ),
-                            contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
-                            suffixIcon: _loadingCategories
-                                ? const Padding(
-                                    padding: EdgeInsets.all(12),
-                                    child: SizedBox(width: 16, height: 16, child: CircularProgressIndicator(strokeWidth: 2, color: Color(0xff2799EA))))
-                                : _selectedCategory != null
-                                    ? Icon(Icons.check_circle, color: const Color(0xff2799EA), size: 20.sp)
-                                    : Icon(Icons.search, color: Colors.grey, size: 20.sp),
-                          ),
-                          onChanged: (v) {
-                            if (_selectedCategory != null) setState(() => _selectedCategory = null);
-                            _searchCategories(v);
-                          },
+                        SearchableTagField(
+                          label: '3. Business Category',
+                          hint: 'Search category (e.g. Food & Beverages)',
+                          options: _businessCategories,
+                          selected: _selectedCategory,
+                          onSelect: (v) => setState(() => _selectedCategory = v),
                         ),
-                        // Show selected category chip
-                        if (_selectedCategory != null) ...[
-                          SizedBox(height: 8.h),
-                          Container(
-                            padding: EdgeInsets.symmetric(horizontal: 12.w, vertical: 6.h),
-                            decoration: BoxDecoration(
-                              color: const Color(0xff1877F2),
-                              borderRadius: BorderRadius.circular(20.r),
-                            ),
-                            child: Row(
-                              mainAxisSize: MainAxisSize.min,
-                              children: [
-                                Text(_selectedCategory!, style: TextStyle(color: Colors.white, fontSize: 12.sp)),
-                                SizedBox(width: 6.w),
-                                GestureDetector(
-                                  onTap: () => setState(() {
-                                    _selectedCategory = null;
-                                    _categorySearchCtrl.clear();
-                                  }),
-                                  child: const Icon(Icons.close, color: Colors.white, size: 14),
-                                ),
-                              ],
-                            ),
-                          ),
-                        ],
-                        // Suggestions dropdown
-                        if (_showCategorySuggestions)
-                          Container(
-                            margin: const EdgeInsets.only(top: 4),
-                            decoration: BoxDecoration(
-                              color: const Color(0xff1E1E1E),
-                              borderRadius: BorderRadius.circular(12.r),
-                              border: Border.all(color: const Color(0xff2C2C2E)),
-                            ),
-                            constraints: BoxConstraints(maxHeight: 180.h),
-                            child: ListView.separated(
-                              shrinkWrap: true,
-                              padding: const EdgeInsets.symmetric(vertical: 4),
-                              itemCount: _categorySuggestions.length,
-                              separatorBuilder: (_, __) => const Divider(height: 1, color: Color(0xff2C2C2E)),
-                              itemBuilder: (context, index) {
-                                final item = _categorySuggestions[index];
-                                final name = item['name'] as String? ?? '';
-                                final sector = item['sector'] as String? ?? '';
-                                return ListTile(
-                                  dense: true,
-                                  title: Text(name, style: const TextStyle(color: Colors.white, fontSize: 13)),
-                                  subtitle: sector.isNotEmpty ? Text(sector, style: const TextStyle(color: Color(0xff8C8C8C), fontSize: 11)) : null,
-                                  onTap: () => setState(() {
-                                    _selectedCategory = name;
-                                    _categorySearchCtrl.text = name;
-                                    _showCategorySuggestions = false;
-                                    _categorySuggestions = [];
-                                  }),
-                                );
-                              },
-                            ),
-                          ),
-                        SizedBox(height: 16.h),
 
                         // ── Toggles ──────────────────────────────────────────
                         Obx(() => ToggleOption(
