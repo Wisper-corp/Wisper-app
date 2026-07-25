@@ -482,7 +482,8 @@ class _GroupChatScreenState extends State<GroupChatScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final content = Column(
+    final content = SizedBox.expand(
+      child: Column(
       children: [
         if (widget.showHeader) _buildHeader(),
         if (widget.showTabs) _buildTabs(),
@@ -610,9 +611,16 @@ class _GroupChatScreenState extends State<GroupChatScreen> {
           if (_tabIndex == 3) _buildMembers(),
         ],
       ],
+      ),
     );
 
-    if (!widget.showHeader) return Material(color: Colors.black, child: Scaffold(backgroundColor: Colors.black, body: content));
-    return Scaffold(backgroundColor: Colors.black, body: content);
+    // When embedded in Announcement tab (no header), return content directly
+    // The parent Column provides the bounded height via Expanded
+    if (!widget.showHeader) return content;
+    // When navigated to as a full screen, wrap in Scaffold
+    return Scaffold(
+      backgroundColor: Colors.black,
+      body: SafeArea(child: content),
+    );
   }
 }
