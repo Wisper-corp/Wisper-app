@@ -1,7 +1,7 @@
-
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:wisper/app/core/others/custom_size.dart';
+import 'package:wisper/app/core/widgets/common/initials_avatar.dart';
 import 'package:wisper/gen/assets.gen.dart';
 
 class MemberWidget extends StatelessWidget {
@@ -17,9 +17,10 @@ class MemberWidget extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final isNetwork = imagePath.startsWith('http');
     return Container(
       decoration: BoxDecoration(
-        color: Color(0xff1B1E25),
+        color: const Color(0xff1B1E25),
         borderRadius: BorderRadius.circular(30.r),
       ),
       child: Padding(
@@ -28,7 +29,13 @@ class MemberWidget extends StatelessWidget {
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.center,
           children: [
-            CircleAvatar(radius: 8.5.r, backgroundImage: AssetImage(imagePath)),
+            // Use InitialsAvatar for network images, AssetImage for local
+            InitialsAvatar(
+              name: name,
+              imageUrl: isNetwork ? imagePath : null,
+              radius: 8.5.r,
+              fontSize: 7,
+            ),
             widthBox4,
             Text(
               name,

@@ -568,7 +568,7 @@ class _GroupChatScreenState extends State<GroupChatScreen> {
       ],
     );
 
-    if (!widget.showHeader) return Material(color: Colors.black, child: content);
+    if (!widget.showHeader) return Material(color: Colors.black, child: Scaffold(backgroundColor: Colors.black, body: content));
     return Scaffold(backgroundColor: Colors.black, body: content);
   }
 }
