@@ -102,8 +102,9 @@ class _CommunitySectionState extends State<CommunitySection> {
             return _CommunityCard(
               item: item,
               onTap: () {
-                final existingChatId = _joinedChatId(item.id);
-                if (existingChatId != null) {
+                // First try socketFriendList, then fallback to item.chat?.id
+                final existingChatId = _joinedChatId(item.id) ?? item.chat?.id;
+                if (existingChatId != null && existingChatId.isNotEmpty) {
                   Get.to(
                     () => GroupChatScreen(
                       chatId: existingChatId,

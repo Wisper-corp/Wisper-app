@@ -49,7 +49,7 @@ class _RecruiterSignUpScreenState extends State<RecruiterSignUpScreen> {
     setState(() => _loadingSuggestions = true);
     try {
       final NetworkResponse response = await Get.find<NetworkCaller>().getRequest(
-        '${Urls.baseUrl}/industries/search?q=${Uri.encodeComponent(query)}&limit=10',
+        Urls.industrySearchUrl(query),
       );
       if (response.isSuccess && response.responseData != null) {
         final data = response.responseData['data'] as List? ?? [];
@@ -290,7 +290,7 @@ class _RecruiterSignUpScreenState extends State<RecruiterSignUpScreen> {
                   text: TextSpan(
                     children: [
                       TextSpan(
-                        text: 'By signing up, I agree to the Wispa  ',
+                        text: 'By signing up, I agree to the Wisper  ',
                         style: TextStyle(
                           fontSize: 14.sp,
                           color: Color(0xffAEAEAE),

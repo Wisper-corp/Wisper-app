@@ -144,6 +144,11 @@ class Urls {
     return '$_baseUrl/job-titles/search?q=${Uri.encodeComponent(q)}&limit=20';
   }
 
+  // Industry/business category search
+  static String industrySearchUrl(String q) {
+    return '$_baseUrl/industries/search?q=${Uri.encodeComponent(q)}&limit=20';
+  }
+
   static String resumeById(String id) {
     return '$_baseUrl/resumes/$id';
   }

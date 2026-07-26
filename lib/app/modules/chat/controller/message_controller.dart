@@ -137,7 +137,7 @@ class MessageController extends GetxController {
   void sendMessage(String chatId) {
     final text = textController.text.trim();
     final fileUrl = imageDecodeController.imageUrl.trim();
-    final fileType = imageDecodeController.currentFileType; // নতুন
+    final fileType = imageDecodeController.currentFileType;
     final userId = StorageUtil.getData(StorageUtil.userId) ?? '';
 
     if (text.isEmpty && fileUrl.isEmpty) {
@@ -145,17 +145,29 @@ class MessageController extends GetxController {
       return;
     }
 
+    if (chatId.isEmpty) {
+      Get.snackbar('Error', 'Chat not ready, please wait...');
+      print('sendMessage: chatId is empty — cannot send');
+      return;
+    }
+
+    if (!socketService.socket.connected) {
+      Get.snackbar('Error', 'Not connected, please wait...',
+        backgroundColor: Colors.orange, colorText: Colors.white);
+      print('sendMessage: socket not connected');
+      return;
+    }
+
     final messageData = {
       "chatId": chatId,
       if (text.isNotEmpty) "text": text,
       if (fileUrl.isNotEmpty) "file": fileUrl,
-      if (fileUrl.isNotEmpty) "fileType": fileType, // সঠিক টাইপ যাবে
+      if (fileUrl.isNotEmpty) "fileType": fileType,
     };
 
     socketService.socket.emit('sendMessage', messageData);
-    print('File type : $fileType');
+    print('sendMessage emitted: chatId=$chatId text=$text');
     print('User Id : $userId');
-    print('Message Done sending message');
 
     // Clear everything
     textController.clear();

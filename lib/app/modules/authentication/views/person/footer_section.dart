@@ -72,7 +72,7 @@ class _FooterSectionState extends State<FooterSection> {
           text: TextSpan(
             children: [
               TextSpan(
-                text: 'By signing up, I agree to the Wispa  ',
+                text: 'By signing up, I agree to the Wisper  ',
                 style: TextStyle(
                   fontSize: 14.sp,
                   color: Color(0xffAEAEAE),
