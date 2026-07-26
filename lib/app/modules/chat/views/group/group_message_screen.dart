@@ -11,6 +11,7 @@ import 'package:wisper/app/core/widgets/common/initials_avatar.dart';
 import 'package:wisper/app/core/widgets/common/line_widget.dart';
 import 'package:wisper/app/core/widgets/shimmer/chat_shimmer.dart';
 import 'package:wisper/app/modules/chat/controller/group/all_group_member_controller.dart';
+import 'package:wisper/app/modules/chat/controller/group/group_info_controller.dart';
 import 'package:wisper/app/modules/chat/controller/message_controller.dart';
 import 'package:wisper/app/modules/chat/controller/seen_message_controller.dart';
 import 'package:wisper/app/modules/chat/model/message_keys.dart';
@@ -59,6 +60,7 @@ class _GroupChatScreenState extends State<GroupChatScreen> {
   String _serviceSearchQuery = '';
   String _jobSearchQuery = '';
   String? _jobLocationType;
+  List<String> _tagPills = []; // community tag pills
 
   static const _tabs = ['General Chat', 'Services', 'Jobs', 'Members'];
 
@@ -89,6 +91,13 @@ class _GroupChatScreenState extends State<GroupChatScreen> {
       // Only fetch members if we have a real groupId
       if (widget.groupId != null && widget.groupId!.isNotEmpty) {
         _membersCtrl.getGroupMembers(widget.groupId);
+        // Fetch group info for tag pills
+        final infoCtrl = Get.put(GroupInfoController(), tag: 'grp_${widget.groupId}');
+        infoCtrl.getGroupInfo(widget.groupId).then((ok) {
+          if (ok && mounted) {
+            setState(() => _tagPills = _parseTags(infoCtrl.groupInfoData?.description));
+          }
+        });
       }
     });
   }
@@ -100,6 +109,24 @@ class _GroupChatScreenState extends State<GroupChatScreen> {
     _serviceSearchCtrl.dispose();
     _jobSearchCtrl.dispose();
     super.dispose();
+  }
+
+  // ── Parse community tag pills from description ───────────────────────────
+  List<String> _parseTags(String? description) {
+    if (description == null || description.isEmpty) return [];
+    final tags = <String>[];
+    final lines = description.split('\n');
+    for (final line in lines) {
+      final parts = line.split('|');
+      for (final part in parts) {
+        final colonIdx = part.indexOf(':');
+        if (colonIdx != -1) {
+          final value = part.substring(colonIdx + 1).trim();
+          if (value.isNotEmpty) tags.add(value);
+        }
+      }
+    }
+    return tags;
   }
 
   // ── Header ──────────────────────────────────────────────────────────────────
@@ -147,6 +174,26 @@ class _GroupChatScreenState extends State<GroupChatScreen> {
                       style: TextStyle(fontSize: 16.sp, fontWeight: FontWeight.w700, color: Colors.white),
                       overflow: TextOverflow.ellipsis,
                     ),
+                    // Community tag pills
+                    if (_tagPills.isNotEmpty) ...[
+                      SizedBox(height: 3.h),
+                      Wrap(
+                        spacing: 5.w,
+                        runSpacing: 3.h,
+                        children: _tagPills.map((tag) => Container(
+                          padding: EdgeInsets.symmetric(horizontal: 7.w, vertical: 2.h),
+                          decoration: BoxDecoration(
+                            color: const Color(0xff1A2C3D),
+                            borderRadius: BorderRadius.circular(20.r),
+                            border: Border.all(color: const Color(0xff1F7DE9), width: 0.8),
+                          ),
+                          child: Text(
+                            tag,
+                            style: TextStyle(fontSize: 9.sp, fontWeight: FontWeight.w500, color: const Color(0xff5BB8FF)),
+                          ),
+                        )).toList(),
+                      ),
+                    ],
                     SizedBox(height: 2.h),
                     Row(
                       children: [

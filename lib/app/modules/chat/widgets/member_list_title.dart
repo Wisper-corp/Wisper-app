@@ -117,7 +117,7 @@ class MemberListTile extends StatelessWidget {
                             widthBox5,
                             isGroup
                                 ? Tag(
-                                    text: 'Group',
+                                    text: 'Community',
                                     color: Color(0xff051B33),
                                     textColor: Color(0xff1F7DE9),
                                   )
@@ -267,7 +267,7 @@ class Tag extends StatelessWidget {
       child: Padding(
         padding: const EdgeInsets.symmetric(horizontal: 6.0, vertical: 2.0),
         child: Text(
-          text ?? 'Group',
+          text ?? 'Community',
           style: TextStyle(
             fontSize: 10.sp,
             fontWeight: FontWeight.w400,

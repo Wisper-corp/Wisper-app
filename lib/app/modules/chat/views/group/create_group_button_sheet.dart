@@ -80,6 +80,10 @@ class _CreateGroupButtomSheetState extends State<CreateGroupButtomSheet> {
   String? _selectedMarketType;
   String? _selectedCategory;
 
+  // Name suffix
+  String? _selectedSuffix; // 'MKT' or 'STY'
+  static const _suffixOptions = ['MKT', 'STY'];
+
   // Business category search
   final TextEditingController _categorySearchCtrl = TextEditingController();
   List<Map<String, dynamic>> _categorySuggestions = [];
@@ -125,9 +129,20 @@ class _CreateGroupButtomSheetState extends State<CreateGroupButtomSheet> {
     super.dispose();
   }
 
+  @override
+  void initState() {
+    super.initState();
+    // Rebuild preview when name changes
+    _groupNameC.addListener(() => setState(() {}));
+  }
+
   void createGroup() {
     if (_groupNameC.text.trim().isEmpty) {
-      showSnackBarMessage(context, 'Please enter group name', true);
+      showSnackBarMessage(context, 'Please enter community name', true);
+      return;
+    }
+    if (_selectedSuffix == null) {
+      showSnackBarMessage(context, 'Please select a suffix (MKT or STY)', true);
       return;
     }
     showLoadingOverLay(
@@ -137,11 +152,16 @@ class _CreateGroupButtomSheetState extends State<CreateGroupButtomSheet> {
   }
 
   Future<void> performCreateGroup() async {
+    // Full name = base name + suffix
+    final baseName = _groupNameC.text.trim();
+    final fullName = _selectedSuffix != null ? '$baseName $_selectedSuffix' : baseName;
+
     // Build description with community tags appended
     final tagSuffix = [
       if (_selectedTradeType != null) 'Trade: $_selectedTradeType',
       if (_selectedMarketType != null) 'Market: $_selectedMarketType',
       if (_selectedCategory != null) 'Category: $_selectedCategory',
+      if (_selectedSuffix != null) 'Suffix: $_selectedSuffix',
     ].join(' | ');
 
     final description = [
@@ -150,7 +170,7 @@ class _CreateGroupButtomSheetState extends State<CreateGroupButtomSheet> {
     ].join('\n');
 
     final bool isSuccess = await createGroupController.createGroup(
-      name: _groupNameC.text.trim(),
+      name: fullName,
       description: description,
       members: widget.selectedMemberIds,
       isPrivate: _isPrivate.value,
@@ -267,12 +287,120 @@ class _CreateGroupButtomSheetState extends State<CreateGroupButtomSheet> {
                         // ── Group Name ───────────────────────────────────────
                         const Label(label: 'Community Name'),
                         heightBox8,
-                        CustomTextField(
-                          controller: _groupNameC,
-                          hintText: 'Enter community name',
-                          keyboardType: TextInputType.name,
-                          validator: ValidatorService.validateSimpleField,
+                        // Name field + suffix selector in one row
+                        Container(
+                          decoration: BoxDecoration(
+                            color: const Color(0xff1E1E1E),
+                            borderRadius: BorderRadius.circular(12.r),
+                            border: Border.all(color: const Color(0xff2C2C2E)),
+                          ),
+                          child: Row(
+                            children: [
+                              // Name text field
+                              Expanded(
+                                child: TextFormField(
+                                  controller: _groupNameC,
+                                  style: TextStyle(color: Colors.white, fontSize: 14.sp),
+                                  decoration: InputDecoration(
+                                    hintText: 'Enter community name',
+                                    hintStyle: TextStyle(color: Colors.white38, fontSize: 14.sp),
+                                    border: InputBorder.none,
+                                    contentPadding: EdgeInsets.symmetric(horizontal: 14.w, vertical: 14.h),
+                                  ),
+                                  validator: (v) => (v == null || v.trim().isEmpty) ? 'Required' : null,
+                                ),
+                              ),
+                              // Divider
+                              Container(width: 1, height: 30.h, color: const Color(0xff3A3A3A)),
+                              // Suffix selector
+                              GestureDetector(
+                                onTap: () {
+                                  showModalBottomSheet(
+                                    context: context,
+                                    backgroundColor: const Color(0xff1E1E1E),
+                                    shape: RoundedRectangleBorder(
+                                      borderRadius: BorderRadius.vertical(top: Radius.circular(16.r)),
+                                    ),
+                                    builder: (_) => Padding(
+                                      padding: EdgeInsets.symmetric(horizontal: 20.w, vertical: 20.h),
+                                      child: Column(
+                                        mainAxisSize: MainAxisSize.min,
+                                        crossAxisAlignment: CrossAxisAlignment.start,
+                                        children: [
+                                          Text('Select Suffix', style: TextStyle(fontSize: 16.sp, fontWeight: FontWeight.w700, color: Colors.white)),
+                                          SizedBox(height: 16.h),
+                                          ..._suffixOptions.map((suffix) => GestureDetector(
+                                            onTap: () {
+                                              setState(() => _selectedSuffix = suffix);
+                                              Navigator.pop(context);
+                                            },
+                                            child: Container(
+                                              width: double.infinity,
+                                              padding: EdgeInsets.symmetric(vertical: 14.h, horizontal: 16.w),
+                                              margin: EdgeInsets.only(bottom: 8.h),
+                                              decoration: BoxDecoration(
+                                                color: _selectedSuffix == suffix
+                                                    ? const Color(0xff1F3A5F)
+                                                    : const Color(0xff2C2C2E),
+                                                borderRadius: BorderRadius.circular(10.r),
+                                                border: Border.all(
+                                                  color: _selectedSuffix == suffix
+                                                      ? const Color(0xff1F7DE9)
+                                                      : Colors.transparent,
+                                                ),
+                                              ),
+                                              child: Row(
+                                                children: [
+                                                  Text(suffix, style: TextStyle(color: Colors.white, fontSize: 15.sp, fontWeight: FontWeight.w600)),
+                                                  SizedBox(width: 10.w),
+                                                  Text(
+                                                    suffix == 'MKT' ? 'Market' : 'Society',
+                                                    style: TextStyle(color: Colors.white54, fontSize: 13.sp),
+                                                  ),
+                                                  if (_selectedSuffix == suffix) ...[
+                                                    const Spacer(),
+                                                    Icon(Icons.check_circle, color: const Color(0xff1F7DE9), size: 18.sp),
+                                                  ],
+                                                ],
+                                              ),
+                                            ),
+                                          )).toList(),
+                                        ],
+                                      ),
+                                    ),
+                                  );
+                                },
+                                child: Container(
+                                  padding: EdgeInsets.symmetric(horizontal: 12.w, vertical: 14.h),
+                                  child: Row(
+                                    mainAxisSize: MainAxisSize.min,
+                                    children: [
+                                      Text(
+                                        _selectedSuffix ?? 'MKT/STY',
+                                        style: TextStyle(
+                                          color: _selectedSuffix != null ? const Color(0xff1F7DE9) : Colors.white38,
+                                          fontSize: 13.sp,
+                                          fontWeight: FontWeight.w600,
+                                        ),
+                                      ),
+                                      SizedBox(width: 4.w),
+                                      Icon(Icons.arrow_drop_down, color: Colors.white38, size: 18.sp),
+                                    ],
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
                         ),
+                        // Preview of full name
+                        if (_selectedSuffix != null && _groupNameC.text.isNotEmpty)
+                          Padding(
+                            padding: EdgeInsets.only(top: 6.h, left: 4.w),
+                            child: Text(
+                              'Preview: ${_groupNameC.text.trim()} $_selectedSuffix',
+                              style: TextStyle(color: Colors.white54, fontSize: 11.sp),
+                            ),
+                          ),
                         heightBox12,
 
                         // ── Description ──────────────────────────────────────

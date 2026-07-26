@@ -9,6 +9,8 @@ import 'package:wisper/app/core/widgets/common/circle_icon.dart';
 import 'package:wisper/app/core/widgets/common/custom_button.dart';
 import 'package:wisper/app/core/widgets/common/custom_text_filed.dart';
 import 'package:wisper/app/core/widgets/common/line_widget.dart';
+import 'package:wisper/app/modules/chat/controller/group/group_info_controller.dart';
+import 'package:wisper/app/modules/chat/model/group_info_model.dart';
 import 'package:wisper/app/modules/chat/controller/all_community_controller.dart';
 import 'package:wisper/app/modules/chat/controller/all_group_controller.dart';
 import 'package:wisper/app/modules/chat/views/group/group_info_screen.dart';
@@ -44,6 +46,7 @@ class CommunityScreen extends StatefulWidget {
 class _CommunityScreenState extends State<CommunityScreen> {
   final JoinGroupController joinGroupController = JoinGroupController();
   final TextEditingController _memberSearchController = TextEditingController();
+  late final GroupInfoController _groupInfoCtrl;
 
   int selectedIndex = 0;
   int _postSectionVersion = 0;
@@ -51,6 +54,9 @@ class _CommunityScreenState extends State<CommunityScreen> {
   int _roleSectionVersion = 0;
   late bool _hasJoined;
   String _chatId = '';
+
+  // Parsed community tag pills from description
+  List<String> _tagPills = [];
 
   bool _isValidImagePath(String path) {
     final trimmed = path.trim();
@@ -140,6 +146,35 @@ class _CommunityScreenState extends State<CommunityScreen> {
     super.initState();
     _hasJoined = widget.hasJoined ?? false;
     _chatId = widget.chatId ?? '';
+    _groupInfoCtrl = Get.put(GroupInfoController(), tag: 'community_${widget.groupId}');
+    if (widget.groupId != null && widget.groupId!.isNotEmpty) {
+      WidgetsBinding.instance.addPostFrameCallback((_) async {
+        final ok = await _groupInfoCtrl.getGroupInfo(widget.groupId);
+        if (ok && mounted) {
+          setState(() => _tagPills = _parseTags(_groupInfoCtrl.groupInfoData?.description));
+        }
+      });
+    }
+  }
+
+  /// Parse "Trade: X | Market: Y | Category: Z" out of the description string
+  List<String> _parseTags(String? description) {
+    if (description == null || description.isEmpty) return [];
+    final tags = <String>[];
+    // Tags are on the last line after a newline separator
+    final lines = description.split('\n');
+    for (final line in lines) {
+      // Each tag part looks like "Trade: X | Market: Y | Category: Z"
+      final parts = line.split('|');
+      for (final part in parts) {
+        final colonIdx = part.indexOf(':');
+        if (colonIdx != -1) {
+          final value = part.substring(colonIdx + 1).trim();
+          if (value.isNotEmpty) tags.add(value);
+        }
+      }
+    }
+    return tags;
   }
 
   @override
@@ -232,6 +267,32 @@ class _CommunityScreenState extends State<CommunityScreen> {
                           fontWeight: FontWeight.w800,
                         ),
                       ),
+
+                      // Community tag pills (Trade Type, Market Type, Category)
+                      if (_tagPills.isNotEmpty) ...[
+                        SizedBox(height: 4.h),
+                        Wrap(
+                          spacing: 6.w,
+                          runSpacing: 4.h,
+                          children: _tagPills.map((tag) => Container(
+                            padding: EdgeInsets.symmetric(horizontal: 8.w, vertical: 3.h),
+                            decoration: BoxDecoration(
+                              color: const Color(0xff1A2C3D),
+                              borderRadius: BorderRadius.circular(20.r),
+                              border: Border.all(color: const Color(0xff1F7DE9), width: 0.8),
+                            ),
+                            child: Text(
+                              tag,
+                              style: TextStyle(
+                                fontSize: 10.sp,
+                                fontWeight: FontWeight.w500,
+                                color: const Color(0xff5BB8FF),
+                              ),
+                            ),
+                          )).toList(),
+                        ),
+                        SizedBox(height: 4.h),
+                      ],
 
                       // heightBox4,
                       Row(
