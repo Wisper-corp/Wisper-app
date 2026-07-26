@@ -11,6 +11,7 @@
 -keepattributes *Annotation*
 -keepattributes Signature
 -keepattributes InnerClasses
+-keepattributes SourceFile,LineNumberTable
 
 # Gson
 -keepattributes Signature
@@ -22,6 +23,12 @@
 -dontwarn coil.bitmap.BitmapPool
 -dontwarn coil.**
 
+# SmileID SDK — keep all classes to prevent startup crash
+-keep class com.smileidentity.** { *; }
+-keep class com.smileidentity.flutter.** { *; }
+-keepclassmembers class com.smileidentity.** { *; }
+-dontwarn com.smileidentity.**
+
 # Firebase / FCM
 -keep class com.google.firebase.** { *; }
 -keep class com.google.android.gms.** { *; }
@@ -31,3 +38,14 @@
 # Keep all plugin method channels
 -keep class * implements io.flutter.plugin.common.MethodChannel$MethodCallHandler { *; }
 -keep class * implements io.flutter.plugin.common.EventChannel$StreamHandler { *; }
+
+# Retrofit
+-keepattributes RuntimeVisibleAnnotations, RuntimeInvisibleAnnotations
+-keep,allowobfuscation,allowshrinking interface retrofit2.Call
+-keep,allowobfuscation,allowshrinking class retrofit2.Response
+-keep,allowobfuscation,allowshrinking class kotlin.coroutines.Continuation
+
+# General — keep all classes that could be loaded reflectively
+-keepclassmembers class * {
+    @android.webkit.JavascriptInterface <methods>;
+}

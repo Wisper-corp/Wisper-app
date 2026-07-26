@@ -32,9 +32,12 @@ android {
 
     buildTypes {
         release {
-            // TODO: Add your own signing config for the release build.
             // Signing with the debug keys for now, so `flutter run --release` works.
             signingConfig = signingConfigs.getByName("debug")
+            // Disable R8 shrinking — some SDK classes (SmileID, callkit) are stripped
+            // by R8 even with keep rules, causing startup crashes
+            isMinifyEnabled = false
+            isShrinkResources = false
         }
     }
 
