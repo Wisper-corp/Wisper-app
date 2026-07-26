@@ -65,19 +65,13 @@ class _GroupChatScreenState extends State<GroupChatScreen> {
   @override
   void initState() {
     super.initState();
-    // Generate unique tags per instance using hashCode
-    _ctrlTag = 'msg_${widget.chatId ?? widget.groupId ?? hashCode}';
-    _membersTag = 'mem_${widget.groupId ?? hashCode}';
+    // Use timestamp to guarantee unique tag — prevents any possible collision
+    final ts = DateTime.now().millisecondsSinceEpoch;
+    _ctrlTag = 'msg_${widget.chatId ?? widget.groupId ?? 'g'}_$ts';
+    _membersTag = 'mem_${widget.groupId ?? 'g'}_$ts';
 
-    // Always create fresh controllers
-    if (Get.isRegistered<MessageController>(tag: _ctrlTag)) {
-      Get.delete<MessageController>(tag: _ctrlTag, force: true);
-    }
+    // Force delete any existing controller with same base before creating new
     _ctrl = Get.put(MessageController(), tag: _ctrlTag);
-
-    if (Get.isRegistered<GroupMembersController>(tag: _membersTag)) {
-      Get.delete<GroupMembersController>(tag: _membersTag, force: true);
-    }
     _membersCtrl = Get.put(GroupMembersController(), tag: _membersTag);
 
     WidgetsBinding.instance.addPostFrameCallback((_) {
