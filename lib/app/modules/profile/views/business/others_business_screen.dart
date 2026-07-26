@@ -222,7 +222,7 @@ class _OthersBusinessScreenState extends State<OthersBusinessScreen> {
                 isEditImage: false,
                 isTrailing: false,
                 trailingOnTap: () {},
-                imagePath: Assets.images.person.keyName,
+                imagePath: business?.image ?? '',
                 editOnTap: () {},
                 title: business?.name ?? 'No Name',
                 memberInfo: business?.industry ?? 'No Industry',
@@ -234,8 +234,9 @@ class _OthersBusinessScreenState extends State<OthersBusinessScreen> {
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
                     CircleIconWidget(
-                      imagePath: Assets.images.call.keyName,
-                      onTap: () {},
+                      imagePath: Assets.images.messenger.keyName,
+                      onTap: () =>
+                          createChat(business?.id, business?.name, business?.image),
                       radius: 15,
                       color: LightThemeColors.blueColor,
                       iconColor: Colors.white,
@@ -286,11 +287,11 @@ class _OthersBusinessScreenState extends State<OthersBusinessScreen> {
                               controller.profileData!.connection?.status == null
                               ? LightThemeColors.blueColor
                               : LightThemeColors.themeGreyColor,
-                          textSize: 12,
+                          textSize: 11,
                           title:
                               controller.profileData!.connection?.status ==
                                   'ACCEPTED'
-                              ? 'Added'
+                              ? 'Contact added'
                               : controller.profileData!.connection?.status ==
                                     'PENDING'
                               ? 'Pending'
@@ -300,7 +301,7 @@ class _OthersBusinessScreenState extends State<OthersBusinessScreen> {
                               : controller.profileData!.connection?.status ==
                                     'BLOCKED'
                               ? 'Blocked'
-                              : 'Add',
+                              : 'Add contact',
                           onPress:
                               controller.profileData!.connection?.status ==
                                   'ACCEPTED'

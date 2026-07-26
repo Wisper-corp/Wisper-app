@@ -86,86 +86,93 @@ class _CreateClassButtomSheetState extends State<CreateClassButtomSheet> {
 
   @override
   Widget build(BuildContext context) {
-    return ConstrainedBox(
-      constraints: BoxConstraints(
-        maxHeight: MediaQuery.of(context).size.height * 0.9,
+    return AnimatedPadding(
+      padding: EdgeInsets.only(
+        bottom: MediaQuery.of(context).viewInsets.bottom,
       ),
-      child: Container(
-        color: Colors.black,
-        child: SingleChildScrollView(
-          child: Padding(
-            padding: const EdgeInsets.all(20.0),
-            child: Form(
-              key: formKey,
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  CreateHeader(
-                    bgColor: const Color(0xff051B33),
-                    iconColor: const Color(0xff1F7DE9),
-                    title: 'Create Class',
-                    imagePath: Assets.images.education.keyName,
-                    onTap: () {
-                      if (formKey.currentState!.validate()) {
-                        createGroup();
-                      }
-                    },
-                    trailinlgText: 'Create',
-                  ),
-                  heightBox10,
-                  const StraightLiner(height: 0.5),
-                  heightBox10,
-                  const Label(label: 'Class Name'),
-                  heightBox10,
-                  CustomTextField(
-                    controller: _groupNameC,
-                    hintText: 'Enter class name',
-                    keyboardType: TextInputType.name,
-                    validator: ValidatorService.validateSimpleField,
-                  ),
-                  heightBox10,
-                  const Label(label: 'Description'),
-                  heightBox10,
-                  CustomTextField(
-                    controller: _groupDescriptionC,
-                    hintText: 'Write description',
-                    keyboardType: TextInputType.multiline,
-                    maxLines: 3,
-                    validator: ValidatorService.validateSimpleField,
-                  ),
-                  heightBox16,
-                  ToggleOption(
-                    isToggled: false,
-                    title: 'Private Class',
-                    subtitle: 'Only invited members can join',
-                    onToggle: (bool value) {
-                      _isPrivate.value = value;
-                    },
-                  ),
-                  heightBox10,
-                  ToggleOption(
-                    isToggled: false,
-                    title: 'Allow Member Invites',
-                    subtitle: 'Let members invite others',
-                    onToggle: (bool value) {
-                      _allowInvitation.value = value;
-                    },
-                  ),
-                  heightBox10,
-                  Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        'Selected Members (${widget.selectedMemberIds.length})',
-                        style: TextStyle(
-                          fontSize: 14.sp,
-                          fontWeight: FontWeight.w400,
+      duration: const Duration(milliseconds: 200),
+      curve: Curves.easeOut,
+      child: ConstrainedBox(
+        constraints: BoxConstraints(
+          maxHeight: MediaQuery.of(context).size.height * 0.9,
+        ),
+        child: Container(
+          color: Colors.black,
+          child: SingleChildScrollView(
+            child: Padding(
+              padding: const EdgeInsets.all(20.0),
+              child: Form(
+                key: formKey,
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    CreateHeader(
+                      bgColor: const Color(0xff051B33),
+                      iconColor: const Color(0xff1F7DE9),
+                      title: 'Create Class',
+                      imagePath: Assets.images.education.keyName,
+                      onTap: () {
+                        if (formKey.currentState!.validate()) {
+                          createGroup();
+                        }
+                      },
+                      trailinlgText: 'Create',
+                    ),
+                    heightBox10,
+                    const StraightLiner(height: 0.5),
+                    heightBox10,
+                    const Label(label: 'Class Name'),
+                    heightBox10,
+                    CustomTextField(
+                      controller: _groupNameC,
+                      hintText: 'Enter class name',
+                      keyboardType: TextInputType.name,
+                      validator: ValidatorService.validateSimpleField,
+                    ),
+                    heightBox10,
+                    const Label(label: 'Description'),
+                    heightBox10,
+                    CustomTextField(
+                      controller: _groupDescriptionC,
+                      hintText: 'Write description',
+                      keyboardType: TextInputType.multiline,
+                      maxLines: 3,
+                      validator: ValidatorService.validateSimpleField,
+                    ),
+                    heightBox16,
+                    ToggleOption(
+                      isToggled: false,
+                      title: 'Private Class',
+                      subtitle: 'Only invited members can join',
+                      onToggle: (bool value) {
+                        _isPrivate.value = value;
+                      },
+                    ),
+                    heightBox10,
+                    ToggleOption(
+                      isToggled: false,
+                      title: 'Allow Member Invites',
+                      subtitle: 'Let members invite others',
+                      onToggle: (bool value) {
+                        _allowInvitation.value = value;
+                      },
+                    ),
+                    heightBox10,
+                    Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          'Selected Members (${widget.selectedMemberIds.length})',
+                          style: TextStyle(
+                            fontSize: 14.sp,
+                            fontWeight: FontWeight.w400,
+                          ),
                         ),
-                      ),
-                    ],
-                  ),
-                ],
+                      ],
+                    ),
+                  ],
+                ),
               ),
             ),
           ),

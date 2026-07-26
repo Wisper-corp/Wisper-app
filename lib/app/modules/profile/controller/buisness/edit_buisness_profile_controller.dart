@@ -48,4 +48,35 @@ class EditBusinessProfileController extends GetxController {
       return false;
     }
   }
+
+  Future<bool> updateAddress({String? address}) async {
+    _inProgress.value = true;
+
+    try {
+      Map<String, dynamic> body = {"address": address};
+      final NetworkResponse response = await Get.find<NetworkCaller>()
+          .patchRequest(
+            Urls.businessEditProfileUrl,
+            body: body,
+            accessToken: StorageUtil.getData(StorageUtil.userAccessToken),
+          );
+
+      if (response.isSuccess && response.responseData != null) {
+        print('Address updated successfully');
+        _errorMessage.value = '';
+
+        _inProgress.value = false;
+        return true;
+      } else {
+        _errorMessage.value = response.errorMessage;
+        _inProgress.value = false;
+        return false;
+      }
+    } catch (e) {
+      _errorMessage.value = 'Failed to fetch district data: ${e.toString()}';
+      print('Error fetching district data: $e');
+      _inProgress.value = false;
+      return false;
+    }
+  }
 }

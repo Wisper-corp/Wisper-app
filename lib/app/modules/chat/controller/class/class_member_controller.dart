@@ -3,7 +3,7 @@ import 'package:wisper/app/core/others/get_storage.dart';
 import 'package:wisper/app/core/services/network_caller/network_caller.dart';
 import 'package:wisper/app/core/services/network_caller/network_response.dart';
 import 'package:wisper/app/modules/authentication/views/sign_in_screen.dart';
-import 'package:wisper/app/modules/chat/model/group_members_model.dart';
+import 'package:wisper/app/modules/chat/model/class_members_model.dart';
 import 'package:wisper/app/urls.dart';
 
 class ClassMembersController extends GetxController {
@@ -13,15 +13,15 @@ class ClassMembersController extends GetxController {
   final RxString _errorMessage = ''.obs;
   String get errorMessage => _errorMessage.value;
 
-  final Rx<GroupMembersModel?> _groupMemnersModel = Rx<GroupMembersModel?>(
+  final Rx<ClassMembersModel?> _groupMemnersModel = Rx<ClassMembersModel?>(
     null,
   );
-  List<GroupMembersItemModel>? get groupMemnersData =>
-      _groupMemnersModel.value!.data?.members ?? [];
+  List<ClassMembersItemModel>? get groupMemnersData =>
+      _groupMemnersModel.value?.data ?? [];
 
   // @override
   // void onInit() {
-  //   super.onInit(); 
+  //   super.onInit();
   //   getMyProfile();
   // }
 
@@ -39,7 +39,7 @@ class ClassMembersController extends GetxController {
       if (response.isSuccess && response.responseData != null) {
         _errorMessage.value = '';
 
-        _groupMemnersModel.value = GroupMembersModel.fromJson(
+        _groupMemnersModel.value = ClassMembersModel.fromJson(
           response.responseData,
         );
 
@@ -48,6 +48,66 @@ class ClassMembersController extends GetxController {
       } else {
         _errorMessage.value = response.errorMessage;
         _errorMessage.value.contains('expired') ? Get.to(SignInScreen()) : null;
+        _inProgress.value = false;
+        return false;
+      }
+    } catch (e) {
+      _errorMessage.value = 'Failed to fetch district data: ${e.toString()}';
+      print('Error fetching district data: $e');
+      _inProgress.value = false;
+      return false;
+    }
+  }
+
+  Future<bool> addRequest({String? memberId, String? classId}) async {
+    _inProgress.value = true;
+
+    try {
+      Map<String, dynamic> body = {"member": memberId};
+      final NetworkResponse response = await Get.find<NetworkCaller>()
+          .postRequest(
+            Urls.addClassMembersById(classId ?? ''),
+            body: body,
+            accessToken: StorageUtil.getData(StorageUtil.userAccessToken),
+          );
+
+      if (response.isSuccess && response.responseData != null) {
+        _errorMessage.value = '';
+
+        _inProgress.value = false;
+        return true;
+      } else {
+        _errorMessage.value = response.errorMessage;
+        _inProgress.value = false;
+        return false;
+      }
+    } catch (e) {
+      _errorMessage.value = 'Failed to fetch district data: ${e.toString()}';
+      print('Error fetching district data: $e');
+      _inProgress.value = false;
+      return false;
+    }
+  }
+
+  Future<bool> removeRequest({String? memberId, String? chatId}) async {
+    _inProgress.value = true;
+
+    try {
+      Map<String, dynamic> body = {"chatId": chatId, "participantId": memberId};
+      final NetworkResponse response = await Get.find<NetworkCaller>()
+          .patchRequest(
+            Urls.removePerticipantUrl,
+            body: body,
+            accessToken: StorageUtil.getData(StorageUtil.userAccessToken),
+          );
+
+      if (response.isSuccess && response.responseData != null) {
+        _errorMessage.value = '';
+
+        _inProgress.value = false;
+        return true;
+      } else {
+        _errorMessage.value = response.errorMessage;
         _inProgress.value = false;
         return false;
       }

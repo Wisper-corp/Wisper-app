@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:wisper/app/core/utils/date_formatter.dart';
+import 'package:wisper/app/core/utils/connectivity_services.dart';
 import 'package:wisper/app/core/widgets/shimmer/gallery_post_shimmer.dart';
 import 'package:wisper/app/modules/job/controller/favorite_job_controller.dart';
 import 'package:wisper/app/modules/job/widgets/job_card.dart';
@@ -14,6 +15,9 @@ class FavoriteJobScreen extends StatefulWidget {
 
 class _FavoriteJobScreenState extends State<FavoriteJobScreen> {
   final FavoriteController favoriteController = Get.put(FavoriteController());
+  final ConnectivityService connectivityService = Get.put(
+    ConnectivityService(),
+  );
 
   @override
   void initState() {
@@ -21,7 +25,7 @@ class _FavoriteJobScreenState extends State<FavoriteJobScreen> {
     favoriteController.getAllFavorite();
   }
 
-  @override 
+  @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
@@ -34,7 +38,11 @@ class _FavoriteJobScreenState extends State<FavoriteJobScreen> {
         child: Obx(() {
           if (favoriteController.inProgress) {
             return PostShimmerEffectWidget();
-          } else if (favoriteController.favoriteJobData!.isEmpty) {
+          } else if (favoriteController.favoriteJobData == null ||
+              favoriteController.favoriteJobData!.isEmpty) {
+            if (!connectivityService.isOnline.value) {
+              return const Center(child: PostShimmerEffectWidget());
+            }
             return SizedBox(
               height: 500,
               child: const Center(

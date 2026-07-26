@@ -15,7 +15,7 @@ class PasswordSection extends StatelessWidget {
     required this.confirmPasswordController,
   });
 
-  @override 
+  @override
   Widget build(BuildContext context) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -51,32 +51,43 @@ class PasswordSection extends StatelessWidget {
 
         heightBox20,
         Text('Password must contain at least'),
-        Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            heightBox8,
-            info('7 characters'),
-            heightBox8,
-            info('One uppercase letter'),
-            heightBox8,
-            info('One number'),
-            heightBox8,
-            info('One Special Character e.g !^@*#('),
-          ],
+        ValueListenableBuilder<TextEditingValue>(
+          valueListenable: passwordController,
+          builder: (context, value, _) {
+            final password = value.text;
+            return Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                heightBox8,
+                info('7 characters', password.length >= 7),
+                heightBox8,
+                info('One uppercase letter', RegExp(r'[A-Z]').hasMatch(password)),
+                heightBox8,
+                info('One number', RegExp(r'[0-9]').hasMatch(password)),
+                heightBox8,
+                info(
+                  'One Special Character e.g !^@*#(',
+                  RegExp(r'[!@#\$%^&*(),.?":{}|<>]').hasMatch(password),
+                ),
+              ],
+            );
+          },
         ),
       ],
     );
   }
 
-  Widget info(String text) {
+  Widget info(String text, bool isValid) {
+    final color = isValid ? Colors.green : Colors.grey;
+
     return Row(
       children: [
-        Icon(Icons.check_circle, size: 14.h, color: Colors.grey),
+        Icon(Icons.check_circle, size: 14.h, color: color),
         widthBox4,
         Text(
           text,
-          style: TextStyle(fontSize: 12.sp, color: Colors.grey),
+          style: TextStyle(fontSize: 12.sp, color: color),
         ),
       ],
     );

@@ -10,6 +10,7 @@ import 'package:syncfusion_flutter_pdfviewer/pdfviewer.dart';
 import 'package:wisper/app/core/others/get_storage.dart';
 import 'package:wisper/app/core/utils/show_over_loading.dart';
 import 'package:wisper/app/core/utils/snack_bar.dart';
+import 'package:wisper/app/core/utils/connectivity_services.dart';
 import 'package:wisper/app/core/widgets/common/circle_icon.dart';
 import 'package:wisper/app/modules/chat/views/doc_info.dart';
 import 'package:wisper/app/modules/homepage/controller/delete_reusme_controller.dart';
@@ -29,6 +30,8 @@ class _MyResumeSectionState extends State<MyResumeSection> {
   late final MyResumeController controller;
   final DeleteResumeController deleteResumeController =
       DeleteResumeController();
+  final ConnectivityService connectivityService =
+      Get.find<ConnectivityService>();
 
   @override
   void initState() {
@@ -170,6 +173,11 @@ class _MyResumeSectionState extends State<MyResumeSection> {
       final resumes = controller.myResumeData;
 
       if (resumes == null || resumes.isEmpty) {
+        if (!connectivityService.isOnline.value) {
+          return const Center(
+            child: CircularProgressIndicator(color: Colors.white),
+          );
+        }
         return SizedBox(
           height: 200,
           child: Center(

@@ -17,8 +17,8 @@ class AllConnectionController extends GetxController {
     null,
   );
   List<AllConnectionItemModel>? get allConnectionData =>
-      _allConnectionModel.value!.data?.connections;
-
+      _allConnectionModel.value?.data?.connections;
+ 
   // @override
   // void onInit() {
   //   super.onInit();
@@ -27,10 +27,10 @@ class AllConnectionController extends GetxController {
 
   Future<bool> getAllConnection(String? status, String? recieverId) async {
     _inProgress.value = true;
-
+ 
     Map<String, dynamic> params = recieverId == ''
-        ? {"status": status,}
-        : {"status": status, "receiverId": recieverId};
+        ? {"status": status, "limit": 999}
+        : {"status": status, "receiverId": recieverId, "limit": 999};
     // Map<String, dynamic> params = {"status": status};
     try {
       final NetworkResponse response = await Get.find<NetworkCaller>()

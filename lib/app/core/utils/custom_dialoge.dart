@@ -8,7 +8,7 @@ import 'package:wisper/app/core/widgets/common/custom_size_button.dart';
 
 class CustomDialog extends StatelessWidget {
   final VoidCallback yesOntap;
-  final VoidCallback noOntap;
+  final VoidCallback noOntap; 
   final IconData iconData;
   final String title; 
   final String subtitle;

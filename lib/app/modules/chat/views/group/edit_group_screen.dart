@@ -379,7 +379,7 @@ class _EditGroupScreenState extends State<EditGroupScreen> {
 
               Center(
                 child: CustomElevatedButton(
-                  height: 56.h,
+                  height: 46.h,
                   title: 'Update',
                   onPress: _updateGroup,
                   color: Colors.blue,

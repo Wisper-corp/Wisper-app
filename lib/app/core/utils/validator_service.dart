@@ -113,4 +113,19 @@ class ValidatorService {
     }
     return null;
   }
+
+  static String? validateSimpleField10Carecter(String? value) {
+    if (value == null) {
+      return 'Field Required';
+    } else if (value.length < 10) {
+      return 'Length should be 10';
+    }
+    // Remove leading and trailing whitespace
+    final words = value.trim();
+
+    if (words.isEmpty) {
+      return 'Field Required';
+    }
+    return null;
+  }
 }

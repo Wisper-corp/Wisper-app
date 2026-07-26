@@ -1,1 +1,38 @@
-{"flutter":{"platforms":{"android":{"default":{"projectId":"wisper-9f2ab","appId":"1:667291069508:android:273d05d9473148596ce011","fileOutput":"android/app/google-services.json"}},"dart":{"lib/firebase_options.dart":{"projectId":"wisper-9f2ab","configurations":{"android":"1:667291069508:android:273d05d9473148596ce011","ios":"1:667291069508:ios:bfa161b2712e65d06ce011","macos":"1:667291069508:ios:7dd105f3322a77da6ce011","web":"1:667291069508:web:e2e31ff4e7d600296ce011","windows":"1:667291069508:web:5b70019c537537096ce011"}}},"ios":{"default":{"projectId":"wisper-9f2ab","appId":"1:667291069508:ios:bfa161b2712e65d06ce011","uploadDebugSymbols":false,"fileOutput":"ios/Runner/GoogleService-Info.plist"}},"macos":{"default":{"projectId":"wisper-9f2ab","appId":"1:667291069508:ios:7dd105f3322a77da6ce011","uploadDebugSymbols":false,"fileOutput":"macos/Runner/GoogleService-Info.plist"}}}}}
+{
+    "flutter": {
+        "platforms": {
+            "android": {
+                "default": {
+                    "projectId": "wisper-bab8d",
+                    "appId": "1:488154013426:android:e1979524098e8bc2737a6b",
+                    "fileOutput": "android/app/google-services.json"
+                }
+            },
+            "dart": {
+                "lib/firebase_options.dart": {
+                    "projectId": "wisper-bab8d",
+                    "configurations": {
+                        "android": "1:488154013426:android:e1979524098e8bc2737a6b",
+                        "ios": "1:488154013426:ios:b12401ad8e544661737a6b"
+                    }
+                }
+            },
+            "ios": {
+                "default": {
+                    "projectId": "wisper-9f2ab",
+                    "appId": "1:667291069508:ios:bfa161b2712e65d06ce011",
+                    "uploadDebugSymbols": false,
+                    "fileOutput": "ios/Runner/GoogleService-Info.plist"
+                }
+            },
+            "macos": {
+                "default": {
+                    "projectId": "wisper-9f2ab",
+                    "appId": "1:667291069508:ios:7dd105f3322a77da6ce011",
+                    "uploadDebugSymbols": false,
+                    "fileOutput": "macos/Runner/GoogleService-Info.plist"
+                }
+            }
+        }
+    }
+}

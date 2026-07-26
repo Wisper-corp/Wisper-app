@@ -3,12 +3,18 @@ import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:get/get.dart';
 import 'package:wisper/app/core/others/custom_size.dart';
 import 'package:wisper/app/core/others/get_storage.dart';
+import 'package:wisper/app/core/utils/initials.dart';
 import 'package:wisper/app/core/utils/show_over_loading.dart';
 import 'package:wisper/app/core/utils/snack_bar.dart';
 import 'package:wisper/app/core/widgets/common/custom_text_filed.dart';
 import 'package:wisper/app/modules/post/controller/comment_controller.dart';
 import 'package:wisper/app/modules/post/controller/edit_comment_controller.dart';
+import 'package:wisper/app/modules/post/controller/feed_post_controller.dart';
+import 'package:wisper/app/modules/post/controller/my_post_controller.dart';
+import 'package:wisper/app/modules/post/controller/others_post_controller.dart';
 import 'package:wisper/app/modules/post/views/my_post_section.dart';
+import 'package:wisper/app/modules/profile/views/business/others_business_screen.dart';
+import 'package:wisper/app/modules/profile/views/person/others_person_screen.dart';
 
 class CommentScreen extends StatefulWidget {
   final String postId;
@@ -64,6 +70,7 @@ class _CommentScreenState extends State<CommentScreen> {
 
     if (isSuccess) {
       await commentController.getAllComment(widget.postId);
+      _syncFeedCommentCount();
       commentCtrl.clear();
       setState(() {
         currentEditingCommentId = null; // এডিট মোড বন্ধ
@@ -94,9 +101,26 @@ class _CommentScreenState extends State<CommentScreen> {
 
     if (isSuccess) {
       await commentController.getAllComment(widget.postId);
+      _syncFeedCommentCount();
       Get.back(); // বটমশিট বন্ধ
     } else {
       showSnackBarMessage(context, editCommentController.errorMessage, true);
+    }
+  }
+
+  void _syncFeedCommentCount() {
+    final count = commentController.commentData?.length ?? 0;
+    if (Get.isRegistered<AllFeedPostController>()) {
+      Get.find<AllFeedPostController>()
+          .setPostCommentCount(postId: widget.postId, count: count);
+    }
+    if (Get.isRegistered<MyFeedPostController>()) {
+      Get.find<MyFeedPostController>()
+          .setPostCommentCount(postId: widget.postId, count: count);
+    }
+    if (Get.isRegistered<OthersFeedPostController>()) {
+      Get.find<OthersFeedPostController>()
+          .setPostCommentCount(postId: widget.postId, count: count);
     }
   }
 
@@ -111,7 +135,7 @@ class _CommentScreenState extends State<CommentScreen> {
     });
   }
 
-  void _showDeleteComment(String commentId) {
+  void _showDeleteComment(String commentId) { 
     ConfirmationBottomSheet.show(
       context: context,
       title: "Delete Comment?",
@@ -172,9 +196,31 @@ class _CommentScreenState extends State<CommentScreen> {
                       height: 70.h,
                       child: ListTile(
                         contentPadding: EdgeInsets.zero,
-                        leading: CircleAvatar(
-                          backgroundImage: NetworkImage(authorImage ?? ''),
-                          radius: 20.r,
+                        leading: GestureDetector(
+                          onTap: () {
+                            if (isPerson) {
+                              Get.to(OthersPersonScreen(userId: authorId));
+                            } else {
+                              Get.to(OthersBusinessScreen(userId: authorId));
+                            }
+                          },
+                          child: CircleAvatar(
+                            backgroundColor: Colors.grey,
+                            backgroundImage: (authorImage ?? '').isNotEmpty
+                                ? NetworkImage(authorImage!)
+                                : null,
+                            radius: 20.r,
+                            child: (authorImage == null || authorImage!.isEmpty)
+                                ? Text(
+                                    initialsFromName(authorName),
+                                    style: TextStyle(
+                                      color: Colors.white,
+                                      fontSize: 10.sp,
+                                      fontWeight: FontWeight.w600,
+                                    ),
+                                  )
+                                : null,
+                          ),
                         ),
                         title: Text(
                           authorName ?? '',

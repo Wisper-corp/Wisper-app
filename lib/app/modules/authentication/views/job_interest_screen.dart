@@ -41,6 +41,8 @@ class JobInterestScreen extends StatefulWidget {
 
 class _JobInterestScreenState extends State<JobInterestScreen> {
   final SignUpController signUpController = Get.put(SignUpController());
+  final TextEditingController _searchController = TextEditingController();
+  late List<String> _filteredInterests;
 
   final List<String> jobInterests = [
     'AgriTech',
@@ -188,8 +190,30 @@ class _JobInterestScreenState extends State<JobInterestScreen> {
   }
 
   @override
+  void initState() {
+    super.initState();
+    _filteredInterests = List<String>.from(jobInterests);
+    _searchController.addListener(_applySearch);
+  }
+
+  void _applySearch() {
+    final query = _searchController.text.trim().toLowerCase();
+    setState(() {
+      if (query.isEmpty) {
+        _filteredInterests = List<String>.from(jobInterests);
+      } else {
+        _filteredInterests = jobInterests
+            .where((item) => item.toLowerCase().contains(query))
+            .toList();
+      }
+    });
+  }
+
+  @override
   void dispose() {
     selectedInterest = null;
+    _searchController.removeListener(_applySearch);
+    _searchController.dispose();
     super.dispose();
   }
 
@@ -217,7 +241,7 @@ class _JobInterestScreenState extends State<JobInterestScreen> {
                       fontSize: 14.sp,
                       fontWeight: FontWeight.w600,
                       color: LightThemeColors.blueColor,
-                    ),
+                    ), 
                   ),
                 ),
               ),
@@ -227,7 +251,7 @@ class _JobInterestScreenState extends State<JobInterestScreen> {
               ),
               heightBox12,
               CustomTextField(
-                controller: TextEditingController(),
+                controller: _searchController,
                 hintText: 'Search job title',
                 validator: (value) => null,
               ),
@@ -238,27 +262,27 @@ class _JobInterestScreenState extends State<JobInterestScreen> {
                   itemBuilder: (context, index) => GestureDetector(
                     onTap: () {
                       setState(() {
-                        if (selectedInterest == jobInterests[index]) {
+                        if (selectedInterest == _filteredInterests[index]) {
                           selectedInterest = null; // deselect
                         } else {
-                          selectedInterest = jobInterests[index]; // select
+                          selectedInterest = _filteredInterests[index]; // select
                         }
                       });
                     },
                     child: Padding(
                       padding: const EdgeInsets.symmetric(vertical: 8.0),
                       child: Text(
-                        jobInterests[index],
+                        _filteredInterests[index],
                         style: TextStyle(
                           fontSize: 14.sp,
-                          color: selectedInterest == jobInterests[index]
+                          color: selectedInterest == _filteredInterests[index]
                               ? LightThemeColors.blueColor
                               : Colors.white,
                         ),
                       ),
                     ),
                   ),
-                  itemCount: jobInterests.length,
+                  itemCount: _filteredInterests.length,
                 ),
               ),
             ],

@@ -6,7 +6,7 @@ import 'package:wisper/app/modules/authentication/views/sign_in_screen.dart';
 import 'package:wisper/app/modules/job/model/favourite_job_list_model.dart';
 import 'package:wisper/app/urls.dart';
 
-class FavoriteController extends GetxController {
+class FavoriteController extends GetxController { 
   final RxBool _inProgress = false.obs;
   bool get inProgress => _inProgress.value;
 

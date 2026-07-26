@@ -5,6 +5,7 @@ import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:get/get.dart';
 import 'package:wisper/app/core/config/theme/light_theme_colors.dart';
 import 'package:wisper/app/core/others/custom_size.dart';
+import 'package:wisper/app/core/utils/initials.dart';
 import 'package:wisper/app/core/others/get_storage.dart';
 import 'package:wisper/app/core/utils/show_over_loading.dart';
 import 'package:wisper/app/core/utils/snack_bar.dart';
@@ -17,7 +18,7 @@ import 'package:wisper/app/modules/profile/controller/person/profile_controller.
 import 'package:wisper/gen/assets.gen.dart';
 import 'package:file_picker/file_picker.dart';
 
-class ResumePostScreen extends StatefulWidget {
+ class ResumePostScreen extends StatefulWidget {
   const ResumePostScreen({super.key});
 
   @override
@@ -29,8 +30,8 @@ class _ResumePostScreenState extends State<ResumePostScreen> {
   final FilePickerHelper _filePickerHelper = FilePickerHelper();
   final CreateResumeController createPostController = CreateResumeController();
 
-  final ProfileController profileController = Get.find<ProfileController>();
-  final BusinessController businessController = Get.find<BusinessController>();
+  final ProfileController profileController = Get.put(ProfileController());
+  final BusinessController businessController = Get.put(BusinessController());
 
   // Role-based user info observables
   final RxBool isLoading = true.obs;
@@ -201,7 +202,13 @@ class _ResumePostScreenState extends State<ResumePostScreen> {
                             ? NetworkImage(userImageUrl.value)
                             : null,
                         child: userImageUrl.value.isEmpty
-                            ? const Icon(Icons.person, color: Colors.white)
+                            ? Text(
+                                initialsFromName(userName.value),
+                                style: const TextStyle(
+                                  color: Colors.white,
+                                  fontWeight: FontWeight.w600,
+                                ),
+                              )
                             : null,
                       ),
                       widthBox8,

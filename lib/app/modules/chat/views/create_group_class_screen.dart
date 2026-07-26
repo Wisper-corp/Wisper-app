@@ -10,6 +10,8 @@ import 'package:wisper/app/modules/chat/views/class/create_class_screen.dart';
 import 'package:wisper/app/modules/chat/views/group/create_group_screen.dart';
 import 'package:wisper/app/modules/chat/widgets/contact_widget.dart';
 import 'package:wisper/app/modules/chat/widgets/create_widget.dart';
+import 'package:wisper/app/modules/profile/views/business/others_business_screen.dart';
+import 'package:wisper/app/modules/profile/views/person/others_person_screen.dart';
 import 'package:wisper/gen/assets.gen.dart';
 
 class CreateGroupClassScreen extends StatefulWidget {
@@ -144,22 +146,40 @@ class _CreateGroupClassScreenState extends State<CreateGroupClassScreen> {
                   itemCount: filteredList.length,
                   itemBuilder: (context, index) {
                     final connection = filteredList[index];
-                    final name = connection.partner?.person?.name ?? 'Unknown';
-                    final title = connection.partner?.person?.title ?? '';
+                    final name = connection.partner?.person != null
+                        ? connection.partner?.person?.name
+                        : connection.partner?.business?.name ?? '';
+                    final title = connection.partner?.person != null
+                        ? connection.partner?.person?.title
+                        : connection.partner?.business?.industry ?? '';
 
                     final imagePath = connection.partner?.person != null
                         ? connection.partner?.person?.image
-                        : connection.partner!.business?.image;
+                        : connection.partner?.business?.image;
                     '';
+
+                    bool isPerson = connection.partner?.person != null
+                        ? true
+                        : false;
 
                     return Padding(
                       padding: const EdgeInsets.symmetric(vertical: 6.0),
                       child: ContactWidget(
                         imagePath: imagePath ?? '',
-                        title: name,
-                        subtitle: title,
+                        title: name ?? '',
+                        subtitle: title ?? '',
                         onTap: () {
-                          // TODO: Handle contact selection if needed
+                          isPerson == true
+                              ? Get.to(
+                                  () => OthersPersonScreen(
+                                    userId: connection.partner?.id ?? '',
+                                  ),
+                                )
+                              : Get.to(
+                                  () => OthersBusinessScreen(
+                                    userId: connection.partner?.id ?? '',
+                                  ),
+                                );
                         },
                       ),
                     );

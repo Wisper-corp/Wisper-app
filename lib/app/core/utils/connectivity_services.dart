@@ -14,6 +14,8 @@ class ConnectivityService extends GetxService {
   StreamSubscription<List<ConnectivityResult>>? _connectivitySubscription;
 
   RxBool isOnline = true.obs;
+  // When true, we won't show the blocking no-internet dialog (e.g. in chat).
+  RxBool suppressDialog = false.obs;
   bool _isShowingDialog = false;
 
   @override
@@ -40,6 +42,13 @@ class ConnectivityService extends GetxService {
 
     if (hasNoNetwork) {
       isOnline.value = false;
+      if (suppressDialog.value) {
+        if (_isShowingDialog) {
+          Get.back(closeOverlays: true);
+          _isShowingDialog = false;
+        }
+        return;
+      }
       _showNoInternetDialog();
       return;
     }
@@ -79,6 +88,7 @@ class ConnectivityService extends GetxService {
   }
 
   void _showNoInternetDialog() {
+    if (suppressDialog.value) return;
     if (_isShowingDialog) return;
 
     _isShowingDialog = true;

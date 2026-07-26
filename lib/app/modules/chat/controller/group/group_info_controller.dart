@@ -14,7 +14,7 @@ class GroupInfoController extends GetxController {
   String get errorMessage => _errorMessage.value;
 
   final Rx<GroupInfoModel?> _groupInfoModel = Rx<GroupInfoModel?>(null);
-  Data? get groupInfoData => _groupInfoModel.value?.data;
+  GroupInfoData? get groupInfoData => _groupInfoModel.value?.data;
 
   Future<bool> getGroupInfo(String? groupId) async {
     _inProgress.value = true;
@@ -22,7 +22,7 @@ class GroupInfoController extends GetxController {
     try {
       final NetworkResponse response = await Get.find<NetworkCaller>()
           .getRequest(
-            Urls.groupInfoById(groupId!),
+            Urls.groupInfoById(groupId!), 
             accessToken: StorageUtil.getData(StorageUtil.userAccessToken),
           );
 

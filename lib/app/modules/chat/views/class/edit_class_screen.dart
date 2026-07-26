@@ -113,7 +113,7 @@ class _EditClassScreenState extends State<EditClassScreen> {
               ),
 
               heightBox20,
-              const Label(label: 'Group Caption'),
+              const Label(label: 'Group Description'),
               heightBox10,
               CustomTextField(
                 controller: _captionCtrl,
@@ -153,7 +153,7 @@ class _EditClassScreenState extends State<EditClassScreen> {
 
               Center(
                 child: CustomElevatedButton(
-                  height: 56.h,
+                  height: 46.h,
                   title: 'Update',
                   onPress: _updateClass,
                   color: Colors.blue,

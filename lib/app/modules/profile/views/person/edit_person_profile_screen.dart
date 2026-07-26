@@ -65,6 +65,7 @@ class _EditPersonProfileScreenState extends State<EditPersonProfileScreen> {
     _emailCtrl.text = user?.email ?? '';
     _phoneCtrl.text = user?.phone ?? '';
     _addressCtrl.text = user?.address ?? '';
+    selectedAddress.value = user?.address ?? '';
 
     _selectedTitle = user?.title;
     _titleCtrl.text = _selectedTitle ?? '';
@@ -73,6 +74,7 @@ class _EditPersonProfileScreenState extends State<EditPersonProfileScreen> {
   @override
   void dispose() {
     _nameCtrl.dispose();
+    _emailCtrl.dispose();
     _phoneCtrl.dispose();
     _titleCtrl.dispose();
     _addressCtrl.dispose();

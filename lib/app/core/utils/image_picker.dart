@@ -12,7 +12,7 @@ class ImagePickerHelper {
     Function(File) onImagePicked, 
   ) async {
     try {
-      final pickedImage = await ImagePicker().pickImage(
+      final pickedImage = await ImagePicker().pickImage( 
         source: ImageSource.camera,
       );
       if (pickedImage != null) {
@@ -23,7 +23,7 @@ class ImagePickerHelper {
     } finally {
       if (Navigator.canPop(context)) Navigator.pop(context);
     }
-  }
+  }    
 
   // Function to pick an image from the gallery
   Future<void> pickImageFromGallery(

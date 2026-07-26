@@ -3,6 +3,11 @@ import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:get/get.dart';
 import 'package:wisper/app/core/others/custom_size.dart';
 import 'package:wisper/app/core/others/get_storage.dart';
+import 'package:wisper/app/core/services/call/controller/call_services.dart';
+import 'package:wisper/app/core/services/call/views/pending_banner.dart';
+import 'package:wisper/app/core/services/socket/socket_service.dart';
+import 'package:wisper/app/core/utils/connectivity_services.dart';
+import 'package:wisper/app/core/utils/initials.dart';
 import 'package:wisper/app/modules/calls/views/call_screen.dart';
 import 'package:wisper/app/modules/chat/views/chat_list_screen.dart';
 import 'package:wisper/app/modules/homepage/controller/all_role_controller.dart';
@@ -14,22 +19,32 @@ import 'package:wisper/app/modules/homepage/views/create_post_screen.dart';
 import 'package:wisper/app/modules/homepage/views/home_screen.dart';
 import 'package:wisper/app/modules/profile/controller/buisness/buisness_controller.dart';
 import 'package:wisper/app/modules/profile/controller/person/profile_controller.dart';
+import 'package:wisper/app/modules/profile/views/person/edit_person_profile_screen.dart';
 import 'package:wisper/app/modules/profile/views/profile_screen.dart';
 import 'package:wisper/gen/assets.gen.dart';
 
 class MainButtonNavbarScreen extends StatefulWidget {
-  const MainButtonNavbarScreen({super.key});
+  const MainButtonNavbarScreen({super.key, this.initialIndex = 0});
+
+  final int initialIndex;
 
   @override
   State<MainButtonNavbarScreen> createState() => _MainButtonNavbarScreenState();
 }
 
-class _MainButtonNavbarScreenState extends State<MainButtonNavbarScreen> {
-  int selectedKey = 0;
+class _MainButtonNavbarScreenState extends State<MainButtonNavbarScreen>
+    with WidgetsBindingObserver {
+  late int selectedKey;
+  bool _hasCheckedRequiredJobTitle = false;
 
-  // কন্ট্রোলারগুলো এখানে lazy load করছি → Get.reset() করলেও সমস্যা নেই
   final ProfileController profileController = Get.put(ProfileController());
   final BusinessController businessController = Get.put(BusinessController());
+  final SocketService socketService = Get.find<SocketService>();
+  final ConnectivityService connectivityService =
+      Get.find<ConnectivityService>();
+  final CallService callService = Get.isRegistered<CallService>()
+      ? Get.put(CallService())
+      : Get.put(CallService());
 
   final AllFeedPostController allFeedPostController = Get.put(
     AllFeedPostController(),
@@ -43,13 +58,12 @@ class _MainButtonNavbarScreenState extends State<MainButtonNavbarScreen> {
   final MyFeedPostController myFeedPostController = Get.put(
     MyFeedPostController(),
   );
-  
   final AllRoleController allRoleController = Get.put(AllRoleController());
 
   final List<Widget> screens = const [
     HomeScreen(),
     CallScreen(),
-    CreatePostScreen(), 
+    CreatePostScreen(),
     ChatListScreen(),
     ProfileScreen(),
   ];
@@ -57,7 +71,29 @@ class _MainButtonNavbarScreenState extends State<MainButtonNavbarScreen> {
   @override
   void initState() {
     super.initState();
-    _initializeData();
+    selectedKey = widget.initialIndex;
+    WidgetsBinding.instance.addObserver(this);
+
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _initializeData();
+      socketService.onInit();
+      callService.checkAndShowPendingCallDialogIfNeeded();
+      connectivityService.suppressDialog.value = selectedKey == 3;
+    });
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    super.didChangeAppLifecycleState(state);
+    if (state == AppLifecycleState.resumed) {
+      callService.checkAndShowPendingCallDialogIfNeeded();
+    }
+  }
+
+  @override
+  void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
+    super.dispose();
   }
 
   Future<void> _initializeData() async {
@@ -66,26 +102,39 @@ class _MainButtonNavbarScreenState extends State<MainButtonNavbarScreen> {
     myFeedJobController.resetPagination();
     myFeedPostController.resetPagination();
 
-    await Future.wait([
+    final otherDataFuture = Future.wait([
       allFeedJobController.getJobs(),
       allFeedPostController.getAllPost(),
       myFeedJobController.getJobs(),
       myFeedPostController.getAllPost(),
-      allRoleController.getAllRole(''),
+      allRoleController.getAllRole('', null),
       businessController.getMyProfile(),
-      profileController.getMyProfile(),
     ]);
 
-    // if (StorageUtil.getData(StorageUtil.userRole) == 'PERSON') {
-    //   await profileController.getMyProfile();
-    // } else {
-    //   await businessController.getMyProfile();
-    // }
+    await profileController.getMyProfile();
+    await _redirectToJobTitleSetupIfNeeded();
+    await otherDataFuture;
+  }
+
+  Future<void> _redirectToJobTitleSetupIfNeeded() async {
+    if (_hasCheckedRequiredJobTitle || !mounted) return;
+    _hasCheckedRequiredJobTitle = true;
+
+    final role = StorageUtil.getData(StorageUtil.userRole)
+        ?.toString()
+        .toUpperCase();
+    final isPersonUser = role == 'PERSON' || role == 'USER';
+    final title = profileController.profileData?.auth?.person?.title?.trim();
+
+    if (isPersonUser &&
+        (title == null || title.isEmpty || title.toLowerCase() == 'null')) {
+      await Get.to(() => const EditPersonProfileScreen());
+    }
   }
 
   String _getProfileImageUrl() {
     final role = StorageUtil.getData(StorageUtil.userRole);
-    String? url; 
+    String? url;
 
     if (role == 'PERSON') {
       url = profileController.profileData?.auth?.person?.image;
@@ -94,51 +143,64 @@ class _MainButtonNavbarScreenState extends State<MainButtonNavbarScreen> {
     }
 
     if (url == null || url.isEmpty || url == 'null') return '';
-
-    // Cache bypass করার জন্য timestamp যোগ করলাম
     return url;
+  }
+
+  String _getProfileName() {
+    final role = StorageUtil.getData(StorageUtil.userRole);
+    String? name;
+
+    if (role == 'PERSON') {
+      name = profileController.profileData?.auth?.person?.name;
+    } else {
+      name = businessController.buisnessData?.auth?.business?.name;
+    }
+
+    return name ?? '';
   }
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      body: IndexedStack(index: selectedKey, children: screens),
-      bottomNavigationBar: Container(
-        height: 80.h,
-        color: const Color(0xff121212),
-        child: Row(
-          mainAxisAlignment: MainAxisAlignment.spaceAround,
-          children: [
-            _buildNavItem(
-              index: 0,
-              selectedIcon: Assets.images.home.keyName,
-              unselectedIcon: Assets.images.unselectedHome.keyName,
-              label: "Home",
-            ),
-            _buildNavItem(
-              index: 1,
-              selectedIcon: Assets.images.selectedCall.keyName,
-              unselectedIcon: Assets.images.call.keyName,
-              label: "Call",
-            ),
-            // Middle Create Post Button
-            _buildNavItem(
-              index: 2,
-              height: 50.h,
-              width: 56.h,
-              selectedIcon: Assets.images.frame5313.keyName,
-              unselectedIcon: Assets.images.frame5313.keyName,
-              label: "",
-            ),
-            _buildNavItem(
-              index: 3,
-              selectedIcon: Assets.images.unselectedChat.keyName,
-              unselectedIcon: Assets.images.selectedChat.keyName,
-              label: "Chat",
-            ),
-            // Profile Item → Reactive + Cache Safe
-            Obx(() => _buildProfileNavItem(index: 4)),
-          ],
+    // ── PendingCallBanner দিয়ে পুরো screen wrap করো ──
+    // Background/terminated থেকে call accept হলে এখানে banner দেখাবে
+    return PendingCallBanner(
+      child: Scaffold(
+        body: IndexedStack(index: selectedKey, children: screens),
+        bottomNavigationBar: Container(
+          height: 80.h,
+          color: const Color(0xff121212),
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.spaceAround,
+            children: [
+              _buildNavItem(
+                index: 0,
+                selectedIcon: Assets.images.home.keyName,
+                unselectedIcon: Assets.images.unselectedHome.keyName,
+                label: "Home",
+              ),
+              _buildNavItem(
+                index: 1,
+                selectedIcon: Assets.images.selectedCall.keyName,
+                unselectedIcon: Assets.images.call.keyName,
+                label: "Call",
+              ),
+              _buildNavItem(
+                index: 2,
+                height: 50.h,
+                width: 56.h,
+                selectedIcon: Assets.images.frame5313.keyName,
+                unselectedIcon: Assets.images.frame5313.keyName,
+                label: "",
+              ),
+              _buildNavItem(
+                index: 3,
+                selectedIcon: Assets.images.unselectedChat.keyName,
+                unselectedIcon: Assets.images.selectedChat.keyName,
+                label: "Chat",
+              ),
+              Obx(() => _buildProfileNavItem(index: 4)),
+            ],
+          ),
         ),
       ),
     );
@@ -158,6 +220,7 @@ class _MainButtonNavbarScreenState extends State<MainButtonNavbarScreen> {
       onTap: () {
         if (selectedKey != index) {
           setState(() => selectedKey = index);
+          connectivityService.suppressDialog.value = selectedKey == 3;
         }
       },
       child: Container(
@@ -196,12 +259,11 @@ class _MainButtonNavbarScreenState extends State<MainButtonNavbarScreen> {
   Widget _buildProfileNavItem({required int index}) {
     final bool isSelected = selectedKey == index;
     final String imageUrl = _getProfileImageUrl();
+    final String profileName = _getProfileName();
 
     return GestureDetector(
       onTap: () {
-        if (selectedKey != index) { 
-          setState(() => selectedKey = index);
-        }
+        if (selectedKey != index) setState(() => selectedKey = index);
       },
       child: Container(
         color: Colors.transparent,
@@ -217,7 +279,14 @@ class _MainButtonNavbarScreenState extends State<MainButtonNavbarScreen> {
                   ? NetworkImage(imageUrl) as ImageProvider
                   : null,
               child: imageUrl.isEmpty
-                  ? Icon(Icons.person, size: 18.r, color: Colors.white70)
+                  ? Text(
+                      initialsFromName(profileName),
+                      style: TextStyle(
+                        color: Colors.white70,
+                        fontSize: 10.r,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    )
                   : null,
             ),
             SizedBox(height: 4.h),

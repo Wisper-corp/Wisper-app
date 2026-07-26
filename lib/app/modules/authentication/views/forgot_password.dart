@@ -36,7 +36,7 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
   Future<void> performForgotPassword(BuildContext context) async {
     final bool isSuccess = await forgotPasswordController.forgotPassword(
       email: emailController.text,
-    );
+    ); 
 
     if (isSuccess) {
       Get.to(

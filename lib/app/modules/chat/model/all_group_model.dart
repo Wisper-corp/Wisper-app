@@ -17,7 +17,7 @@ class AllGroupModel {
     );
   }
 }
-
+ 
 class Data {
   Data({required this.meta, required this.groups});
 

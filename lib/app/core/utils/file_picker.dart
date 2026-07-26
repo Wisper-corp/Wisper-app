@@ -25,8 +25,6 @@ class AttachmentPickerHelper {
       }
     } catch (e) {
       debugPrint("Error picking video: $e");
-    } finally {
-      if (Navigator.canPop(context)) Navigator.pop(context);
     }
   }
 

@@ -36,9 +36,13 @@ class _MyPostSectionState extends State<MyPostSection> {
   );
 
   @override
+  @override
   void initState() {
     super.initState();
-    controller.getAllPost();
+
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      controller.getAllPost();
+    });
   }
 
   Future<void> _handleDeletePost(String postId) async {
@@ -151,6 +155,7 @@ class _MyPostSectionState extends State<MyPostSection> {
                   Get.to(() => CommentScreen(postId: post.id!));
                 }
               },
+              commentCount: post.count?.comment ?? 0,
               isComment: true,
               ownerId: post.author?.id ?? '',
               trailing: GestureDetector(
@@ -181,7 +186,7 @@ class _MyPostSectionState extends State<MyPostSection> {
               deliveryTime: post.deliveryTime,
             ),
           );
-        }, 
+        },
       );
     });
   }
@@ -271,9 +276,9 @@ class ConfirmationBottomSheet extends StatelessWidget {
   static void show({
     required BuildContext context,
     String title = 'Delete?',
-    String message = 'Are you sure you want to delete?',
+    String? message,
     required VoidCallback onDelete,
-    String deleteButtonText = 'Delete',
+    String? deleteButtonText,
     String cancelButtonText = 'Discard',
   }) {
     showModalBottomSheet(
@@ -282,11 +287,11 @@ class ConfirmationBottomSheet extends StatelessWidget {
       isScrollControlled: true,
       builder: (context) => ConfirmationBottomSheet(
         title: title,
-        message: message,
+        message: message ?? 'Are you sure you want to delete?',
         onTap: onDelete,
-        deleteButtonText: deleteButtonText,
+        deleteButtonText: deleteButtonText ?? 'Delete',
         cancelButtonText: cancelButtonText,
       ),
     );
-  } 
+  }
 }

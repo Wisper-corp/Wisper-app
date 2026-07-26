@@ -1,40 +1,21 @@
 {
   "project_info": {
-    "project_number": "667291069508",
-    "project_id": "wisper-9f2ab",
-    "storage_bucket": "wisper-9f2ab.firebasestorage.app"
+    "project_number": "488154013426",
+    "project_id": "wisper-bab8d",
+    "storage_bucket": "wisper-bab8d.firebasestorage.app"
   },
   "client": [
     {
       "client_info": {
-        "mobilesdk_app_id": "1:667291069508:android:5cecd54002b5b54c6ce011",
+        "mobilesdk_app_id": "1:488154013426:android:e1979524098e8bc2737a6b",
         "android_client_info": {
-          "package_name": "com.example.wisper"
+          "package_name": "com.wisperapplication.app"
         }
       },
       "oauth_client": [],
       "api_key": [
         {
-          "current_key": "AIzaSyBx3M0QY83BaEtLmSfyaFYAeV_king70Bc"
-        }
-      ],
-      "services": {
-        "appinvite_service": {
-          "other_platform_oauth_client": []
-        }
-      }
-    },
-    {
-      "client_info": {
-        "mobilesdk_app_id": "1:667291069508:android:273d05d9473148596ce011",
-        "android_client_info": {
-          "package_name": "com.wisperuser.app"
-        }
-      },
-      "oauth_client": [],
-      "api_key": [
-        {
-          "current_key": "AIzaSyBx3M0QY83BaEtLmSfyaFYAeV_king70Bc"
+          "current_key": "AIzaSyBqGxQuw0iU0B2kDjlJM60PDgGzaYPeWIQ"
         }
       ],
       "services": {

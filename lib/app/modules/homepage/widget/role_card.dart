@@ -3,6 +3,7 @@ import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:get/get.dart';
 import 'package:wisper/app/core/config/theme/light_theme_colors.dart';
 import 'package:wisper/app/core/others/custom_size.dart';
+import 'package:wisper/app/core/utils/initials.dart';
 import 'package:wisper/app/core/widgets/common/circle_icon.dart';
 import 'package:wisper/app/core/widgets/common/custom_button.dart';
 import 'package:wisper/app/core/widgets/common/line_widget.dart';
@@ -52,9 +53,17 @@ class RoleCard extends StatelessWidget {
                   CircleAvatar(
                     radius: 30.r,
                     backgroundColor: Colors.grey.shade800,
-                    backgroundImage: NetworkImage(imagePath ?? ''),
+                    backgroundImage: (imagePath ?? '').isNotEmpty
+                        ? NetworkImage(imagePath!)
+                        : null,
                     child: imagePath == null || imagePath == ''
-                        ? const Icon(Icons.person, size: 40)
+                        ? Text(
+                            initialsFromName(title),
+                            style: const TextStyle(
+                              color: Colors.white,
+                              fontWeight: FontWeight.w600,
+                            ),
+                          )
                         : null,
                   ),
                   widthBox8,
