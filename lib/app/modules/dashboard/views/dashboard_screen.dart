@@ -107,7 +107,7 @@ class _MainButtonNavbarScreenState extends State<MainButtonNavbarScreen>
       allFeedPostController.getAllPost(),
       myFeedJobController.getJobs(),
       myFeedPostController.getAllPost(),
-      allRoleController.getAllRole('', null),
+      allRoleController.getAllRole(''),
       businessController.getMyProfile(),
     ]);
 

@@ -381,17 +381,35 @@ class _GroupChatScreenState extends State<GroupChatScreen> {
               ),
             ],
             if (_tabIndex == 1) Expanded(
-              child: Stack(children: [
-                Positioned.fill(child: PostSection(
-                  groupId: widget.groupId,
-                  searchQuery: _serviceSearchQuery.isEmpty ? null : _serviceSearchQuery,
-                )),
-                Positioned(
-                  bottom: 16.h, left: 20.w, right: 20.w,
-                  child: CustomElevatedButton(
-                    title: 'Post your service', borderRadius: 50, height: 48,
-                    onPress: () => Get.to(() => GalleryPostScreen(groupId: widget.groupId)),
+              child: Column(children: [
+                // Search bar — same pattern as Jobs tab
+                Padding(
+                  padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 8.h),
+                  child: CustomTextField(
+                    controller: _serviceSearchCtrl,
+                    hintText: 'Search services...',
+                    prefixIcon: Icons.search_rounded,
+                    onChanged: (v) => setState(() => _serviceSearchQuery = v ?? ''),
                   ),
+                ),
+                // Service posts filtered by groupId + searchQuery
+                Expanded(
+                  child: Stack(children: [
+                    Positioned.fill(
+                      child: PostSection(
+                        key: ValueKey('services_${widget.groupId}_$_serviceSearchQuery'),
+                        groupId: widget.groupId,
+                        searchQuery: _serviceSearchQuery.isEmpty ? null : _serviceSearchQuery,
+                      ),
+                    ),
+                    Positioned(
+                      bottom: 16.h, left: 20.w, right: 20.w,
+                      child: CustomElevatedButton(
+                        title: 'Post your service', borderRadius: 50, height: 48,
+                        onPress: () => Get.to(() => GalleryPostScreen(groupId: widget.groupId)),
+                      ),
+                    ),
+                  ]),
                 ),
               ]),
             ),

@@ -109,12 +109,12 @@ class AllFeedPostController extends GetxController {
     }
   }
 
-  void resetPagination() {
+  void resetPagination({String? groupId, String? searchQuery}) {
     page = 0;
     lastPage = null;
     _allPostList.clear();
-    print('Pagination reset, fetching with categoryId: $_selectedCategoryId');
-    getAllPost(categoryId: _selectedCategoryId.value);
+    print('Pagination reset, fetching with categoryId: $_selectedCategoryId, groupId: $groupId');
+    getAllPost(categoryId: _selectedCategoryId.value, groupId: groupId, searchQuery: searchQuery);
   }
 
   // Track which posts have already been viewed this session to avoid duplicate calls
@@ -128,8 +128,23 @@ class AllFeedPostController extends GetxController {
         Urls.postViewUrl(postId),
         accessToken: StorageUtil.getData(StorageUtil.userAccessToken),
       );
-    } catch (_) {
-      // Silently fail - view count is non-critical
-    }
+    } catch (_) {}
+  }
+
+  void setPostCommentCount({required String postId, required int count}) {
+    final index = _allPostList.indexWhere((p) => p.id == postId);
+    if (index == -1) return;
+    final post = _allPostList[index];
+    _allPostList[index] = FeedPostItemModel(
+      id: post.id, caption: post.caption, images: post.images,
+      views: post.views, createdAt: post.createdAt,
+      commentAccess: post.commentAccess, author: post.author,
+      price: post.price, deliveryTime: post.deliveryTime,
+      currency: post.currency, avgRating: post.avgRating,
+      ratingCount: post.ratingCount,
+      count: Count(comment: count),
+      groupId: post.groupId,
+    );
+    update();
   }
 }

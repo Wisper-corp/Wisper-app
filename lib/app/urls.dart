@@ -36,6 +36,7 @@ class Urls {
   static const String resendOtpUrl = '$_baseUrl/otps/send';
   static const String signInUrl = '$_baseUrl/auths/login';
   static const String updateFcmTokenUrl = '$_baseUrl/auths/fcm-token';
+  static const String removeFcmToken = '$_baseUrl/auths/fcm-token';
   static const String forgotPasswordUrl = '$_baseUrl/otps/send';
   static const String changePasswordUrl = '$_baseUrl/auths/change-password';
   static const String deleteAccountUrl = '$_baseUrl/auth/change-password';
@@ -93,6 +94,12 @@ class Urls {
   static String groupJobsUrl(String groupId) => '$_baseUrl/jobs/group/$groupId';
   static const String roleUrl = '$_baseUrl/persons/roles';
   static const String myCallsUrl = '$_baseUrl/calls/my';
+  static const String myCallUrl = '$_baseUrl/calls/my';
+  static const String roomUrl = '$_baseUrl/calls/token';
+  static const String callTokenUrl = '$_baseUrl/calls/token';
+  static const String allCommunityUrl = '$_baseUrl/groups/public';
+  static String addClassMembersById(String id) => '$_baseUrl/classes/members/$id';
+  static const String removePerticipantUrl = '$_baseUrl/chats/participants';
   static const String walletTransactionsUrl = '$_baseUrl/wallet/transactions';
   static const String allGroupUrl = '$_baseUrl/groups';
 

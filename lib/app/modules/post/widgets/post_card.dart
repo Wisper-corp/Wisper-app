@@ -21,6 +21,7 @@ class PostCard extends StatelessWidget {
   final String? postTime;
   final String? views;
   final bool? isComment;
+  final int? commentCount;
   final double? price;
   final String? deliveryTime;
   final VoidCallback onTapComment;
@@ -39,6 +40,7 @@ class PostCard extends StatelessWidget {
     this.views,
     this.ownerId,
     this.isComment = false,
+    this.commentCount,
     this.price,
     this.deliveryTime,
     required this.onTapComment,
@@ -235,7 +237,9 @@ class PostCard extends StatelessWidget {
                     // Comment
                     _ActionButton(
                       icon: Icons.chat_bubble_outline_rounded,
-                      label: '',
+                      label: commentCount != null && commentCount! > 0
+                          ? _formatViews(commentCount.toString())
+                          : '',
                       onTap: onTapComment,
                     ),
                     SizedBox(width: 20.w),

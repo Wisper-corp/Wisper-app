@@ -33,12 +33,8 @@ class _PostSectionState extends State<PostSection> {
         : Get.put(AllFeedPostController(), tag: _tag);
 
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      controller.resetPagination();
-      if (widget.groupId != null && widget.groupId!.isNotEmpty) {
-        controller.getAllPost(groupId: widget.groupId, searchQuery: widget.searchQuery);
-      } else {
-        controller.getAllPost(searchQuery: widget.searchQuery);
-      }
+      // Single call — resetPagination passes groupId into the fetch
+      controller.resetPagination(groupId: widget.groupId, searchQuery: widget.searchQuery);
     });
   }
 
@@ -46,11 +42,7 @@ class _PostSectionState extends State<PostSection> {
   void didUpdateWidget(covariant PostSection oldWidget) {
     super.didUpdateWidget(oldWidget);
     if (widget.searchQuery != oldWidget.searchQuery) {
-      controller.resetPagination();
-      controller.getAllPost(
-        groupId: widget.groupId,
-        searchQuery: widget.searchQuery,
-      );
+      controller.resetPagination(groupId: widget.groupId, searchQuery: widget.searchQuery);
     }
   }
 

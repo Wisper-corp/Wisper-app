@@ -328,7 +328,6 @@ class _CommunityScreenState extends State<CommunityScreen> {
                             ),
                           )
                         : GroupChatScreen(
-                            isGeneralChat: true,
                             chatId: _chatId,
                             groupId: widget.groupId,
                             groupName: 'General Chat',
@@ -357,7 +356,6 @@ class _CommunityScreenState extends State<CommunityScreen> {
                     child: RoleSection(
                       key: ValueKey('role_section_$_roleSectionVersion'),
                       searchQuery: _memberSearchController.text.trim(),
-                      groupId: widget.groupId,
                     ),
                   ),
                 ],

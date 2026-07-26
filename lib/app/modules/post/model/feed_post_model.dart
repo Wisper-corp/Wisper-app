@@ -62,6 +62,8 @@ class FeedPostItemModel {
     this.currency,
     this.avgRating = 0.0,
     this.ratingCount = 0,
+    this.count,
+    this.groupId,
   });
 
   final String? id;
@@ -73,9 +75,11 @@ class FeedPostItemModel {
   final Author? author;
   final double? price;
   final String? deliveryTime;
-  final String? currency; // "NGN" or "USD"
+  final String? currency;
   final double avgRating;
   final int ratingCount;
+  final PostCount? count;
+  final String? groupId;
 
   factory FeedPostItemModel.fromJson(Map<String, dynamic> json) {
     return FeedPostItemModel(
@@ -93,8 +97,23 @@ class FeedPostItemModel {
       currency: json["currency"] as String?,
       avgRating: (json["avgRating"] as num?)?.toDouble() ?? 0.0,
       ratingCount: json["ratingCount"] as int? ?? 0,
+      count: json["_count"] == null ? null : PostCount.fromJson(json["_count"]),
+      groupId: json["groupId"],
     );
   }
+}
+
+class PostCount {
+  PostCount({this.comment = 0});
+  final int comment;
+  factory PostCount.fromJson(Map<String, dynamic> json) {
+    return PostCount(comment: json["comment"] as int? ?? 0);
+  }
+}
+
+// Alias for backward compat with other team's code
+class Count extends PostCount {
+  Count({int comment = 0}) : super(comment: comment);
 }
 
 class Author {
