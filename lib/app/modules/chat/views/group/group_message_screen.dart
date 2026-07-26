@@ -62,6 +62,12 @@ class _GroupChatScreenState extends State<GroupChatScreen> {
 
   static const _tabs = ['General Chat', 'Services', 'Jobs', 'Members'];
 
+  // When no groupId, only show General Chat tab (home announcement feed)
+  List<String> get _activeTabs =>
+      (widget.groupId != null && widget.groupId!.isNotEmpty)
+          ? _tabs
+          : ['General Chat'];
+
   @override
   void initState() {
     super.initState();
@@ -80,7 +86,10 @@ class _GroupChatScreenState extends State<GroupChatScreen> {
         _seenCtrl.seenMessage(widget.chatId!);
       }
       _ctrl.setupChat(chatId: widget.chatId);
-      _membersCtrl.getGroupMembers(widget.groupId);
+      // Only fetch members if we have a real groupId
+      if (widget.groupId != null && widget.groupId!.isNotEmpty) {
+        _membersCtrl.getGroupMembers(widget.groupId);
+      }
     });
   }
 
@@ -180,7 +189,7 @@ class _GroupChatScreenState extends State<GroupChatScreen> {
       mainAxisSize: MainAxisSize.min,
       children: [
         Row(
-          children: List.generate(_tabs.length, (i) {
+          children: List.generate(_activeTabs.length, (i) {
             final sel = _tabIndex == i;
             return Expanded(
               child: GestureDetector(
@@ -190,7 +199,7 @@ class _GroupChatScreenState extends State<GroupChatScreen> {
                   children: [
                     Padding(
                       padding: EdgeInsets.symmetric(vertical: 8.h),
-                      child: Text(_tabs[i],
+                      child: Text(_activeTabs[i],
                         textAlign: TextAlign.center,
                         style: TextStyle(
                           fontSize: 13.sp, fontWeight: FontWeight.w600,

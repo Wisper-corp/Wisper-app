@@ -1,4 +1,4 @@
-package com.wisperapplication.app
+package com.wisperuser.app
 
 import android.content.Intent
 import io.flutter.embedding.android.FlutterActivity
