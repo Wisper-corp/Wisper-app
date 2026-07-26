@@ -52,7 +52,7 @@ class _GroupInfoScreenState extends State<GroupInfoScreen> {
   final ProfilePhotoController photoController =
       Get.find<ProfilePhotoController>();
 
-  final AddMemberController addMemberController = AddMemberController();
+  final GroupMemberController addMemberController = GroupMemberController();
   final RxString currentImagePath = ''.obs;
   @override
   void initState() {

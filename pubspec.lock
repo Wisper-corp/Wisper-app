@@ -93,10 +93,10 @@ packages:
     dependency: "direct main"
     description:
       name: audioplayers
-      sha256: a72dd459d1a48f61a6fb9c0134dba26597c9236af40639ff0eb70eb4e0baab70
+      sha256: f16640453cc47487b7de72a2b28d37c7df1ac97999849f4a46d92b1d2b0f093d
       url: "https://pub.dev"
     source: hosted
-    version: "6.6.0"
+    version: "6.7.1"
   audioplayers_android:
     dependency: transitive
     description:
@@ -133,18 +133,18 @@ packages:
     dependency: transitive
     description:
       name: audioplayers_web
-      sha256: faa8fa6587f996a6f604433b53af44c57a1407d4fe8dff5766cf63d6875e8de9
+      sha256: "24a6f258062bd7da8cb2157e83fccb9816a08dd306cbaaa24f9813d071470545"
       url: "https://pub.dev"
     source: hosted
-    version: "5.2.0"
+    version: "5.2.1"
   audioplayers_windows:
     dependency: transitive
     description:
       name: audioplayers_windows
-      sha256: bafff2b38b6f6d331887558ba6e0a01c9c208d9dbb3ad0005234db065122a734
+      sha256: "95f875a96c88c3dbbcb608d4f8288e300b0113d256a81d0b3197fcc18f0dc91a"
       url: "https://pub.dev"
     source: hosted
-    version: "4.3.0"
+    version: "4.3.1"
   boolean_selector:
     dependency: transitive
     description:
@@ -353,6 +353,14 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "3.1.2"
+  crash_safe_image:
+    dependency: "direct main"
+    description:
+      name: crash_safe_image
+      sha256: cedeb3bbda49f1e9f33d5cab4f83cde0ec1e61ce73f63336fdcacad562b7dc5d
+      url: "https://pub.dev"
+    source: hosted
+    version: "0.3.0"
   cross_file:
     dependency: transitive
     description:
@@ -626,10 +634,10 @@ packages:
     dependency: "direct main"
     description:
       name: flutter_callkit_incoming
-      sha256: "3589deb8b71e43f2d520a9c8a5240243f611062a8b246cdca4b1fda01fbbf9b8"
+      sha256: "993fb0f0cd990961072f0d13ff815a91773f92bfa1895be17d3366b2225ec9cd"
       url: "https://pub.dev"
     source: hosted
-    version: "3.0.0"
+    version: "2.5.8"
   flutter_gen_core:
     dependency: transitive
     description:
@@ -763,14 +771,6 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "2.0.30"
-  flutter_randomcolor:
-    dependency: "direct main"
-    description:
-      name: flutter_randomcolor
-      sha256: "831095ae7883d006de8067d58b96fb722591c72b42364ffd503bfdbe4f65f592"
-      url: "https://pub.dev"
-    source: hosted
-    version: "1.0.18"
   flutter_screenutil:
     dependency: "direct main"
     description:
@@ -1337,10 +1337,10 @@ packages:
     dependency: transitive
     description:
       name: meta
-      sha256: "23f08335362185a5ea2ad3a4e597f1375e78bce8a040df5c600c8d3552ef2394"
+      sha256: e3641ec5d63ebf0d9b41bd43201a66e3fc79a65db5f61fc181f04cd27aab950c
       url: "https://pub.dev"
     source: hosted
-    version: "1.17.0"
+    version: "1.16.0"
   mgrs_dart:
     dependency: transitive
     description:
@@ -1966,10 +1966,10 @@ packages:
     dependency: transitive
     description:
       name: test_api
-      sha256: ab2726c1a94d3176a45960b6234466ec367179b87dd74f1611adb1f3b5fb9d55
+      sha256: "522f00f556e73044315fa4585ec3270f1808a4b186c936e612cab0b565ff1e00"
       url: "https://pub.dev"
     source: hosted
-    version: "0.7.7"
+    version: "0.7.6"
   time:
     dependency: transitive
     description:
