@@ -83,11 +83,41 @@ class AllChatsController extends GetxController {
           ? jsonDecode(rawData)
           : rawData as Map<String, dynamic>;
 
-      // যদি full list আসে (meta + chats থাকে), তাহলে reload করো
+      // যদি full list আসে (meta + chats থাকে), তাহলে just update existing entries — don't reload
       if (payload.containsKey('chats') &&
           payload['chats'] is List &&
           payload.containsKey('meta')) {
-        getAllChats();
+        // Update last message and timestamp for each chat in the payload
+        final chats = payload['chats'] as List;
+        for (final chatJson in chats) {
+          final chat = chatJson as Map<String, dynamic>;
+          final String chatId = chat['id'] ?? '';
+          if (chatId.isEmpty) continue;
+          final msgs = chat['messages'] as List? ?? [];
+          String lastMessage = '';
+          if (msgs.isNotEmpty) {
+            final firstMsg = msgs.first as Map<String, dynamic>;
+            final fileType = firstMsg['fileType'] ?? '';
+            final text = firstMsg['text'] ?? '';
+            if (fileType == 'IMAGE') lastMessage = '📷 Photo';
+            else if (fileType == 'VIDEO') lastMessage = '🎥 Video';
+            else if (fileType != null && fileType != '' && fileType != 'OFFER') lastMessage = '📄 File';
+            else lastMessage = text;
+          }
+          final latestAt = chat['latestMessageAt'] ?? '';
+          final idx = socketService.socketFriendList.indexWhere((e) => e['id'] == chatId);
+          if (idx != -1) {
+            socketService.socketFriendList[idx]
+              ..['lastMessage'] = lastMessage
+              ..['latestMessageAt'] = latestAt;
+          }
+        }
+        socketService.socketFriendList.sort((a, b) {
+          final aTime = DateTime.tryParse(a['latestMessageAt'] ?? '') ?? DateTime(1970);
+          final bTime = DateTime.tryParse(b['latestMessageAt'] ?? '') ?? DateTime(1970);
+          return bTime.compareTo(aTime);
+        });
+        socketService.socketFriendList.refresh();
         return;
       }
 

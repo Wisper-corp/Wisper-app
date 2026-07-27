@@ -75,11 +75,50 @@ class _EditGroupScreenState extends State<EditGroupScreen> {
   @override
   void initState() {
     super.initState();
-    _nameCtrl.text = widget.groupName;
-    _captionCtrl.text = widget.groupCaption;
     _isPublic = widget.isPublic;
     _isAllowInvitation = widget.isAllowInvitation;
     _loadTagEditDate();
+    _parseDescriptionAndPopulate(widget.groupCaption);
+  }
+
+  /// Parse "userDescription\nTrade: X | Market: Y | Category: Z | Suffix: S"
+  /// Sets tag fields and strips tag line from description controller
+  void _parseDescriptionAndPopulate(String raw) {
+    if (raw.isEmpty) {
+      _nameCtrl.text = widget.groupName;
+      _captionCtrl.text = raw;
+      return;
+    }
+
+    _nameCtrl.text = widget.groupName;
+
+    final lines = raw.split('\n');
+    String userDescription = raw;
+
+    // Find the tag line — it contains "Trade:" or "Market:" or "Category:"
+    for (int i = 0; i < lines.length; i++) {
+      final line = lines[i];
+      if (line.contains('Trade:') || line.contains('Market:') || line.contains('Category:') || line.contains('Suffix:')) {
+        // Parse each tag from this line
+        final parts = line.split('|');
+        for (final part in parts) {
+          final trimmed = part.trim();
+          if (trimmed.startsWith('Trade:')) {
+            _selectedTradeType = trimmed.substring('Trade:'.length).trim();
+          } else if (trimmed.startsWith('Market:')) {
+            _selectedMarketType = trimmed.substring('Market:'.length).trim();
+          } else if (trimmed.startsWith('Category:')) {
+            _selectedCategory = trimmed.substring('Category:'.length).trim();
+          }
+          // Suffix is metadata — don't need to display separately
+        }
+        // Strip the tag line so only user description shows in the text field
+        userDescription = lines.sublist(0, i).join('\n').trim();
+        break;
+      }
+    }
+
+    _captionCtrl.text = userDescription;
   }
 
   Future<void> _loadTagEditDate() async {
@@ -121,17 +160,22 @@ class _EditGroupScreenState extends State<EditGroupScreen> {
   }
 
   Future<void> _performUpdateGroup() async {
-    // Build description with community tags
-    final tagSuffix = [
-      if (_selectedTradeType != null) 'Trade: $_selectedTradeType',
-      if (_selectedMarketType != null) 'Market: $_selectedMarketType',
-      if (_selectedCategory != null) 'Category: $_selectedCategory',
-    ].join(' | ');
+    // Build tag suffix — only include tags that are set
+    final tagParts = <String>[
+      if (_selectedTradeType != null && _selectedTradeType!.isNotEmpty)
+        'Trade: $_selectedTradeType',
+      if (_selectedMarketType != null && _selectedMarketType!.isNotEmpty)
+        'Market: $_selectedMarketType',
+      if (_selectedCategory != null && _selectedCategory!.isNotEmpty)
+        'Category: $_selectedCategory',
+    ];
 
-    final description = [
-      _captionCtrl.text.trim(),
-      if (tagSuffix.isNotEmpty) tagSuffix,
-    ].join('\n');
+    // Clean user description — strip any existing tag lines first
+    final cleanDesc = _captionCtrl.text.trim();
+
+    final description = tagParts.isNotEmpty
+        ? '$cleanDesc\n${tagParts.join(' | ')}'
+        : cleanDesc;
 
     final bool isSuccess = await editGroupController.editGroup(
       groupId: widget.groupId,

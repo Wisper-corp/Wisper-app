@@ -217,14 +217,9 @@ class SocketService extends GetxController {
       }
 
       if (_listRefreshInFlight) return;
-      _listRefreshInFlight = true;
-      if (Get.isRegistered<AllChatsController>()) {
-        Get.find<AllChatsController>().getAllChats().whenComplete(
-          () => _listRefreshInFlight = false,
-        );
-      } else {
-        _listRefreshInFlight = false;
-      }
+      // Chat not in list yet — add a basic entry, chatList event will update it properly
+      _listRefreshInFlight = false;
+      _socketFriendList.refresh();
     } catch (e) {
       _listRefreshInFlight = false;
       print('SocketService newMessage list update failed: $e');
