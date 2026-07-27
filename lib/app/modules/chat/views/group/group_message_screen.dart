@@ -73,14 +73,26 @@ class _GroupChatScreenState extends State<GroupChatScreen> {
   @override
   void initState() {
     super.initState();
-    // Use timestamp to guarantee unique tag — prevents any possible collision
     final ts = DateTime.now().millisecondsSinceEpoch;
     _ctrlTag = 'msg_${widget.chatId ?? widget.groupId ?? 'g'}_$ts';
     _membersTag = 'mem_${widget.groupId ?? 'g'}_$ts';
 
-    // Force delete any existing controller with same base before creating new
     _ctrl = Get.put(MessageController(), tag: _ctrlTag);
     _membersCtrl = Get.put(GroupMembersController(), tag: _membersTag);
+
+    // Fetch members immediately — don't wait for frame callback
+    if (widget.groupId != null && widget.groupId!.isNotEmpty) {
+      print('GroupChatScreen: fetching members for groupId=${widget.groupId}');
+      _membersCtrl.getGroupMembers(widget.groupId);
+
+      // Fetch group info for tag pills
+      final infoCtrl = Get.put(GroupInfoController(), tag: 'grp_${widget.groupId}');
+      infoCtrl.getGroupInfo(widget.groupId).then((ok) {
+        if (ok && mounted) {
+          setState(() => _tagPills = _parseTags(infoCtrl.groupInfoData?.description));
+        }
+      });
+    }
 
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (!mounted) return;
@@ -88,17 +100,6 @@ class _GroupChatScreenState extends State<GroupChatScreen> {
         _seenCtrl.seenMessage(widget.chatId!);
       }
       _ctrl.setupChat(chatId: widget.chatId);
-      // Only fetch members if we have a real groupId
-      if (widget.groupId != null && widget.groupId!.isNotEmpty) {
-        _membersCtrl.getGroupMembers(widget.groupId);
-        // Fetch group info for tag pills
-        final infoCtrl = Get.put(GroupInfoController(), tag: 'grp_${widget.groupId}');
-        infoCtrl.getGroupInfo(widget.groupId).then((ok) {
-          if (ok && mounted) {
-            setState(() => _tagPills = _parseTags(infoCtrl.groupInfoData?.description));
-          }
-        });
-      }
     });
   }
 
