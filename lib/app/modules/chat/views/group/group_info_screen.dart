@@ -44,7 +44,7 @@ class _GroupInfoScreenState extends State<GroupInfoScreen> {
   );
 
   final GroupMembersController groupMembersController =
-      Get.find<GroupMembersController>();
+      Get.put(GroupMembersController(), tag: 'info_members');
 
   final AllConnectionController allConnectionController =
       Get.put(AllConnectionController());
@@ -208,7 +208,7 @@ class _GroupInfoScreenState extends State<GroupInfoScreen> {
 
                   showMember: _showMemberInfo,
                   title: groupInfoController.groupInfoData?.name ?? '',
-                  memberInfo: 'Group • 3 members',
+                  memberInfo: 'Community • ${groupMembersController.groupMemnersData?.length ?? groupInfoController.groupInfoData?.chat?.count?.participants ?? 0} members',
 
                   child: Row(
                     mainAxisAlignment: MainAxisAlignment.center,
