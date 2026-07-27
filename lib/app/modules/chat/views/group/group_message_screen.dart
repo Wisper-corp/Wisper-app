@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:get/get.dart';
 import 'package:wisper/app/core/others/custom_size.dart';
+import 'package:wisper/app/core/others/get_storage.dart';
 import 'package:wisper/app/core/utils/date_formatter.dart';
 import 'package:wisper/app/core/widgets/common/custom_button.dart';
 import 'package:wisper/app/core/widgets/common/custom_text_filed.dart';
@@ -82,8 +83,7 @@ class _GroupChatScreenState extends State<GroupChatScreen> {
 
     // Fetch members immediately — don't wait for frame callback
     if (widget.groupId != null && widget.groupId!.isNotEmpty) {
-      print('GroupChatScreen: fetching members for groupId=${widget.groupId}');
-      _membersCtrl.getGroupMembers(widget.groupId);
+      _fetchMembersWithRetry(widget.groupId!);
 
       // Fetch group info for tag pills
       final infoCtrl = Get.put(GroupInfoController(), tag: 'grp_${widget.groupId}');
@@ -110,6 +110,24 @@ class _GroupChatScreenState extends State<GroupChatScreen> {
     _serviceSearchCtrl.dispose();
     _jobSearchCtrl.dispose();
     super.dispose();
+  }
+
+  // ── Retry member fetch until token is available ──────────────────────────
+  Future<void> _fetchMembersWithRetry(String groupId) async {
+    // Wait up to 5 seconds for auth token to be available
+    String? token;
+    for (int i = 0; i < 10; i++) {
+      token = StorageUtil.getData(StorageUtil.userAccessToken);
+      if (token != null && token.isNotEmpty) break;
+      await Future.delayed(const Duration(milliseconds: 500));
+    }
+    if (!mounted) return;
+    final ok = await _membersCtrl.getGroupMembers(groupId);
+    // If failed or empty, retry once after short delay
+    if ((!ok || (_membersCtrl.groupMemnersData?.isEmpty ?? true)) && mounted) {
+      await Future.delayed(const Duration(seconds: 2));
+      if (mounted) await _membersCtrl.getGroupMembers(groupId);
+    }
   }
 
   // ── Parse community tag pills from description ───────────────────────────
