@@ -79,16 +79,15 @@ class _CreateGroupClassScreenState extends State<CreateGroupClassScreen> {
             heightBox10,
             StraightLiner(height: 0.5),
             heightBox10,
-            CreateWidget(
-              ontap: () {
-                Get.to(() => CreateClassScreen());
-              },
-              imagePath: Assets.images.userGroup.keyName,
-              bgColor: Color(0xff1B1E25),
-              iconColor: Color.fromARGB(255, 255, 255, 255),
-              title: 'Create New Class',
-              subtitle: 'Start a new educational class',
-            ),
+            // Create New Class — hidden for now
+            // CreateWidget(
+            //   ontap: () { Get.to(() => CreateClassScreen()); },
+            //   imagePath: Assets.images.userGroup.keyName,
+            //   bgColor: Color(0xff1B1E25),
+            //   iconColor: Color.fromARGB(255, 255, 255, 255),
+            //   title: 'Create New Class',
+            //   subtitle: 'Start a new educational class',
+            // ),
             heightBox30,
 
             Text(

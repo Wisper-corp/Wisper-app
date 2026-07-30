@@ -35,11 +35,8 @@ class _SignInScreenState extends State<SignInScreen> {
   );
 
   final formKey = GlobalKey<FormState>(); 
-  final emailController = TextEditingController(
-    text: 'aminulislamzxx5152@gmail.com',
-  );
-  final passwordController = TextEditingController(text: 'Aminul@123');
-  // final passwordController = TextEditingController(text: '12345678');
+  final emailController = TextEditingController();
+  final passwordController = TextEditingController();
   void signIn() {
     showLoadingOverLay(
       asyncFunction: () async => await performSignIn(context),

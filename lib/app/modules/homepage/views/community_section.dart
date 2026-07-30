@@ -104,18 +104,16 @@ class _CommunitySectionState extends State<CommunitySection> {
               onTap: () {
                 // First try socketFriendList, then fallback to item.chat?.id
                 final existingChatId = _joinedChatId(item.id) ?? item.chat?.id;
-                if (existingChatId != null && existingChatId.isNotEmpty) {
-                  Get.to(
-                    () => GroupChatScreen(
-                      chatId: existingChatId,
-                      groupId: item.id,
-                      groupName: item.name,
-                      groupImage: item.image?.toString(),
-                    ),
-                  );
-                } else {
-                  joinGroup(item.id, item.name, item.image?.toString());
-                }
+                // Open group chat — if not joined, show join banner inside
+                Get.to(
+                  () => GroupChatScreen(
+                    chatId: existingChatId ?? '',
+                    groupId: item.id,
+                    groupName: item.name,
+                    groupImage: item.image?.toString(),
+                    hasJoined: existingChatId != null && existingChatId.isNotEmpty,
+                  ),
+                );
               },
             );
           },

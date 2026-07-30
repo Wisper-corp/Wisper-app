@@ -13,6 +13,7 @@ import 'package:wisper/app/core/widgets/common/line_widget.dart';
 import 'package:wisper/app/core/widgets/shimmer/chat_shimmer.dart';
 import 'package:wisper/app/modules/chat/controller/group/all_group_member_controller.dart';
 import 'package:wisper/app/modules/chat/controller/group/group_info_controller.dart';
+import 'package:wisper/app/modules/homepage/controller/join_group_controller.dart';
 import 'package:wisper/app/modules/chat/controller/message_controller.dart';
 import 'package:wisper/app/modules/chat/controller/seen_message_controller.dart';
 import 'package:wisper/app/modules/chat/model/message_keys.dart';
@@ -32,6 +33,7 @@ class GroupChatScreen extends StatefulWidget {
   final String? groupId;
   final bool showHeader;
   final bool showTabs;
+  final bool hasJoined;
 
   const GroupChatScreen({
     super.key,
@@ -41,6 +43,7 @@ class GroupChatScreen extends StatefulWidget {
     this.groupId,
     this.showHeader = true,
     this.showTabs = true,
+    this.hasJoined = true,
   });
 
   @override
@@ -61,7 +64,9 @@ class _GroupChatScreenState extends State<GroupChatScreen> {
   String _serviceSearchQuery = '';
   String _jobSearchQuery = '';
   String? _jobLocationType;
-  List<String> _tagPills = []; // community tag pills
+  List<String> _tagPills = [];
+  late bool _hasJoined;
+  bool _isJoining = false; // community tag pills
 
   static const _tabs = ['General Chat', 'Services', 'Jobs', 'Members'];
 
@@ -74,6 +79,7 @@ class _GroupChatScreenState extends State<GroupChatScreen> {
   @override
   void initState() {
     super.initState();
+    _hasJoined = widget.hasJoined;
     final ts = DateTime.now().millisecondsSinceEpoch;
     _ctrlTag = 'msg_${widget.chatId ?? widget.groupId ?? 'g'}_$ts';
     _membersTag = 'mem_${widget.groupId ?? 'g'}_$ts';
@@ -216,25 +222,6 @@ class _GroupChatScreenState extends State<GroupChatScreen> {
                     SizedBox(height: 2.h),
                     Row(
                       children: [
-                        if (previewMembers.isNotEmpty)
-                          SizedBox(
-                            height: 16,
-                            width: 16.0 + (previewMembers.length - 1) * 10.0,
-                            child: Stack(
-                              children: List.generate(previewMembers.length, (i) {
-                                final m = previewMembers[i];
-                                return Positioned(
-                                  left: i * 10.0,
-                                  child: InitialsAvatar(
-                                    name: m.auth?.person?.name ?? m.auth?.business?.name ?? '?',
-                                    imageUrl: m.auth?.person?.image ?? m.auth?.business?.image,
-                                    radius: 8, fontSize: 6,
-                                  ),
-                                );
-                              }),
-                            ),
-                          ),
-                        if (previewMembers.isNotEmpty) SizedBox(width: 4.w),
                         Text('$memberCount members',
                           style: TextStyle(fontSize: 11.sp, color: Colors.white54)),
                       ],
@@ -244,6 +231,72 @@ class _GroupChatScreenState extends State<GroupChatScreen> {
               ),
             ],
           ),
+        ),
+      );
+    });
+  }
+
+  // ── Member avatars row (below header, above tabs) ─────────────────────────
+  Widget _buildMemberAvatarsRow() {
+    return Obx(() {
+      final members = _membersCtrl.groupMemnersData ?? [];
+      if (members.isEmpty) return const SizedBox.shrink();
+      final preview = members.take(5).toList();
+      final extra = members.length - preview.length;
+      return Container(
+        color: Colors.black,
+        padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 6.h),
+        child: Row(
+          children: [
+            // Overlapping avatars
+            SizedBox(
+              height: 32.h,
+              width: (preview.length * 22.0) + (extra > 0 ? 28 : 0),
+              child: Stack(
+                children: [
+                  ...List.generate(preview.length, (i) {
+                    final m = preview[i];
+                    return Positioned(
+                      left: i * 22.0,
+                      child: Container(
+                        decoration: BoxDecoration(
+                          shape: BoxShape.circle,
+                          border: Border.all(color: Colors.black, width: 1.5),
+                        ),
+                        child: InitialsAvatar(
+                          name: m.auth?.person?.name ?? m.auth?.business?.name ?? '?',
+                          imageUrl: m.auth?.person?.image ?? m.auth?.business?.image,
+                          radius: 14.r, fontSize: 9,
+                        ),
+                      ),
+                    );
+                  }),
+                  if (extra > 0)
+                    Positioned(
+                      left: preview.length * 22.0,
+                      child: Container(
+                        width: 28.r, height: 28.r,
+                        decoration: BoxDecoration(
+                          shape: BoxShape.circle,
+                          color: const Color(0xff2A2A2A),
+                          border: Border.all(color: Colors.black, width: 1.5),
+                        ),
+                        child: Center(
+                          child: Text('+$extra',
+                            style: TextStyle(fontSize: 9.sp, color: Colors.white70)),
+                        ),
+                      ),
+                    ),
+                ],
+              ),
+            ),
+            SizedBox(width: 10.w),
+            Text(
+              '${members.length} member${members.length == 1 ? '' : 's'}',
+              style: TextStyle(fontSize: 12.sp, color: Colors.white60,
+                fontWeight: FontWeight.w500),
+            ),
+          ],
         ),
       );
     });
@@ -423,6 +476,84 @@ class _GroupChatScreenState extends State<GroupChatScreen> {
     );
   }
 
+  // ── Join Community Banner ─────────────────────────────────────────────────
+  Widget _buildJoinBanner() {
+    return Container(
+      padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 12.h),
+      decoration: BoxDecoration(
+        color: Colors.black,
+        border: Border(top: BorderSide(color: const Color(0xff2A2A2A), width: 0.5)),
+      ),
+      child: SafeArea(
+        top: false,
+        child: Row(
+          children: [
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Text(
+                    '${widget.groupName ?? 'This community'} is open to join',
+                    style: TextStyle(fontSize: 13.sp, color: Colors.white70),
+                  ),
+                  SizedBox(height: 2.h),
+                  Text(
+                    'Join to participate in chats and post services',
+                    style: TextStyle(fontSize: 11.sp, color: Colors.white38),
+                  ),
+                ],
+              ),
+            ),
+            SizedBox(width: 12.w),
+            GestureDetector(
+              onTap: _isJoining ? null : _joinGroup,
+              child: Container(
+                padding: EdgeInsets.symmetric(horizontal: 20.w, vertical: 10.h),
+                decoration: BoxDecoration(
+                  color: const Color(0xff1F7DE9),
+                  borderRadius: BorderRadius.circular(24.r),
+                ),
+                child: _isJoining
+                    ? SizedBox(width: 16.w, height: 16.h,
+                        child: const CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
+                    : Text('Join', style: TextStyle(fontSize: 14.sp,
+                        fontWeight: FontWeight.w700, color: Colors.white)),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Future<void> _joinGroup() async {
+    if (_isJoining || widget.groupId == null) return;
+    setState(() => _isJoining = true);
+    try {
+      final ctrl = JoinGroupController();
+      final ok = await ctrl.joinGroup(groupId: widget.groupId);
+      if (ok && mounted) {
+        setState(() {
+          _hasJoined = true;
+          _isJoining = false;
+        });
+        // Reload members after joining
+        _membersCtrl.getGroupMembers(widget.groupId);
+        Get.snackbar('Success', 'You joined ${widget.groupName ?? 'the community'}!',
+          backgroundColor: Colors.green, colorText: Colors.white,
+          snackPosition: SnackPosition.TOP);
+      } else if (mounted) {
+        setState(() => _isJoining = false);
+        Get.snackbar('Error', ctrl.errorMessage,
+          backgroundColor: Colors.red, colorText: Colors.white,
+          snackPosition: SnackPosition.TOP);
+      }
+    } catch (e) {
+      if (mounted) setState(() => _isJoining = false);
+    }
+  }
+
   // ── Build ─────────────────────────────────────────────────────────────────────
   @override
   Widget build(BuildContext context) {
@@ -433,27 +564,37 @@ class _GroupChatScreenState extends State<GroupChatScreen> {
         children: [
           // Header (skip for embedded announcement tab)
           if (widget.showHeader) _buildHeader(),
+          // Member avatars row — between header and tabs
+          if (widget.showHeader && widget.showTabs &&
+              widget.groupId != null && widget.groupId!.isNotEmpty)
+            _buildMemberAvatarsRow(),
           // Tabs (skip for embedded announcement tab)
           if (widget.showTabs) _buildTabs(),
 
           // Content — always wrapped in Expanded so Column has bounded height
           if (!widget.showTabs) ...[
             _buildChat(),
-            MessageInputBar(
-              controller: _ctrl.textController,
-              chatId: widget.chatId ?? '',
-              receiverId: '',
-              onSend: () => _ctrl.sendMessage(widget.chatId ?? ''),
-            ),
-          ] else ...[
-            if (_tabIndex == 0) ...[
-              _buildChat(),
+            if (_hasJoined)
               MessageInputBar(
                 controller: _ctrl.textController,
                 chatId: widget.chatId ?? '',
                 receiverId: '',
                 onSend: () => _ctrl.sendMessage(widget.chatId ?? ''),
-              ),
+              )
+            else
+              _buildJoinBanner(),
+          ] else ...[
+            if (_tabIndex == 0) ...[
+              _buildChat(),
+              if (_hasJoined)
+                MessageInputBar(
+                  controller: _ctrl.textController,
+                  chatId: widget.chatId ?? '',
+                  receiverId: '',
+                  onSend: () => _ctrl.sendMessage(widget.chatId ?? ''),
+                )
+              else
+                _buildJoinBanner(),
             ],
             if (_tabIndex == 1) Expanded(
               child: Column(children: [
