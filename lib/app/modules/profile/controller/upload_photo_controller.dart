@@ -45,9 +45,8 @@ class ProfilePhotoController extends GetxController {
     }
   }
 
-  Future<bool> uploadGroupPhoto(File image, String groupId) async {
+  Future<String?> uploadGroupPhoto(File image, String groupId) async {
     _inProgress.value = true;
-
     print('Uploading group photo...');
     update();
 
@@ -62,21 +61,30 @@ class ProfilePhotoController extends GetxController {
       if (response.isSuccess) {
         _inProgress.value = false;
         update();
-        return true;
+        // Extract the new image URL from the response if present
+        try {
+          final data = response.responseData;
+          final imageUrl =
+              data?['data']?['image'] as String? ??
+              data?['image'] as String?;
+          return imageUrl ?? '';
+        } catch (_) {
+          return '';
+        }
       } else {
         final msg = response.errorMessage;
         if (msg.toLowerCase().contains('expired') ||
             msg.toLowerCase().contains('unauthenticated')) {
           Get.offAll(() => const SignInScreen());
-        } else {}
+        }
         _inProgress.value = false;
         update();
-        return false;
+        return null;
       }
     } catch (e) {
       _inProgress.value = false;
       update();
-      return false;
+      return null;
     }
   }
 

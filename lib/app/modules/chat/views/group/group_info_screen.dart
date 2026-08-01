@@ -119,21 +119,23 @@ class _GroupInfoScreenState extends State<GroupInfoScreen> {
     // Show the local file immediately for instant feedback
     currentImagePath.value = imageFile.path;
 
-    final bool success = await photoController.uploadGroupPhoto(
+    final String? newUrl = await photoController.uploadGroupPhoto(
       imageFile,
       widget.groupId!,
     );
 
-    if (success) {
-      // Await the refresh so groupInfoData has the new image URL
-      await groupInfoController.getGroupInfo(widget.groupId);
-
-      // Update the displayed image from the freshly fetched server URL
-      final newUrl = groupInfoController.groupInfoData?.image ?? '';
+    if (newUrl != null) {
+      // Use the URL returned directly from the server response
       if (newUrl.isNotEmpty) {
         currentImagePath.value = newUrl;
+      } else {
+        // Fallback: re-fetch group info to get the new image URL
+        await groupInfoController.getGroupInfo(widget.groupId);
+        final fetchedUrl = groupInfoController.groupInfoData?.image?.toString() ?? '';
+        if (fetchedUrl.isNotEmpty) {
+          currentImagePath.value = fetchedUrl;
+        }
       }
-
       showSnackBarMessage(context, 'Group photo updated!', false);
     } else {
       showSnackBarMessage(context, 'Failed to upload image', true);
