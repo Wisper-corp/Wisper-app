@@ -224,6 +224,32 @@ class _GroupChatScreenState extends State<GroupChatScreen> {
                     SizedBox(height: 2.h),
                     Row(
                       children: [
+                        // Overlapping member avatars
+                        if (previewMembers.isNotEmpty)
+                          SizedBox(
+                            height: 20.h,
+                            width: (previewMembers.length * 14.0) + 6,
+                            child: Stack(
+                              children: List.generate(previewMembers.length, (i) {
+                                final m = previewMembers[i];
+                                return Positioned(
+                                  left: i * 14.0,
+                                  child: Container(
+                                    decoration: BoxDecoration(
+                                      shape: BoxShape.circle,
+                                      border: Border.all(color: Colors.black, width: 1),
+                                    ),
+                                    child: InitialsAvatar(
+                                      name: m.auth?.person?.name ?? m.auth?.business?.name ?? '?',
+                                      imageUrl: m.auth?.person?.image ?? m.auth?.business?.image,
+                                      radius: 9.r, fontSize: 6,
+                                    ),
+                                  ),
+                                );
+                              }),
+                            ),
+                          ),
+                        if (previewMembers.isNotEmpty) SizedBox(width: 6.w),
                         Text('$memberCount members',
                           style: TextStyle(fontSize: 11.sp, color: Colors.white54)),
                       ],
@@ -594,9 +620,6 @@ class _GroupChatScreenState extends State<GroupChatScreen> {
               _buildJoinBanner(),
           ] else ...[
             if (_tabIndex == 0) ...[
-              // Member avatars row — top of General Chat
-              if (widget.showHeader && widget.groupId != null && widget.groupId!.isNotEmpty)
-                _buildMemberAvatarsRow(),
               _buildChat(),
               if (_hasJoined)
                 MessageInputBar(
