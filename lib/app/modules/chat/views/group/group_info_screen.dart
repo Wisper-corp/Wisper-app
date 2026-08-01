@@ -215,6 +215,7 @@ class _GroupInfoScreenState extends State<GroupInfoScreen> {
                   ) : null,
 
                   showMember: _showMemberInfo,
+                  isEditImage: _isCurrentUserAdmin,
                   title: groupInfoController.groupInfoData?.name ?? '',
                   memberInfo: 'Community • ${groupMembersController.groupMemnersData?.length ?? groupInfoController.groupInfoData?.chat?.count?.participants ?? 0} members',
                   isTrailing: _isCurrentUserAdmin,
