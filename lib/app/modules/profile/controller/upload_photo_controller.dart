@@ -60,6 +60,7 @@ class ProfilePhotoController extends GetxController {
       );
 
       if (response.isSuccess) {
+        _inProgress.value = false;
         update();
         return true;
       } else {

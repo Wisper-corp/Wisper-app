@@ -116,6 +116,7 @@ class _GroupInfoScreenState extends State<GroupInfoScreen> {
   }
 
   void _onImagePicked(File imageFile) async {
+    // Show the local file immediately for instant feedback
     currentImagePath.value = imageFile.path;
 
     final bool success = await photoController.uploadGroupPhoto(
@@ -124,14 +125,19 @@ class _GroupInfoScreenState extends State<GroupInfoScreen> {
     );
 
     if (success) {
-      groupInfoController.getGroupInfo(widget.groupId);
-      ();
+      // Await the refresh so groupInfoData has the new image URL
+      await groupInfoController.getGroupInfo(widget.groupId);
 
-      await Future.delayed(const Duration(milliseconds: 800));
-      _updateProfileImage();
+      // Update the displayed image from the freshly fetched server URL
+      final newUrl = groupInfoController.groupInfoData?.image ?? '';
+      if (newUrl.isNotEmpty) {
+        currentImagePath.value = newUrl;
+      }
+
       showSnackBarMessage(context, 'Group photo updated!', false);
     } else {
       showSnackBarMessage(context, 'Failed to upload image', true);
+      // Revert to whatever is on the server
       _updateProfileImage();
     }
   }
