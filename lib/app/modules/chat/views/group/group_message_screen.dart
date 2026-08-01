@@ -25,6 +25,8 @@ import 'package:wisper/app/modules/job/views/job_post_screen.dart';
 import 'package:wisper/app/modules/job/views/job_section.dart';
 import 'package:wisper/app/modules/post/views/gallery_post_screen.dart';
 import 'package:wisper/app/modules/post/views/post_section.dart';
+import 'package:wisper/app/modules/profile/views/business/others_business_screen.dart';
+import 'package:wisper/app/modules/profile/views/person/others_person_screen.dart';
 
 class GroupChatScreen extends StatefulWidget {
   final String? groupName;
@@ -453,22 +455,31 @@ class _GroupChatScreenState extends State<GroupChatScreen> {
             final image = m.auth?.person?.image ?? m.auth?.business?.image;
             final title = m.auth?.person?.title ?? m.auth?.business?.industry;
             final role = m.role ?? 'MEMBER';
-            return Padding(
-              padding: EdgeInsets.symmetric(vertical: 10.h),
-              child: Row(children: [
-                InitialsAvatar(name: name, imageUrl: image, radius: 22.r, fontSize: 14),
-                SizedBox(width: 12.w),
-                Expanded(child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(name, style: TextStyle(fontSize: 14.sp, fontWeight: FontWeight.w600, color: Colors.white)),
-                    if (role == 'ADMIN')
-                      Text('Admin', style: TextStyle(fontSize: 11.sp, color: Colors.blue))
-                    else if (title != null && title.isNotEmpty)
-                      Text(title, style: TextStyle(fontSize: 11.sp, color: Colors.white54)),
-                  ],
-                )),
-              ]),
+            final isPerson = m.auth?.person != null;
+            final authId = m.auth?.id ?? '';
+            return GestureDetector(
+              onTap: authId.isNotEmpty
+                  ? () => Get.to(() => isPerson
+                      ? OthersPersonScreen(userId: authId)
+                      : OthersBusinessScreen(userId: authId))
+                  : null,
+              child: Padding(
+                padding: EdgeInsets.symmetric(vertical: 10.h),
+                child: Row(children: [
+                  InitialsAvatar(name: name, imageUrl: image, radius: 22.r, fontSize: 14),
+                  SizedBox(width: 12.w),
+                  Expanded(child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(name, style: TextStyle(fontSize: 14.sp, fontWeight: FontWeight.w600, color: Colors.white)),
+                      if (role == 'ADMIN')
+                        Text('Admin', style: TextStyle(fontSize: 11.sp, color: Colors.blue))
+                      else if (title != null && title.isNotEmpty)
+                        Text(title, style: TextStyle(fontSize: 11.sp, color: Colors.white54)),
+                    ],
+                  )),
+                ]),
+              ),
             );
           },
         );
