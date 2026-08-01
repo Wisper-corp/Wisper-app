@@ -387,6 +387,8 @@ class _GroupChatScreenState extends State<GroupChatScreen> {
                 senderName: msg[SocketMessageKeys.senderName],
                 time: DateFormatter(msg[SocketMessageKeys.createdAt]).getRelativeTimeFormat(),
                 isGroupChat: true,
+                senderId: msg[SocketMessageKeys.senderId],
+                senderType: msg[SocketMessageKeys.senderType],
               ),
             ]);
           },

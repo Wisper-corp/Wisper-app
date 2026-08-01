@@ -10,6 +10,8 @@ import 'package:wisper/app/core/utils/snack_bar.dart';
 import 'package:wisper/app/core/utils/video_player.dart';
 import 'package:wisper/app/core/widgets/common/circle_icon.dart';
 import 'package:wisper/app/core/widgets/common/initials_avatar.dart';
+import 'package:wisper/app/modules/profile/views/business/others_business_screen.dart';
+import 'package:wisper/app/modules/profile/views/person/others_person_screen.dart';
 import 'package:wisper/gen/assets.gen.dart';
 
 class MessageBubble extends StatelessWidget {
@@ -21,6 +23,8 @@ class MessageBubble extends StatelessWidget {
   final String? senderImage;
   final String time;
   final bool isGroupChat;
+  final String? senderId;
+  final String? senderType; // 'PERSON' | 'BUSINESS'
 
   const MessageBubble({
     super.key,
@@ -32,6 +36,8 @@ class MessageBubble extends StatelessWidget {
     this.senderImage,
     required this.time,
     this.isGroupChat = false,
+    this.senderId,
+    this.senderType,
   });
 
   // Helper: file name extract
@@ -249,11 +255,18 @@ class MessageBubble extends StatelessWidget {
             : CrossAxisAlignment.start,
         children: [
           if (!isMe)
-            InitialsAvatar(
-              name: senderName,
-              imageUrl: senderImage,
-              radius: 16.r,
-              fontSize: 12,
+            GestureDetector(
+              onTap: (senderId != null && senderId!.isNotEmpty)
+                  ? () => Get.to(() => senderType == 'BUSINESS'
+                      ? OthersBusinessScreen(userId: senderId!)
+                      : OthersPersonScreen(userId: senderId!))
+                  : null,
+              child: InitialsAvatar(
+                name: senderName,
+                imageUrl: senderImage,
+                radius: 16.r,
+                fontSize: 12,
+              ),
             ),
           if (!isMe) widthBox8 else widthBox10,
 
