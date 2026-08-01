@@ -20,6 +20,7 @@ import 'package:wisper/app/modules/chat/controller/group/add_group_member.dart';
 import 'package:wisper/app/modules/chat/controller/all_connection_controller.dart';
 import 'package:wisper/app/modules/chat/controller/group/all_group_member_controller.dart';
 import 'package:wisper/app/modules/chat/controller/group/group_info_controller.dart';
+import 'package:wisper/app/core/others/get_storage.dart';
 import 'package:wisper/app/modules/chat/views/group/edit_group_screen.dart';
 import 'package:wisper/app/modules/chat/views/link_info.dart';
 import 'package:wisper/app/modules/chat/views/media_info.dart';
@@ -135,6 +136,13 @@ class _GroupInfoScreenState extends State<GroupInfoScreen> {
     }
   }
 
+  bool get _isCurrentUserAdmin {
+    final myId = StorageUtil.getData(StorageUtil.userId) ?? '';
+    final members = groupMembersController.groupMemnersData ?? [];
+    final me = members.firstWhereOrNull((m) => m.auth?.id == myId);
+    return me?.role == 'ADMIN';
+  }
+
   @override
   Widget build(BuildContext context) {
     final GlobalKey suffixButtonKey = GlobalKey();
@@ -175,7 +183,7 @@ class _GroupInfoScreenState extends State<GroupInfoScreen> {
                 heightBox10,
                 InfoCard(
                   trailingKey: suffixButtonKey,
-                  trailingOnTap: () => CustomPopupMenu(
+                  trailingOnTap: _isCurrentUserAdmin ? () => CustomPopupMenu(
                     targetKey: suffixButtonKey,
                     options: [
                       Text(
@@ -199,16 +207,17 @@ class _GroupInfoScreenState extends State<GroupInfoScreen> {
                     },
                     menuWidth: 200,
                     menuHeight: 40,
-                  ).showMenuAtPosition(context),
+                  ).showMenuAtPosition(context) : null,
                   imagePath: currentImagePath.value,
-                  editOnTap: () => ImagePickerHelper().showAlertDialog(
+                  editOnTap: _isCurrentUserAdmin ? () => ImagePickerHelper().showAlertDialog(
                     context,
                     _onImagePicked,
-                  ),
+                  ) : null,
 
                   showMember: _showMemberInfo,
                   title: groupInfoController.groupInfoData?.name ?? '',
                   memberInfo: 'Community • ${groupMembersController.groupMemnersData?.length ?? groupInfoController.groupInfoData?.chat?.count?.participants ?? 0} members',
+                  isTrailing: _isCurrentUserAdmin,
 
                   child: Row(
                     mainAxisAlignment: MainAxisAlignment.center,

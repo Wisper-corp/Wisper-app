@@ -18,7 +18,7 @@ import 'package:wisper/gen/assets.gen.dart';
 class InfoCard extends StatelessWidget {
   final bool? isEditImage;
   final String imagePath;
-  final VoidCallback editOnTap;
+  final VoidCallback? editOnTap;
   final String title;
   final String memberInfo;
   final Widget child;
@@ -33,7 +33,7 @@ class InfoCard extends StatelessWidget {
   const InfoCard({
     super.key,
     required this.imagePath,
-    required this.editOnTap,
+    this.editOnTap,
     required this.title,
     required this.memberInfo,
     required this.child,
@@ -155,7 +155,7 @@ class InfoCard extends StatelessWidget {
                                 ),
                         ),
                       ),
-                      if (isEditImage == true)
+                      if (isEditImage == true && editOnTap != null)
                         Positioned(
                           bottom: 0,
                           right: 0,
@@ -165,7 +165,7 @@ class InfoCard extends StatelessWidget {
                             iconRadius: 10,
                             radius: 10,
                             imagePath: Assets.images.edit.keyName,
-                            onTap: editOnTap,
+                            onTap: editOnTap!,
                           ),
                         ),
                     ],
