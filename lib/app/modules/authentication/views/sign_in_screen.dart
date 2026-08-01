@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/gestures.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:get/get.dart';
 import 'package:wisper/app/core/config/theme/light_theme_colors.dart';
@@ -17,6 +18,7 @@ import 'package:wisper/app/modules/authentication/views/forgot_password.dart';
 import 'package:wisper/app/modules/dashboard/views/dashboard_screen.dart';
 import 'package:wisper/app/modules/profile/controller/buisness/buisness_controller.dart';
 import 'package:wisper/app/modules/profile/controller/person/profile_controller.dart';
+import 'package:wisper/app/modules/settings/views/content_screen.dart';
 import 'package:wisper/gen/assets.gen.dart';
 
 class SignInScreen extends StatefulWidget { 
@@ -37,6 +39,21 @@ class _SignInScreenState extends State<SignInScreen> {
   final formKey = GlobalKey<FormState>(); 
   final emailController = TextEditingController();
   final passwordController = TextEditingController();
+
+  @override
+  void initState() {
+    super.initState();
+    // Always start with empty fields — never show a previous session's email
+    emailController.clear();
+    passwordController.clear();
+  }
+
+  @override
+  void dispose() {
+    emailController.dispose();
+    passwordController.dispose();
+    super.dispose();
+  }
   void signIn() {
     showLoadingOverLay(
       asyncFunction: () async => await performSignIn(context),
@@ -211,6 +228,10 @@ class _SignInScreenState extends State<SignInScreen> {
                       ),
                       TextSpan(
                         text: 'Terms and Conditions',
+                        recognizer: TapGestureRecognizer()
+                          ..onTap = () {
+                            Get.to(() => const ContentScreen(title: 'Terms & Conditions'));
+                          },
                         style: TextStyle(
                           decoration: TextDecoration.underline,
                           fontSize: 14.sp,
@@ -228,6 +249,10 @@ class _SignInScreenState extends State<SignInScreen> {
                       ),
                       TextSpan(
                         text: 'Privacy Policy',
+                        recognizer: TapGestureRecognizer()
+                          ..onTap = () {
+                            Get.to(() => const ContentScreen(title: 'Privacy Policy'));
+                          },
                         style: TextStyle(
                           decoration: TextDecoration.underline,
                           fontSize: 14.sp,
