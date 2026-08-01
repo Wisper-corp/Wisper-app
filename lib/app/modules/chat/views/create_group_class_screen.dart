@@ -77,8 +77,6 @@ class _CreateGroupClassScreenState extends State<CreateGroupClassScreen> {
               subtitle: 'Start a community market.',
             ),
             heightBox10,
-            StraightLiner(height: 0.5),
-            heightBox10,
             // Create New Class — hidden for now
             // CreateWidget(
             //   ontap: () { Get.to(() => CreateClassScreen()); },
