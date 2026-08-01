@@ -64,9 +64,15 @@ class _ChatListScreenState extends State<ChatListScreen> {
         final filteredList = query.isEmpty
             ? list
             : list.where((item) {
-                final String name = (item['receiverName'] ?? '')
-                    .toString()
-                    .toLowerCase();
+                final String type = (item['type'] ?? '').toString();
+                String name = '';
+                if (type == 'INDIVIDUAL') {
+                  name = (item['receiverName'] ?? '').toString().toLowerCase();
+                } else if (type == 'GROUP') {
+                  name = (item['group']?['name'] ?? '').toString().toLowerCase();
+                } else if (type == 'CLASS') {
+                  name = (item['chatClass']?['name'] ?? '').toString().toLowerCase();
+                }
                 return name.contains(query);
               }).toList();
 
