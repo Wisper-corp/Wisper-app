@@ -577,10 +577,6 @@ class _GroupChatScreenState extends State<GroupChatScreen> {
         children: [
           // Header (skip for embedded announcement tab)
           if (widget.showHeader) _buildHeader(),
-          // Member avatars row — between header and tabs
-          if (widget.showHeader && widget.showTabs &&
-              widget.groupId != null && widget.groupId!.isNotEmpty)
-            _buildMemberAvatarsRow(),
           // Tabs (skip for embedded announcement tab)
           if (widget.showTabs) _buildTabs(),
 
@@ -598,6 +594,9 @@ class _GroupChatScreenState extends State<GroupChatScreen> {
               _buildJoinBanner(),
           ] else ...[
             if (_tabIndex == 0) ...[
+              // Member avatars row — top of General Chat
+              if (widget.showHeader && widget.groupId != null && widget.groupId!.isNotEmpty)
+                _buildMemberAvatarsRow(),
               _buildChat(),
               if (_hasJoined)
                 MessageInputBar(
