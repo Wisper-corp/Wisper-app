@@ -53,9 +53,9 @@ class ProfilePhotoController extends GetxController {
 
     try {
       final response = await Get.find<NetworkCaller>().patchRequest(
+        Urls.changeGroupImageById(groupId),
         image: image,
         keyNameImage: 'image',
-       Urls.changeGroupImageById(groupId),
         accessToken: StorageUtil.getData(StorageUtil.userAccessToken),
       );
 
