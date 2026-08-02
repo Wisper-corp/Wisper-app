@@ -421,27 +421,6 @@ class _GroupChatScreenState extends State<GroupChatScreen> {
     });
   }
 
-  Widget _encryptionNotice() => Container(
-    margin: EdgeInsets.all(8.w),
-    padding: EdgeInsets.symmetric(horizontal: 12.w, vertical: 8.h),
-    decoration: BoxDecoration(
-      color: Colors.white.withOpacity(0.05),
-      borderRadius: BorderRadius.circular(10.r),
-    ),
-    child: Column(children: [
-      Row(mainAxisAlignment: MainAxisAlignment.center, children: [
-        Icon(Icons.lock_rounded, size: 12.sp, color: Colors.grey[500]),
-        SizedBox(width: 4.w),
-        Flexible(child: Text('Messages and calls are end-to-end encrypted',
-          style: TextStyle(fontSize: 11.sp, color: Colors.grey[500]))),
-      ]),
-      SizedBox(height: 2.h),
-      Text('No one outside of this chat can read or listen to them.',
-        textAlign: TextAlign.center,
-        style: TextStyle(fontSize: 10.sp, color: Colors.grey[600])),
-    ]),
-  );
-
   Widget _dateSep(String text) => text.isEmpty ? const SizedBox.shrink() : Align(
     alignment: Alignment.center,
     child: Container(

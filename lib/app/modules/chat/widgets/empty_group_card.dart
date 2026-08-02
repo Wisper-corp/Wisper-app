@@ -63,49 +63,6 @@ class EmptyGroupInfoCard extends StatelessWidget {
           ),
 
           heightBox24,
-          DetailsCard(
-            borderColor: Colors.transparent,
-            bgColor: Color(0xff1B1E25).withValues(alpha: 0.50),
-            child: Padding(
-              padding: const EdgeInsets.all(8.0),
-              child: Row(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Image.asset(
-                    Assets.images.adds.keyName,
-                    height: 20,
-                    color: LightThemeColors.themeGreyColor,
-                  ),
-                  widthBox10,
-                  Expanded(
-                    child: RichText(
-                      text: TextSpan(
-                        children: [
-                          TextSpan(
-                            text:
-                                'Messages and calls are end-to-end encrypted. Only people in this chat can read, listen to, or share them. ',
-                            style: TextStyle(
-                              fontSize: 12.sp,
-                              fontWeight: FontWeight.w400,
-                              color: LightThemeColors.themeGreyColor,
-                            ),
-                          ),
-                          TextSpan(
-                            text: 'Learn more',
-                            style: TextStyle(
-                              fontSize: 12.sp,
-                              fontWeight: FontWeight.w400,
-                              color: Color(0xff1F7DE9),
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          ),
         ],
       ),
     );
