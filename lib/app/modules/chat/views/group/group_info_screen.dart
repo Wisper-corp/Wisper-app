@@ -236,6 +236,33 @@ class _GroupInfoScreenState extends State<GroupInfoScreen> {
                   ),
                 ),
                 heightBox20,
+                // Community description — strip tag metadata line
+                Builder(builder: (_) {
+                  final raw = groupInfoController.groupInfoData?.description ?? '';
+                  // Extract only the user-written part (before tag line)
+                  String display = raw;
+                  final lines = raw.split('\n');
+                  for (int i = 0; i < lines.length; i++) {
+                    if (lines[i].contains('Trade:') || lines[i].contains('Market:') || lines[i].contains('Category:')) {
+                      display = lines.sublist(0, i).join('\n').trim();
+                      break;
+                    }
+                  }
+                  if (display.isEmpty) return const SizedBox.shrink();
+                  return Padding(
+                    padding: EdgeInsets.symmetric(horizontal: 4.w),
+                    child: Text(
+                      display,
+                      textAlign: TextAlign.center,
+                      style: TextStyle(
+                        fontSize: 12.sp,
+                        color: const Color(0xff98A2B3),
+                        fontWeight: FontWeight.w400,
+                      ),
+                    ),
+                  );
+                }),
+                heightBox20,
                 StraightLiner(height: 0.4, color: const Color(0xff454545)),
                 heightBox10,
                 Row(
