@@ -9,10 +9,23 @@
       "client_info": {
         "mobilesdk_app_id": "1:488154013426:android:e1979524098e8bc2737a6b",
         "android_client_info": {
-          "package_name": "com.wisperuser.app"
+          "package_name": "com.wisperapplication.app"
         }
       },
-      "oauth_client": [],
+      "oauth_client": [
+        {
+          "client_id": "488154013426-g33575geg18blu817b213iea3m322d8f.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.wisperapplication.app",
+            "certificate_hash": "0f2c4e3daf995692338441038a33654b8806e20b"
+          }
+        },
+        {
+          "client_id": "488154013426-d9nsk6en1ahe6iv0nnobfjbh5pvlg510.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
       "api_key": [
         {
           "current_key": "AIzaSyBqGxQuw0iU0B2kDjlJM60PDgGzaYPeWIQ"
@@ -20,7 +33,19 @@
       ],
       "services": {
         "appinvite_service": {
-          "other_platform_oauth_client": []
+          "other_platform_oauth_client": [
+            {
+              "client_id": "488154013426-d9nsk6en1ahe6iv0nnobfjbh5pvlg510.apps.googleusercontent.com",
+              "client_type": 3
+            },
+            {
+              "client_id": "488154013426-bgu8vja9mm5bpvgr3mtksc3hqf60k247.apps.googleusercontent.com",
+              "client_type": 2,
+              "ios_info": {
+                "bundle_id": "com.wisperuser.app.mytest"
+              }
+            }
+          ]
         }
       }
     }
