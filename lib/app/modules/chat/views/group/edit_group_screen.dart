@@ -67,6 +67,17 @@ class _EditGroupScreenState extends State<EditGroupScreen> {
   String? _selectedMarketType;
   String? _selectedCategory;
 
+  // Suffix protection
+  String _suffix = ''; // e.g. ' Mkt' or ' Sty'
+  static const _suffixMap = {
+    'MKT': ' Mkt',
+    'STY': ' Sty',
+    'mkt': ' Mkt',
+    'sty': ' Sty',
+    'Mkt': ' Mkt',
+    'Sty': ' Sty',
+  };
+
   // Tag edit restriction
   bool _canEditTags = true;
   DateTime? _lastTagEditDate;
@@ -78,7 +89,56 @@ class _EditGroupScreenState extends State<EditGroupScreen> {
     _isPublic = widget.isPublic;
     _isAllowInvitation = widget.isAllowInvitation;
     _loadTagEditDate();
+    _extractSuffix(widget.groupName);
     _parseDescriptionAndPopulate(widget.groupCaption);
+
+    // Enforce suffix — user cannot remove it
+    _nameCtrl.addListener(_enforceSuffix);
+  }
+
+  /// Detect and store the suffix from the existing group name
+  void _extractSuffix(String name) {
+    for (final entry in _suffixMap.entries) {
+      if (name.endsWith(entry.value)) {
+        _suffix = entry.value;
+        return;
+      }
+    }
+    // fallback: check last word
+    final parts = name.trim().split(' ');
+    if (parts.length > 1) {
+      final last = parts.last;
+      if (_suffixMap.containsKey(last)) {
+        _suffix = ' $last';
+      }
+    }
+  }
+
+  bool _enforcingNow = false;
+  void _enforceSuffix() {
+    if (_suffix.isEmpty || _enforcingNow) return;
+    final text = _nameCtrl.text;
+    if (!text.endsWith(_suffix)) {
+      _enforcingNow = true;
+      // Strip any partial suffix attempts then re-append
+      String base = text;
+      for (final s in _suffixMap.values) {
+        if (base.endsWith(s.trim()) || base.endsWith(s)) {
+          base = base.substring(0, base.length - s.trim().length).trimRight();
+          break;
+        }
+      }
+      // Remove any trailing space before suffix area
+      base = base.trimRight();
+      final newText = '$base$_suffix';
+      _nameCtrl.value = TextEditingValue(
+        text: newText,
+        selection: TextSelection.collapsed(
+          offset: newText.length - _suffix.length,
+        ),
+      );
+      _enforcingNow = false;
+    }
   }
 
   /// Parse "userDescription\nTrade: X | Market: Y | Category: Z | Suffix: S"
@@ -145,6 +205,7 @@ class _EditGroupScreenState extends State<EditGroupScreen> {
 
   @override
   void dispose() {
+    _nameCtrl.removeListener(_enforceSuffix);
     _nameCtrl.dispose();
     _captionCtrl.dispose();
     super.dispose();
@@ -316,6 +377,14 @@ class _EditGroupScreenState extends State<EditGroupScreen> {
                 keyboardType: TextInputType.text,
                 validator: ValidatorService.validateSimpleField,
               ),
+              if (_suffix.isNotEmpty)
+                Padding(
+                  padding: EdgeInsets.only(top: 4.h),
+                  child: Text(
+                    'Suffix "$_suffix" is locked and cannot be removed.',
+                    style: TextStyle(fontSize: 11.sp, color: Colors.orange.withOpacity(0.8)),
+                  ),
+                ),
 
               heightBox20,
               const Label(label: 'Group Description'),
