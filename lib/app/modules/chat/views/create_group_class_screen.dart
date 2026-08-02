@@ -71,8 +71,8 @@ class _CreateGroupClassScreenState extends State<CreateGroupClassScreen> {
                 Get.to(() => CreateGroupScreen());
               },
               imagePath: Assets.images.userGroup.keyName,
-              bgColor: Color(0xff102B19),
-              iconColor: Color(0xff11AE46),
+              bgColor: const Color(0xff1B2E3D),
+              iconColor: const Color(0xff1F7DE9),
               title: 'Create New Community',
               subtitle: 'Start a community market.',
             ),
