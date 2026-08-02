@@ -50,14 +50,9 @@ class _ContentScreenState extends State<ContentScreen> {
           var updateData = widget.title == 'Privacy Policy'
               ? data?.privacyPolicy
               : data?.termsAndConditions;
-          return Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 20),
-            child: Column(
-              children: [
-                Html(data: updateData),
-                // Text(updateData ?? 'No Data found'),
-              ],
-            ),
+          return SingleChildScrollView(
+            padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+            child: Html(data: updateData),
           );
         }
       }),
