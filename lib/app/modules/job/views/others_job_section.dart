@@ -67,6 +67,8 @@ class _OthersJobSectionState extends State<OthersJobSection> {
                 showAction: false,
                 ontap: null,
                 postId: job.id ?? '',
+                ownerId: job.author?.id ?? '',
+                isPerson: job.author?.person != null,
                 ownerImage: job.author?.business?.image ?? '',
                 ownerName: job.author?.business?.name ?? 'Unknown Company',
                 ownerDesignation: job.author?.business?.industry ?? '',

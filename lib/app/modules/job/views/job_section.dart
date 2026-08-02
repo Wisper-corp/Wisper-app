@@ -99,6 +99,8 @@ class _JobSectionState extends State<JobSection> {
                 padding: const EdgeInsets.symmetric(vertical: 8.0),
                 child: JobCard(
                   postId: job.id,
+                  ownerId: job.author?.id ?? '',
+                  isPerson: job.author?.person != null,
                   ownerImage: resolvedLogo,
                   ownerName: job.companyName?.isNotEmpty == true
                       ? job.companyName!

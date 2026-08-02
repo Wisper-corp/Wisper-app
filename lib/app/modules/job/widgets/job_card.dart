@@ -7,6 +7,8 @@ import 'package:wisper/app/core/widgets/common/initials_avatar.dart';
 import 'package:wisper/app/core/widgets/common/label_data.dart';
 import 'package:wisper/app/core/widgets/common/line_widget.dart';
 import 'package:wisper/app/modules/job/views/job_details_screen.dart';
+import 'package:wisper/app/modules/profile/views/business/others_business_screen.dart';
+import 'package:wisper/app/modules/profile/views/person/others_person_screen.dart';
 import 'package:wisper/gen/assets.gen.dart';
 
 class JobCard extends StatelessWidget {
@@ -15,6 +17,8 @@ class JobCard extends StatelessWidget {
   final GlobalKey? suffixIconKey;
 
   final String? postId;
+  final String? ownerId;
+  final bool? isPerson;
   final String? ownerName;
   final String? ownerImage;
   final String? ownerDesignation;
@@ -30,6 +34,8 @@ class JobCard extends StatelessWidget {
   const JobCard({
     super.key,
     this.postId,
+    this.ownerId,
+    this.isPerson = false,
     this.ownerName,
     this.ownerImage,
     this.ownerDesignation,
@@ -67,11 +73,18 @@ class JobCard extends StatelessWidget {
           child: Row(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              InitialsAvatar(
-                name: ownerName ?? 'Company',
-                imageUrl: ownerImage,
-                radius: 21.r,
-                fontSize: 14,
+              GestureDetector(
+                onTap: (ownerId != null && ownerId!.isNotEmpty)
+                    ? () => Get.to(() => isPerson == true
+                        ? OthersPersonScreen(userId: ownerId!)
+                        : OthersBusinessScreen(userId: ownerId!))
+                    : null,
+                child: InitialsAvatar(
+                  name: ownerName ?? 'Company',
+                  imageUrl: ownerImage,
+                  radius: 21.r,
+                  fontSize: 14,
+                ),
               ),
               widthBox8,
               Expanded(

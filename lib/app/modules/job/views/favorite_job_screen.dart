@@ -66,6 +66,8 @@ class _FavoriteJobScreenState extends State<FavoriteJobScreen> {
                     padding: const EdgeInsets.symmetric(vertical: 8.0),
                     child: JobCard(
                       postId: job?.id ?? '',
+                      ownerId: job?.author?.id ?? '',
+                      isPerson: false,
                       ownerImage: job?.author?.business?.image ?? '',
                       ownerName: job?.author?.business?.name ?? '',
                       ownerDesignation: job?.author?.business?.name ?? '',
