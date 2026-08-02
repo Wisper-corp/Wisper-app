@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/gestures.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:get/get.dart';
+import 'package:url_launcher/url_launcher.dart';
 import 'package:wisper/app/core/config/theme/light_theme_colors.dart';
 import 'package:wisper/app/core/others/custom_size.dart';
 import 'package:wisper/app/core/others/get_storage.dart';
@@ -18,7 +19,6 @@ import 'package:wisper/app/modules/authentication/views/forgot_password.dart';
 import 'package:wisper/app/modules/dashboard/views/dashboard_screen.dart';
 import 'package:wisper/app/modules/profile/controller/buisness/buisness_controller.dart';
 import 'package:wisper/app/modules/profile/controller/person/profile_controller.dart';
-import 'package:wisper/app/modules/settings/views/content_screen.dart';
 import 'package:wisper/gen/assets.gen.dart';
 
 class SignInScreen extends StatefulWidget { 
@@ -230,7 +230,10 @@ class _SignInScreenState extends State<SignInScreen> {
                         text: 'Terms and Conditions',
                         recognizer: TapGestureRecognizer()
                           ..onTap = () {
-                            Get.to(() => const ContentScreen(title: 'Terms & Conditions'));
+                            launchUrl(
+                              Uri.parse('https://wisperonline.com/terms'),
+                              mode: LaunchMode.externalApplication,
+                            );
                           },
                         style: TextStyle(
                           decoration: TextDecoration.underline,
@@ -251,7 +254,10 @@ class _SignInScreenState extends State<SignInScreen> {
                         text: 'Privacy Policy',
                         recognizer: TapGestureRecognizer()
                           ..onTap = () {
-                            Get.to(() => const ContentScreen(title: 'Privacy Policy'));
+                            launchUrl(
+                              Uri.parse('https://wisperonline.com/privacy'),
+                              mode: LaunchMode.externalApplication,
+                            );
                           },
                         style: TextStyle(
                           decoration: TextDecoration.underline,
