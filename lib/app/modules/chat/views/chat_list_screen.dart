@@ -10,7 +10,6 @@ import 'package:wisper/app/modules/chat/views/group/group_message_screen.dart';
 import 'package:wisper/app/modules/chat/views/person/message_screen.dart';
 import 'package:wisper/app/modules/chat/widgets/chat_list_widget.dart';
 import 'package:wisper/app/modules/chat/widgets/member_list_title.dart';
-import 'package:wisper/gen/assets.gen.dart';
 
 class ChatListScreen extends StatefulWidget {
   const ChatListScreen({super.key}); 
@@ -104,8 +103,11 @@ class _ChatListScreenState extends State<ChatListScreen> {
                 : item['type'] == 'CLASS'
                 ? (item['chatClass']?['name'] ?? 'Class Chat')
                 : '';
-            final String image =
-                item['receiverImage'] ?? Assets.images.image.keyName;
+            final String image = type == 'GROUP'
+                ? (item['group']?['image'] ?? '')
+                : type == 'CLASS'
+                ? (item['chatClass']?['image'] ?? '')
+                : (item['receiverImage'] ?? '');
             final String lastMessage = item['lastMessage'] ?? 'No messages yet';
             final String timeStr = item['latestMessageAt'] ?? '';
             final DateTime time = DateTime.tryParse(timeStr) ?? DateTime.now();
