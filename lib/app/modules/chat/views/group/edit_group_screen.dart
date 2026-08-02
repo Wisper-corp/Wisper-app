@@ -67,21 +67,15 @@ class _EditGroupScreenState extends State<EditGroupScreen> {
   String? _selectedMarketType;
   String? _selectedCategory;
 
-  // Suffix protection
-  String _suffix = ''; // e.g. ' Mkt' or ' Sty'
-  static const _suffixMap = {
-    'MKT': ' Mkt',
-    'STY': ' Sty',
-    'mkt': ' Mkt',
-    'sty': ' Sty',
-    'Mkt': ' Mkt',
-    'Sty': ' Sty',
-  };
-
   // Tag edit restriction
   bool _canEditTags = true;
   DateTime? _lastTagEditDate;
   bool _tagsChanged = false;
+
+  // Suffix protection
+  String _suffix = ''; // e.g. ' Mkt' or ' Sty'
+  // All recognised suffix display forms
+  static const _knownSuffixes = [' Mkt', ' Sty', ' MKT', ' STY', ' mkt', ' sty'];
 
   @override
   void initState() {
@@ -89,56 +83,72 @@ class _EditGroupScreenState extends State<EditGroupScreen> {
     _isPublic = widget.isPublic;
     _isAllowInvitation = widget.isAllowInvitation;
     _loadTagEditDate();
+    // Extract suffix first, THEN populate name field
     _extractSuffix(widget.groupName);
     _parseDescriptionAndPopulate(widget.groupCaption);
-
-    // Enforce suffix — user cannot remove it
+    // Add listener AFTER name is set so init doesn't trigger enforcement loop
     _nameCtrl.addListener(_enforceSuffix);
+  }
+
+  @override
+  void dispose() {
+    _nameCtrl.removeListener(_enforceSuffix);
+    _nameCtrl.dispose();
+    _captionCtrl.dispose();
+    super.dispose();
   }
 
   /// Detect and store the suffix from the existing group name
   void _extractSuffix(String name) {
-    for (final entry in _suffixMap.entries) {
-      if (name.endsWith(entry.value)) {
-        _suffix = entry.value;
+    for (final s in _knownSuffixes) {
+      if (name.endsWith(s)) {
+        // Normalise to canonical form
+        _suffix = s.toLowerCase().contains('mkt') ? ' Mkt' : ' Sty';
         return;
       }
     }
-    // fallback: check last word
-    final parts = name.trim().split(' ');
-    if (parts.length > 1) {
-      final last = parts.last;
-      if (_suffixMap.containsKey(last)) {
-        _suffix = ' $last';
-      }
-    }
+    // No suffix found — no enforcement needed
+    _suffix = '';
   }
 
   bool _enforcingNow = false;
   void _enforceSuffix() {
     if (_suffix.isEmpty || _enforcingNow) return;
     final text = _nameCtrl.text;
-    if (!text.endsWith(_suffix)) {
-      _enforcingNow = true;
-      // Strip any partial suffix attempts then re-append
-      String base = text;
-      for (final s in _suffixMap.values) {
-        if (base.endsWith(s.trim()) || base.endsWith(s)) {
-          base = base.substring(0, base.length - s.trim().length).trimRight();
-          break;
-        }
+    if (text.endsWith(_suffix)) return; // already correct — do nothing
+
+    _enforcingNow = true;
+
+    // Strip any partial or full suffix variant the user may have typed
+    String base = text;
+    for (final s in _knownSuffixes) {
+      if (base.endsWith(s)) {
+        base = base.substring(0, base.length - s.length);
+        break;
       }
-      // Remove any trailing space before suffix area
-      base = base.trimRight();
-      final newText = '$base$_suffix';
-      _nameCtrl.value = TextEditingValue(
-        text: newText,
-        selection: TextSelection.collapsed(
-          offset: newText.length - _suffix.length,
-        ),
-      );
-      _enforcingNow = false;
     }
+    // Also strip partial suffix characters at the end (e.g. user deleted 't' leaving ' Mk')
+    final suffixTrimmed = _suffix.trim(); // 'Mkt' or 'Sty'
+    for (int len = suffixTrimmed.length - 1; len >= 1; len--) {
+      final partial = ' ${suffixTrimmed.substring(0, len)}';
+      if (base.endsWith(partial)) {
+        base = base.substring(0, base.length - partial.length);
+        break;
+      }
+    }
+    base = base.trimRight();
+
+    // Re-append the correct suffix
+    final newText = '$base$_suffix';
+
+    // Place cursor just before the suffix
+    final cursorPos = newText.length - _suffix.length;
+    _nameCtrl.value = TextEditingValue(
+      text: newText,
+      selection: TextSelection.collapsed(offset: cursorPos.clamp(0, newText.length)),
+    );
+
+    _enforcingNow = false;
   }
 
   /// Parse "userDescription\nTrade: X | Market: Y | Category: Z | Suffix: S"
@@ -201,14 +211,6 @@ class _EditGroupScreenState extends State<EditGroupScreen> {
     final prefs = await SharedPreferences.getInstance();
     final key = 'tag_edit_${widget.groupId}';
     await prefs.setString(key, DateTime.now().toIso8601String());
-  }
-
-  @override
-  void dispose() {
-    _nameCtrl.removeListener(_enforceSuffix);
-    _nameCtrl.dispose();
-    _captionCtrl.dispose();
-    super.dispose();
   }
 
   void _updateGroup() {
