@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:get/get.dart';
-import 'package:url_launcher/url_launcher.dart';
 import 'package:wisper/app/core/config/theme/light_theme_colors.dart';
 import 'package:wisper/app/core/others/custom_size.dart';
 import 'package:wisper/app/core/others/get_storage.dart';
@@ -313,10 +312,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                     SettingsFeatureRow(
                       title: 'Privacy Policy',
                       onTap: () {
-                        launchUrl(
-                          Uri.parse('https://wisperonline.com/privacy'),
-                          mode: LaunchMode.externalApplication,
-                        );
+                        Get.to(() => ContentScreen(title: 'Privacy Policy'));
                       },
                     ),
                     heightBox10,
@@ -325,9 +321,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
                     SettingsFeatureRow(
                       title: 'Terms & Conditions',
                       onTap: () {
-                        launchUrl(
-                          Uri.parse('https://wisperonline.com/terms'),
-                          mode: LaunchMode.externalApplication,
+                        Get.to(
+                          () => ContentScreen(title: 'Terms & Conditions'),
                         );
                       },
                     ),
