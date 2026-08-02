@@ -376,7 +376,6 @@ class _GroupChatScreenState extends State<GroupChatScreen> {
         return Expanded(
           child: Column(
             children: [
-              _encryptionNotice(),
               Expanded(child: Center(
                 child: EmptyGroupInfoCard(isGroup: true, name: widget.groupName ?? '', member: '5'),
               )),
@@ -389,11 +388,10 @@ class _GroupChatScreenState extends State<GroupChatScreen> {
         child: ListView.builder(
           controller: _ctrl.scrollController,
           padding: EdgeInsets.all(10.r),
-          itemCount: msgs.length + 2,
+          itemCount: msgs.length + 1,
           itemBuilder: (context, idx) {
-            if (idx == 0) return _encryptionNotice();
-            if (idx == 1) return _dateSep(_dateLabel(msgs.isNotEmpty ? msgs[0][SocketMessageKeys.createdAt]?.toString() : null));
-            final mi = idx - 2;
+            if (idx == 0) return _dateSep(_dateLabel(msgs.isNotEmpty ? msgs[0][SocketMessageKeys.createdAt]?.toString() : null));
+            final mi = idx - 1;
             if (mi >= msgs.length) return const SizedBox.shrink();
             final msg = msgs[mi];
             final isMe = msg[SocketMessageKeys.senderId] == _ctrl.userAuthId;
