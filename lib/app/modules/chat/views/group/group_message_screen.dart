@@ -655,13 +655,16 @@ class _GroupChatScreenState extends State<GroupChatScreen> {
                     ),
                     Positioned(
                       bottom: 16.h, left: 20.w, right: 20.w,
-                      child: CustomElevatedButton(
-                        title: 'Post your service', borderRadius: 50, height: 48,
-                        onPress: () => Get.to(() => GalleryPostScreen(groupId: widget.groupId)),
-                      ),
+                      child: _hasJoined
+                          ? CustomElevatedButton(
+                              title: 'Post your service', borderRadius: 50, height: 48,
+                              onPress: () => Get.to(() => GalleryPostScreen(groupId: widget.groupId)),
+                            )
+                          : const SizedBox.shrink(),
                     ),
                   ]),
                 ),
+                if (!_hasJoined) _buildJoinBanner(),
               ]),
             ),
             if (_tabIndex == 2) Expanded(
@@ -698,12 +701,15 @@ class _GroupChatScreenState extends State<GroupChatScreen> {
                   )),
                   Positioned(
                     bottom: 16.h, left: 20.w, right: 20.w,
-                    child: CustomElevatedButton(
-                      title: 'Post a job', borderRadius: 50, height: 48,
-                      onPress: () => Get.to(() => JobPostScreen(groupId: widget.groupId)),
-                    ),
+                    child: _hasJoined
+                        ? CustomElevatedButton(
+                            title: 'Post a job', borderRadius: 50, height: 48,
+                            onPress: () => Get.to(() => JobPostScreen(groupId: widget.groupId)),
+                          )
+                        : const SizedBox.shrink(),
                   ),
                 ])),
+                if (!_hasJoined) _buildJoinBanner(),
               ]),
             ),
             if (_tabIndex == 3) _buildMembers(),
