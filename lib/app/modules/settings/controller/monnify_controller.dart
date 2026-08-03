@@ -37,8 +37,21 @@ class MonnifyController extends GetxController {
         apiKey: apiKey,
         contractCode: contractCode,
       );
+      print('Monnify initialized successfully');
     } catch (e) {
       print('Monnify initialization error: $e');
+      // Retry once after 2 seconds
+      await Future.delayed(const Duration(seconds: 2));
+      try {
+        _monnify = await Monnify.initialize(
+          applicationMode: isTestMode ? ApplicationMode.TEST : ApplicationMode.LIVE,
+          apiKey: apiKey,
+          contractCode: contractCode,
+        );
+        print('Monnify initialized on retry');
+      } catch (e2) {
+        print('Monnify initialization failed after retry: $e2');
+      }
     }
   }
 
@@ -69,8 +82,13 @@ class MonnifyController extends GetxController {
       );
 
       // Launch Monnify payment SDK
-      final response = await _monnify?.initializePayment(transaction: transaction);
-      final status = response?.transactionStatus?.toUpperCase() ?? '';
+      if (_monnify == null) {
+        _errorMessage.value = 'Payment gateway not initialized. Please restart the app.';
+        _inProgress.value = false;
+        return false;
+      }
+      final response = await _monnify!.initializePayment(transaction: transaction);
+      final status = response.transactionStatus?.toUpperCase() ?? '';
       print('Monnify response status: $status');
 
       _inProgress.value = false;

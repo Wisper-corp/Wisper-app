@@ -63,7 +63,7 @@ class TransactionSection extends StatelessWidget {
   }
 
   Widget _buildTransactionTile(TransectionItemModel item) {
-    final sym = CurrencyHelper.deviceSymbol;
+    final String sym = '₦'; // NGN wallet always uses Naira
     final isCredit = item.isCredit;
     final color = isCredit ? Colors.greenAccent : Colors.redAccent;
     final amountStr = item.amount != null
