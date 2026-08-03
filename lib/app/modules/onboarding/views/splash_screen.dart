@@ -41,16 +41,11 @@ class _SplashScreenState extends State<SplashScreen> {
   }
 
   Future<void> _requestPermissions() async {
-
-    Map<Permission, PermissionStatus> statuses = await [
+    await [
       Permission.camera,
       Permission.microphone,
     ].request();
-
-    if (statuses[Permission.camera]!.isPermanentlyDenied ||
-        statuses[Permission.microphone]!.isPermanentlyDenied) {
-      await openAppSettings();
-    }
+    // Never open system settings automatically — user can grant later when needed
   }
 
   Future<void> _checkAndNavigate() async {
