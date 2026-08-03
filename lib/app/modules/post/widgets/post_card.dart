@@ -258,7 +258,16 @@ class PostCard extends StatelessWidget {
                       ),
                     SizedBox(width: 10.w),
                     // Bookmark
-                    Icon(Icons.bookmark_border_rounded, size: 16.sp, color: Colors.grey),
+                    GestureDetector(
+                      onTap: () => ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(
+                          content: Text('Save post — coming soon'),
+                          duration: Duration(seconds: 2),
+                          backgroundColor: Color(0xff1F7DE9),
+                        ),
+                      ),
+                      child: Icon(Icons.bookmark_border_rounded, size: 16.sp, color: Colors.grey),
+                    ),
                   ],
                 ),
                 // Divider between posts
