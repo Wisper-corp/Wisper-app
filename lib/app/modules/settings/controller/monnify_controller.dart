@@ -88,7 +88,7 @@ class MonnifyController extends GetxController {
         return false;
       }
       final response = await _monnify!.initializePayment(transaction: transaction);
-      final status = response.transactionStatus?.toUpperCase() ?? '';
+      final status = response?.transactionStatus?.toUpperCase() ?? '';
       print('Monnify response status: $status');
 
       _inProgress.value = false;
