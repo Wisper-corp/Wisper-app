@@ -182,6 +182,7 @@ class _ChatHeaderState extends State<ChatHeader> {
       title: "Block ${widget.name}?",
       message:
           "This user will be permanently blocked.\nThis action cannot be undone.",
+      deleteButtonText: 'Block',
       onDelete: () => blockMember(widget.chatId, widget.memberId),
     );
   }
