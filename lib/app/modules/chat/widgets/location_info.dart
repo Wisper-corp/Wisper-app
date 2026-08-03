@@ -11,28 +11,31 @@ class LocationInfo extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final bool hasLocation = location != null && location!.isNotEmpty && location != 'No Location';
     return Row(
       mainAxisAlignment: MainAxisAlignment.center,
       children: [
-        Row(
-          children: [
-            Image.asset(
-              Assets.images.location.keyName,
-              height: 16.h,
-              color: const Color(0xff7F8694),
-            ),
-            widthBox4,
-            Text(
-              location ?? '',
-              style: TextStyle(
-                fontSize: 12.sp,
-                fontWeight: FontWeight.w400,
+        if (hasLocation) ...[
+          Row(
+            children: [
+              Image.asset(
+                Assets.images.location.keyName,
+                height: 16.h,
                 color: const Color(0xff7F8694),
               ),
-            ),
-          ],
-        ),
-        widthBox10,
+              widthBox4,
+              Text(
+                location!,
+                style: TextStyle(
+                  fontSize: 12.sp,
+                  fontWeight: FontWeight.w400,
+                  color: const Color(0xff7F8694),
+                ),
+              ),
+            ],
+          ),
+          widthBox10,
+        ],
         isDate!
             ? Row(
                 children: [

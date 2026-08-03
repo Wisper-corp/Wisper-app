@@ -35,19 +35,34 @@ class _SettingsScreenState extends State<SettingsScreen> {
   final ProfileController profileController = Get.put(ProfileController());
   final BusinessController businessController = Get.put(BusinessController());
 
+  // Same reactive pattern as profile_screen.dart
+  final RxString _currentImagePath = ''.obs;
+  final RxString _currentName = ''.obs;
+  final RxString _currentJob = ''.obs;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadProfileData();
+  }
+
+  Future<void> _loadProfileData() async {
+    final role = StorageUtil.getData(StorageUtil.userRole) ?? 'PERSON';
+    if (role == 'PERSON') {
+      await profileController.getMyProfile();
+      _currentImagePath.value = profileController.profileData?.auth?.person?.image ?? '';
+      _currentName.value = profileController.profileData?.auth?.person?.name ?? '';
+      _currentJob.value = profileController.profileData?.auth?.person?.title ?? '';
+    } else {
+      await businessController.getMyProfile();
+      _currentImagePath.value = businessController.buisnessData?.auth?.business?.image ?? '';
+      _currentName.value = businessController.buisnessData?.auth?.business?.name ?? '';
+      _currentJob.value = businessController.buisnessData?.auth?.business?.industry ?? '';
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
-    var profileImage = StorageUtil.getData(StorageUtil.userRole) == 'PERSON'
-        ? profileController.profileData?.auth?.person?.image
-        : businessController.buisnessData?.auth?.business?.image;
-
-    var name = StorageUtil.getData(StorageUtil.userRole) == 'PERSON'
-        ? profileController.profileData?.auth?.person?.name
-        : businessController.buisnessData?.auth?.business?.name;
-
-    var job = StorageUtil.getData(StorageUtil.userRole) == 'PERSON'
-        ? profileController.profileData?.auth?.person?.title
-        : businessController.buisnessData?.auth?.business?.industry;
     return Scaffold(
       body: Padding(
         padding: const EdgeInsets.symmetric(horizontal: 20.0),
@@ -83,14 +98,14 @@ class _SettingsScreenState extends State<SettingsScreen> {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     heightBox10,
-                    MyInfoCard(
+                    Obx(() => MyInfoCard(
                       ontap: () {
                         Get.to(() => const ProfileScreen());
                       },
-                      imagePath: profileImage ?? '',
-                      name: name ?? '',
-                      job: job ?? '',
-                    ),
+                      imagePath: _currentImagePath.value,
+                      name: _currentName.value,
+                      job: _currentJob.value,
+                    )),
 
                     heightBox20,
                     StraightLiner(height: 0.5),
