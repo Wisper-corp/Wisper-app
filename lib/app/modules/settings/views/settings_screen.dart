@@ -131,73 +131,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 ),
               ),
 
-              heightBox16,
-              SeetingsFeatureCard(
-                iconPath: Assets.images.adds.keyName,
-                title: 'Ads & Analytics',
-                widget: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      'Control advertising and data collection preferences',
-                      style: TextStyle(
-                        fontSize: 14.sp,
-                        fontWeight: FontWeight.w400,
-                        color: Color(0xff999999),
-                      ),
-                    ),
-                    heightBox20,
-                    ToggleOption(
-                      isToggled: false,
-                      title: 'Third-party Data',
-                      subtitle: 'Use data from partner companies',
-                      onToggle: (bool p1) {},
-                    ),
-                  ],
-                ),
-              ),
-              heightBox16,
-              SeetingsFeatureCard(
-                iconPath: Assets.images.adds.keyName,
-                title: 'Monetization',
-                widget: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      'Manage your earning and revenue settings',
-                      style: TextStyle(
-                        fontSize: 14.sp,
-                        fontWeight: FontWeight.w400,
-                        color: Color(0xff999999),
-                      ),
-                    ),
-                    heightBox20,
-                    ToggleOption(
-                      isToggled: false,
-                      title: 'Content Creator Mode',
-                      subtitle: 'Enable advanced monetization features',
-                      onToggle: (bool p1) {},
-                    ),
-                    heightBox10,
-                    ToggleOption(
-                      isToggled: false,
-                      title: 'Earn from Posts',
-                      subtitle: 'Allow monetization of your content',
-                      onToggle: (bool p1) {},
-                    ),
-                    heightBox10,
-                    ToggleOption(
-                      isToggled: false,
-                      title: 'Sponsored Content',
-                      subtitle: 'Enable sponsored post opportunities',
-                      onToggle: (bool p1) {},
-                    ),
-                    heightBox20,
-                    StraightLiner(height: 0.5),
-                    heightBox10,
-                  ],
-                ),
-              ),
+              // Ads & Analytics — hidden for now
+              // Monetization — hidden for now
               heightBox16,
               // ========= NEW: Identity & Verification Section =========
               SeetingsFeatureCard(
@@ -252,45 +187,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                   ],
                 ),
               ),
-              heightBox16,
-              SeetingsFeatureCard(
-                iconPath: Assets.images.notification.keyName,
-                title: 'Notifications',
-                widget: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      'Choose what notifications you want to receive',
-                      style: TextStyle(
-                        fontSize: 14.sp,
-                        fontWeight: FontWeight.w400,
-                        color: Color(0xff999999),
-                      ),
-                    ),
-                    heightBox20,
-                    ToggleOption(
-                      isToggled: false,
-                      title: 'Messages',
-                      subtitle: 'New messages and replies',
-                      onToggle: (bool p1) {},
-                    ),
-                    heightBox10,
-                    ToggleOption(
-                      isToggled: false,
-                      title: 'Connections',
-                      subtitle: 'New connection requests',
-                      onToggle: (bool p1) {},
-                    ),
-                    heightBox10,
-                    ToggleOption(
-                      isToggled: false,
-                      title: 'Posts',
-                      subtitle: 'New posts by your connection',
-                      onToggle: (bool p1) {},
-                    ),
-                  ],
-                ),
-              ),
+              // Notifications — hidden for now
               heightBox16,
               SeetingsFeatureCard(
                 iconPath: Assets.images.sheild.keyName,
@@ -336,13 +233,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     heightBox20,
-                    ToggleOption(
-                      isToggled: true,
-                      title: 'Dark Mode',
-                      subtitle: 'Switch to dark theme',
-                      onToggle: (bool p1) {},
-                    ),
-                    heightBox10,
+                    // Dark Mode — hidden for now
                     Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [

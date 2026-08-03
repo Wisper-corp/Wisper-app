@@ -224,32 +224,7 @@ class _GroupChatScreenState extends State<GroupChatScreen> {
                     SizedBox(height: 2.h),
                     Row(
                       children: [
-                        // Overlapping member avatars
-                        if (previewMembers.isNotEmpty)
-                          SizedBox(
-                            height: 20.h,
-                            width: (previewMembers.length * 14.0) + 6,
-                            child: Stack(
-                              children: List.generate(previewMembers.length, (i) {
-                                final m = previewMembers[i];
-                                return Positioned(
-                                  left: i * 14.0,
-                                  child: Container(
-                                    decoration: BoxDecoration(
-                                      shape: BoxShape.circle,
-                                      border: Border.all(color: Colors.black, width: 1),
-                                    ),
-                                    child: InitialsAvatar(
-                                      name: m.auth?.person?.name ?? m.auth?.business?.name ?? '?',
-                                      imageUrl: m.auth?.person?.image ?? m.auth?.business?.image,
-                                      radius: 9.r, fontSize: 6,
-                                    ),
-                                  ),
-                                );
-                              }),
-                            ),
-                          ),
-                        if (previewMembers.isNotEmpty) SizedBox(width: 6.w),
+                        // Member avatars hidden for now
                         Text('$memberCount members',
                           style: TextStyle(fontSize: 11.sp, color: Colors.white54)),
                       ],
