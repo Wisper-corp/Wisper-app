@@ -342,6 +342,27 @@ class _GroupChatScreenState extends State<GroupChatScreen> {
   }
 
   // ── General Chat ─────────────────────────────────────────────────────────────
+  Widget _encryptionNotice() => Container(
+    margin: EdgeInsets.symmetric(horizontal: 12.w, vertical: 6.h),
+    padding: EdgeInsets.symmetric(horizontal: 12.w, vertical: 8.h),
+    decoration: BoxDecoration(
+      color: Colors.white.withOpacity(0.05),
+      borderRadius: BorderRadius.circular(10.r),
+    ),
+    child: Column(children: [
+      Row(mainAxisAlignment: MainAxisAlignment.center, children: [
+        Icon(Icons.lock_rounded, size: 12.sp, color: Colors.grey[500]),
+        SizedBox(width: 4.w),
+        Flexible(child: Text('Messages and calls are end-to-end encrypted',
+          style: TextStyle(fontSize: 11.sp, color: Colors.grey[500]))),
+      ]),
+      SizedBox(height: 2.h),
+      Text('No one outside of this chat can read or listen to them.',
+        textAlign: TextAlign.center,
+        style: TextStyle(fontSize: 10.sp, color: Colors.grey[600])),
+    ]),
+  );
+
   Widget _buildChat() {
     return Obx(() {
       if (_ctrl.isLoading.value) {
@@ -351,6 +372,7 @@ class _GroupChatScreenState extends State<GroupChatScreen> {
         return Expanded(
           child: Column(
             children: [
+              _encryptionNotice(),
               Expanded(child: Center(
                 child: EmptyGroupInfoCard(isGroup: true, name: widget.groupName ?? '', member: '5'),
               )),
@@ -572,9 +594,6 @@ class _GroupChatScreenState extends State<GroupChatScreen> {
               _buildJoinBanner(),
           ] else ...[
             if (_tabIndex == 0) ...[
-              // Member avatars row — between tabs and chat content
-              if (widget.groupId != null && widget.groupId!.isNotEmpty)
-                _buildMemberAvatarsRow(),
               _buildChat(),
               if (_hasJoined)
                 MessageInputBar(
