@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:get/get.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:permission_handler/permission_handler.dart';
 import 'package:wisper/app/core/config/theme/light_theme_colors.dart';
 import 'package:wisper/app/core/others/custom_size.dart';
 import 'package:wisper/app/core/utils/show_over_loading.dart';
@@ -174,6 +175,34 @@ class _ChatHeaderState extends State<ChatHeader> {
           "This conversation will be permanently removed.\nThis action cannot be undone.",
       onDelete: deleteChat,
     );
+  }
+
+  /// Request camera + microphone permissions before starting a call
+  Future<bool> _requestCallPermissions({bool video = false}) async {
+    final perms = video
+        ? [Permission.camera, Permission.microphone]
+        : [Permission.microphone];
+    final statuses = await perms.request();
+    final denied = statuses.values.any(
+      (s) => s == PermissionStatus.denied || s == PermissionStatus.permanentlyDenied,
+    );
+    if (denied) {
+      Get.snackbar(
+        'Permission Required',
+        video
+            ? 'Camera and microphone access are needed for video calls.'
+            : 'Microphone access is needed for voice calls.',
+        snackPosition: SnackPosition.TOP,
+        backgroundColor: Colors.red,
+        colorText: Colors.white,
+        mainButton: TextButton(
+          onPressed: () => openAppSettings(),
+          child: const Text('Settings', style: TextStyle(color: Colors.white)),
+        ),
+      );
+      return false;
+    }
+    return true;
   }
 
   void _showBlockUser() {
@@ -352,7 +381,9 @@ class _ChatHeaderState extends State<ChatHeader> {
                   children: [
                     CircleIconWidget(
                       imagePath: Assets.images.call.keyName,
-                      onTap: () {
+                      onTap: () async {
+                        final granted = await _requestCallPermissions(video: false);
+                        if (!granted) return;
                         Get.to(
                           () => VideoCallPage(
                             name: widget.name ?? '',
@@ -367,7 +398,9 @@ class _ChatHeaderState extends State<ChatHeader> {
                     widthBox4,
                     CircleIconWidget(
                       imagePath: Assets.images.video.keyName,
-                      onTap: () {
+                      onTap: () async {
+                        final granted = await _requestCallPermissions(video: true);
+                        if (!granted) return;
                         Get.to(
                           () => VideoCallPage(
                             name: widget.name ?? '',
