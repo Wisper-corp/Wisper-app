@@ -93,11 +93,20 @@ class _GroupChatScreenState extends State<GroupChatScreen> {
     if (widget.groupId != null && widget.groupId!.isNotEmpty) {
       _fetchMembersWithRetry(widget.groupId!);
 
-      // Fetch group info for tag pills
+      // Fetch group info for tag pills — also get chatId if missing
       final infoCtrl = Get.put(GroupInfoController(), tag: 'grp_${widget.groupId}');
       infoCtrl.getGroupInfo(widget.groupId).then((ok) {
         if (ok && mounted) {
           setState(() => _tagPills = _parseTags(infoCtrl.groupInfoData?.description));
+          // If chatId was empty, get it from group info and set up chat
+          if ((widget.chatId == null || widget.chatId!.isEmpty)) {
+            final fetchedChatId = infoCtrl.groupInfoData?.chat?.id ?? '';
+            if (fetchedChatId.isNotEmpty && mounted) {
+              setState(() => _hasJoined = true);
+              _ctrl.setupChat(chatId: fetchedChatId);
+            }
+          }
+        }
         }
       });
     }
@@ -572,6 +581,9 @@ class _GroupChatScreenState extends State<GroupChatScreen> {
               _buildJoinBanner(),
           ] else ...[
             if (_tabIndex == 0) ...[
+              // Member avatars row — between tabs and chat content
+              if (widget.groupId != null && widget.groupId!.isNotEmpty)
+                _buildMemberAvatarsRow(),
               _buildChat(),
               if (_hasJoined)
                 MessageInputBar(
