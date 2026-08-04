@@ -98,15 +98,6 @@ class _GroupChatScreenState extends State<GroupChatScreen> {
       infoCtrl.getGroupInfo(widget.groupId).then((ok) {
         if (ok && mounted) {
           setState(() => _tagPills = _parseTags(infoCtrl.groupInfoData?.description));
-          // If chatId was empty, get it from group info and set up chat
-          if ((widget.chatId == null || widget.chatId!.isEmpty)) {
-            final fetchedChatId = infoCtrl.groupInfoData?.chat?.id ?? '';
-            if (fetchedChatId.isNotEmpty && mounted) {
-              setState(() => _hasJoined = true);
-              _ctrl.setupChat(chatId: fetchedChatId);
-            }
-          }
-        }
         }
       });
     }
