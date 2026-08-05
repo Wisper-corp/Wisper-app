@@ -240,6 +240,31 @@ class _NotificationBellState extends State<_NotificationBell> {
     _loadPendingCount();
   }
 
+  Future<void> _markAllSeen() async {
+    try {
+      // Get all unseen notification ids and mark them seen
+      final listResp = await Get.find<NetworkCaller>().getRequest(
+        '${Urls.baseUrl}/notifications?limit=100',
+        accessToken: StorageUtil.getData(StorageUtil.userAccessToken),
+      );
+      if (listResp.isSuccess && listResp.responseData != null) {
+        final notifs = listResp.responseData['data']?['notifications'] as List? ?? [];
+        final ids = notifs
+            .where((n) => n['hasSeen'] == false)
+            .map<String>((n) => n['id'].toString())
+            .toList();
+        if (ids.isNotEmpty) {
+          await Get.find<NetworkCaller>().patchRequest(
+            '${Urls.baseUrl}/notifications/seen',
+            body: {'ids': ids},
+            accessToken: StorageUtil.getData(StorageUtil.userAccessToken),
+          );
+        }
+      }
+      _pendingCount.value = 0;
+    } catch (_) {}
+  }
+
   Future<void> _loadPendingCount() async {
     try {
       final NetworkResponse response = await Get.find<NetworkCaller>().getRequest(
@@ -248,7 +273,6 @@ class _NotificationBellState extends State<_NotificationBell> {
       );
       if (response.isSuccess && response.responseData != null) {
         final data = response.responseData['data'];
-        // Backend returns the count as a plain integer directly in data
         final count = data is int ? data : int.tryParse(data.toString()) ?? 0;
         _pendingCount.value = count;
       }
@@ -258,7 +282,8 @@ class _NotificationBellState extends State<_NotificationBell> {
   @override
   Widget build(BuildContext context) {
     return GestureDetector(
-      onTap: () {
+      onTap: () async {
+        await _markAllSeen();
         Get.to(() => const ConnectionScreen());
       },
       child: Stack(
@@ -268,7 +293,8 @@ class _NotificationBellState extends State<_NotificationBell> {
             radius: 14,
             iconRadius: 18,
             imagePath: Assets.images.notification.keyName,
-            onTap: () {
+            onTap: () async {
+              await _markAllSeen();
               Get.to(() => const ConnectionScreen());
             },
           ),
