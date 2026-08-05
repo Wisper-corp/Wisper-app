@@ -323,14 +323,14 @@ class _GroupChatScreenState extends State<GroupChatScreen> {
           children: [
             // Overlapping avatars
             SizedBox(
-              height: 32.h,
-              width: (preview.length * 22.0) + (extra > 0 ? 28 : 0),
+              height: 22.h,
+              width: (preview.length * 16.0) + (extra > 0 ? 20 : 0),
               child: Stack(
                 children: [
                   ...List.generate(preview.length, (i) {
                     final m = preview[i];
                     return Positioned(
-                      left: i * 22.0,
+                      left: i * 16.0,
                       child: Container(
                         decoration: BoxDecoration(
                           shape: BoxShape.circle,
@@ -339,16 +339,16 @@ class _GroupChatScreenState extends State<GroupChatScreen> {
                         child: InitialsAvatar(
                           name: m.auth?.person?.name ?? m.auth?.business?.name ?? '?',
                           imageUrl: m.auth?.person?.image ?? m.auth?.business?.image,
-                          radius: 14.r, fontSize: 9,
+                          radius: 10.r, fontSize: 7,
                         ),
                       ),
                     );
                   }),
                   if (extra > 0)
                     Positioned(
-                      left: preview.length * 22.0,
+                      left: preview.length * 16.0,
                       child: Container(
-                        width: 28.r, height: 28.r,
+                        width: 20.r, height: 20.r,
                         decoration: BoxDecoration(
                           shape: BoxShape.circle,
                           color: const Color(0xff2A2A2A),
@@ -356,7 +356,7 @@ class _GroupChatScreenState extends State<GroupChatScreen> {
                         ),
                         child: Center(
                           child: Text('+$extra',
-                            style: TextStyle(fontSize: 9.sp, color: Colors.white70)),
+                            style: TextStyle(fontSize: 7.sp, color: Colors.white70)),
                         ),
                       ),
                     ),
