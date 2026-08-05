@@ -135,6 +135,8 @@ class GoogleSignUpAuthController extends GetxController {
         var userId = decodedToken['id'];
         StorageUtil.saveData(StorageUtil.userRole, role);
         StorageUtil.saveData(StorageUtil.userId, userId ?? '');
+        // Save Google email for pre-filling edit profile
+        StorageUtil.saveData('userEmail', email);
         StorageUtil.saveData(
           StorageUtil.userAccessToken,
           response.responseData['data']['accessToken'],

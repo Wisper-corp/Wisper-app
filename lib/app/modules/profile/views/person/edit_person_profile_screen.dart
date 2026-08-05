@@ -62,7 +62,9 @@ class _EditPersonProfileScreenState extends State<EditPersonProfileScreen> {
 
     final user = profileController.profileData?.auth?.person;
     _nameCtrl.text = user?.name ?? '';
-    _emailCtrl.text = user?.email ?? '';
+    // Fallback to stored email (from Google Sign-In JWT) if profile email is empty
+    final storedEmail = StorageUtil.getData('userEmail') ?? '';
+    _emailCtrl.text = user?.email?.isNotEmpty == true ? user!.email! : storedEmail;
     _phoneCtrl.text = user?.phone ?? '';
     _addressCtrl.text = user?.address ?? '';
     selectedAddress.value = user?.address ?? '';

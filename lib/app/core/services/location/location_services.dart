@@ -164,6 +164,7 @@ class _LocationPickerScreenState extends State<LocationPickerScreen> {
               TileLayer(
                 urlTemplate: 'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',
                 subdomains: const ['a', 'b', 'c'],
+                userAgentPackageName: 'com.wisperapplication.app',
               ),
               MarkerLayer(
                 markers: [
