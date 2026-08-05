@@ -620,11 +620,11 @@ class _GroupChatScreenState extends State<GroupChatScreen> {
         children: [
           // Header (skip for embedded announcement tab)
           if (widget.showHeader) _buildHeader(),
-          // Tabs (skip for embedded announcement tab)
-          if (widget.showTabs) _buildTabs(),
-          // Member avatars row — ABOVE General Chat content, BELOW tabs
+          // Member avatars row — ABOVE tabs
           if (widget.showTabs && widget.groupId != null && widget.groupId!.isNotEmpty)
             _buildMemberAvatarsRow(),
+          // Tabs (skip for embedded announcement tab)
+          if (widget.showTabs) _buildTabs(),
 
           // Content — always wrapped in Expanded so Column has bounded height
           if (!widget.showTabs) ...[
