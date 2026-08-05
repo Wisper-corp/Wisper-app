@@ -271,13 +271,7 @@ class _GroupChatScreenState extends State<GroupChatScreen> {
                       ),
                     ],
                     SizedBox(height: 2.h),
-                    Row(
-                      children: [
-                        // Member avatars hidden for now
-                        Text('$memberCount members',
-                          style: TextStyle(fontSize: 11.sp, color: Colors.white54)),
-                      ],
-                    ),
+                    // Member count shown in avatars row below tabs — not duplicated here
                   ],
                 ),
               ),
