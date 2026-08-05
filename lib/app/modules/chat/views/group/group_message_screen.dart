@@ -16,6 +16,7 @@ import 'package:wisper/app/modules/chat/controller/group/group_info_controller.d
 import 'package:wisper/app/modules/homepage/controller/join_group_controller.dart';
 import 'package:wisper/app/modules/chat/controller/message_controller.dart';
 import 'package:wisper/app/core/services/socket/socket_service.dart';
+import 'package:wisper/app/modules/chat/controller/all_chats_controller.dart';
 import 'package:wisper/app/modules/chat/controller/seen_message_controller.dart';
 import 'package:wisper/app/modules/chat/model/message_keys.dart';
 import 'package:wisper/app/modules/chat/views/group/group_info_screen.dart';
@@ -86,9 +87,11 @@ class _GroupChatScreenState extends State<GroupChatScreen> {
     _hasJoined = widget.hasJoined;
     _effectiveChatId.value = widget.chatId ?? '';
 
-    // If chatId is empty, resolve it with retry — same pattern as _fetchMembersWithRetry
-    if (_effectiveChatId.value.isEmpty && widget.groupId != null && widget.groupId!.isNotEmpty) {
-      _resolveChatIdWithRetry(widget.groupId!);
+    // If chatId is empty OR hasJoined is false, try to resolve from socket list
+    if (_effectiveChatId.value.isEmpty || !_hasJoined) {
+      if (widget.groupId != null && widget.groupId!.isNotEmpty) {
+        _resolveChatIdWithRetry(widget.groupId!);
+      }
     }
     final ts = DateTime.now().millisecondsSinceEpoch;
     _ctrlTag = 'msg_${widget.chatId ?? widget.groupId ?? 'g'}_$ts';
@@ -140,33 +143,57 @@ class _GroupChatScreenState extends State<GroupChatScreen> {
       await Future.delayed(const Duration(milliseconds: 500));
     }
     if (!mounted) return;
-    // Look up chatId from socket friend list
+
+    // Helper to check socket list
+    String? _findChatId() {
+      try {
+        final socketService = Get.find<SocketService>();
+        // Try by groupId
+        final match = socketService.socketFriendList.firstWhereOrNull(
+          (e) => e['groupId'] == groupId,
+        );
+        if (match != null && (match['id'] ?? '').isNotEmpty) return match['id'];
+      } catch (_) {}
+      return null;
+    }
+
+    // First attempt
+    String? found = _findChatId();
+    if (found != null) {
+      _effectiveChatId.value = found;
+      _ctrl.setupChat(chatId: found);
+      if (mounted) setState(() => _hasJoined = true);
+      return;
+    }
+
+    // If socket list is empty, trigger getAllChats then retry
     try {
-      final socketService = Get.find<SocketService>();
-      final match = socketService.socketFriendList.firstWhereOrNull(
-        (e) => e['groupId'] == groupId,
-      );
-      if (match != null && (match['id'] ?? '').isNotEmpty) {
-        _effectiveChatId.value = match['id'];
-        _ctrl.setupChat(chatId: _effectiveChatId.value);
-        setState(() => _hasJoined = true);
-        return;
+      final allChatsCtrl = Get.find<AllChatsController>();
+      if (allChatsCtrl.allChatsModel.value == null) {
+        await allChatsCtrl.getAllChats();
       }
     } catch (_) {}
-    // Retry after 2s if not found yet
+
+    await Future.delayed(const Duration(seconds: 1));
+    if (!mounted) return;
+
+    found = _findChatId();
+    if (found != null) {
+      _effectiveChatId.value = found;
+      _ctrl.setupChat(chatId: found);
+      if (mounted) setState(() => _hasJoined = true);
+      return;
+    }
+
+    // Final retry after 2s
     await Future.delayed(const Duration(seconds: 2));
     if (!mounted) return;
-    try {
-      final socketService = Get.find<SocketService>();
-      final match = socketService.socketFriendList.firstWhereOrNull(
-        (e) => e['groupId'] == groupId,
-      );
-      if (match != null && (match['id'] ?? '').isNotEmpty) {
-        _effectiveChatId.value = match['id'];
-        _ctrl.setupChat(chatId: _effectiveChatId.value);
-        setState(() => _hasJoined = true);
-      }
-    } catch (_) {}
+    found = _findChatId();
+    if (found != null) {
+      _effectiveChatId.value = found;
+      _ctrl.setupChat(chatId: found);
+      if (mounted) setState(() => _hasJoined = true);
+    }
   }
 
   // ── Retry member fetch until token is available ──────────────────────────
