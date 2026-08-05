@@ -2,6 +2,7 @@ import 'package:get/get.dart';
 import 'package:wisper/app/core/others/get_storage.dart';
 import 'package:wisper/app/core/services/network_caller/network_caller.dart';
 import 'package:wisper/app/core/services/network_caller/network_response.dart';
+import 'package:wisper/app/core/services/socket/socket_service.dart';
 import 'package:wisper/app/modules/authentication/views/sign_in_screen.dart';
 import 'package:wisper/app/urls.dart';
 
@@ -24,8 +25,16 @@ class SeenMessageController extends GetxController {
 
       if (response.isSuccess && response.responseData != null) {
         _errorMessage.value = '';
-        print('Sms seen Response data : ${response.responseData}');
-
+        // Reset unread count in socket list so badge disappears immediately
+        try {
+          final socketService = Get.find<SocketService>();
+          final idx = socketService.socketFriendList
+              .indexWhere((e) => e['id'] == chatId);
+          if (idx != -1) {
+            socketService.socketFriendList[idx]['unreadMessageCount'] = 0;
+            socketService.socketFriendList.refresh();
+          }
+        } catch (_) {}
         return true;
       } else {
         _errorMessage.value = response.errorMessage;
@@ -35,7 +44,6 @@ class SeenMessageController extends GetxController {
       }
     } catch (e) {
       _errorMessage.value = 'Failed to fetch district data: ${e.toString()}';
-      print('Error fetching district data: $e');
       _inProgress.value = false;
       return false;
     }
