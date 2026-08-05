@@ -68,7 +68,8 @@ class _GroupChatScreenState extends State<GroupChatScreen> {
   String? _jobLocationType;
   List<String> _tagPills = [];
   late bool _hasJoined;
-  bool _isJoining = false; // community tag pills
+  bool _isJoining = false;
+  final RxString _effectiveChatId = ''.obs; // resolved chatId (may come from group info)
 
   static const _tabs = ['General Chat', 'Services', 'Jobs', 'Members'];
 
@@ -82,6 +83,12 @@ class _GroupChatScreenState extends State<GroupChatScreen> {
   void initState() {
     super.initState();
     _hasJoined = widget.hasJoined;
+    _effectiveChatId.value = widget.chatId ?? '';
+
+    // If chatId is empty, resolve it with retry — same pattern as _fetchMembersWithRetry
+    if (_effectiveChatId.value.isEmpty && widget.groupId != null && widget.groupId!.isNotEmpty) {
+      _resolveChatIdWithRetry(widget.groupId!);
+    }
     final ts = DateTime.now().millisecondsSinceEpoch;
     _ctrlTag = 'msg_${widget.chatId ?? widget.groupId ?? 'g'}_$ts';
     _membersTag = 'mem_${widget.groupId ?? 'g'}_$ts';
@@ -106,8 +113,10 @@ class _GroupChatScreenState extends State<GroupChatScreen> {
       if (!mounted) return;
       if (widget.chatId != null && widget.chatId!.isNotEmpty) {
         _seenCtrl.seenMessage(widget.chatId!);
+      } else if (_effectiveChatId.value.isNotEmpty) {
+        _seenCtrl.seenMessage(_effectiveChatId.value);
       }
-      _ctrl.setupChat(chatId: widget.chatId);
+      _ctrl.setupChat(chatId: _effectiveChatId.value.isNotEmpty ? _effectiveChatId.value : widget.chatId);
     });
   }
 
@@ -118,6 +127,45 @@ class _GroupChatScreenState extends State<GroupChatScreen> {
     _serviceSearchCtrl.dispose();
     _jobSearchCtrl.dispose();
     super.dispose();
+  }
+
+  // ── Resolve chatId with retry (same pattern as _fetchMembersWithRetry) ──────
+  Future<void> _resolveChatIdWithRetry(String groupId) async {
+    // Wait for auth token
+    String? token;
+    for (int i = 0; i < 10; i++) {
+      token = StorageUtil.getData(StorageUtil.userAccessToken);
+      if (token != null && token.isNotEmpty) break;
+      await Future.delayed(const Duration(milliseconds: 500));
+    }
+    if (!mounted) return;
+    // Look up chatId from socket friend list
+    try {
+      final socketService = Get.find<SocketService>();
+      final match = socketService.socketFriendList.firstWhereOrNull(
+        (e) => e['groupId'] == groupId,
+      );
+      if (match != null && (match['id'] ?? '').isNotEmpty) {
+        _effectiveChatId.value = match['id'];
+        _ctrl.setupChat(chatId: _effectiveChatId.value);
+        setState(() => _hasJoined = true);
+        return;
+      }
+    } catch (_) {}
+    // Retry after 2s if not found yet
+    await Future.delayed(const Duration(seconds: 2));
+    if (!mounted) return;
+    try {
+      final socketService = Get.find<SocketService>();
+      final match = socketService.socketFriendList.firstWhereOrNull(
+        (e) => e['groupId'] == groupId,
+      );
+      if (match != null && (match['id'] ?? '').isNotEmpty) {
+        _effectiveChatId.value = match['id'];
+        _ctrl.setupChat(chatId: _effectiveChatId.value);
+        setState(() => _hasJoined = true);
+      }
+    } catch (_) {}
   }
 
   // ── Retry member fetch until token is available ──────────────────────────
@@ -579,6 +627,9 @@ class _GroupChatScreenState extends State<GroupChatScreen> {
           if (widget.showHeader) _buildHeader(),
           // Tabs (skip for embedded announcement tab)
           if (widget.showTabs) _buildTabs(),
+          // Member avatars row — ABOVE General Chat content, BELOW tabs
+          if (widget.showTabs && widget.groupId != null && widget.groupId!.isNotEmpty)
+            _buildMemberAvatarsRow(),
 
           // Content — always wrapped in Expanded so Column has bounded height
           if (!widget.showTabs) ...[
@@ -586,9 +637,9 @@ class _GroupChatScreenState extends State<GroupChatScreen> {
             if (_hasJoined)
               MessageInputBar(
                 controller: _ctrl.textController,
-                chatId: widget.chatId ?? '',
+                chatId: _effectiveChatId.value.isNotEmpty ? _effectiveChatId.value : widget.chatId ?? '',
                 receiverId: '',
-                onSend: () => _ctrl.sendMessage(widget.chatId ?? ''),
+                onSend: () => _ctrl.sendMessage(_effectiveChatId.value.isNotEmpty ? _effectiveChatId.value : widget.chatId ?? ''),
               )
             else
               _buildJoinBanner(),
@@ -598,9 +649,9 @@ class _GroupChatScreenState extends State<GroupChatScreen> {
               if (_hasJoined)
                 MessageInputBar(
                   controller: _ctrl.textController,
-                  chatId: widget.chatId ?? '',
+                  chatId: _effectiveChatId.value.isNotEmpty ? _effectiveChatId.value : widget.chatId ?? '',
                   receiverId: '',
-                  onSend: () => _ctrl.sendMessage(widget.chatId ?? ''),
+                  onSend: () => _ctrl.sendMessage(_effectiveChatId.value.isNotEmpty ? _effectiveChatId.value : widget.chatId ?? ''),
                 )
               else
                 _buildJoinBanner(),
