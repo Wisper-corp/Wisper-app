@@ -36,11 +36,25 @@ class MessageController extends GetxController {
 
     getMessages(chatId: chatId ?? '').then((_) => scrollToBottom());
 
-    // Socket listener (একবারই on করা)
-    socketService.socket.off('newMessage');
-    socketService.socket.on('chatList', _handleIncomingChat);
-    socketService.socket.on('newMessage', _handleIncomingMessage);
-    socketService.socket.on('typingStatus', _handleTypingStatus);
+    // Wait for socket to be ready before attaching listeners
+    _attachSocketListeners();
+  }
+
+  void _attachSocketListeners() {
+    try {
+      if (!socketService.isInitialized) {
+        // Retry after 1 second
+        Future.delayed(const Duration(seconds: 1), _attachSocketListeners);
+        return;
+      }
+      socketService.socket.off('newMessage');
+      socketService.socket.on('chatList', _handleIncomingChat);
+      socketService.socket.on('newMessage', _handleIncomingMessage);
+      socketService.socket.on('typingStatus', _handleTypingStatus);
+    } catch (e) {
+      // Socket not ready yet, retry
+      Future.delayed(const Duration(seconds: 1), _attachSocketListeners);
+    }
   }
 
   void _handleIncomingChat(dynamic rawData) {
@@ -148,6 +162,17 @@ class MessageController extends GetxController {
     if (chatId.isEmpty) {
       Get.snackbar('Error', 'Chat not ready, please wait...');
       print('sendMessage: chatId is empty — cannot send');
+      return;
+    }
+
+    if (!socketService.isInitialized) {
+      // Socket not initialized yet — trigger init and retry send after delay
+      socketService.init().then((_) {
+        Future.delayed(const Duration(seconds: 2), () => sendMessage(chatId));
+      });
+      Get.snackbar('Connecting...', 'Please wait a moment and try again',
+        backgroundColor: Colors.orange, colorText: Colors.white,
+        duration: const Duration(seconds: 2));
       return;
     }
 

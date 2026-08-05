@@ -24,7 +24,10 @@ class SocketService extends GetxController {
 
   IO.Socket get socket => _socket;
 
+  bool get isSocketReady => _initialized && isConnected.value;
+
   bool _initialized = false;
+  bool get isInitialized => _initialized;
   String? _activeToken;
   String? _activeUserId;
   bool _listRefreshInFlight = false;
