@@ -36,6 +36,7 @@ class JobData {
     required this.responsibilities,
     required this.applicationType,
     required this.applicationLink,
+    this.applicationEmail,
     required this.createdAt,
     required this.updatedAt,
     required this.author,
@@ -63,6 +64,7 @@ class JobData {
   final List<String> responsibilities;
   final String? applicationType;
   final dynamic applicationLink;
+  final String? applicationEmail;
   final DateTime? createdAt;
   final DateTime? updatedAt;
   final Author? author;
@@ -94,6 +96,7 @@ class JobData {
           : List<String>.from(json["responsibilities"]!.map((x) => x)),
       applicationType: json["applicationType"],
       applicationLink: json["applicationLink"],
+      applicationEmail: json["applicationEmail"],
       createdAt: DateTime.tryParse(json["createdAt"] ?? ""),
       updatedAt: DateTime.tryParse(json["updatedAt"] ?? ""),
       author: json["author"] == null ? null : Author.fromJson(json["author"]),

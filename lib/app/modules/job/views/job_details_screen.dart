@@ -222,24 +222,15 @@ class _JobDetailsScreenState extends State<JobDetailsScreen> {
                                     ?.applicationType;
 
                                 if (applicationType == 'CHAT') {
-                                  createChat(
-                                    singleJobController
-                                            .singleJobData
-                                            ?.authorId ??
-                                        '',
-                                    singleJobController
-                                            .singleJobData!
-                                            .author!
-                                            .business
-                                            ?.name ??
-                                        '',
-                                    singleJobController
-                                            .singleJobData
-                                            ?.author
-                                            ?.business
-                                            ?.image ??
-                                        '',
-                                  );
+                                  final jobData = singleJobController.singleJobData;
+                                  final authorId = jobData?.authorId ?? '';
+                                  final authorName = (jobData?.companyName?.isNotEmpty == true)
+                                      ? jobData!.companyName!
+                                      : jobData?.author?.business?.name ?? '';
+                                  final authorImage = (jobData?.companyLogo?.isNotEmpty == true)
+                                      ? jobData!.companyLogo!
+                                      : jobData?.author?.business?.image ?? '';
+                                  createChat(authorId, authorName, authorImage);
                                 } else if (applicationType == 'EXTERNAL') {
                                   Get.to(
                                     PaymentView(
@@ -256,9 +247,9 @@ class _JobDetailsScreenState extends State<JobDetailsScreen> {
                                     ),
                                   );
                                 } else {
-                                  // EMAIL case – তোমার model-এ employer-এর email কোন field-এ আছে change করো
-                                  String recipientEmail =
-                                      'employer@example.com'; // fallback email
+                                  // EMAIL case — use applicationEmail from the job data
+                                  final recipientEmail =
+                                      singleJobController.singleJobData?.applicationEmail ?? '';
                                   routeToEmail(recipientEmail);
                                 }
                               },
