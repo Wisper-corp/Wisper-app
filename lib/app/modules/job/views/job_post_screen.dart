@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:get/get.dart';
 import 'package:wisper/app/core/others/custom_size.dart';
+import 'package:wisper/app/core/others/get_storage.dart';
+import 'package:wisper/app/core/utils/currency_helper.dart';
 import 'package:wisper/app/core/utils/show_over_loading.dart';
 import 'package:wisper/app/core/utils/snack_bar.dart';
 import 'package:wisper/app/core/widgets/common/custom_button.dart';
@@ -9,6 +11,8 @@ import 'package:wisper/app/core/widgets/common/custom_text_filed.dart';
 import 'package:wisper/app/core/widgets/common/label.dart';
 import 'package:wisper/app/modules/job/controller/create_job_controller.dart';
 import 'package:wisper/app/modules/job/controller/feed_job_controller.dart';
+import 'package:wisper/app/modules/profile/controller/buisness/buisness_controller.dart';
+import 'package:wisper/app/modules/profile/controller/person/profile_controller.dart';
 import 'package:wisper/app/modules/job/controller/my_job_controller.dart';
 
 class JobPostScreen extends StatefulWidget {
@@ -108,6 +112,21 @@ class _JobPostScreenState extends State<JobPostScreen> {
     _validateForm();
   }
 
+  bool _isNigeriaUser() {
+    if (CurrencyHelper.isNaira) return true;
+    try {
+      final role = StorageUtil.getData(StorageUtil.userRole) ?? '';
+      String address = '';
+      if (role == 'PERSON') {
+        address = Get.find<ProfileController>().profileData?.auth?.person?.address?.toLowerCase() ?? '';
+      } else {
+        address = Get.find<BusinessController>().buisnessData?.auth?.business?.address?.toLowerCase() ?? '';
+      }
+      if (address.contains('nigeria') || address.contains('lagos') || address.contains('abuja') || address.contains(' ng')) return true;
+    } catch (_) {}
+    return false;
+  }
+
   void createJob() {
     showLoadingOverLay(
       asyncFunction: () async => await performCreateJob(context),
@@ -124,6 +143,7 @@ class _JobPostScreenState extends State<JobPostScreen> {
       experienceLevel: experienceLevel ?? 'MID_LEVEL',
       compensationType: compensationType ?? 'MONTHLY',
       salary: double.tryParse(_salaryC.text.trim()) ?? 0.0,
+      currency: _isNigeriaUser() ? 'NGN' : 'USD',
       location: _locationC.text.trim().isEmpty
           ? "Remote"
           : _locationC.text.trim(),
@@ -315,7 +335,24 @@ class _JobPostScreenState extends State<JobPostScreen> {
               heightBox16,
 
               // Salary *
-              const Label(label: 'Salary (USD) *'),
+              Builder(builder: (context) {
+                // Detect Nigeria from profile address or device locale
+                bool isNigeria = CurrencyHelper.isNaira;
+                try {
+                  final role = StorageUtil.getData(StorageUtil.userRole) ?? '';
+                  String address = '';
+                  if (role == 'PERSON') {
+                    address = Get.find<ProfileController>().profileData?.auth?.person?.address?.toLowerCase() ?? '';
+                  } else {
+                    address = Get.find<BusinessController>().buisnessData?.auth?.business?.address?.toLowerCase() ?? '';
+                  }
+                  if (address.contains('nigeria') || address.contains('ng') || address.contains('lagos') || address.contains('abuja')) {
+                    isNigeria = true;
+                  }
+                } catch (_) {}
+                final currencyLabel = isNigeria ? '₦ (NGN)' : '\$ (USD)';
+                return Label(label: 'Salary ($currencyLabel) *');
+              }),
               heightBox6,
               Row(
                 children: [
@@ -346,40 +383,6 @@ class _JobPostScreenState extends State<JobPostScreen> {
                   DropdownMenuItem(value: 'ON_SITE', child: Text('On-site')),
                   DropdownMenuItem(value: 'HYBRID', child: Text('Hybrid')),
                   DropdownMenuItem(value: 'REMOTE', child: Text('Remote')),
-                ],
-              ),
-              heightBox16,
-
-              // Industry
-              const Label(label: 'Industry'),
-              heightBox6,
-              CustomTextField(
-                hintText: 'Select industry',
-                value: industry,
-                onChanged: (v) => setState(() => industry = v),
-                items: const [
-                  DropdownMenuItem(
-                    value: 'Web Development',
-                    child: Text('Web Development'),
-                  ),
-                  DropdownMenuItem(
-                    value: 'Mobile Development',
-                    child: Text('Mobile Development'),
-                  ),
-                  DropdownMenuItem(
-                    value: 'UI/UX Design',
-                    child: Text('UI/UX Design'),
-                  ),
-                  DropdownMenuItem(
-                    value: 'Data Science',
-                    child: Text('Data Science'),
-                  ),
-                  DropdownMenuItem(
-                    value: 'Marketing',
-                    child: Text('Marketing'),
-                  ),
-                  DropdownMenuItem(value: 'Sales', child: Text('Sales')),
-                  DropdownMenuItem(value: 'Other', child: Text('Other')),
                 ],
               ),
               heightBox16,
