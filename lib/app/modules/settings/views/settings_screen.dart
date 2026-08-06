@@ -270,24 +270,13 @@ class _SettingsScreenState extends State<SettingsScreen> {
                             ),
                           ],
                         ),
-                        Row(
-                          children: [
-                            Text(
-                              'English',
-                              style: TextStyle(
-                                fontSize: 12.sp,
-                                fontWeight: FontWeight.w600,
-                                color: LightThemeColors.themeGreyColor,
-                              ),
-                            ),
-                            widthBox8,
-                            Image.asset(
-                              Assets.images.arrowForwoard.keyName,
-                              height: 16.h,
-                              width: 16.w,
-                              color: LightThemeColors.themeGreyColor,
-                            ),
-                          ],
+                        Text(
+                          'English',
+                          style: TextStyle(
+                            fontSize: 12.sp,
+                            fontWeight: FontWeight.w600,
+                            color: LightThemeColors.themeGreyColor,
+                          ),
                         ),
                       ],
                     ),
@@ -312,27 +301,14 @@ class _SettingsScreenState extends State<SettingsScreen> {
                             ),
                           ],
                         ),
-                        Row(
-                          children: [
-                            Text(
-                              _getRegion(),
-                              style: TextStyle(
-                                fontSize: 12.sp,
-                                fontWeight: FontWeight.w600,
-                                color: LightThemeColors.themeGreyColor,
-                              ),
-                            ),
-                            widthBox8,
-                            Image.asset(
-                              Assets.images.arrowForwoard.keyName,
-                              height: 16.h,
-                              width: 16.w,
-                              color: LightThemeColors.themeGreyColor,
-                            ),
-                          ],
+                        Text(
+                          _getRegion(),
+                          style: TextStyle(
+                            fontSize: 12.sp,
+                            fontWeight: FontWeight.w600,
+                            color: LightThemeColors.themeGreyColor,
+                          ),
                         ),
-                      ],
-                    ),
                   ],
                 ),
               ),
@@ -378,8 +354,23 @@ class _SettingsScreenState extends State<SettingsScreen> {
     );
   }
 
-  /// Get region from user address or device locale
+  /// Get region from device locale (always fresh)
   String _getRegion() {
+    // Use device locale as the most accurate current region
+    final locale = WidgetsBinding.instance.platformDispatcher.locale;
+    final code = locale.countryCode ?? '';
+    const Map<String, String> codes = {
+      'NG': 'Nigeria', 'US': 'United States', 'GB': 'United Kingdom',
+      'PK': 'Pakistan', 'IN': 'India', 'GH': 'Ghana', 'KE': 'Kenya',
+      'ZA': 'South Africa', 'BD': 'Bangladesh', 'CA': 'Canada',
+      'AU': 'Australia', 'DE': 'Germany', 'FR': 'France', 'AE': 'UAE',
+      'CN': 'China', 'JP': 'Japan', 'BR': 'Brazil', 'MX': 'Mexico',
+      'ID': 'Indonesia', 'PH': 'Philippines', 'EG': 'Egypt', 'ET': 'Ethiopia',
+      'TZ': 'Tanzania', 'UG': 'Uganda', 'RW': 'Rwanda', 'SN': 'Senegal',
+      'CI': 'Ivory Coast', 'CM': 'Cameroon', 'ZM': 'Zambia', 'ZW': 'Zimbabwe',
+    };
+    if (code.isNotEmpty && codes.containsKey(code)) return codes[code]!;
+    // Fallback to profile address country
     final role = StorageUtil.getData(StorageUtil.userRole) ?? '';
     String address = '';
     try {
@@ -389,7 +380,6 @@ class _SettingsScreenState extends State<SettingsScreen> {
         address = Get.find<BusinessController>().buisnessData?.auth?.business?.address ?? '';
       }
     } catch (_) {}
-
     if (address.isNotEmpty) {
       final parts = address.split(',');
       if (parts.isNotEmpty) {
@@ -397,17 +387,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
         if (country.isNotEmpty) return country;
       }
     }
-
-    // Fall back to device locale country
-    final locale = WidgetsBinding.instance.platformDispatcher.locale;
-    final code = locale.countryCode ?? '';
-    const Map<String, String> codes = {
-      'NG': 'Nigeria', 'US': 'United States', 'GB': 'United Kingdom',
-      'PK': 'Pakistan', 'IN': 'India', 'GH': 'Ghana', 'KE': 'Kenya',
-      'ZA': 'South Africa', 'BD': 'Bangladesh', 'CA': 'Canada',
-      'AU': 'Australia', 'DE': 'Germany', 'FR': 'France', 'AE': 'UAE',
-    };
-    return codes[code] ?? (code.isNotEmpty ? code : 'Nigeria');
+    return code.isNotEmpty ? code : 'Unknown';
   }
 
   void _showLogout() {

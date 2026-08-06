@@ -13,6 +13,7 @@ import 'package:wisper/app/core/services/socket/socket_service.dart';
 import 'package:wisper/app/modules/dashboard/views/dashboard_screen.dart';
 import 'package:wisper/app/modules/profile/controller/buisness/buisness_controller.dart';
 import 'package:wisper/app/modules/profile/controller/person/profile_controller.dart';
+import 'package:wisper/app/modules/profile/views/person/edit_person_profile_screen.dart';
 import 'package:wisper/app/urls.dart';
 import 'package:wisper/push_notification.dart';
 
@@ -163,9 +164,15 @@ class GoogleSignUpAuthController extends GetxController {
           await socketService.ensureRegistered();
         }
 
-        // Navigate to main home screen
+        // Navigate — new Google users go to edit profile, existing users go home
         Future.delayed(Duration.zero, () {
-          Get.offAll(() => MainButtonNavbarScreen());
+          final person = profileController.profileData?.auth?.person;
+          final bool isNewUser = person?.title == null || person!.title!.isEmpty;
+          if (isNewUser && role == 'PERSON') {
+            Get.offAll(() => const EditPersonProfileScreen());
+          } else {
+            Get.offAll(() => MainButtonNavbarScreen());
+          }
         });
 
         return true;

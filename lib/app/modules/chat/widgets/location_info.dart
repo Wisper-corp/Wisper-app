@@ -12,11 +12,15 @@ class LocationInfo extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final bool hasLocation = location != null && location!.isNotEmpty && location != 'No Location';
-    return Row(
-      mainAxisAlignment: MainAxisAlignment.center,
+    return Wrap(
+      alignment: WrapAlignment.center,
+      crossAxisAlignment: WrapCrossAlignment.center,
+      spacing: 10,
+      runSpacing: 4,
       children: [
-        if (hasLocation) ...[
+        if (hasLocation)
           Row(
+            mainAxisSize: MainAxisSize.min,
             children: [
               Image.asset(
                 Assets.images.location.keyName,
@@ -24,8 +28,30 @@ class LocationInfo extends StatelessWidget {
                 color: const Color(0xff7F8694),
               ),
               widthBox4,
+              Flexible(
+                child: Text(
+                  location!,
+                  style: TextStyle(
+                    fontSize: 12.sp,
+                    fontWeight: FontWeight.w400,
+                    color: const Color(0xff7F8694),
+                  ),
+                ),
+              ),
+            ],
+          ),
+        if (isDate!)
+          Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Image.asset(
+                Assets.images.calendar.keyName,
+                height: 16.h,
+                color: const Color(0xff7F8694),
+              ),
+              widthBox4,
               Text(
-                location!,
+                'Joined $date',
                 style: TextStyle(
                   fontSize: 12.sp,
                   fontWeight: FontWeight.w400,
@@ -34,28 +60,6 @@ class LocationInfo extends StatelessWidget {
               ),
             ],
           ),
-          widthBox10,
-        ],
-        isDate!
-            ? Row(
-                children: [
-                  Image.asset(
-                    Assets.images.calendar.keyName,
-                    height: 16.h,
-                    color: const Color(0xff7F8694),
-                  ),
-                  widthBox4,
-                  Text(
-                    'Joined $date',
-                    style: TextStyle(
-                      fontSize: 12.sp,
-                      fontWeight: FontWeight.w400,
-                      color: const Color(0xff7F8694),
-                    ),
-                  ),
-                ],
-              )
-            : Container(),
       ],
     );
   }
