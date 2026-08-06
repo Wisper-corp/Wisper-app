@@ -610,7 +610,9 @@ class _JobDetailsScreenState extends State<JobDetailsScreen> {
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           Text(
-                            job?.author!.business?.address ?? 'Not mentioned',
+                            job?.location?.toString().isNotEmpty == true
+                                ? job!.location.toString()
+                                : 'Not mentioned',
                             style: TextStyle(
                               fontSize: 12.sp,
                               fontWeight: FontWeight.w400,

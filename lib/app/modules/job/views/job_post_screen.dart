@@ -387,6 +387,15 @@ class _JobPostScreenState extends State<JobPostScreen> {
               ),
               heightBox16,
 
+              // Location
+              const Label(label: 'Location (City, Country)'),
+              heightBox6,
+              CustomTextField(
+                controller: _locationC,
+                hintText: 'e.g. Lagos, Nigeria',
+              ),
+              heightBox16,
+
               // Minimum Qualification
               const Label(label: 'Minimum Qualification'),
               heightBox6,
