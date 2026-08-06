@@ -169,7 +169,7 @@ class GoogleSignUpAuthController extends GetxController {
           final person = profileController.profileData?.auth?.person;
           final bool isNewUser = person?.title == null || person!.title!.isEmpty;
           if (isNewUser && role == 'PERSON') {
-            Get.offAll(() => const EditPersonProfileScreen());
+            Get.offAll(() => const EditPersonProfileScreen(isNewUser: true));
           } else {
             Get.offAll(() => MainButtonNavbarScreen());
           }

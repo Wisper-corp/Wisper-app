@@ -309,6 +309,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
                             color: LightThemeColors.themeGreyColor,
                           ),
                         ),
+                      ],
+                    ),
                   ],
                 ),
               ),

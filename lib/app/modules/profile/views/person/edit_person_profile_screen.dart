@@ -20,7 +20,8 @@ import 'package:wisper/app/modules/profile/controller/person/edit_person_profile
 import 'package:wisper/app/modules/profile/controller/person/profile_controller.dart';
 
 class EditPersonProfileScreen extends StatefulWidget {
-  const EditPersonProfileScreen({super.key});
+  final bool isNewUser;
+  const EditPersonProfileScreen({super.key, this.isNewUser = false});
 
   @override
   State<EditPersonProfileScreen> createState() =>
@@ -122,7 +123,7 @@ class _EditPersonProfileScreenState extends State<EditPersonProfileScreen> {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               heightBox60,
-              AuthHeader(title: 'Edit Profile Details'),
+              AuthHeader(title: widget.isNewUser ? 'Sign Up' : 'Edit Profile Details'),
               heightBox30,
 
               const Label(label: 'Full Name'),
