@@ -396,8 +396,24 @@ class _JobPostScreenState extends State<JobPostScreen> {
                 onChanged: (v) => setState(() => qualification = v),
                 items: const [
                   DropdownMenuItem(
+                    value: 'SSCE',
+                    child: Text('Secondary School Certificate (SSCE)'),
+                  ),
+                  DropdownMenuItem(
+                    value: 'OND',
+                    child: Text('Ordinary National Diploma (OND)'),
+                  ),
+                  DropdownMenuItem(
+                    value: 'HND',
+                    child: Text('Higher National Diploma (HND)'),
+                  ),
+                  DropdownMenuItem(
                     value: 'BSC',
                     child: Text("Bachelor's Degree (BSc)"),
+                  ),
+                  DropdownMenuItem(
+                    value: 'MSC',
+                    child: Text("Master's Degree (MSc)"),
                   ),
                   DropdownMenuItem(value: 'PHD', child: Text('PhD')),
                 ],
