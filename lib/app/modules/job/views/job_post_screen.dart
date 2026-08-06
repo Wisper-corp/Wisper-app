@@ -497,9 +497,9 @@ class _JobPostScreenState extends State<JobPostScreen> {
                     ),
                   ),
                   widthBox10,
-                  IconButton(
-                    onPressed: () => _addItem('req'),
-                    icon: const Icon(Icons.add_circle, color: Colors.blue),
+                  GestureDetector(
+                    onTap: () => _addItem('req'),
+                    child: const Icon(Icons.add_circle, color: Colors.blue, size: 32),
                   ),
                 ],
               ),
@@ -537,9 +537,9 @@ class _JobPostScreenState extends State<JobPostScreen> {
                     ),
                   ),
                   widthBox10,
-                  IconButton(
-                    onPressed: () => _addItem('res'),
-                    icon: const Icon(Icons.add_circle, color: Colors.blue),
+                  GestureDetector(
+                    onTap: () => _addItem('res'),
+                    child: const Icon(Icons.add_circle, color: Colors.blue, size: 32),
                   ),
                 ],
               ),
