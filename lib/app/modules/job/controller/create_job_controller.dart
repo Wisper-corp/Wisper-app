@@ -50,8 +50,12 @@ class CreateJobController extends GetxController {
         if (groupId != null && groupId.isNotEmpty) "groupId": groupId,
       };
       if (applicationType == 'EXTERNAL') {
-        if (applicationLink != null || applicationLink != '') {
+        if (applicationLink != null && applicationLink.isNotEmpty) {
           body['applicationLink'] = applicationLink;
+        }
+      } else if (applicationType == 'EMAIL') {
+        if (applicationLink != null && applicationLink.isNotEmpty) {
+          body['applicationEmail'] = applicationLink;
         }
       }
 

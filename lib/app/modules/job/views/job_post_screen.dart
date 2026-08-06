@@ -426,7 +426,10 @@ class _JobPostScreenState extends State<JobPostScreen> {
               CustomTextField(
                 hintText: 'How should candidates apply?',
                 value: applicationType,
-                onChanged: (v) => setState(() => applicationType = v),
+                onChanged: (v) => setState(() {
+                  applicationType = v;
+                  _linkC.clear(); // clear when switching method
+                }),
                 items: const [
                   DropdownMenuItem(
                     value: 'CHAT',
@@ -441,14 +444,26 @@ class _JobPostScreenState extends State<JobPostScreen> {
               ),
               heightBox16,
 
-              // External Link (optional)
-              const Label(label: 'External Link (URL)'),
-              heightBox6,
-              CustomTextField(
-                controller: _linkC,
-                hintText: 'https://example.com',
-              ),
-              heightBox20,
+              // Conditional field based on application method
+              if (applicationType == 'EXTERNAL') ...[
+                const Label(label: 'External Link (URL)'),
+                heightBox6,
+                CustomTextField(
+                  controller: _linkC,
+                  hintText: 'https://example.com',
+                  keyboardType: TextInputType.url,
+                ),
+                heightBox20,
+              ] else if (applicationType == 'EMAIL') ...[
+                const Label(label: 'Application Email Address'),
+                heightBox6,
+                CustomTextField(
+                  controller: _linkC,
+                  hintText: 'e.g. careers@company.com',
+                  keyboardType: TextInputType.emailAddress,
+                ),
+                heightBox20,
+              ],
 
               // Requirements *
               const Label(label: 'Requirements * (at least 1)'),
