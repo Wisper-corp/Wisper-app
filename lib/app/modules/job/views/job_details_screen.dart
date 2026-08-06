@@ -331,12 +331,29 @@ class _JobDetailsScreenState extends State<JobDetailsScreen> {
                           final logoUrl = (job?.companyLogo?.isNotEmpty == true)
                               ? job!.companyLogo!
                               : job?.author?.business?.image ?? '';
+                          if (logoUrl.isNotEmpty) {
+                            return CircleAvatar(
+                              radius: 20.r,
+                              backgroundColor: Colors.grey.shade800,
+                              child: ClipOval(
+                                child: CachedNetworkImage(
+                                  imageUrl: logoUrl,
+                                  width: 40.r,
+                                  height: 40.r,
+                                  fit: BoxFit.cover,
+                                  errorWidget: (context, url, error) => CircleAvatar(
+                                    radius: 20.r,
+                                    backgroundColor: Colors.grey.shade700,
+                                    child: Icon(Icons.business, color: Colors.white54, size: 20.r),
+                                  ),
+                                ),
+                              ),
+                            );
+                          }
                           return CircleAvatar(
                             radius: 20.r,
-                            backgroundColor: Colors.grey.shade800,
-                            backgroundImage: logoUrl.isNotEmpty
-                                ? CachedNetworkImageProvider(logoUrl)
-                                : AssetImage(Assets.images.icon01.keyName) as ImageProvider,
+                            backgroundColor: Colors.grey.shade700,
+                            child: Icon(Icons.business, color: Colors.white54, size: 20.r),
                           );
                         })(),
                         widthBox8,
@@ -480,7 +497,13 @@ class _JobDetailsScreenState extends State<JobDetailsScreen> {
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           Text(
-                            '\$ ${job?.salary.toString() ?? ''}/$shift',
+                            (() {
+                              final currencySymbol = (job?.currency == 'NGN') ? '₦' : '\$';
+                              final salaryVal = job?.salary ?? 0;
+                              final shiftLabel = shift == 'mo' ? 'mo' : 'one-off';
+                              if (salaryVal <= 0) return 'Salary Negotiable';
+                              return '$currencySymbol${salaryVal.toString()}/$shiftLabel';
+                            })(),
                             style: TextStyle(
                               fontSize: 14.sp,
                               fontWeight: FontWeight.w600,
@@ -621,38 +644,44 @@ class _JobDetailsScreenState extends State<JobDetailsScreen> {
                   ),
                   heightBox10,
                   DetailsCard(
+                    width: double.infinity,
                     child: Padding(
-                      padding: const EdgeInsets.all(8.0),
+                      padding: const EdgeInsets.all(12.0),
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           Text(
                             job?.description ?? '',
                             style: TextStyle(
-                              fontSize: 12.sp,
+                              fontSize: 14.sp,
                               fontWeight: FontWeight.w400,
-                              color: Color(0xff8C8C8C),
+                              color: Colors.white70,
+                              height: 1.6,
                             ),
-                            textAlign: TextAlign.justify,
-                            maxLines: isDescriptionExpanded ? null : 10,
-                            overflow: TextOverflow.ellipsis,
+                            textAlign: TextAlign.left,
+                            maxLines: isDescriptionExpanded ? null : 5,
+                            overflow: isDescriptionExpanded
+                                ? TextOverflow.visible
+                                : TextOverflow.ellipsis,
                           ),
-                          heightBox10,
-                          GestureDetector(
-                            onTap: () {
-                              setState(() {
-                                isDescriptionExpanded = !isDescriptionExpanded;
-                              });
-                            },
-                            child: Text(
-                              isDescriptionExpanded ? 'Read Less' : 'Read More',
-                              style: TextStyle(
-                                fontSize: 12.sp,
-                                fontWeight: FontWeight.w800,
-                                color: LightThemeColors.blueColor,
+                          if ((job?.description?.length ?? 0) > 200) ...[
+                            heightBox10,
+                            GestureDetector(
+                              onTap: () {
+                                setState(() {
+                                  isDescriptionExpanded = !isDescriptionExpanded;
+                                });
+                              },
+                              child: Text(
+                                isDescriptionExpanded ? 'Read Less' : 'Read More',
+                                style: TextStyle(
+                                  fontSize: 13.sp,
+                                  fontWeight: FontWeight.w700,
+                                  color: LightThemeColors.blueColor,
+                                ),
                               ),
                             ),
-                          ),
+                          ],
                         ],
                       ),
                     ),

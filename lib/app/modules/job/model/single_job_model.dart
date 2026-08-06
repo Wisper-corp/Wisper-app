@@ -40,6 +40,7 @@ class JobData {
     required this.updatedAt,
     required this.author,
     required this.isFavorite,
+    this.currency,
     this.companyName,
     this.companyLogo,
     this.isScraped,
@@ -53,6 +54,7 @@ class JobData {
   final String? experienceLevel;
   final String? compensationType;
   final int? salary;
+  final String? currency;
   final String? locationType;
   final dynamic location;
   final String? industry;
@@ -79,6 +81,7 @@ class JobData {
       experienceLevel: json["experienceLevel"],
       compensationType: json["compensationType"],
       salary: json["salary"],
+      currency: json["currency"],
       locationType: json["locationType"],
       location: json["location"],
       industry: json["industry"],
