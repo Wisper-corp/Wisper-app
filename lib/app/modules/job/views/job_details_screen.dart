@@ -14,7 +14,6 @@ import 'package:wisper/app/modules/chat/controller/create_chat_controller.dart';
 import 'package:wisper/app/modules/chat/views/person/message_screen.dart';
 import 'package:wisper/app/modules/job/controller/favorite_job_controller.dart';
 import 'package:wisper/app/modules/job/controller/single_job_controller.dart';
-import 'package:wisper/app/modules/homepage/widget/feature_list.dart';
 import 'package:wisper/app/modules/payment/view/payment_webview_screen.dart';
 import 'package:wisper/app/modules/profile/views/business/others_business_screen.dart';
 import 'package:wisper/gen/assets.gen.dart';
@@ -650,6 +649,7 @@ class _JobDetailsScreenState extends State<JobDetailsScreen> {
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
+                          // Description text
                           Text(
                             job?.description ?? '',
                             style: TextStyle(
@@ -678,6 +678,82 @@ class _JobDetailsScreenState extends State<JobDetailsScreen> {
                                   fontSize: 13.sp,
                                   fontWeight: FontWeight.w700,
                                   color: LightThemeColors.blueColor,
+                                ),
+                              ),
+                            ),
+                          ],
+
+                          // Requirements
+                          if ((job?.requirements ?? []).isNotEmpty) ...[
+                            heightBox20,
+                            Text(
+                              'Requirements',
+                              style: TextStyle(
+                                fontSize: 14.sp,
+                                fontWeight: FontWeight.w600,
+                                color: Color(0xffD1D1D1),
+                              ),
+                            ),
+                            heightBox8,
+                            ...( job?.requirements ?? []).map(
+                              (item) => Padding(
+                                padding: const EdgeInsets.only(bottom: 8),
+                                child: Row(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    const Icon(Icons.check_circle_outline,
+                                        color: Colors.green, size: 16),
+                                    const SizedBox(width: 8),
+                                    Expanded(
+                                      child: Text(
+                                        item,
+                                        style: TextStyle(
+                                          fontSize: 13.sp,
+                                          fontWeight: FontWeight.w400,
+                                          color: Colors.white70,
+                                          height: 1.5,
+                                        ),
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            ),
+                          ],
+
+                          // Key Responsibilities
+                          if ((job?.responsibilities ?? []).isNotEmpty) ...[
+                            heightBox16,
+                            Text(
+                              'Key Responsibilities',
+                              style: TextStyle(
+                                fontSize: 14.sp,
+                                fontWeight: FontWeight.w600,
+                                color: Color(0xffD1D1D1),
+                              ),
+                            ),
+                            heightBox8,
+                            ...(job?.responsibilities ?? []).map(
+                              (item) => Padding(
+                                padding: const EdgeInsets.only(bottom: 8),
+                                child: Row(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    const Icon(Icons.arrow_right,
+                                        color: Colors.blueAccent, size: 18),
+                                    const SizedBox(width: 4),
+                                    Expanded(
+                                      child: Text(
+                                        item,
+                                        style: TextStyle(
+                                          fontSize: 13.sp,
+                                          fontWeight: FontWeight.w400,
+                                          color: Colors.white70,
+                                          height: 1.5,
+                                        ),
+                                      ),
+                                    ),
+                                  ],
                                 ),
                               ),
                             ),
@@ -715,60 +791,6 @@ class _JobDetailsScreenState extends State<JobDetailsScreen> {
                             ),
                           ),
                         ],
-                      ),
-                    ),
-                  ),
-                  heightBox20,
-                  Text(
-                    'Requirements',
-                    style: TextStyle(
-                      fontSize: 14.sp,
-                      fontWeight: FontWeight.w600,
-                      color: Color(0xffD1D1D1),
-                    ),
-                  ),
-                  heightBox10,
-                  DetailsCard(
-                    child: Padding(
-                      padding: const EdgeInsets.all(8.0),
-                      child: Column(
-                        children:
-                            job?.requirements
-                                ?.map(
-                                  (requirement) => FeatureList(
-                                    iconPath: Assets.images.mark02.keyName,
-                                    title: requirement,
-                                  ),
-                                )
-                                .toList() ??
-                            [],
-                      ),
-                    ),
-                  ),
-                  heightBox20,
-                  Text(
-                    'Key Responsibilities',
-                    style: TextStyle(
-                      fontSize: 14.sp,
-                      fontWeight: FontWeight.w600,
-                      color: Color(0xffD1D1D1),
-                    ),
-                  ),
-                  heightBox10,
-                  DetailsCard(
-                    child: Padding(
-                      padding: const EdgeInsets.all(8.0),
-                      child: Column(
-                        children:
-                            job?.responsibilities
-                                ?.map(
-                                  (re) => FeatureList(
-                                    iconPath: Assets.images.mark02.keyName,
-                                    title: re,
-                                  ),
-                                )
-                                .toList() ??
-                            [],
                       ),
                     ),
                   ),
