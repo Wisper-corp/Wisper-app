@@ -7,7 +7,6 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:wisper/app/core/others/custom_size.dart';
 import 'package:wisper/app/core/utils/show_over_loading.dart';
 import 'package:wisper/app/core/utils/snack_bar.dart';
-import 'package:wisper/app/core/utils/validator_service.dart';
 import 'package:wisper/app/core/widgets/common/custom_button.dart';
 import 'package:wisper/app/core/widgets/common/custom_text_filed.dart';
 import 'package:wisper/app/core/widgets/common/label.dart';
@@ -16,7 +15,6 @@ import 'package:wisper/app/modules/chat/controller/group/edit_group_controller.d
 import 'package:wisper/app/modules/chat/controller/group/group_info_controller.dart';
 import 'package:wisper/app/modules/chat/controller/all_chats_controller.dart';
 import 'package:wisper/app/core/widgets/common/searchable_tag_field.dart';
-import 'package:wisper/app/modules/chat/widgets/toggle_option.dart';
 
 // ── Community Tag Options ────────────────────────────────────────────────────
 const _tradeTypes = [
@@ -73,10 +71,10 @@ class _EditGroupScreenState extends State<EditGroupScreen> {
   DateTime? _lastTagEditDate;
   bool _tagsChanged = false;
 
-  // Suffix protection
-  String _suffix = ''; // e.g. ' Mkt' or ' Sty'
-  // All recognised suffix display forms
-  static const _knownSuffixes = [' Mkt', ' Sty', ' MKT', ' STY', ' mkt', ' sty'];
+  // Suffix dropdown — same options as create screen
+  String? _selectedSuffix; // 'MKT' or 'STY'
+  static const _suffixOptions = ['MKT', 'STY'];
+  static const _knownSuffixVariants = ['MKT', 'STY', 'Mkt', 'Sty', 'mkt', 'sty'];
 
   @override
   void initState() {
@@ -84,93 +82,45 @@ class _EditGroupScreenState extends State<EditGroupScreen> {
     _isPublic = widget.isPublic;
     _isAllowInvitation = widget.isAllowInvitation;
     _loadTagEditDate();
-    // Extract suffix first, THEN populate name field
-    _extractSuffix(widget.groupName);
     _parseDescriptionAndPopulate(widget.groupCaption);
-    // Add listener AFTER name is set so init doesn't trigger enforcement loop
-    _nameCtrl.addListener(_enforceSuffix);
+    // Strip suffix from name and set dropdown
+    _extractAndSetSuffix(widget.groupName);
   }
 
   @override
   void dispose() {
-    _nameCtrl.removeListener(_enforceSuffix);
     _nameCtrl.dispose();
     _captionCtrl.dispose();
     super.dispose();
   }
 
-  /// Detect and store the suffix from the existing group name
-  void _extractSuffix(String name) {
-    for (final s in _knownSuffixes) {
-      if (name.endsWith(s)) {
-        // Normalise to canonical form
-        _suffix = s.toLowerCase().contains('mkt') ? ' Mkt' : ' Sty';
+  /// Strip suffix from the group name and store it in the dropdown variable.
+  void _extractAndSetSuffix(String fullName) {
+    for (final s in _knownSuffixVariants) {
+      if (fullName.endsWith(' $s')) {
+        _selectedSuffix = s.toUpperCase(); // normalise to 'MKT' or 'STY'
+        _nameCtrl.text = fullName.substring(0, fullName.length - s.length - 1).trimRight();
         return;
       }
     }
-    // No suffix found — no enforcement needed
-    _suffix = '';
+    // No suffix found — just set the plain name
+    _nameCtrl.text = fullName;
   }
 
-  bool _enforcingNow = false;
-  void _enforceSuffix() {
-    if (_suffix.isEmpty || _enforcingNow) return;
-    final text = _nameCtrl.text;
-    if (text.endsWith(_suffix)) return; // already correct — do nothing
-
-    _enforcingNow = true;
-
-    // Strip any partial or full suffix variant the user may have typed
-    String base = text;
-    for (final s in _knownSuffixes) {
-      if (base.endsWith(s)) {
-        base = base.substring(0, base.length - s.length);
-        break;
-      }
-    }
-    // Also strip partial suffix characters at the end (e.g. user deleted 't' leaving ' Mk')
-    final suffixTrimmed = _suffix.trim(); // 'Mkt' or 'Sty'
-    for (int len = suffixTrimmed.length - 1; len >= 1; len--) {
-      final partial = ' ${suffixTrimmed.substring(0, len)}';
-      if (base.endsWith(partial)) {
-        base = base.substring(0, base.length - partial.length);
-        break;
-      }
-    }
-    base = base.trimRight();
-
-    // Re-append the correct suffix
-    final newText = '$base$_suffix';
-
-    // Place cursor just before the suffix
-    final cursorPos = newText.length - _suffix.length;
-    _nameCtrl.value = TextEditingValue(
-      text: newText,
-      selection: TextSelection.collapsed(offset: cursorPos.clamp(0, newText.length)),
-    );
-
-    _enforcingNow = false;
-  }
-
-  /// Parse "userDescription\nTrade: X | Market: Y | Category: Z | Suffix: S"
-  /// Sets tag fields and strips tag line from description controller
+  /// Parse "userDescription\nTrade: X | Market: Y | Category: Z"
   void _parseDescriptionAndPopulate(String raw) {
     if (raw.isEmpty) {
-      _nameCtrl.text = widget.groupName;
-      _captionCtrl.text = raw;
+      _captionCtrl.text = '';
       return;
     }
-
-    _nameCtrl.text = widget.groupName;
 
     final lines = raw.split('\n');
     String userDescription = raw;
 
-    // Find the tag line — it contains "Trade:" or "Market:" or "Category:"
     for (int i = 0; i < lines.length; i++) {
       final line = lines[i];
-      if (line.contains('Trade:') || line.contains('Market:') || line.contains('Category:') || line.contains('Suffix:')) {
-        // Parse each tag from this line
+      if (line.contains('Trade:') || line.contains('Market:') ||
+          line.contains('Category:') || line.contains('Suffix:')) {
         final parts = line.split('|');
         for (final part in parts) {
           final trimmed = part.trim();
@@ -181,9 +131,7 @@ class _EditGroupScreenState extends State<EditGroupScreen> {
           } else if (trimmed.startsWith('Category:')) {
             _selectedCategory = trimmed.substring('Category:'.length).trim();
           }
-          // Suffix is metadata — don't need to display separately
         }
-        // Strip the tag line so only user description shows in the text field
         userDescription = lines.sublist(0, i).join('\n').trim();
         break;
       }
@@ -241,9 +189,14 @@ class _EditGroupScreenState extends State<EditGroupScreen> {
         ? '$cleanDesc\n${tagParts.join(' | ')}'
         : cleanDesc;
 
+    final String baseName = _nameCtrl.text.trim();
+    final String fullName = _selectedSuffix != null && _selectedSuffix!.isNotEmpty
+        ? '$baseName $_selectedSuffix'
+        : baseName;
+
     final bool isSuccess = await editGroupController.editGroup(
       groupId: widget.groupId,
-      name: _nameCtrl.text.trim(),
+      name: fullName,
       caption: description,
       isPrivate: !_isPublic,
       allowInvitation: _isAllowInvitation,
@@ -268,102 +221,6 @@ class _EditGroupScreenState extends State<EditGroupScreen> {
     }
   }
 
-  void _showSelectionSheet({
-    required String title,
-    required List<String> options,
-    required String? selected,
-    required void Function(String) onSelect,
-  }) {
-    showModalBottomSheet(
-      context: context,
-      backgroundColor: const Color(0xff1A1A1A),
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
-      ),
-      builder: (ctx) => Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          SizedBox(height: 12.h),
-          Container(width: 40.w, height: 4.h,
-            decoration: BoxDecoration(color: Colors.white24, borderRadius: BorderRadius.circular(2))),
-          SizedBox(height: 16.h),
-          Text(title, style: TextStyle(fontSize: 16.sp, fontWeight: FontWeight.w700, color: Colors.white)),
-          SizedBox(height: 8.h),
-          Flexible(
-            child: ListView.separated(
-              shrinkWrap: true,
-              padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 8.h),
-              itemCount: options.length,
-              separatorBuilder: (_, __) => const Divider(color: Color(0xff2A2A2A), height: 1),
-              itemBuilder: (ctx, i) {
-                final opt = options[i];
-                final isSelected = selected == opt;
-                return ListTile(
-                  title: Text(opt, style: TextStyle(
-                    fontSize: 14.sp, color: isSelected ? const Color(0xff1877F2) : Colors.white,
-                    fontWeight: isSelected ? FontWeight.w600 : FontWeight.w400,
-                  )),
-                  trailing: isSelected ? const Icon(Icons.check, color: Color(0xff1877F2)) : null,
-                  onTap: () {
-                    onSelect(opt);
-                    _tagsChanged = true;
-                    Navigator.pop(ctx);
-                  },
-                );
-              },
-            ),
-          ),
-          SizedBox(height: 16.h),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildTagRow({
-    required String label,
-    required String? selected,
-    required List<String> options,
-    required void Function(String) onSelect,
-    required bool enabled,
-  }) {
-    return GestureDetector(
-      onTap: enabled
-          ? () => _showSelectionSheet(title: label, options: options, selected: selected, onSelect: onSelect)
-          : () => showSnackBarMessage(context,
-              _lastTagEditDate != null
-                  ? 'Tags locked. Editable in ${30 - DateTime.now().difference(_lastTagEditDate!).inDays} days'
-                  : 'Tags locked (once per month)', true),
-      child: Container(
-        padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 14.h),
-        margin: EdgeInsets.only(bottom: 1.h),
-        decoration: BoxDecoration(
-          color: const Color(0xff1E1E1E),
-          borderRadius: BorderRadius.circular(12.r),
-        ),
-        child: Row(
-          children: [
-            Expanded(
-              child: Text(label, style: TextStyle(fontSize: 14.sp, color: Colors.white)),
-            ),
-            Text(
-              selected ?? 'Select',
-              style: TextStyle(
-                fontSize: 13.sp,
-                color: selected != null ? const Color(0xff1877F2) : Colors.white38,
-              ),
-            ),
-            SizedBox(width: 6.w),
-            Icon(
-              enabled ? Icons.chevron_right : Icons.lock_outline,
-              color: enabled ? Colors.white38 : Colors.orange,
-              size: 18.sp,
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -380,18 +237,124 @@ class _EditGroupScreenState extends State<EditGroupScreen> {
 
               const Label(label: 'Group Name'),
               heightBox10,
-              CustomTextField(
-                controller: _nameCtrl,
-                hintText: 'Enter group name',
-                keyboardType: TextInputType.text,
-                validator: ValidatorService.validateSimpleField,
+              // Name field + suffix dropdown in one row (same as create screen)
+              Container(
+                decoration: BoxDecoration(
+                  color: const Color(0xff1E1E1E),
+                  borderRadius: BorderRadius.circular(12.r),
+                  border: Border.all(color: const Color(0xff2C2C2E)),
+                ),
+                child: Row(
+                  children: [
+                    // Base name text field
+                    Expanded(
+                      child: TextFormField(
+                        controller: _nameCtrl,
+                        style: TextStyle(color: Colors.white, fontSize: 14.sp),
+                        decoration: InputDecoration(
+                          hintText: 'Enter community name',
+                          hintStyle: TextStyle(color: Colors.white38, fontSize: 14.sp),
+                          border: InputBorder.none,
+                          contentPadding: EdgeInsets.symmetric(horizontal: 14.w, vertical: 14.h),
+                        ),
+                        validator: (v) => (v == null || v.trim().isEmpty) ? 'Required' : null,
+                      ),
+                    ),
+                    // Vertical divider
+                    Container(width: 1, height: 30.h, color: const Color(0xff3A3A3A)),
+                    // Suffix dropdown button
+                    GestureDetector(
+                      onTap: () {
+                        showModalBottomSheet(
+                          context: context,
+                          backgroundColor: const Color(0xff1E1E1E),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.vertical(top: Radius.circular(16.r)),
+                          ),
+                          builder: (_) => StatefulBuilder(
+                            builder: (ctx, setInner) => Padding(
+                              padding: EdgeInsets.symmetric(horizontal: 20.w, vertical: 20.h),
+                              child: Column(
+                                mainAxisSize: MainAxisSize.min,
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text('Select Suffix',
+                                    style: TextStyle(fontSize: 16.sp, fontWeight: FontWeight.w700, color: Colors.white)),
+                                  SizedBox(height: 16.h),
+                                  ..._suffixOptions.map((suffix) => GestureDetector(
+                                    onTap: () {
+                                      setState(() => _selectedSuffix = suffix);
+                                      Navigator.pop(ctx);
+                                    },
+                                    child: Container(
+                                      width: double.infinity,
+                                      padding: EdgeInsets.symmetric(vertical: 14.h, horizontal: 16.w),
+                                      margin: EdgeInsets.only(bottom: 8.h),
+                                      decoration: BoxDecoration(
+                                        color: _selectedSuffix == suffix
+                                            ? const Color(0xff1F3A5F)
+                                            : const Color(0xff2C2C2E),
+                                        borderRadius: BorderRadius.circular(10.r),
+                                        border: Border.all(
+                                          color: _selectedSuffix == suffix
+                                              ? const Color(0xff1F7DE9)
+                                              : Colors.transparent,
+                                        ),
+                                      ),
+                                      child: Row(
+                                        children: [
+                                          Text(suffix,
+                                            style: TextStyle(color: Colors.white, fontSize: 15.sp, fontWeight: FontWeight.w600)),
+                                          SizedBox(width: 10.w),
+                                          Text(
+                                            suffix == 'MKT' ? 'Market' : 'Society',
+                                            style: TextStyle(color: Colors.white54, fontSize: 13.sp),
+                                          ),
+                                          if (_selectedSuffix == suffix) ...[
+                                            const Spacer(),
+                                            Icon(Icons.check_circle, color: const Color(0xff1F7DE9), size: 18.sp),
+                                          ],
+                                        ],
+                                      ),
+                                    ),
+                                  )).toList(),
+                                ],
+                              ),
+                            ),
+                          ),
+                        );
+                      },
+                      child: Container(
+                        padding: EdgeInsets.symmetric(horizontal: 12.w, vertical: 14.h),
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Text(
+                              _selectedSuffix ?? 'MKT/STY',
+                              style: TextStyle(
+                                color: _selectedSuffix != null
+                                    ? const Color(0xff1F7DE9)
+                                    : Colors.white38,
+                                fontSize: 13.sp,
+                                fontWeight: FontWeight.w600,
+                              ),
+                            ),
+                            SizedBox(width: 4.w),
+                            Icon(Icons.arrow_drop_down, color: Colors.white38, size: 18.sp),
+                          ],
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
               ),
-              if (_suffix.isNotEmpty)
+              // Preview of full name
+              if (_selectedSuffix != null && _nameCtrl.text.isNotEmpty)
                 Padding(
-                  padding: EdgeInsets.only(top: 4.h),
+                  padding: EdgeInsets.only(top: 6.h, left: 4.w),
                   child: Text(
-                    'Suffix "$_suffix" is locked and cannot be removed.',
-                    style: TextStyle(fontSize: 11.sp, color: Colors.orange.withOpacity(0.8)),
+                    'Preview: ${_nameCtrl.text.trim()} $_selectedSuffix',
+                    style: TextStyle(color: Colors.white54, fontSize: 11.sp),
                   ),
                 ),
 
