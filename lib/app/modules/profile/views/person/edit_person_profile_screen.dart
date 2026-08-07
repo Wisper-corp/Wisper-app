@@ -61,18 +61,39 @@ class _EditPersonProfileScreenState extends State<EditPersonProfileScreen> {
   @override
   void initState() {
     super.initState();
+    _populateFields();
+  }
 
+  void _populateFields() {
     final user = profileController.profileData?.auth?.person;
-    _nameCtrl.text = user?.name ?? '';
-    // Fallback to stored email (from Google Sign-In JWT) if profile email is empty
-    final storedEmail = StorageUtil.getData('userEmail') ?? '';
-    _emailCtrl.text = user?.email?.isNotEmpty == true ? user!.email! : storedEmail;
-    _phoneCtrl.text = user?.phone ?? '';
-    _addressCtrl.text = user?.address ?? '';
-    selectedAddress.value = user?.address ?? '';
-
-    _selectedTitle = user?.title;
-    _titleCtrl.text = _selectedTitle ?? '';
+    if (user != null) {
+      // Data already loaded — fill immediately
+      _nameCtrl.text = user.name ?? '';
+      final storedEmail = StorageUtil.getData('userEmail') ?? '';
+      _emailCtrl.text = user.email?.isNotEmpty == true ? user.email! : storedEmail;
+      _phoneCtrl.text = user.phone ?? '';
+      _addressCtrl.text = user.address ?? '';
+      selectedAddress.value = user.address ?? '';
+      _selectedTitle = user.title;
+      _titleCtrl.text = _selectedTitle ?? '';
+    } else {
+      // Data not yet loaded — fetch then fill
+      profileController.getMyProfile().then((_) {
+        if (!mounted) return;
+        final u = profileController.profileData?.auth?.person;
+        if (u == null) return;
+        final storedEmail = StorageUtil.getData('userEmail') ?? '';
+        setState(() {
+          _nameCtrl.text = u.name ?? '';
+          _emailCtrl.text = u.email?.isNotEmpty == true ? u.email! : storedEmail;
+          _phoneCtrl.text = u.phone ?? '';
+          _addressCtrl.text = u.address ?? '';
+          selectedAddress.value = u.address ?? '';
+          _selectedTitle = u.title;
+          _titleCtrl.text = _selectedTitle ?? '';
+        });
+      });
+    }
   }
 
   @override
@@ -98,7 +119,7 @@ class _EditPersonProfileScreenState extends State<EditPersonProfileScreen> {
     final bool isSuccess = await editProfileController.editProfile(
       name: _nameCtrl.text.trim(),
       phone: _phoneCtrl.text.trim(),
-      title: _selectedTitle!,
+      title: _selectedTitle ?? _titleCtrl.text.trim(),
       // Use newly picked address; fall back to the original if not changed
       address: selectedAddress.value.isNotEmpty
           ? selectedAddress.value
@@ -118,7 +139,12 @@ class _EditPersonProfileScreenState extends State<EditPersonProfileScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      body: SingleChildScrollView(
+      body: Obx(() {
+        // Show spinner while fetching profile for the first time
+        if (profileController.inProgress && _nameCtrl.text.isEmpty) {
+          return const Center(child: CircularProgressIndicator());
+        }
+        return SingleChildScrollView(
         padding: EdgeInsets.symmetric(horizontal: 24.w),
         child: Form(
           key: _formKey,
@@ -189,6 +215,7 @@ class _EditPersonProfileScreenState extends State<EditPersonProfileScreen> {
                 onSelected: (title) {
                   setState(() {
                     _titleCtrl.text = title;
+                    _selectedTitle = title;
                   });
                 },
               ),
@@ -212,7 +239,8 @@ class _EditPersonProfileScreenState extends State<EditPersonProfileScreen> {
             ],
           ),
         ),
-      ),
+        ); // end Obx
+      }),
     );
   }
 }
