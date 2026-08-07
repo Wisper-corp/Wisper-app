@@ -232,9 +232,12 @@ class _GroupChatScreenState extends State<GroupChatScreen> {
     for (final line in lines) {
       final parts = line.split('|');
       for (final part in parts) {
-        final colonIdx = part.indexOf(':');
+        final trimmed = part.trim();
+        // Skip the Suffix metadata — it belongs in the name, not in tag pills
+        if (trimmed.startsWith('Suffix:')) continue;
+        final colonIdx = trimmed.indexOf(':');
         if (colonIdx != -1) {
-          final value = part.substring(colonIdx + 1).trim();
+          final value = trimmed.substring(colonIdx + 1).trim();
           if (value.isNotEmpty) tags.add(value);
         }
       }
