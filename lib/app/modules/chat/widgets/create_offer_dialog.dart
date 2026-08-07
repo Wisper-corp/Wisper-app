@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:get/get.dart';
+import 'package:wisper/app/core/utils/currency_helper.dart';
 import 'package:wisper/app/modules/chat/controller/offer_service.dart';
 import 'package:wisper/app/modules/chat/model/offer_model.dart';
 
@@ -217,7 +218,7 @@ class _CreateOfferDialogState extends State<CreateOfferDialog> {
                           const Padding(
                             padding: EdgeInsets.only(left: 14),
                             child: Text(
-                              '₦',
+                              CurrencyHelper.serviceSymbol,
                               style: TextStyle(
                                 color: Color(0xff8E8E93),
                                 fontSize: 17,

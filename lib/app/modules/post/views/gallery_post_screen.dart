@@ -345,7 +345,7 @@ class _GalleryPostScreenState extends State<GalleryPostScreen> {
                       Padding(
                         padding: EdgeInsets.symmetric(horizontal: 12.w, vertical: 12.h),
                         child: Text(
-                          CurrencyHelper.inputPrefix,
+                          CurrencyHelper.serviceSymbol,
                           style: TextStyle(
                             fontSize: 14.sp,
                             color: Colors.white,

@@ -26,7 +26,7 @@ class _OfferCardState extends State<OfferCard> {
 
   bool get _isSender => widget.offer.senderId == widget.currentUserId;
   bool get _isReceiver => widget.offer.receiverId == widget.currentUserId;
-  String get _sym => CurrencyHelper.deviceSymbol;
+  String get _sym => CurrencyHelper.serviceSymbol; // always ₦ for services
 
   @override
   void initState() {

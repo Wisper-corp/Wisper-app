@@ -25,6 +25,12 @@ class CurrencyHelper {
     return 'from $sym$formatted';
   }
 
+  /// Symbol for input fields on service/marketplace posts — always ₦ (NGN).
+  static const String serviceSymbol = '₦';
+
+  /// Currency code for service/marketplace posts — always NGN.
+  static const String serviceCurrency = 'NGN';
+
   /// Symbol for input fields — based on device locale.
   static String get inputPrefix => deviceSymbol;
 

@@ -31,7 +31,7 @@ class CreatePostController extends GetxController {
         "caption": description,
         "commentAccess": privacy,
         if (price != null) "price": price,
-        "currency": CurrencyHelper.isNaira ? "NGN" : "USD",
+        "currency": CurrencyHelper.serviceCurrency, // always NGN for services
         if (deliveryTime != null && deliveryTime.isNotEmpty) "deliveryTime": deliveryTime,
         if (groupId != null && groupId.isNotEmpty) "groupId": groupId,
       };
