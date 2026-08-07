@@ -99,7 +99,10 @@ class _EditPersonProfileScreenState extends State<EditPersonProfileScreen> {
       name: _nameCtrl.text.trim(),
       phone: _phoneCtrl.text.trim(),
       title: _selectedTitle!,
-      address: selectedAddress.value,
+      // Use newly picked address; fall back to the original if not changed
+      address: selectedAddress.value.isNotEmpty
+          ? selectedAddress.value
+          : _addressCtrl.text.trim(),
     );
 
     if (isSuccess) {
@@ -155,43 +158,28 @@ class _EditPersonProfileScreenState extends State<EditPersonProfileScreen> {
                 validator: ValidatorService.validateSimpleField,
               ),
 
-              _addressCtrl.text.isNotEmpty
-                  ? Container()
-                  : Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        heightBox20,
-                        const Label(label: 'Address'),
-                        heightBox10,
-                        Obx(
-                          () => LocationField(
-                            address: selectedAddress.value,
-                            onPick: () async {
-                              final pos =
-                                  selectedLatLng.value ??
-                                  LatLng(23.8103, 90.4125);
-                              final res = await Get.to(
-                                () =>
-                                    LocationPickerScreen(initialPosition: pos),
-                              );
-                              if (res is Map) {
-                                setState(() {
-                                  setLocation(res['latLng'], res['address']);
-                                });
-                              }
-                            },
-                            onClear: clearLocation,
-                          ),
-                        ),
-                      ],
-                    ),
-
-              // CustomTextField(
-              //   controller: _addressCtrl,
-              //   hintText: 'Enter address',
-              //   keyboardType: TextInputType.text,
-              //   validator: ValidatorService.validateSimpleField,
-              // ),
+              heightBox20,
+              const Label(label: 'Address'),
+              heightBox10,
+              Obx(
+                () => LocationField(
+                  address: selectedAddress.value.isNotEmpty
+                      ? selectedAddress.value
+                      : (_addressCtrl.text.isNotEmpty ? _addressCtrl.text : ''),
+                  onPick: () async {
+                    final pos = selectedLatLng.value ?? LatLng(23.8103, 90.4125);
+                    final res = await Get.to(
+                      () => LocationPickerScreen(initialPosition: pos),
+                    );
+                    if (res is Map) {
+                      setState(() {
+                        setLocation(res['latLng'], res['address']);
+                      });
+                    }
+                  },
+                  onClear: clearLocation,
+                ),
+              ),
               heightBox20,
               const Label(label: 'Job Title'),
               heightBox10,
