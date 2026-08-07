@@ -21,6 +21,7 @@ import 'package:wisper/app/modules/chat/controller/all_connection_controller.dar
 import 'package:wisper/app/modules/chat/controller/group/all_group_member_controller.dart';
 import 'package:wisper/app/modules/chat/controller/group/group_info_controller.dart';
 import 'package:wisper/app/core/others/get_storage.dart';
+import 'package:wisper/app/modules/chat/controller/all_chats_controller.dart';
 import 'package:wisper/app/modules/chat/views/group/edit_group_screen.dart';
 import 'package:wisper/app/modules/chat/views/link_info.dart';
 import 'package:wisper/app/modules/chat/views/media_info.dart';
@@ -123,7 +124,10 @@ class _GroupInfoScreenState extends State<GroupInfoScreen> {
 
     if (success) {
       await groupInfoController.getGroupInfo(widget.groupId);
-
+      // Refresh chat list so inbox shows the new image immediately
+      if (Get.isRegistered<AllChatsController>()) {
+        Get.find<AllChatsController>().getAllChats();
+      }
       await Future.delayed(const Duration(milliseconds: 800));
       _updateProfileImage();
       showSnackBarMessage(context, 'Group photo updated!', false);

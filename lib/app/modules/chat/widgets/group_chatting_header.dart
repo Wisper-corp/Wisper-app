@@ -23,6 +23,8 @@ import 'package:wisper/app/modules/chat/controller/group/delete_group_chat_contr
 import 'package:wisper/app/modules/chat/controller/mute_chat_controller.dart';
 import 'package:wisper/app/modules/chat/controller/mute_info_controller.dart';
 import 'package:wisper/app/modules/chat/views/group/group_info_screen.dart';
+import 'package:wisper/app/modules/chat/controller/group/group_info_controller.dart';
+import 'package:wisper/app/core/widgets/common/initials_avatar.dart';
 import 'package:wisper/app/modules/dashboard/views/dashboard_screen.dart';
 import 'package:wisper/app/modules/post/views/my_post_section.dart';
 import 'package:wisper/gen/assets.gen.dart';
@@ -389,11 +391,21 @@ class _GroupChatHeaderState extends State<GroupChatHeader> {
                               color: const Color(0xff1F7DE9),
                               height: 20.h,
                             )
-                          : CircleAvatar(
-                              backgroundColor: Colors.grey,
-                              backgroundImage: NetworkImage(widget.groupImage),
-                              radius: 20,
-                            ),
+                          : Obx(() {
+                              // Prefer live data from GroupInfoController if available
+                              final liveImage = Get.isRegistered<GroupInfoController>()
+                                  ? (Get.find<GroupInfoController>().groupInfoData?.image ?? widget.groupImage)
+                                  : widget.groupImage;
+                              final liveName = Get.isRegistered<GroupInfoController>()
+                                  ? (Get.find<GroupInfoController>().groupInfoData?.name ?? widget.groupName)
+                                  : widget.groupName;
+                              return InitialsAvatar(
+                                name: liveName,
+                                imageUrl: liveImage.isNotEmpty ? liveImage : null,
+                                radius: 20,
+                                fontSize: 14,
+                              );
+                            }),
                       widthBox10,
                       Column(
                         crossAxisAlignment: CrossAxisAlignment.start,

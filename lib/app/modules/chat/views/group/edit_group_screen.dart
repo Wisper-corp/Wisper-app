@@ -14,6 +14,7 @@ import 'package:wisper/app/core/widgets/common/label.dart';
 import 'package:wisper/app/modules/authentication/widget/auth_header.dart';
 import 'package:wisper/app/modules/chat/controller/group/edit_group_controller.dart';
 import 'package:wisper/app/modules/chat/controller/group/group_info_controller.dart';
+import 'package:wisper/app/modules/chat/controller/all_chats_controller.dart';
 import 'package:wisper/app/core/widgets/common/searchable_tag_field.dart';
 import 'package:wisper/app/modules/chat/widgets/toggle_option.dart';
 
@@ -254,6 +255,12 @@ class _EditGroupScreenState extends State<EditGroupScreen> {
 
       final groupInfoController = Get.find<GroupInfoController>();
       await groupInfoController.getGroupInfo(widget.groupId);
+
+      // Refresh chat inbox so name/image update shows immediately
+      if (Get.isRegistered<AllChatsController>()) {
+        Get.find<AllChatsController>().getAllChats();
+      }
+
       Navigator.pop(context);
       showSnackBarMessage(context, 'Community updated successfully', false);
     } else {
