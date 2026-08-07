@@ -70,4 +70,61 @@ class GroupMemberController extends GetxController {
       return false;
     }
   }
+  Future<bool> leaveGroup({String? chatId}) async {
+    _inProgress.value = true;
+    try {
+      final myId = StorageUtil.getData(StorageUtil.userId) ?? '';
+      final Map<String, dynamic> body = {
+        "chatId": chatId,
+        "participantId": myId,
+      };
+      final NetworkResponse response = await Get.find<NetworkCaller>()
+          .patchRequest(
+            Urls.removePerticipantUrl,
+            body: body,
+            accessToken: StorageUtil.getData(StorageUtil.userAccessToken),
+          );
+      if (response.isSuccess) {
+        _inProgress.value = false;
+        return true;
+      }
+      _errorMessage.value = response.errorMessage;
+      _inProgress.value = false;
+      return false;
+    } catch (e) {
+      _errorMessage.value = e.toString();
+      _inProgress.value = false;
+      return false;
+    }
+  }
+}
+
+extension GroupMemberLeave on GroupMemberController {
+  Future<bool> leaveGroup({String? chatId}) async {
+    _inProgress.value = true;
+    try {
+      final myId = StorageUtil.getData(StorageUtil.userId) ?? '';
+      final Map<String, dynamic> body = {
+        "chatId": chatId,
+        "participantId": myId,
+      };
+      final NetworkResponse response = await Get.find<NetworkCaller>()
+          .patchRequest(
+            Urls.removePerticipantUrl,
+            body: body,
+            accessToken: StorageUtil.getData(StorageUtil.userAccessToken),
+          );
+      if (response.isSuccess) {
+        _inProgress.value = false;
+        return true;
+      }
+      _errorMessage.value = response.errorMessage;
+      _inProgress.value = false;
+      return false;
+    } catch (e) {
+      _errorMessage.value = e.toString();
+      _inProgress.value = false;
+      return false;
+    }
+  }
 }

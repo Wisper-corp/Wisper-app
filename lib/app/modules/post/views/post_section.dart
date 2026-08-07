@@ -3,6 +3,7 @@ import 'package:get/get.dart';
 import 'package:wisper/app/core/config/theme/light_theme_colors.dart';
 import 'package:wisper/app/core/utils/date_formatter.dart';
 import 'package:wisper/app/core/widgets/shimmer/gallery_post_shimmer.dart';
+import 'package:wisper/app/modules/post/controller/delete_gallery_post_controlller.dart';
 import 'package:wisper/app/modules/post/controller/feed_post_controller.dart';
 import 'package:wisper/app/modules/post/views/comment_screen.dart';
 import 'package:wisper/app/modules/post/widgets/post_card.dart';
@@ -11,7 +12,8 @@ import 'package:wisper/app/core/widgets/common/star_rating.dart';
 class PostSection extends StatefulWidget {
   final String? groupId;
   final String? searchQuery;
-  const PostSection({super.key, this.groupId, this.searchQuery});
+  final bool isAdmin;
+  const PostSection({super.key, this.groupId, this.searchQuery, this.isAdmin = false});
 
   @override
   State<PostSection> createState() => _PostSectionState();
@@ -77,6 +79,8 @@ class _PostSectionState extends State<PostSection> {
               post: post,
               formattedTime: formattedTime,
               controller: controller,
+              isAdmin: widget.isAdmin,
+              groupId: widget.groupId,
             );
           },
         );
@@ -89,11 +93,15 @@ class _PostItem extends StatefulWidget {
   final dynamic post;
   final String formattedTime;
   final AllFeedPostController controller;
+  final bool isAdmin;
+  final String? groupId;
 
   const _PostItem({
     required this.post,
     required this.formattedTime,
     required this.controller,
+    this.isAdmin = false,
+    this.groupId,
   });
 
   @override
@@ -113,6 +121,66 @@ class _PostItemState extends State<_PostItem> {
   @override
   Widget build(BuildContext context) {
     final post = widget.post;
+    // Admin delete trailing widget
+    Widget trailing = const SizedBox.shrink();
+    if (widget.isAdmin) {
+      trailing = GestureDetector(
+        onTap: () {
+          showModalBottomSheet(
+            context: context,
+            backgroundColor: Colors.black,
+            builder: (_) => Container(
+              padding: const EdgeInsets.all(20),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const Text('Delete Post?',
+                      style: TextStyle(fontSize: 18, fontWeight: FontWeight.w600, color: Colors.white)),
+                  const SizedBox(height: 8),
+                  const Text('This post will be permanently removed for everyone.',
+                      style: TextStyle(color: Color(0xff9FA3AA))),
+                  const SizedBox(height: 24),
+                  Row(children: [
+                    Expanded(
+                      child: OutlinedButton(
+                        onPressed: () => Navigator.pop(context),
+                        style: OutlinedButton.styleFrom(foregroundColor: Colors.white,
+                            side: const BorderSide(color: Color(0xff262629))),
+                        child: const Text('Cancel'),
+                      ),
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: ElevatedButton(
+                        onPressed: () async {
+                          Navigator.pop(context);
+                          final ctrl = DeletePostController();
+                          final ok = await ctrl.deletePost(postId: post.id ?? '');
+                          if (ok) {
+                            widget.controller.resetPagination(groupId: widget.groupId);
+                            Get.snackbar('Deleted', 'Post removed',
+                                backgroundColor: Colors.green, colorText: Colors.white,
+                                snackPosition: SnackPosition.BOTTOM);
+                          } else {
+                            Get.snackbar('Error', ctrl.errorMessage ?? 'Failed to delete',
+                                backgroundColor: Colors.red, colorText: Colors.white,
+                                snackPosition: SnackPosition.BOTTOM);
+                          }
+                        },
+                        style: ElevatedButton.styleFrom(backgroundColor: Colors.red),
+                        child: const Text('Delete', style: TextStyle(color: Colors.white)),
+                      ),
+                    ),
+                  ]),
+                ],
+              ),
+            ),
+          );
+        },
+        child: const Icon(Icons.delete_outline, color: Colors.red, size: 20),
+      );
+    }
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 8.0),
       child: PostCard(
@@ -122,7 +190,7 @@ class _PostItemState extends State<_PostItem> {
         },
         isComment: false,
         ownerId: post.author?.id ?? '',
-        trailing: const SizedBox.shrink(),
+        trailing: trailing,
         ownerName: post.author?.person != null
             ? post.author?.person?.name ?? 'Unknown User'
             : post.author?.business?.name ?? 'Unknown Business',

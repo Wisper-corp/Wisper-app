@@ -11,6 +11,7 @@ import 'package:wisper/app/core/widgets/common/custom_text_filed.dart';
 import 'package:wisper/app/core/widgets/common/initials_avatar.dart';
 import 'package:wisper/app/core/widgets/common/line_widget.dart';
 import 'package:wisper/app/core/widgets/shimmer/chat_shimmer.dart';
+import 'package:wisper/app/modules/chat/controller/group/add_group_member.dart';
 import 'package:wisper/app/modules/chat/controller/group/all_group_member_controller.dart';
 import 'package:wisper/app/modules/chat/controller/group/group_info_controller.dart';
 import 'package:wisper/app/modules/homepage/controller/join_group_controller.dart';
@@ -74,6 +75,15 @@ class _GroupChatScreenState extends State<GroupChatScreen> {
   final RxString _effectiveChatId = ''.obs; // resolved chatId (may come from group info)
 
   static const _tabs = ['General Chat', 'Services', 'Jobs', 'Members'];
+
+  // Current user is admin in this group
+  bool get _isCurrentUserAdmin {
+    final myId = StorageUtil.getData(StorageUtil.userId) ?? '';
+    final members = _membersCtrl.groupMemnersData ?? [];
+    return members.any((m) => m.auth?.id == myId && m.role == 'ADMIN');
+  }
+
+  String get _myUserId => StorageUtil.getData(StorageUtil.userId) ?? '';
 
   // When no groupId, only show General Chat tab (home announcement feed)
   List<String> get _activeTabs =>
@@ -230,6 +240,176 @@ class _GroupChatScreenState extends State<GroupChatScreen> {
       }
     }
     return tags;
+  }
+
+  // ── Admin: remove a member ──────────────────────────────────────────────
+  void _confirmRemoveMember(String memberAuthId, String memberName) {
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: Colors.black,
+      builder: (_) => Container(
+        padding: const EdgeInsets.all(20),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text('Remove $memberName?',
+                style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w600, color: Colors.white)),
+            const SizedBox(height: 8),
+            const Text('This member will be removed from the community.',
+                style: TextStyle(color: Color(0xff9FA3AA))),
+            const SizedBox(height: 24),
+            Row(children: [
+              Expanded(
+                child: OutlinedButton(
+                  onPressed: () => Navigator.pop(context),
+                  style: OutlinedButton.styleFrom(foregroundColor: Colors.white,
+                      side: const BorderSide(color: Color(0xff262629))),
+                  child: const Text('Cancel'),
+                ),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: ElevatedButton(
+                  onPressed: () async {
+                    Navigator.pop(context);
+                    final chatId = _effectiveChatId.value.isNotEmpty
+                        ? _effectiveChatId.value
+                        : widget.chatId ?? '';
+                    final ctrl = GroupMemberController();
+                    final ok = await ctrl.removeRequest(
+                        memberId: memberAuthId, chatId: chatId);
+                    if (ok) {
+                      await _membersCtrl.getGroupMembers(widget.groupId ?? '');
+                      if (mounted) setState(() {});
+                      Get.snackbar('Done', '$memberName removed',
+                          backgroundColor: Colors.green, colorText: Colors.white,
+                          snackPosition: SnackPosition.BOTTOM);
+                    } else {
+                      Get.snackbar('Error', ctrl.errorMessage,
+                          backgroundColor: Colors.red, colorText: Colors.white,
+                          snackPosition: SnackPosition.BOTTOM);
+                    }
+                  },
+                  style: ElevatedButton.styleFrom(backgroundColor: Colors.red),
+                  child: const Text('Remove', style: TextStyle(color: Colors.white)),
+                ),
+              ),
+            ]),
+          ],
+        ),
+      ),
+    );
+  }
+
+  // ── User: leave community ──────────────────────────────────────────────
+  void _confirmLeaveGroup() {
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: Colors.black,
+      builder: (_) => Container(
+        padding: const EdgeInsets.all(20),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const Text('Leave Community?',
+                style: TextStyle(fontSize: 18, fontWeight: FontWeight.w600, color: Colors.white)),
+            const SizedBox(height: 8),
+            Text('You will leave "${widget.groupName ?? 'this community'}" and lose access to its content.',
+                style: const TextStyle(color: Color(0xff9FA3AA))),
+            const SizedBox(height: 24),
+            Row(children: [
+              Expanded(
+                child: OutlinedButton(
+                  onPressed: () => Navigator.pop(context),
+                  style: OutlinedButton.styleFrom(foregroundColor: Colors.white,
+                      side: const BorderSide(color: Color(0xff262629))),
+                  child: const Text('Cancel'),
+                ),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: ElevatedButton(
+                  onPressed: () async {
+                    Navigator.pop(context);
+                    final chatId = _effectiveChatId.value.isNotEmpty
+                        ? _effectiveChatId.value
+                        : widget.chatId ?? '';
+                    final ctrl = GroupMemberController();
+                    final ok = await ctrl.leaveGroup(chatId: chatId);
+                    if (ok) {
+                      if (Get.isRegistered<AllChatsController>()) {
+                        Get.find<AllChatsController>().getAllChats();
+                      }
+                      Get.back();
+                      Get.snackbar('Left', 'You have left the community',
+                          backgroundColor: Colors.orange, colorText: Colors.white,
+                          snackPosition: SnackPosition.BOTTOM);
+                    } else {
+                      Get.snackbar('Error', ctrl.errorMessage,
+                          backgroundColor: Colors.red, colorText: Colors.white,
+                          snackPosition: SnackPosition.BOTTOM);
+                    }
+                  },
+                  style: ElevatedButton.styleFrom(backgroundColor: Colors.orange),
+                  child: const Text('Leave', style: TextStyle(color: Colors.white)),
+                ),
+              ),
+            ]),
+          ],
+        ),
+      ),
+    );
+  }
+
+  // ── Admin/owner: delete a message ──────────────────────────────────────
+  void _confirmDeleteMessage(String messageId) {
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: Colors.black,
+      builder: (_) => Container(
+        padding: const EdgeInsets.all(20),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const Text('Delete Message?',
+                style: TextStyle(fontSize: 18, fontWeight: FontWeight.w600, color: Colors.white)),
+            const SizedBox(height: 8),
+            const Text('This message will be permanently removed for everyone.',
+                style: TextStyle(color: Color(0xff9FA3AA))),
+            const SizedBox(height: 24),
+            Row(children: [
+              Expanded(
+                child: OutlinedButton(
+                  onPressed: () => Navigator.pop(context),
+                  style: OutlinedButton.styleFrom(foregroundColor: Colors.white,
+                      side: const BorderSide(color: Color(0xff262629))),
+                  child: const Text('Cancel'),
+                ),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: ElevatedButton(
+                  onPressed: () async {
+                    Navigator.pop(context);
+                    final ok = await _ctrl.deleteMessage(messageId);
+                    if (!ok) {
+                      Get.snackbar('Error', 'Could not delete message',
+                          backgroundColor: Colors.red, colorText: Colors.white,
+                          snackPosition: SnackPosition.BOTTOM);
+                    }
+                  },
+                  style: ElevatedButton.styleFrom(backgroundColor: Colors.red),
+                  child: const Text('Delete', style: TextStyle(color: Colors.white)),
+                ),
+              ),
+            ]),
+          ],
+        ),
+      ),
+    );
   }
 
   // ── Header ──────────────────────────────────────────────────────────────────
@@ -470,16 +650,26 @@ class _GroupChatScreenState extends State<GroupChatScreen> {
             }
             return Column(children: [
               if (sep != null) _dateSep(sep),
-              MessageBubble(
-                message: msg, isMe: isMe,
-                fileUrl: msg[SocketMessageKeys.imageUrl] ?? '',
-                fileType: msg[SocketMessageKeys.fileType] ?? '',
-                senderImage: msg[SocketMessageKeys.senderImage],
-                senderName: msg[SocketMessageKeys.senderName],
-                time: DateFormatter(msg[SocketMessageKeys.createdAt]).getRelativeTimeFormat(),
-                isGroupChat: true,
-                senderId: msg[SocketMessageKeys.senderId],
-                senderType: msg[SocketMessageKeys.senderType],
+              GestureDetector(
+                onLongPress: () {
+                  final msgId = msg[SocketMessageKeys.id] ?? '';
+                  final senderId = msg[SocketMessageKeys.senderId] ?? '';
+                  // Admin can delete any message; user can delete own
+                  if (_isCurrentUserAdmin || senderId == _myUserId) {
+                    _confirmDeleteMessage(msgId);
+                  }
+                },
+                child: MessageBubble(
+                  message: msg, isMe: isMe,
+                  fileUrl: msg[SocketMessageKeys.imageUrl] ?? '',
+                  fileType: msg[SocketMessageKeys.fileType] ?? '',
+                  senderImage: msg[SocketMessageKeys.senderImage],
+                  senderName: msg[SocketMessageKeys.senderName],
+                  time: DateFormatter(msg[SocketMessageKeys.createdAt]).getRelativeTimeFormat(),
+                  isGroupChat: true,
+                  senderId: msg[SocketMessageKeys.senderId],
+                  senderType: msg[SocketMessageKeys.senderType],
+                ),
               ),
             ]);
           },
@@ -517,43 +707,86 @@ class _GroupChatScreenState extends State<GroupChatScreen> {
         final members = _membersCtrl.groupMemnersData ?? [];
         if (_membersCtrl.inProgress) return const Center(child: CircularProgressIndicator());
         if (members.isEmpty) return const Center(child: Text('No members yet', style: TextStyle(color: Colors.white54)));
-        return ListView.separated(
-          padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 8.h),
-          itemCount: members.length,
-          separatorBuilder: (_, __) => const Divider(color: Color(0xff2A2A2A), height: 1, thickness: 0.5),
-          itemBuilder: (context, i) {
-            final m = members[i];
-            final name = m.auth?.person?.name ?? m.auth?.business?.name ?? 'Unknown';
-            final image = m.auth?.person?.image ?? m.auth?.business?.image;
-            final title = m.auth?.person?.title ?? m.auth?.business?.industry;
-            final role = m.role ?? 'MEMBER';
-            final isPerson = m.auth?.person != null;
-            final authId = m.auth?.id ?? '';
-            return GestureDetector(
-              onTap: authId.isNotEmpty
-                  ? () => Get.to(() => isPerson
-                      ? OthersPersonScreen(userId: authId)
-                      : OthersBusinessScreen(userId: authId))
-                  : null,
-              child: Padding(
-                padding: EdgeInsets.symmetric(vertical: 10.h),
-                child: Row(children: [
-                  InitialsAvatar(name: name, imageUrl: image, radius: 22.r, fontSize: 14),
-                  SizedBox(width: 12.w),
-                  Expanded(child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(name, style: TextStyle(fontSize: 14.sp, fontWeight: FontWeight.w600, color: Colors.white)),
-                      if (role == 'ADMIN')
-                        Text('Admin', style: TextStyle(fontSize: 11.sp, color: Colors.blue))
-                      else if (title != null && title.isNotEmpty)
-                        Text(title, style: TextStyle(fontSize: 11.sp, color: Colors.white54)),
-                    ],
-                  )),
-                ]),
+        final isAdmin = _isCurrentUserAdmin;
+        final myId = _myUserId;
+        return Column(
+          children: [
+            Expanded(
+              child: ListView.separated(
+                padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 8.h),
+                itemCount: members.length,
+                separatorBuilder: (_, __) => const Divider(color: Color(0xff2A2A2A), height: 1, thickness: 0.5),
+                itemBuilder: (context, i) {
+                  final m = members[i];
+                  final name = m.auth?.person?.name ?? m.auth?.business?.name ?? 'Unknown';
+                  final image = m.auth?.person?.image ?? m.auth?.business?.image;
+                  final title = m.auth?.person?.title ?? m.auth?.business?.industry;
+                  final role = m.role ?? 'MEMBER';
+                  final isPerson = m.auth?.person != null;
+                  final authId = m.auth?.id ?? '';
+                  final isSelf = authId == myId;
+                  return GestureDetector(
+                    onTap: authId.isNotEmpty
+                        ? () => Get.to(() => isPerson
+                            ? OthersPersonScreen(userId: authId)
+                            : OthersBusinessScreen(userId: authId))
+                        : null,
+                    child: Padding(
+                      padding: EdgeInsets.symmetric(vertical: 10.h),
+                      child: Row(children: [
+                        InitialsAvatar(name: name, imageUrl: image, radius: 22.r, fontSize: 14),
+                        SizedBox(width: 12.w),
+                        Expanded(child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(name, style: TextStyle(fontSize: 14.sp, fontWeight: FontWeight.w600, color: Colors.white)),
+                            if (role == 'ADMIN')
+                              Text('Admin', style: TextStyle(fontSize: 11.sp, color: Colors.blue))
+                            else if (title != null && title.isNotEmpty)
+                              Text(title, style: TextStyle(fontSize: 11.sp, color: Colors.white54)),
+                          ],
+                        )),
+                        // Admin can remove any non-admin, non-self member
+                        if (isAdmin && !isSelf && role != 'ADMIN')
+                          GestureDetector(
+                            onTap: () => _confirmRemoveMember(authId, name),
+                            child: Container(
+                              padding: EdgeInsets.symmetric(horizontal: 10.w, vertical: 5.h),
+                              decoration: BoxDecoration(
+                                color: Colors.red.withValues(alpha: 0.15),
+                                borderRadius: BorderRadius.circular(8.r),
+                                border: Border.all(color: Colors.red.withValues(alpha: 0.4)),
+                              ),
+                              child: Text('Remove',
+                                  style: TextStyle(fontSize: 11.sp, color: Colors.red, fontWeight: FontWeight.w600)),
+                            ),
+                          ),
+                      ]),
+                    ),
+                  );
+                },
               ),
-            );
-          },
+            ),
+            // Leave Community button — only for non-admin members
+            if (!isAdmin)
+              Padding(
+                padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 12.h),
+                child: SizedBox(
+                  width: double.infinity,
+                  child: OutlinedButton.icon(
+                    onPressed: _confirmLeaveGroup,
+                    icon: const Icon(Icons.exit_to_app, color: Colors.orange),
+                    label: const Text('Leave Community',
+                        style: TextStyle(color: Colors.orange, fontWeight: FontWeight.w600)),
+                    style: OutlinedButton.styleFrom(
+                      side: const BorderSide(color: Colors.orange),
+                      padding: EdgeInsets.symmetric(vertical: 12.h),
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12.r)),
+                    ),
+                  ),
+                ),
+              ),
+          ],
         );
       }),
     );
@@ -698,6 +931,7 @@ class _GroupChatScreenState extends State<GroupChatScreen> {
                         key: ValueKey('services_${widget.groupId}_$_serviceSearchQuery'),
                         groupId: widget.groupId,
                         searchQuery: _serviceSearchQuery.isEmpty ? null : _serviceSearchQuery,
+                        isAdmin: _isCurrentUserAdmin,
                       ),
                     ),
                     Positioned(

@@ -262,6 +262,25 @@ class MessageController extends GetxController {
     }
   }
 
+  /// Delete a message by ID — admin can delete any, user can delete own
+  Future<bool> deleteMessage(String messageId) async {
+    try {
+      final token = StorageUtil.getData(StorageUtil.userAccessToken);
+      final response = await Get.find<NetworkCaller>().deleteRequest(
+        Urls.messagesById(messageId),
+        accessToken: token,
+      );
+      if (response.isSuccess) {
+        // Remove locally so UI updates instantly
+        messages.removeWhere((m) => m[SocketMessageKeys.id] == messageId);
+        return true;
+      }
+      return false;
+    } catch (e) {
+      return false;
+    }
+  }
+
   @override
   void onClose() {
     socketService.socket.off('newMessage');
