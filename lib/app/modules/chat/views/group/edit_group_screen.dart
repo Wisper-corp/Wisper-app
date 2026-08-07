@@ -482,21 +482,6 @@ class _EditGroupScreenState extends State<EditGroupScreen> {
 
               heightBox20,
 
-              ToggleOption(
-                title: 'Private Group',
-                subtitle: 'Only invited members can join',
-                isToggled: !_isPublic,
-                onToggle: (bool value) => setState(() => _isPublic = !value),
-              ),
-              heightBox20,
-              ToggleOption(
-                title: 'Allow Member Invites',
-                subtitle: 'Let members invite others',
-                isToggled: _isAllowInvitation,
-                onToggle: (bool value) =>
-                    setState(() => _isAllowInvitation = value),
-              ),
-
               heightBox40,
 
               Center(

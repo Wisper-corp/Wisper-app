@@ -441,20 +441,6 @@ class _CreateGroupButtomSheetState extends State<CreateGroupButtomSheet> {
                           onSelect: (v) => setState(() => _selectedCategory = v),
                         ),
 
-                        // ── Toggles ──────────────────────────────────────────
-                        Obx(() => ToggleOption(
-                          title: 'Private Community',
-                          subtitle: 'Only invited members can join',
-                          onToggle: (v) => _isPrivate.value = v,
-                          isToggled: _isPrivate.value,
-                        )),
-                        heightBox10,
-                        Obx(() => ToggleOption(
-                          isToggled: _allowInvitation.value,
-                          title: 'Allow Member Invites',
-                          subtitle: 'Let members invite others',
-                          onToggle: (v) => _allowInvitation.value = v,
-                        )),
                         heightBox12,
 
                         Text(
