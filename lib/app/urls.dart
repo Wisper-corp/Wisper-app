@@ -99,7 +99,7 @@ class Urls {
   static const String callTokenUrl = '$_baseUrl/calls/token';
   static const String allCommunityUrl = '$_baseUrl/groups/public';
   static String addClassMembersById(String id) => '$_baseUrl/classes/members/$id';
-  static const String removePerticipantUrl = '$_baseUrl/chats/participants';
+  static const String removePerticipantUrl = '$_baseUrl/chats/remove-participant';
   static const String walletTransactionsUrl = '$_baseUrl/wallet/transactions';
   static const String allGroupUrl = '$_baseUrl/groups';
 
