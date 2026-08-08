@@ -339,8 +339,19 @@ class _GroupChatScreenState extends State<GroupChatScreen> {
                     final chatId = _effectiveChatId.value.isNotEmpty
                         ? _effectiveChatId.value
                         : widget.chatId ?? '';
+                    // Find own ChatParticipant ID from members list
+                    final myMember = _membersCtrl.groupMemnersData?.firstWhereOrNull(
+                        (m) => m.auth?.id == _myUserId);
+                    final myParticipantId = myMember?.id ?? '';
+                    if (myParticipantId.isEmpty) {
+                      Get.snackbar('Error', 'Could not find your membership',
+                          backgroundColor: Colors.red, colorText: Colors.white,
+                          snackPosition: SnackPosition.BOTTOM);
+                      return;
+                    }
                     final ctrl = GroupMemberController();
-                    final ok = await ctrl.leaveGroup(chatId: chatId);
+                    final ok = await ctrl.removeRequest(
+                        memberId: myParticipantId, chatId: chatId);
                     if (ok) {
                       if (Get.isRegistered<AllChatsController>()) {
                         Get.find<AllChatsController>().getAllChats();
@@ -747,6 +758,7 @@ class _GroupChatScreenState extends State<GroupChatScreen> {
                   final role = m.role ?? 'MEMBER';
                   final isPerson = m.auth?.person != null;
                   final authId = m.auth?.id ?? '';
+                  final participantId = m.id ?? ''; // ChatParticipant record ID
                   final isSelf = authId == myId;
                   return GestureDetector(
                     onTap: authId.isNotEmpty
@@ -772,7 +784,7 @@ class _GroupChatScreenState extends State<GroupChatScreen> {
                         // Admin can remove any non-admin, non-self member
                         if (isAdmin && !isSelf && role != 'ADMIN')
                           GestureDetector(
-                            onTap: () => _confirmRemoveMember(authId, name),
+                            onTap: () => _confirmRemoveMember(participantId, name),
                             child: Container(
                               padding: EdgeInsets.symmetric(horizontal: 10.w, vertical: 5.h),
                               decoration: BoxDecoration(
