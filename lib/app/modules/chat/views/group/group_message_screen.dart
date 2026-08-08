@@ -444,22 +444,42 @@ class _GroupChatScreenState extends State<GroupChatScreen> {
                 child: const Icon(Icons.arrow_back, color: Colors.white, size: 22),
               ),
               SizedBox(width: 10.w),
-              InitialsAvatar(
-                name: widget.groupName ?? 'G',
-                imageUrl: widget.groupImage?.isNotEmpty == true ? widget.groupImage : null,
-                radius: 20.r,
-                fontSize: 14,
-              ),
+              Builder(builder: (_) {
+                final infoCtrl = widget.groupId != null
+                    ? Get.find<GroupInfoController>(tag: 'grp_${widget.groupId}')
+                    : null;
+                final liveImage = infoCtrl?.groupInfoData?.image?.isNotEmpty == true
+                    ? infoCtrl!.groupInfoData!.image!
+                    : (widget.groupImage?.isNotEmpty == true ? widget.groupImage : null);
+                final liveName = infoCtrl?.groupInfoData?.name?.isNotEmpty == true
+                    ? infoCtrl!.groupInfoData!.name!
+                    : (widget.groupName ?? 'G');
+                return InitialsAvatar(
+                  name: liveName,
+                  imageUrl: liveImage,
+                  radius: 20.r,
+                  fontSize: 14,
+                );
+              }),
               SizedBox(width: 10.w),
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    Text(widget.groupName ?? '',
-                      style: TextStyle(fontSize: 16.sp, fontWeight: FontWeight.w700, color: Colors.white),
-                      overflow: TextOverflow.ellipsis,
-                    ),
+                    Obx(() {
+                      final infoCtrl = widget.groupId != null &&
+                              Get.isRegistered<GroupInfoController>(tag: 'grp_${widget.groupId}')
+                          ? Get.find<GroupInfoController>(tag: 'grp_${widget.groupId}')
+                          : null;
+                      final liveName = infoCtrl?.groupInfoData?.name?.isNotEmpty == true
+                          ? infoCtrl!.groupInfoData!.name!
+                          : (widget.groupName ?? '');
+                      return Text(liveName,
+                        style: TextStyle(fontSize: 16.sp, fontWeight: FontWeight.w700, color: Colors.white),
+                        overflow: TextOverflow.ellipsis,
+                      );
+                    }),
                     // Community tag pills
                     if (_tagPills.isNotEmpty) ...[
                       SizedBox(height: 3.h),

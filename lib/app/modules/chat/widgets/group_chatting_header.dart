@@ -410,14 +410,19 @@ class _GroupChatHeaderState extends State<GroupChatHeader> {
                       Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          Text(
-                            widget.groupName,
-                            style: GoogleFonts.poppins(
-                              fontSize: 14,
-                              fontWeight: FontWeight.w600,
-                              color: Colors.white,
-                            ),
-                          ),
+                          Obx(() {
+                            final liveName = Get.isRegistered<GroupInfoController>()
+                                ? (Get.find<GroupInfoController>().groupInfoData?.name ?? widget.groupName)
+                                : widget.groupName;
+                            return Text(
+                              liveName,
+                              style: GoogleFonts.poppins(
+                                fontSize: 14,
+                                fontWeight: FontWeight.w600,
+                                color: Colors.white,
+                              ),
+                            );
+                          }),
                         ],
                       ),
                     ],
