@@ -105,32 +105,37 @@ class MemberListTile extends StatelessWidget {
                     Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
-                        Row(
-                          children: [
-                            Text(
-                              name,
-                              style: TextStyle(
-                                fontSize: 14.sp,
-                                fontWeight: FontWeight.w600,
-                                color: Colors.white,
+                        Expanded(
+                          child: Row(
+                            children: [
+                              Flexible(
+                                child: Text(
+                                  name,
+                                  style: TextStyle(
+                                    fontSize: 14.sp,
+                                    fontWeight: FontWeight.w600,
+                                    color: Colors.white,
+                                  ),
+                                  overflow: TextOverflow.ellipsis,
+                                  maxLines: 1,
+                                ),
                               ),
-                              overflow: TextOverflow.ellipsis,
-                            ),
-                            widthBox5,
-                            isGroup
-                                ? Tag(
-                                    text: 'Community',
-                                    color: Color(0xff051B33),
-                                    textColor: Color(0xff1F7DE9),
-                                  )
-                                : isClass
-                                ? Tag(
-                                    text: 'Class',
-                                    color: Color(0xff102B19),
-                                    textColor: Color(0xff11AE46),
-                                  )
-                                : Container(),
-                          ],
+                              widthBox5,
+                              isGroup
+                                  ? Tag(
+                                      text: 'Community',
+                                      color: Color(0xff051B33),
+                                      textColor: Color(0xff1F7DE9),
+                                    )
+                                  : isClass
+                                  ? Tag(
+                                      text: 'Class',
+                                      color: Color(0xff102B19),
+                                      textColor: Color(0xff11AE46),
+                                    )
+                                  : Container(),
+                            ],
+                          ),
                         ),
                         if (unreadCount > 0)
                           CircleAvatar(
