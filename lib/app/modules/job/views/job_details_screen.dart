@@ -214,8 +214,14 @@ class _JobDetailsScreenState extends State<JobDetailsScreen> {
                           textColor: Colors.white,
                         ),
                       ),
-                      StorageUtil.getData(StorageUtil.userRole) == 'PERSON'
-                          ? CustomElevatedButton(
+                      // Hide Apply button if this is the user's own job
+                      (() {
+                        final myId = StorageUtil.getData(StorageUtil.userId) ?? '';
+                        final authorId = singleJobController.singleJobData?.authorId ?? '';
+                        final isMyJob = myId == authorId;
+                        final isBusinessRole = StorageUtil.getData(StorageUtil.userRole) == 'BUSINESS';
+                        if (isMyJob || isBusinessRole) return Container();
+                        return CustomElevatedButton(
                               onPress: () {
                                 var applicationType = singleJobController
                                     .singleJobData
@@ -260,8 +266,8 @@ class _JobDetailsScreenState extends State<JobDetailsScreen> {
                               color: LightThemeColors.blueColor,
                               borderRadius: 50,
                               textColor: Colors.white,
-                            )
-                          : Container(),
+                            );
+                          })(),
                     ],
                   ),
                   heightBox20,
