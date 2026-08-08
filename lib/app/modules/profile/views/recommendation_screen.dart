@@ -11,9 +11,9 @@ import 'package:wisper/app/modules/profile/model/recommendation_model.dart';
 import 'package:wisper/app/modules/profile/views/create_recommendation.dart';
 import 'package:wisper/app/modules/profile/widget/reviewCard.dart';
 
-class RcommendationButtomSheet extends StatelessWidget {
+class RcommendationButtomSheet extends StatefulWidget {
   final String? recieverId;
-  final bool isCreateReview; 
+  final bool isCreateReview;
 
   const RcommendationButtomSheet({
     super.key,
@@ -22,9 +22,24 @@ class RcommendationButtomSheet extends StatelessWidget {
   });
 
   @override
+  State<RcommendationButtomSheet> createState() => _RcommendationButtomSheetState();
+}
+
+class _RcommendationButtomSheetState extends State<RcommendationButtomSheet> {
+  late final AllRecommendationController controller;
+
+  @override
+  void initState() {
+    super.initState();
+    controller = Get.put(AllRecommendationController());
+    // Fetch immediately when sheet opens
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      controller.getAllRecommendations(widget.recieverId);
+    });
+  }
+
+  @override
   Widget build(BuildContext context) {
-    final AllRecommendationController controller =
-        Get.put(AllRecommendationController());
     final ConnectivityService connectivityService =
         Get.find<ConnectivityService>();
 
@@ -99,7 +114,7 @@ class RcommendationButtomSheet extends StatelessWidget {
               heightBox10,
 
               // Add Recommendation button
-              if (isCreateReview &&
+              if (widget.isCreateReview &&
                   StorageUtil.getData(StorageUtil.userRole) == 'PERSON')
                 Center(
                   child: GestureDetector(
@@ -109,7 +124,7 @@ class RcommendationButtomSheet extends StatelessWidget {
                         isScrollControlled: true,
                         backgroundColor: Colors.transparent,
                         builder: (_) => CreateReviewSheet(
-                          recieverId: recieverId ?? '',
+                          recieverId: widget.recieverId ?? '',
                         ),
                       );
                     },
@@ -118,7 +133,7 @@ class RcommendationButtomSheet extends StatelessWidget {
                       height: 30.h,
                       decoration: BoxDecoration(
                         borderRadius: BorderRadius.circular(50.r),
-                        color: const Color(0xff3DBCF7).withOpacity(0.20),
+                        color: const Color(0xff3DBCF7).withValues(alpha: 0.20),
                       ),
                       child: Center(
                         child: Text(
