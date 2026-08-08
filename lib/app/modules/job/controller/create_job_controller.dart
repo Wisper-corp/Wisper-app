@@ -68,11 +68,17 @@ class CreateJobController extends GetxController {
 
       if (response.isSuccess && response.responseData != null) {
         _errorMessage.value = '';
-
         _inProgress.value = false;
         return true;
       } else {
-        _errorMessage.value = response.errorMessage;
+        // 401 = token expired, 403 = forbidden (KYC or permission issue)
+        if (response.statusCode == 401) {
+          _errorMessage.value = 'Session expired. Please sign in again.';
+        } else if (response.statusCode == 403) {
+          _errorMessage.value = 'You are not allowed to post jobs. Please complete your profile verification first.';
+        } else {
+          _errorMessage.value = response.errorMessage;
+        }
         _inProgress.value = false;
         return false;
       }
