@@ -130,12 +130,22 @@ class _GalleryPostScreenState extends State<GalleryPostScreen> {
     );
 
     if (isSuccess) {
-      final AllFeedPostController feedController = Get.put(
-        AllFeedPostController(),
-      );
-      final MyFeedPostController myFeedPostController = Get.put(
-        MyFeedPostController(),
-      );
+      // Refresh group feed if posted inside a community
+      if (widget.groupId != null && widget.groupId!.isNotEmpty) {
+        final tag = 'posts_group_${widget.groupId}';
+        if (Get.isRegistered<AllFeedPostController>(tag: tag)) {
+          final groupFeed = Get.find<AllFeedPostController>(tag: tag);
+          groupFeed.resetPagination(groupId: widget.groupId);
+          await groupFeed.getAllPost();
+        }
+      }
+      // Also refresh global feeds
+      final AllFeedPostController feedController = Get.isRegistered<AllFeedPostController>()
+          ? Get.find<AllFeedPostController>()
+          : Get.put(AllFeedPostController());
+      final MyFeedPostController myFeedPostController = Get.isRegistered<MyFeedPostController>()
+          ? Get.find<MyFeedPostController>()
+          : Get.put(MyFeedPostController());
       myFeedPostController.resetPagination();
       feedController.resetPagination();
       await myFeedPostController.getAllPost();
