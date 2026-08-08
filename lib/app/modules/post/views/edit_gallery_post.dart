@@ -146,28 +146,39 @@ class _EditGalleryPostScreenState extends State<EditGalleryPostScreen> {
                       children: [
                         heightBox20,
 
-                        // User Info
+                        // User Info — from the post itself
                         Row(
                           children: [
                             CircleAvatar(
                               radius: 22.r,
-                              backgroundImage: AssetImage(
-                                Assets.images.image.keyName,
-                              ),
+                              backgroundImage: (widget.feedPostItemModel.author?.person?.image?.isNotEmpty == true)
+                                  ? NetworkImage(widget.feedPostItemModel.author!.person!.image!)
+                                  : (widget.feedPostItemModel.author?.business?.image?.isNotEmpty == true)
+                                      ? NetworkImage(widget.feedPostItemModel.author!.business!.image!)
+                                      : null,
+                              backgroundColor: Colors.grey.shade700,
+                              child: (widget.feedPostItemModel.author?.person?.image == null &&
+                                      widget.feedPostItemModel.author?.business?.image == null)
+                                  ? const Icon(Icons.person, color: Colors.white)
+                                  : null,
                             ),
                             widthBox12,
                             Column(
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
                                 Text(
-                                  'Aminul Islam',
+                                  widget.feedPostItemModel.author?.person?.name ??
+                                      widget.feedPostItemModel.author?.business?.name ??
+                                      'Unknown',
                                   style: TextStyle(
                                     color: Colors.white,
                                     fontSize: 16.sp,
                                   ),
                                 ),
                                 Text(
-                                  'Flutter Developer',
+                                  widget.feedPostItemModel.author?.person?.title ??
+                                      widget.feedPostItemModel.author?.business?.industry ??
+                                      '',
                                   style: TextStyle(
                                     color: Colors.grey,
                                     fontSize: 12.sp,
@@ -302,11 +313,16 @@ class _EditGalleryPostScreenState extends State<EditGalleryPostScreen> {
         ClipRRect(
           borderRadius: BorderRadius.circular(12.r),
           child: url != null
-              ? Image.asset(
+              ? Image.network(
                   url,
                   width: 120.w,
                   height: 120.h,
                   fit: BoxFit.cover,
+                  errorBuilder: (_, __, ___) => Container(
+                    width: 120.w, height: 120.h,
+                    color: Colors.grey.shade800,
+                    child: const Icon(Icons.broken_image, color: Colors.white38),
+                  ),
                 )
               : Image.file(
                   file!,
