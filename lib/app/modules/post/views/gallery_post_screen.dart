@@ -35,8 +35,14 @@ class _GalleryPostScreenState extends State<GalleryPostScreen> {
   final TextEditingController _deliveryTimeCtrl = TextEditingController();
   String _deliveryUnit = 'Days'; // Fixed to Days only
   final CreatePostController createPostController = CreatePostController();
-  final ProfileController profileController = Get.find<ProfileController>();
-  final BusinessController businessController = Get.find<BusinessController>();
+  final ProfileController profileController =
+      Get.isRegistered<ProfileController>()
+          ? Get.find<ProfileController>()
+          : Get.put(ProfileController());
+  final BusinessController businessController =
+      Get.isRegistered<BusinessController>()
+          ? Get.find<BusinessController>()
+          : Get.put(BusinessController());
   final formKey = GlobalKey<FormState>();
   final List<File> _selectedImages = [];
   final ImagePickerHelper _imagePickerHelper = ImagePickerHelper();
@@ -170,13 +176,26 @@ class _GalleryPostScreenState extends State<GalleryPostScreen> {
     });
 
     if (isPerson) {
-      profileController.getMyProfile().then((_) {
-        if (mounted) _updateUserInfo();
-      });
+      // If data already cached, fill immediately
+      if (profileController.profileData != null) {
+        _updateUserInfo();
+        isLoading.value = false;
+      } else {
+        profileController.getMyProfile().then((_) {
+          if (mounted) _updateUserInfo();
+          isLoading.value = false;
+        });
+      }
     } else {
-      businessController.getMyProfile().then((_) {
-        if (mounted) _updateUserInfo();
-      });
+      if (businessController.buisnessData != null) {
+        _updateUserInfo();
+        isLoading.value = false;
+      } else {
+        businessController.getMyProfile().then((_) {
+          if (mounted) _updateUserInfo();
+          isLoading.value = false;
+        });
+      }
     }
   }
 
