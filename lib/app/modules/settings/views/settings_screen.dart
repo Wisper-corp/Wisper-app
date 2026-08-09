@@ -301,14 +301,14 @@ class _SettingsScreenState extends State<SettingsScreen> {
                             ),
                           ],
                         ),
-                        Text(
+                        Obx(() => Text(
                           _getRegion(),
                           style: TextStyle(
                             fontSize: 12.sp,
                             fontWeight: FontWeight.w600,
                             color: LightThemeColors.themeGreyColor,
                           ),
-                        ),
+                        )),
                       ],
                     ),
                   ],
@@ -356,27 +356,30 @@ class _SettingsScreenState extends State<SettingsScreen> {
     );
   }
 
-  /// Get region from profile address first, then device locale as fallback
+  /// Get region using GPS (same as profile screen) then fallback to profile address
   String _getRegion() {
-    // Step 1: Use profile address as primary (most accurate for the user)
-    final role = StorageUtil.getData(StorageUtil.userRole) ?? '';
-    String address = '';
+    // Use the GPS-based location already fetched by profile screen
+    // It stores city, country e.g. "Lekki, Nigeria"
     try {
+      final profileCtrl = Get.find<ProfileController>();
+      // The profile screen exposes currentCityCountry via the state
+      // Fall back to stored profile address
+      final role = StorageUtil.getData(StorageUtil.userRole) ?? '';
+      String address = '';
       if (role == 'PERSON') {
-        address = Get.find<ProfileController>().profileData?.auth?.person?.address ?? '';
+        address = profileCtrl.profileData?.auth?.person?.address ?? '';
       } else {
         address = Get.find<BusinessController>().buisnessData?.auth?.business?.address ?? '';
       }
-    } catch (_) {}
-    if (address.isNotEmpty) {
-      final parts = address.split(',');
-      if (parts.isNotEmpty) {
+      if (address.isNotEmpty) {
+        // address is like "Lekki, Nigeria" — extract country (last part)
+        final parts = address.split(',');
         final country = parts.last.trim();
         if (country.isNotEmpty) return country;
       }
-    }
+    } catch (_) {}
 
-    // Step 2: Fall back to device locale country code
+    // Final fallback: device locale
     final locale = WidgetsBinding.instance.platformDispatcher.locale;
     final code = locale.countryCode ?? '';
     const Map<String, String> codes = {
