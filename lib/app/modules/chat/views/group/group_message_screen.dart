@@ -743,9 +743,6 @@ class _GroupChatScreenState extends State<GroupChatScreen> {
                   member: _membersCtrl.groupMemnersData?.length.toString() ?? '0',
                 ),
               )),
-              // Show Join button if user hasn't joined yet
-              if (!_hasJoined)
-                _buildJoinBanner(),
             ],
           ),
         );

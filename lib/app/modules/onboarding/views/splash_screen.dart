@@ -84,9 +84,11 @@ class _SplashScreenState extends State<SplashScreen> {
 
       Get.offAllNamed('/dashboard');
 
-      final deepLinkService =
-          Get.find<DeepLinkService>();
-      deepLinkService.processPendingDeepLink();
+      // Wait for dashboard to fully render before processing deep link
+      Future.delayed(const Duration(milliseconds: 1000), () {
+        final deepLinkService = Get.find<DeepLinkService>();
+        deepLinkService.processPendingDeepLink();
+      });
 
     } else {
       Get.offAllNamed('/onboarding');
