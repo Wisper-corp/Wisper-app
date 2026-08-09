@@ -233,10 +233,14 @@ class _JobDetailsScreenState extends State<JobDetailsScreen> {
                                   final authorId = jobData?.authorId ?? '';
                                   final authorName = (jobData?.companyName?.isNotEmpty == true)
                                       ? jobData!.companyName!
-                                      : jobData?.author?.business?.name ?? '';
+                                      : (jobData?.author?.business?.name?.isNotEmpty == true)
+                                          ? jobData!.author!.business!.name!
+                                          : jobData?.author?.person?.name ?? '';
                                   final authorImage = (jobData?.companyLogo?.isNotEmpty == true)
                                       ? jobData!.companyLogo!
-                                      : jobData?.author?.business?.image ?? '';
+                                      : (jobData?.author?.business?.image?.isNotEmpty == true)
+                                          ? jobData!.author!.business!.image!
+                                          : jobData?.author?.person?.image ?? '';
                                   createChat(authorId, authorName, authorImage);
                                 } else if (applicationType == 'EXTERNAL') {
                                   Get.to(
