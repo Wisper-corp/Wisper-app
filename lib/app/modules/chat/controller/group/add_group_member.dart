@@ -128,3 +128,31 @@ extension GroupMemberLeave on GroupMemberController {
     }
   }
 }
+
+  Future<bool> updateRole({String? chatId, String? participantId, String? role}) async {
+    _inProgress.value = true;
+    try {
+      final Map<String, dynamic> body = {
+        "chatId": chatId,
+        "participantId": participantId,
+        "role": role,
+      };
+      final NetworkResponse response = await Get.find<NetworkCaller>()
+          .patchRequest(
+            Urls.updateParticipantRoleUrl,
+            body: body,
+            accessToken: StorageUtil.getData(StorageUtil.userAccessToken),
+          );
+      if (response.isSuccess) {
+        _inProgress.value = false;
+        return true;
+      }
+      _errorMessage.value = response.errorMessage;
+      _inProgress.value = false;
+      return false;
+    } catch (e) {
+      _errorMessage.value = e.toString();
+      _inProgress.value = false;
+      return false;
+    }
+  }

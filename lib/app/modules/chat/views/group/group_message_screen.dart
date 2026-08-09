@@ -245,7 +245,86 @@ class _GroupChatScreenState extends State<GroupChatScreen> {
     return tags;
   }
 
-  // ── Admin: remove a member ──────────────────────────────────────────────
+  // ── Admin: change member role ──────────────────────────────────────────────
+  void _showRoleOptions(String participantId, String memberName, String currentRole) {
+    final chatId = _effectiveChatId.value.isNotEmpty
+        ? _effectiveChatId.value
+        : widget.chatId ?? '';
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: Colors.black,
+      builder: (_) => Container(
+        padding: const EdgeInsets.all(20),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text('Set role for $memberName',
+                style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w600, color: Colors.white)),
+            const SizedBox(height: 16),
+            ...[
+              {'label': 'Admin', 'value': 'ADMIN', 'color': Colors.blue},
+              {'label': 'Moderator', 'value': 'MODERATOR', 'color': Colors.orange},
+              {'label': 'Member', 'value': 'MEMBER', 'color': Colors.grey},
+            ].map((r) {
+              final isSelected = currentRole == r['value'];
+              return GestureDetector(
+                onTap: () async {
+                  Navigator.pop(context);
+                  final ctrl = GroupMemberController();
+                  final ok = await ctrl.updateRole(
+                    chatId: chatId,
+                    participantId: participantId,
+                    role: r['value'] as String,
+                  );
+                  if (ok) {
+                    await _membersCtrl.getGroupMembers(widget.groupId ?? '');
+                    if (mounted) setState(() {});
+                    Get.snackbar('Done', '${memberName} is now ${r['label']}',
+                        backgroundColor: Colors.green, colorText: Colors.white,
+                        snackPosition: SnackPosition.BOTTOM);
+                  } else {
+                    Get.snackbar('Error', ctrl.errorMessage,
+                        backgroundColor: Colors.red, colorText: Colors.white,
+                        snackPosition: SnackPosition.BOTTOM);
+                  }
+                },
+                child: Container(
+                  width: double.infinity,
+                  margin: const EdgeInsets.only(bottom: 8),
+                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                  decoration: BoxDecoration(
+                    color: isSelected
+                        ? (r['color'] as Color).withValues(alpha: 0.2)
+                        : const Color(0xff1E1E1E),
+                    borderRadius: BorderRadius.circular(10),
+                    border: Border.all(
+                      color: isSelected ? (r['color'] as Color) : Colors.transparent,
+                    ),
+                  ),
+                  child: Row(
+                    children: [
+                      Icon(
+                        r['value'] == 'ADMIN' ? Icons.shield : r['value'] == 'MODERATOR' ? Icons.star : Icons.person,
+                        color: r['color'] as Color, size: 18,
+                      ),
+                      const SizedBox(width: 10),
+                      Text(r['label'] as String,
+                          style: TextStyle(color: r['color'] as Color, fontWeight: FontWeight.w600)),
+                      if (isSelected) ...[
+                        const Spacer(),
+                        Icon(Icons.check, color: r['color'] as Color, size: 16),
+                      ],
+                    ],
+                  ),
+                ),
+              );
+            }),
+          ],
+        ),
+      ),
+    );
+  }
   void _confirmRemoveMember(String memberAuthId, String memberName) {
     showModalBottomSheet(
       context: context,
@@ -784,24 +863,49 @@ class _GroupChatScreenState extends State<GroupChatScreen> {
                             Text(name, style: TextStyle(fontSize: 14.sp, fontWeight: FontWeight.w600, color: Colors.white)),
                             if (role == 'ADMIN')
                               Text('Admin', style: TextStyle(fontSize: 11.sp, color: Colors.blue))
+                            else if (role == 'MODERATOR')
+                              Text('Moderator', style: TextStyle(fontSize: 11.sp, color: Colors.orange))
                             else if (title != null && title.isNotEmpty)
                               Text(title, style: TextStyle(fontSize: 11.sp, color: Colors.white54)),
                           ],
                         )),
                         // Admin can remove any non-admin, non-self member
                         if (isAdmin && !isSelf && role != 'ADMIN')
-                          GestureDetector(
-                            onTap: () => _confirmRemoveMember(participantId, name),
-                            child: Container(
-                              padding: EdgeInsets.symmetric(horizontal: 10.w, vertical: 5.h),
-                              decoration: BoxDecoration(
-                                color: Colors.red.withValues(alpha: 0.15),
-                                borderRadius: BorderRadius.circular(8.r),
-                                border: Border.all(color: Colors.red.withValues(alpha: 0.4)),
+                          Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              // Change role button
+                              GestureDetector(
+                                onTap: () => _showRoleOptions(participantId, name, role),
+                                child: Container(
+                                  padding: EdgeInsets.symmetric(horizontal: 8.w, vertical: 5.h),
+                                  margin: EdgeInsets.only(right: 6.w),
+                                  decoration: BoxDecoration(
+                                    color: Colors.blue.withValues(alpha: 0.15),
+                                    borderRadius: BorderRadius.circular(8.r),
+                                    border: Border.all(color: Colors.blue.withValues(alpha: 0.4)),
+                                  ),
+                                  child: Text(
+                                    role == 'MODERATOR' ? 'Moderator' : 'Set Role',
+                                    style: TextStyle(fontSize: 10.sp, color: Colors.blue, fontWeight: FontWeight.w600),
+                                  ),
+                                ),
                               ),
-                              child: Text('Remove',
-                                  style: TextStyle(fontSize: 11.sp, color: Colors.red, fontWeight: FontWeight.w600)),
-                            ),
+                              // Remove button
+                              GestureDetector(
+                                onTap: () => _confirmRemoveMember(participantId, name),
+                                child: Container(
+                                  padding: EdgeInsets.symmetric(horizontal: 10.w, vertical: 5.h),
+                                  decoration: BoxDecoration(
+                                    color: Colors.red.withValues(alpha: 0.15),
+                                    borderRadius: BorderRadius.circular(8.r),
+                                    border: Border.all(color: Colors.red.withValues(alpha: 0.4)),
+                                  ),
+                                  child: Text('Remove',
+                                      style: TextStyle(fontSize: 11.sp, color: Colors.red, fontWeight: FontWeight.w600)),
+                                ),
+                              ),
+                            ],
                           ),
                       ]),
                     ),
