@@ -443,13 +443,6 @@ class _CreateGroupButtomSheetState extends State<CreateGroupButtomSheet> {
 
                         heightBox12,
 
-                        Text(
-                          'Selected Members (${widget.selectedMemberIds.length})',
-                          style: TextStyle(
-                            fontSize: 14.sp,
-                            fontWeight: FontWeight.w400,
-                          ),
-                        ),
                         heightBox24,
                       ],
                     ),
