@@ -2,6 +2,7 @@
 
 import 'dart:convert';
 
+import 'package:collection/collection.dart';
 import 'package:get/get.dart';
 import 'package:wisper/app/core/others/get_storage.dart';
 import 'package:wisper/app/core/services/network_caller/network_caller.dart';
@@ -244,7 +245,7 @@ class AllChatsController extends GetxController {
           print('type: $type');
 
           // // অন্য participant বের করা
-          final otherParticipant = chat.participants.firstWhere(
+          final otherParticipant = chat.participants.firstWhereOrNull(
             (p) => p.auth?.id != StorageUtil.getData(StorageUtil.userId),
           );
 
