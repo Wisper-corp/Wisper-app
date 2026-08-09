@@ -37,26 +37,16 @@ class _FavoriteJobScreenState extends State<FavoriteJobScreen> {
         padding: const EdgeInsets.symmetric(horizontal: 20.0, vertical: 0),
         child: Obx(() {
           if (favoriteController.inProgress) {
-            return PostShimmerEffectWidget();
+            return const Center(child: PostShimmerEffectWidget());
           } else if (favoriteController.favoriteJobData == null ||
               favoriteController.favoriteJobData!.isEmpty) {
-            if (!connectivityService.isOnline.value) {
-              return const Center(child: PostShimmerEffectWidget());
-            }
-            return SizedBox(
-              height: 500,
-              child: const Center(
-                child: Text('No job found', style: TextStyle(fontSize: 12)),
-              ),
+            return const Center(
+              child: Text('No saved jobs yet', style: TextStyle(color: Colors.white70, fontSize: 14)),
             );
           } else {
-            print('Length: ${favoriteController.favoriteJobData?.length}');
-
-            return Expanded(
-              child: ListView.builder(
-                padding: EdgeInsets.all(0),
+            return ListView.builder(
+                padding: EdgeInsets.zero,
                 itemCount: favoriteController.favoriteJobData?.length,
-
                 itemBuilder: (context, index) {
                   var date =
                       favoriteController.favoriteJobData?[index].job?.createdAt;
@@ -81,8 +71,7 @@ class _FavoriteJobScreenState extends State<FavoriteJobScreen> {
                     ),
                   );
                 },
-              ),
-            );
+              );
           }
         }),
       ),
