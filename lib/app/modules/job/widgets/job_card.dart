@@ -59,7 +59,7 @@ class JobCard extends StatelessWidget {
     final double? salaryNum = double.tryParse(salary ?? '0');
     final bool hasRealSalary = salaryNum != null && salaryNum > 1000;
     final String salaryDisplay = hasRealSalary
-        ? '\$${salaryNum.toStringAsFixed(0)}/$shift'
+        ? '₦${salaryNum.toStringAsFixed(0)}/$shift'
         : 'Salary Negotiable';
 
     return Column(

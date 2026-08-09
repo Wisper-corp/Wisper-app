@@ -494,7 +494,7 @@ class _JobDetailsScreenState extends State<JobDetailsScreen> {
                         children: [
                           Text(
                             (() {
-                              final currencySymbol = (job?.currency == 'NGN') ? '₦' : '\$';
+                              final currencySymbol = (job?.currency == 'USD') ? '\$' : '₦'; // default ₦
                               final salaryVal = job?.salary ?? 0;
                               final shiftLabel = shift == 'mo' ? 'mo' : 'one-off';
                               if (salaryVal <= 0) return 'Salary Negotiable';
