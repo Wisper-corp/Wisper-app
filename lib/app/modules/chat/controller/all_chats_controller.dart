@@ -2,7 +2,6 @@
 
 import 'dart:convert';
 
-import 'package:collection/collection.dart';
 import 'package:get/get.dart';
 import 'package:wisper/app/core/others/get_storage.dart';
 import 'package:wisper/app/core/services/network_caller/network_caller.dart';
@@ -241,13 +240,17 @@ class AllChatsController extends GetxController {
         );
 
         for (final chat in model.data?.chats ?? []) {
+          try {
           final String type = chat.type ?? 'INDIVIDUAL';
           print('type: $type');
 
-          // // অন্য participant বের করা
-          final otherParticipant = chat.participants.firstWhereOrNull(
+          final otherParticipant = chat.participants.cast<dynamic>().firstWhere(
             (p) => p.auth?.id != StorageUtil.getData(StorageUtil.userId),
+            orElse: () => chat.participants.isNotEmpty ? chat.participants.first : null,
           );
+
+          // Skip if no participants at all
+          if (chat.participants.isEmpty) continue;
 
           final receiverAuth =
               (otherParticipant ?? chat.participants.first).auth;
@@ -324,6 +327,9 @@ class AllChatsController extends GetxController {
           print(
             'Socket List length after adding: ${socketService.socketFriendList.length}',
           );
+          } catch (e) {
+            print('Error processing chat: $e');
+          }
         }
 
         _sortSocketList();
