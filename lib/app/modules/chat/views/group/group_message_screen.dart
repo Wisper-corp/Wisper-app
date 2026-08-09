@@ -892,12 +892,21 @@ class _GroupChatScreenState extends State<GroupChatScreen> {
       final ctrl = JoinGroupController();
       final ok = await ctrl.joinGroup(groupId: widget.groupId);
       if (ok && mounted) {
+        // Use the chatId returned from join
+        final newChatId = ctrl.chatId;
+        if (newChatId.isNotEmpty) {
+          _effectiveChatId.value = newChatId;
+          _ctrl.setupChat(chatId: newChatId);
+        }
         setState(() {
           _hasJoined = true;
           _isJoining = false;
         });
-        // Reload members after joining
         _membersCtrl.getGroupMembers(widget.groupId);
+        // Refresh chat list so the new community appears
+        if (Get.isRegistered<AllChatsController>()) {
+          Get.find<AllChatsController>().getAllChats();
+        }
         Get.snackbar('Success', 'You joined ${widget.groupName ?? 'the community'}!',
           backgroundColor: Colors.green, colorText: Colors.white,
           snackPosition: SnackPosition.TOP);
