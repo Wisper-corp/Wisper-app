@@ -109,10 +109,11 @@ class JobData {
 }
 
 class Author {
-  Author({required this.id, required this.business});
+  Author({required this.id, required this.business, this.person});
 
   final String? id;
   final Business? business;
+  final Person? person;
 
   factory Author.fromJson(Map<String, dynamic> json) {
     return Author(
@@ -120,6 +121,27 @@ class Author {
       business: json["business"] == null
           ? null
           : Business.fromJson(json["business"]),
+      person: json["person"] == null
+          ? null
+          : Person.fromJson(json["person"]),
+    );
+  }
+}
+
+class Person {
+  Person({this.id, this.name, this.title, this.image});
+
+  final String? id;
+  final String? name;
+  final String? title;
+  final String? image;
+
+  factory Person.fromJson(Map<String, dynamic> json) {
+    return Person(
+      id: json["id"],
+      name: json["name"],
+      title: json["title"],
+      image: json["image"],
     );
   }
 }

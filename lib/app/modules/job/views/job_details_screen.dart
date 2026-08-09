@@ -16,6 +16,7 @@ import 'package:wisper/app/modules/job/controller/favorite_job_controller.dart';
 import 'package:wisper/app/modules/job/controller/single_job_controller.dart';
 import 'package:wisper/app/modules/payment/view/payment_webview_screen.dart';
 import 'package:wisper/app/modules/profile/views/business/others_business_screen.dart';
+import 'package:wisper/app/modules/profile/views/person/others_person_screen.dart';
 import 'package:wisper/gen/assets.gen.dart';
 
 import 'package:open_mail_launcher/open_mail_launcher.dart'; 
@@ -314,19 +315,22 @@ class _JobDetailsScreenState extends State<JobDetailsScreen> {
                     onTap: (job?.isScraped == true)
                         ? null
                         : () {
-                            Get.to(
-                              OthersBusinessScreen(userId: job?.author?.id ?? ''),
-                            );
+                            if (job?.author?.person != null) {
+                              Get.to(OthersPersonScreen(userId: job?.author?.id ?? ''));
+                            } else {
+                              Get.to(OthersBusinessScreen(userId: job?.author?.id ?? ''));
+                            }
                           },
                     child: Row(
                       mainAxisAlignment: MainAxisAlignment.start,
                       crossAxisAlignment: CrossAxisAlignment.center,
                       children: [
-                        // Use companyLogo for scraped jobs, fall back to business image
                         (() {
                           final logoUrl = (job?.companyLogo?.isNotEmpty == true)
                               ? job!.companyLogo!
-                              : job?.author?.business?.image ?? '';
+                              : (job?.author?.business?.image?.isNotEmpty == true)
+                                  ? job!.author!.business!.image!
+                                  : job?.author?.person?.image ?? '';
                           if (logoUrl.isNotEmpty) {
                             return CircleAvatar(
                               radius: 20.r,
@@ -340,7 +344,7 @@ class _JobDetailsScreenState extends State<JobDetailsScreen> {
                                   errorWidget: (context, url, error) => CircleAvatar(
                                     radius: 20.r,
                                     backgroundColor: Colors.grey.shade700,
-                                    child: Icon(Icons.business, color: Colors.white54, size: 20.r),
+                                    child: Icon(Icons.person, color: Colors.white54, size: 20.r),
                                   ),
                                 ),
                               ),
@@ -349,20 +353,34 @@ class _JobDetailsScreenState extends State<JobDetailsScreen> {
                           return CircleAvatar(
                             radius: 20.r,
                             backgroundColor: Colors.grey.shade700,
-                            child: Icon(Icons.business, color: Colors.white54, size: 20.r),
+                            child: Icon(Icons.person, color: Colors.white54, size: 20.r),
                           );
                         })(),
                         widthBox8,
-                        Text(
-                          // Use companyName for scraped jobs, fall back to business name
-                          (job?.companyName?.isNotEmpty == true)
-                              ? job!.companyName!
-                              : job?.author?.business?.name ?? '',
-                          style: TextStyle(
-                            fontSize: 14.sp,
-                            fontWeight: FontWeight.w600,
-                            color: Color(0xffD1D1D1),
-                          ),
+                        Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              (job?.companyName?.isNotEmpty == true)
+                                  ? job!.companyName!
+                                  : (job?.author?.business?.name?.isNotEmpty == true)
+                                      ? job!.author!.business!.name!
+                                      : job?.author?.person?.name ?? '',
+                              style: TextStyle(
+                                fontSize: 14.sp,
+                                fontWeight: FontWeight.w600,
+                                color: Color(0xffD1D1D1),
+                              ),
+                            ),
+                            if ((job?.author?.business?.industry ?? job?.author?.person?.title ?? '').isNotEmpty)
+                              Text(
+                                job?.author?.business?.industry ?? job?.author?.person?.title ?? '',
+                                style: TextStyle(
+                                  fontSize: 11.sp,
+                                  color: Colors.white54,
+                                ),
+                              ),
+                          ],
                         ),
                       ],
                     ),

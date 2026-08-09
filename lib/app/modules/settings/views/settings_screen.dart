@@ -356,23 +356,9 @@ class _SettingsScreenState extends State<SettingsScreen> {
     );
   }
 
-  /// Get region from device locale (always fresh)
+  /// Get region from profile address first, then device locale as fallback
   String _getRegion() {
-    // Use device locale as the most accurate current region
-    final locale = WidgetsBinding.instance.platformDispatcher.locale;
-    final code = locale.countryCode ?? '';
-    const Map<String, String> codes = {
-      'NG': 'Nigeria', 'US': 'United States', 'GB': 'United Kingdom',
-      'PK': 'Pakistan', 'IN': 'India', 'GH': 'Ghana', 'KE': 'Kenya',
-      'ZA': 'South Africa', 'BD': 'Bangladesh', 'CA': 'Canada',
-      'AU': 'Australia', 'DE': 'Germany', 'FR': 'France', 'AE': 'UAE',
-      'CN': 'China', 'JP': 'Japan', 'BR': 'Brazil', 'MX': 'Mexico',
-      'ID': 'Indonesia', 'PH': 'Philippines', 'EG': 'Egypt', 'ET': 'Ethiopia',
-      'TZ': 'Tanzania', 'UG': 'Uganda', 'RW': 'Rwanda', 'SN': 'Senegal',
-      'CI': 'Ivory Coast', 'CM': 'Cameroon', 'ZM': 'Zambia', 'ZW': 'Zimbabwe',
-    };
-    if (code.isNotEmpty && codes.containsKey(code)) return codes[code]!;
-    // Fallback to profile address country
+    // Step 1: Use profile address as primary (most accurate for the user)
     final role = StorageUtil.getData(StorageUtil.userRole) ?? '';
     String address = '';
     try {
@@ -389,6 +375,21 @@ class _SettingsScreenState extends State<SettingsScreen> {
         if (country.isNotEmpty) return country;
       }
     }
+
+    // Step 2: Fall back to device locale country code
+    final locale = WidgetsBinding.instance.platformDispatcher.locale;
+    final code = locale.countryCode ?? '';
+    const Map<String, String> codes = {
+      'NG': 'Nigeria', 'US': 'United States', 'GB': 'United Kingdom',
+      'PK': 'Pakistan', 'IN': 'India', 'GH': 'Ghana', 'KE': 'Kenya',
+      'ZA': 'South Africa', 'BD': 'Bangladesh', 'CA': 'Canada',
+      'AU': 'Australia', 'DE': 'Germany', 'FR': 'France', 'AE': 'UAE',
+      'CN': 'China', 'JP': 'Japan', 'BR': 'Brazil', 'MX': 'Mexico',
+      'ID': 'Indonesia', 'PH': 'Philippines', 'EG': 'Egypt', 'ET': 'Ethiopia',
+      'TZ': 'Tanzania', 'UG': 'Uganda', 'RW': 'Rwanda', 'SN': 'Senegal',
+      'CI': 'Ivory Coast', 'CM': 'Cameroon', 'ZM': 'Zambia', 'ZW': 'Zimbabwe',
+    };
+    if (code.isNotEmpty && codes.containsKey(code)) return codes[code]!;
     return code.isNotEmpty ? code : 'Unknown';
   }
 
