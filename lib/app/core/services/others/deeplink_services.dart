@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:app_links/app_links.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import 'package:wisper/app/modules/chat/views/group/group_message_screen.dart';
 
 class DeepLinkService extends GetxService {
   static final DeepLinkService _instance = DeepLinkService._internal();
@@ -69,13 +70,24 @@ class DeepLinkService extends GetxService {
 
       Get.offAllNamed('/dashboard');
 
-      if (profileType == 'person') {
-        Get.toNamed('/profile/person/$userId');
-      } else if (profileType == 'business') {
-        Get.toNamed('/profile/business/$userId');
-      } else if (profileType == 'group') {
-        Get.toNamed('/groups/$userId');
-      }
+      Future.delayed(const Duration(milliseconds: 500), () {
+        if (profileType == 'person') {
+          Get.toNamed('/profile/person/$userId');
+        } else if (profileType == 'business') {
+          Get.toNamed('/profile/business/$userId');
+        } else if (profileType == 'group') {
+          // Navigate directly to GroupChatScreen with groupId
+          Get.to(
+            () => GroupChatScreen(
+              groupId: userId,
+              groupName: '',
+              groupImage: '',
+              hasJoined: false, // will check membership inside
+            ),
+            transition: Transition.rightToLeft,
+          );
+        }
+      });
     } else {
       debugPrint("❌ Invalid deep link format: $uri");
     }
