@@ -91,7 +91,10 @@ class _JobSectionState extends State<JobSection> {
               final job = jobsToShow[index];
               final logo = job.companyLogo?.trim() ?? '';
               final bizImage = job.author?.business?.image?.trim() ?? '';
-              final resolvedLogo = logo.isNotEmpty ? logo : bizImage;
+              final personImage = job.author?.person?.image?.trim() ?? '';
+              final resolvedLogo = logo.isNotEmpty ? logo
+                  : bizImage.isNotEmpty ? bizImage
+                  : personImage;
 
               var date = job.createdAt;
               final DateFormatter formattedTime = DateFormatter(date!);
