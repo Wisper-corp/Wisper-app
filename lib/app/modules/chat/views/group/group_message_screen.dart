@@ -887,7 +887,7 @@ class _GroupChatScreenState extends State<GroupChatScreen> {
                                     children: [
                                       Text(name, style: TextStyle(fontSize: 15.sp, fontWeight: FontWeight.w600, color: Colors.white)),
                                       SizedBox(height: 4.h),
-                                      Text(role == 'MODERATOR' ? 'Moderator' : role == 'ADMIN' ? 'Admin' : 'Member',
+                                      Text(role == 'MODERATOR' ? 'Moderator' : role == 'ADMIN' ? 'Moderator' : 'Member',
                                           style: TextStyle(fontSize: 12.sp, color: Colors.white54)),
                                       SizedBox(height: 16.h),
                                       // Only show role options for non-admin members
