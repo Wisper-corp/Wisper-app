@@ -74,7 +74,7 @@ class DeepLinkService extends GetxService {
         Get.to(
           () => GroupChatScreen(
             groupId: targetId,
-            groupName: '',
+            groupName: '', // will be loaded from GroupInfoController
             groupImage: '',
             hasJoined: false,
             showHeader: true,
