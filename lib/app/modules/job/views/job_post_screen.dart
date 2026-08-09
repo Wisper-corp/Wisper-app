@@ -45,6 +45,7 @@ class _JobPostScreenState extends State<JobPostScreen> {
   List<String> responsibilities = [];
 
   bool isFormValid = false;
+  String? _salaryError;
 
   @override
   void initState() {
@@ -65,18 +66,25 @@ class _JobPostScreenState extends State<JobPostScreen> {
     final title = _titleC.text.trim();
     final desc = _descC.text.trim();
     final salaryText = _salaryC.text.trim();
-    final salary = double.tryParse(salaryText) ?? 0;
 
-    // Only require title, description and salary — requirements/responsibilities are optional
+    // Check for commas
+    String? salaryErr;
+    if (salaryText.contains(',')) {
+      salaryErr = 'Please enter salary without commas (e.g., 250000).';
+    }
+
+    final salary = double.tryParse(salaryText.replaceAll(',', '')) ?? 0;
     final newValidState =
         title.isNotEmpty &&
         desc.isNotEmpty &&
         salaryText.isNotEmpty &&
-        salary > 0;
+        salary > 0 &&
+        salaryErr == null;
 
-    if (newValidState != isFormValid) {
+    if (newValidState != isFormValid || salaryErr != _salaryError) {
       setState(() {
         isFormValid = newValidState;
+        _salaryError = salaryErr;
       });
     }
   }
@@ -324,7 +332,7 @@ class _JobPostScreenState extends State<JobPostScreen> {
                   Expanded(
                     child: CustomTextField(
                       controller: _salaryC,
-                      hintText: '1800',
+                      hintText: '250000',
                       keyboardType: TextInputType.number,
                     ),
                   ),
@@ -335,6 +343,14 @@ class _JobPostScreenState extends State<JobPostScreen> {
                   ),
                 ],
               ),
+              if (_salaryError != null)
+                Padding(
+                  padding: const EdgeInsets.only(top: 6),
+                  child: Text(
+                    _salaryError!,
+                    style: const TextStyle(color: Colors.red, fontSize: 12),
+                  ),
+                ),
               heightBox16,
 
               // Location Type
