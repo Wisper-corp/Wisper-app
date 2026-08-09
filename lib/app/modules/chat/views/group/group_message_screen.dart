@@ -862,50 +862,81 @@ class _GroupChatScreenState extends State<GroupChatScreen> {
                           children: [
                             Text(name, style: TextStyle(fontSize: 14.sp, fontWeight: FontWeight.w600, color: Colors.white)),
                             if (role == 'ADMIN')
-                              Text('Admin', style: TextStyle(fontSize: 11.sp, color: Colors.blue))
+                              Text('Moderator', style: TextStyle(fontSize: 11.sp, color: Colors.blue))
                             else if (role == 'MODERATOR')
                               Text('Moderator', style: TextStyle(fontSize: 11.sp, color: Colors.orange))
                             else if (title != null && title.isNotEmpty)
                               Text(title, style: TextStyle(fontSize: 11.sp, color: Colors.white54)),
                           ],
                         )),
-                        // Admin can remove any non-admin, non-self member
-                        if (isAdmin && !isSelf && role != 'ADMIN')
-                          Row(
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              // Change role button
-                              GestureDetector(
-                                onTap: () => _showRoleOptions(participantId, name, role),
-                                child: Container(
-                                  padding: EdgeInsets.symmetric(horizontal: 8.w, vertical: 5.h),
-                                  margin: EdgeInsets.only(right: 6.w),
-                                  decoration: BoxDecoration(
-                                    color: Colors.blue.withValues(alpha: 0.15),
-                                    borderRadius: BorderRadius.circular(8.r),
-                                    border: Border.all(color: Colors.blue.withValues(alpha: 0.4)),
-                                  ),
-                                  child: Text(
-                                    role == 'MODERATOR' ? 'Moderator' : 'Set Role',
-                                    style: TextStyle(fontSize: 10.sp, color: Colors.blue, fontWeight: FontWeight.w600),
+                        // Three-dot menu for admin actions on non-self members
+                        if (isAdmin && !isSelf)
+                          GestureDetector(
+                            onTap: () {
+                              showModalBottomSheet(
+                                context: context,
+                                backgroundColor: const Color(0xff1A1A1A),
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.vertical(top: Radius.circular(16.r)),
+                                ),
+                                builder: (_) => Container(
+                                  padding: EdgeInsets.all(20.w),
+                                  child: Column(
+                                    mainAxisSize: MainAxisSize.min,
+                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                    children: [
+                                      Text(name, style: TextStyle(fontSize: 15.sp, fontWeight: FontWeight.w600, color: Colors.white)),
+                                      SizedBox(height: 4.h),
+                                      Text(role == 'MODERATOR' ? 'Moderator' : role == 'ADMIN' ? 'Admin' : 'Member',
+                                          style: TextStyle(fontSize: 12.sp, color: Colors.white54)),
+                                      SizedBox(height: 16.h),
+                                      // Only show role options for non-admin members
+                                      if (role != 'ADMIN') ...[
+                                        ListTile(
+                                          leading: Icon(Icons.star, color: Colors.orange, size: 20.sp),
+                                          title: Text(role == 'MODERATOR' ? 'Remove Moderator' : 'Make Moderator',
+                                              style: TextStyle(fontSize: 14.sp, color: Colors.white)),
+                                          onTap: () {
+                                            Navigator.pop(context);
+                                            _showRoleOptions(participantId, name, role);
+                                          },
+                                        ),
+                                        ListTile(
+                                          leading: Icon(Icons.shield, color: Colors.blue, size: 20.sp),
+                                          title: Text('Make Admin', style: TextStyle(fontSize: 14.sp, color: Colors.white)),
+                                          onTap: () async {
+                                            Navigator.pop(context);
+                                            final chatId = _effectiveChatId.value.isNotEmpty
+                                                ? _effectiveChatId.value
+                                                : widget.chatId ?? '';
+                                            final ctrl = GroupMemberController();
+                                            final ok = await ctrl.updateRole(
+                                                chatId: chatId, participantId: participantId, role: 'ADMIN');
+                                            if (ok) {
+                                              await _membersCtrl.getGroupMembers(widget.groupId ?? '');
+                                              if (mounted) setState(() {});
+                                              Get.snackbar('Done', '$name is now Admin',
+                                                  backgroundColor: Colors.green, colorText: Colors.white,
+                                                  snackPosition: SnackPosition.BOTTOM);
+                                            }
+                                          },
+                                        ),
+                                      ],
+                                      ListTile(
+                                        leading: Icon(Icons.remove_circle_outline, color: Colors.red, size: 20.sp),
+                                        title: Text('Remove from community',
+                                            style: TextStyle(fontSize: 14.sp, color: Colors.red)),
+                                        onTap: () {
+                                          Navigator.pop(context);
+                                          _confirmRemoveMember(participantId, name);
+                                        },
+                                      ),
+                                    ],
                                   ),
                                 ),
-                              ),
-                              // Remove button
-                              GestureDetector(
-                                onTap: () => _confirmRemoveMember(participantId, name),
-                                child: Container(
-                                  padding: EdgeInsets.symmetric(horizontal: 10.w, vertical: 5.h),
-                                  decoration: BoxDecoration(
-                                    color: Colors.red.withValues(alpha: 0.15),
-                                    borderRadius: BorderRadius.circular(8.r),
-                                    border: Border.all(color: Colors.red.withValues(alpha: 0.4)),
-                                  ),
-                                  child: Text('Remove',
-                                      style: TextStyle(fontSize: 11.sp, color: Colors.red, fontWeight: FontWeight.w600)),
-                                ),
-                              ),
-                            ],
+                              );
+                            },
+                            child: Icon(Icons.more_vert, color: Colors.white54, size: 22.sp),
                           ),
                       ]),
                     ),
