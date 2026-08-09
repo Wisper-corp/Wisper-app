@@ -658,8 +658,15 @@ class _GroupChatScreenState extends State<GroupChatScreen> {
             children: [
               _encryptionNotice(),
               Expanded(child: Center(
-                child: EmptyGroupInfoCard(isGroup: true, name: widget.groupName ?? '', member: '5'),
+                child: EmptyGroupInfoCard(
+                  isGroup: true,
+                  name: widget.groupName ?? '',
+                  member: _membersCtrl.groupMemnersData?.length.toString() ?? '0',
+                ),
               )),
+              // Show Join button if user hasn't joined yet
+              if (!_hasJoined)
+                _buildJoinBanner(),
             ],
           ),
         );

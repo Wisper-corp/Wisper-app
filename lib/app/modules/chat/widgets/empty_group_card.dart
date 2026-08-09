@@ -38,11 +38,14 @@ class EmptyGroupInfoCard extends StatelessWidget {
           heightBox20,
           isGroup!
               ? Text(
-                  'You created this Community Market',
+                  name != null && name!.isNotEmpty
+                      ? 'Welcome to $name'
+                      : 'Welcome to this Community',
                   style: TextStyle(
                     fontSize: 16.sp,
                     fontWeight: FontWeight.w600,
                   ),
+                  textAlign: TextAlign.center,
                 )
               : Text(
                   'You created this Class',
@@ -53,7 +56,9 @@ class EmptyGroupInfoCard extends StatelessWidget {
                 ),
           heightBox8,
           Text(
-            'Community • $member members',
+            member != null && member != '0' && member != '5'
+                ? 'Community • $member members'
+                : 'Be the first to send a message',
             style: TextStyle(
               fontSize: 12.sp,
               fontWeight: FontWeight.w400,
