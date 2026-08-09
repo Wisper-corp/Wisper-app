@@ -13,7 +13,6 @@ class GroupMemberController extends GetxController {
 
   Future<bool> addRequest({String? memberId, String? groupId}) async {
     _inProgress.value = true;
-
     try {
       Map<String, dynamic> body = {"member": memberId};
       final NetworkResponse response = await Get.find<NetworkCaller>()
@@ -22,10 +21,8 @@ class GroupMemberController extends GetxController {
             body: body,
             accessToken: StorageUtil.getData(StorageUtil.userAccessToken),
           );
-
       if (response.isSuccess && response.responseData != null) {
         _errorMessage.value = '';
-
         _inProgress.value = false;
         return true;
       } else {
@@ -34,8 +31,7 @@ class GroupMemberController extends GetxController {
         return false;
       }
     } catch (e) {
-      _errorMessage.value = 'Failed to fetch district data: ${e.toString()}';
-      print('Error fetching district data: $e');
+      _errorMessage.value = 'Failed: ${e.toString()}';
       _inProgress.value = false;
       return false;
     }
@@ -43,7 +39,6 @@ class GroupMemberController extends GetxController {
 
   Future<bool> removeRequest({String? memberId, String? chatId}) async {
     _inProgress.value = true;
-
     try {
       Map<String, dynamic> body = {"chatId": chatId, "participantId": memberId};
       final NetworkResponse response = await Get.find<NetworkCaller>()
@@ -52,10 +47,8 @@ class GroupMemberController extends GetxController {
             body: body,
             accessToken: StorageUtil.getData(StorageUtil.userAccessToken),
           );
-
       if (response.isSuccess && response.responseData != null) {
         _errorMessage.value = '';
-
         _inProgress.value = false;
         return true;
       } else {
@@ -64,42 +57,12 @@ class GroupMemberController extends GetxController {
         return false;
       }
     } catch (e) {
-      _errorMessage.value = 'Failed to fetch district data: ${e.toString()}';
-      print('Error fetching district data: $e');
+      _errorMessage.value = 'Failed: ${e.toString()}';
       _inProgress.value = false;
       return false;
     }
   }
-  Future<bool> leaveGroup({String? chatId}) async {
-    _inProgress.value = true;
-    try {
-      final myId = StorageUtil.getData(StorageUtil.userId) ?? '';
-      final Map<String, dynamic> body = {
-        "chatId": chatId,
-        "participantId": myId,
-      };
-      final NetworkResponse response = await Get.find<NetworkCaller>()
-          .patchRequest(
-            Urls.removePerticipantUrl,
-            body: body,
-            accessToken: StorageUtil.getData(StorageUtil.userAccessToken),
-          );
-      if (response.isSuccess) {
-        _inProgress.value = false;
-        return true;
-      }
-      _errorMessage.value = response.errorMessage;
-      _inProgress.value = false;
-      return false;
-    } catch (e) {
-      _errorMessage.value = e.toString();
-      _inProgress.value = false;
-      return false;
-    }
-  }
-}
 
-extension GroupMemberLeave on GroupMemberController {
   Future<bool> leaveGroup({String? chatId}) async {
     _inProgress.value = true;
     try {
@@ -127,7 +90,6 @@ extension GroupMemberLeave on GroupMemberController {
       return false;
     }
   }
-}
 
   Future<bool> updateRole({String? chatId, String? participantId, String? role}) async {
     _inProgress.value = true;
@@ -156,3 +118,4 @@ extension GroupMemberLeave on GroupMemberController {
       return false;
     }
   }
+}
