@@ -115,10 +115,11 @@ class Job {
 }
 
 class Author {
-  Author({required this.id, required this.business});
+  Author({required this.id, required this.business, this.person});
 
   final String? id;
   final Business? business;
+  final Business? person; // reuse same shape — has name/image
 
   factory Author.fromJson(Map<String, dynamic> json) {
     return Author(
@@ -126,6 +127,9 @@ class Author {
       business: json["business"] == null
           ? null
           : Business.fromJson(json["business"]),
+      person: json["person"] == null
+          ? null
+          : Business.fromJson(json["person"]),
     );
   }
 }
