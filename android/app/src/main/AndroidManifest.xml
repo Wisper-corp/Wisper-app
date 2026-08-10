@@ -62,6 +62,9 @@
                 <data android:scheme="https" android:host="wisperonline.com" android:pathPrefix="/persons/" />
                 <data android:scheme="https" android:host="wisperonline.com" android:pathPrefix="/businesses/" />
                 <data android:scheme="https" android:host="wisperonline.com" android:pathPrefix="/groups/" />
+                <data android:scheme="https" android:host="admin.wisperonline.com" android:pathPrefix="/groups/" />
+                <data android:scheme="https" android:host="admin.wisperonline.com" android:pathPrefix="/persons/" />
+                <data android:scheme="https" android:host="admin.wisperonline.com" android:pathPrefix="/businesses/" />
             </intent-filter>
 
             <!-- New: Running Deep Link (for ngrok testing) -->

@@ -387,7 +387,7 @@ class _GroupInfoScreenState extends State<GroupInfoScreen> {
   void _showShareGroupLink(String? groupId) {
     if (groupId == null) return;
     final groupName = groupInfoController.groupInfoData?.name ?? 'Group';
-    final String inviteLink = 'https://wisperonline.com/groups/$groupId';
+    final String inviteLink = 'https://admin.wisperonline.com/groups/$groupId';
 
     showModalBottomSheet(
       context: context,
