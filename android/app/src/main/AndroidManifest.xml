@@ -54,6 +54,14 @@
                 <category android:name="android.intent.category.BROWSABLE"/>
             </intent-filter>
 
+            <!-- wisper:// custom scheme for deep links from browser -->
+            <intent-filter>
+                <action android:name="android.intent.action.VIEW" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <category android:name="android.intent.category.BROWSABLE" />
+                <data android:scheme="wisper" />
+            </intent-filter>
+
             <!-- Production deep links: wisperonline.com -->
             <intent-filter android:autoVerify="true">
                 <action android:name="android.intent.action.VIEW" />
