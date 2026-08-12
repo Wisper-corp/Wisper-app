@@ -59,7 +59,9 @@
                 <action android:name="android.intent.action.VIEW" />
                 <category android:name="android.intent.category.DEFAULT" />
                 <category android:name="android.intent.category.BROWSABLE" />
-                <data android:scheme="wisper" />
+                <data android:scheme="wisper" android:host="groups" />
+                <data android:scheme="wisper" android:host="persons" />
+                <data android:scheme="wisper" android:host="businesses" />
             </intent-filter>
 
             <!-- Production deep links: wisperonline.com -->
