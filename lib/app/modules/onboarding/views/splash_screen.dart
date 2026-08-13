@@ -82,11 +82,18 @@ class _SplashScreenState extends State<SplashScreen> {
 
     if (token != null && token.isNotEmpty) {
 
+      // If deep link already processed (hot start), skip dashboard navigation
+      final deepLinkService = Get.find<DeepLinkService>();
+      if (deepLinkService.deepLinkProcessed) {
+        // Deep link already navigated — don't overwrite with dashboard
+        deepLinkService.deepLinkProcessed = false;
+        return;
+      }
+
       Get.offAllNamed('/dashboard');
 
       // Wait for dashboard to fully render before processing deep link
       Future.delayed(const Duration(milliseconds: 1000), () {
-        final deepLinkService = Get.find<DeepLinkService>();
         deepLinkService.processPendingDeepLink();
       });
 

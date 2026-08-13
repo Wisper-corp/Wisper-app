@@ -15,6 +15,7 @@ class DeepLinkService extends GetxService {
   StreamSubscription<Uri>? _linkSubscription;
 
   final Rx<Uri?> pendingDeepLink = Rx<Uri?>(null);
+  bool deepLinkProcessed = false;
 
   Future<void> initDeepLinks() async {
     final initialLink = await _appLinks.getInitialLink();
@@ -40,6 +41,7 @@ class DeepLinkService extends GetxService {
     final token = StorageUtil.getData(StorageUtil.userAccessToken);
     if (token != null && token.isNotEmpty) {
       Future.delayed(const Duration(milliseconds: 300), () {
+        deepLinkProcessed = true;
         processPendingDeepLink();
       });
     }
@@ -52,7 +54,23 @@ class DeepLinkService extends GetxService {
     String? targetId;
     String? profileType;
 
-    if (uri.pathSegments.length >= 2) {
+    // Handle wisper:// custom scheme — host IS the type, path is the ID
+    // e.g. wisper://groups/6c105e1f-...  → host=groups, pathSegments=['6c105e1f-...']
+    if (uri.scheme == 'wisper') {
+      final host = uri.host.toLowerCase();
+      if (host == 'groups' || host == 'group') {
+        profileType = 'group';
+        targetId = uri.pathSegments.isNotEmpty ? uri.pathSegments[0] : null;
+      } else if (host == 'persons' || host == 'person') {
+        profileType = 'person';
+        targetId = uri.pathSegments.isNotEmpty ? uri.pathSegments[0] : null;
+      } else if (host == 'businesses' || host == 'business') {
+        profileType = 'business';
+        targetId = uri.pathSegments.isNotEmpty ? uri.pathSegments[0] : null;
+      }
+    }
+    // Handle https:// links — path is /groups/{id}
+    else if (uri.pathSegments.length >= 2) {
       final firstSegment = uri.pathSegments[0].toLowerCase();
       if (firstSegment == 'persons' || firstSegment == 'person') {
         profileType = 'person';
