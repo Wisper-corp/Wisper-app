@@ -107,9 +107,10 @@ class AllChatsController extends GetxController {
           final latestAt = chat['latestMessageAt'] ?? '';
           final idx = socketService.socketFriendList.indexWhere((e) => e['id'] == chatId);
           if (idx != -1) {
-            socketService.socketFriendList[idx]
-              ..['lastMessage'] = lastMessage
-              ..['latestMessageAt'] = latestAt;
+            final updated = Map<String, dynamic>.from(socketService.socketFriendList[idx]);
+            updated['lastMessage'] = lastMessage;
+            updated['latestMessageAt'] = latestAt;
+            socketService.socketFriendList[idx] = updated;
           }
         }
         socketService.socketFriendList.sort((a, b) {
