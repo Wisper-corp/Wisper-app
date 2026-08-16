@@ -68,13 +68,13 @@ dependencies:
   syncfusion_flutter_pdfviewer: 
   open_mail_launcher: ^0.1.1
   flutter_image_compress: ^2.4.0
-  app_links: 
+  app_links: ^6.4.1
   audioplayers: ^6.1.0
   flutter_callkit_incoming: ^2.3.3
   crash_safe_image: ^0.3.0
   hive: ^2.2.3
   hive_flutter: ^1.1.0
-  firebase_messaging:
+  firebase_messaging: ^15.1.6
   flutter_local_notifications: ^18.0.1
   go_router: ^17.0.1
   share_plus: ^12.0.1

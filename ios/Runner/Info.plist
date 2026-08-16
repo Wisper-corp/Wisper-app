@@ -28,10 +28,20 @@
 			<key>CFBundleTypeRole</key>
 			<string>Editor</string>
 			<key>CFBundleURLName</key>
-			<string>com.wisperuser.app.mytest</string>
+			<string>com.wispermedia.app</string>
 			<key>CFBundleURLSchemes</key>
 			<array>
-				<string>com.googleusercontent.apps.488154013426-bgu8vja9mm5bpvgr3mtksc3hqf60k247</string>
+				<string>com.googleusercontent.apps.488154013426-bifr2c1n5bbl7tsmr5nk1jt1j92qmp28</string>
+			</array>
+		</dict>
+		<dict>
+			<key>CFBundleTypeRole</key>
+			<string>Editor</string>
+			<key>CFBundleURLName</key>
+			<string>wisper</string>
+			<key>CFBundleURLSchemes</key>
+			<array>
+				<string>wisper</string>
 			</array>
 		</dict>
 	</array>
