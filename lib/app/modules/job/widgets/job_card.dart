@@ -10,6 +10,7 @@ import 'package:wisper/app/modules/job/views/job_details_screen.dart';
 import 'package:wisper/app/modules/profile/views/business/others_business_screen.dart';
 import 'package:wisper/app/modules/profile/views/person/others_person_screen.dart';
 import 'package:wisper/gen/assets.gen.dart';
+import 'package:wisper/app/core/utils/currency_helper.dart';
 
 class JobCard extends StatelessWidget {
   final bool? showAction;
@@ -24,6 +25,11 @@ class JobCard extends StatelessWidget {
   final String? ownerDesignation;
   final String? jobTitle;
   final String? salary;
+
+  /// Scraped listings carry a monthly USD figure (see job_scraper). The Job
+  /// model has no currency column, so this flag decides the symbol — showing
+  /// them in Naira misrepresented the pay by orders of magnitude.
+  final bool isScraped;
   final String? location;
   final String? jobType;
   final String? locationType;
@@ -41,6 +47,7 @@ class JobCard extends StatelessWidget {
     this.ownerDesignation,
     this.jobTitle,
     this.salary,
+    this.isScraped = false,
     this.location,
     this.jobType,
     this.locationType,
@@ -58,8 +65,10 @@ class JobCard extends StatelessWidget {
     // Show "Negotiable" if salary is 0 or the default 1000 placeholder
     final double? salaryNum = double.tryParse(salary ?? '0');
     final bool hasRealSalary = salaryNum != null && salaryNum > 1000;
+    final String currencySymbol =
+        isScraped ? CurrencyHelper.symbolFor('USD') : CurrencyHelper.symbolFor('NGN');
     final String salaryDisplay = hasRealSalary
-        ? '₦${salaryNum.toStringAsFixed(0)}/$shift'
+        ? '$currencySymbol${salaryNum.toStringAsFixed(0)}/$shift'
         : 'Salary Negotiable';
 
     return Column(

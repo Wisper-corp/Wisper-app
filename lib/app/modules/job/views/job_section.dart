@@ -117,6 +117,7 @@ class _JobSectionState extends State<JobSection> {
                       '',
                   jobTitle: job.title ?? '',
                   salary: job.salary.toString(),
+                  isScraped: job.isScraped ?? false,
                   location: job.location ?? 'Not Mentioned',
                   jobType: job.type ?? '',
                   locationType: job.locationType ?? '',

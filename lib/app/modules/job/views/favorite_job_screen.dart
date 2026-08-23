@@ -63,6 +63,9 @@ class _FavoriteJobScreenState extends State<FavoriteJobScreen> {
                       ownerDesignation: job?.author?.business?.name ?? job?.author?.person?.name ?? '',
                       jobTitle: job?.title ?? '',
                       salary: job?.salary.toString() ?? '',
+                      // Favourites model has no isScraped field; scraped jobs are not
+                      // favouritable in practice, so Naira is correct here.
+                      isScraped: false,
                       location: job?.location ?? '',
                       jobType: job?.type ?? '',
                       jobDescription: job?.description ?? '',

@@ -74,6 +74,7 @@ class _OthersJobSectionState extends State<OthersJobSection> {
                 ownerDesignation: job.author?.business?.industry ?? '',
                 jobTitle: job.title ?? 'No Title',
                 salary: job.salary?.toString() ?? 'Negotiable',
+                isScraped: job.isScraped ?? false,
                 location: job.location ?? 'Remote',
                 jobType: job.type ?? 'Full Time',
                 jobDescription: job.description ?? '',
