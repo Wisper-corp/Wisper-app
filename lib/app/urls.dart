@@ -95,7 +95,9 @@ class Urls {
   static const String roleUrl = '$_baseUrl/persons/roles';
   static const String myCallsUrl = '$_baseUrl/calls/my';
   static const String myCallUrl = '$_baseUrl/calls/my';
-  static const String roomUrl = '$_baseUrl/calls/token';
+  // Creating the call room is POST /calls — /calls/token only mints an Agora
+  // token for an *existing* call and 422s on a create payload.
+  static const String roomUrl = '$_baseUrl/calls';
   static const String callTokenUrl = '$_baseUrl/calls/token';
   static const String allCommunityUrl = '$_baseUrl/groups/public';
   static String addClassMembersById(String id) => '$_baseUrl/classes/members/$id';

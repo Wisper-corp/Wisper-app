@@ -17,7 +17,11 @@ import 'package:wisper/app/modules/chat/controller/block_user_controller.dart';
 import 'package:wisper/app/modules/chat/controller/group/delete_group_chat_controller.dart';
 import 'package:wisper/app/modules/chat/controller/mute_chat_controller.dart';
 import 'package:wisper/app/modules/chat/controller/mute_info_controller.dart';
-import 'package:wisper/app/modules/chat/views/video_call.dart';
+import 'package:wisper/app/core/services/call/controller/call_services.dart';
+import 'package:wisper/app/core/services/socket/socket_service.dart';
+import 'package:wisper/app/modules/calls/controller/call_controller.dart';
+import 'package:wisper/app/modules/calls/views/audio_call.dart';
+import 'package:wisper/app/modules/calls/views/video_call.dart';
 import 'package:wisper/app/modules/dashboard/views/dashboard_screen.dart';
 import 'package:wisper/app/modules/post/views/my_post_section.dart';
 import 'package:wisper/app/modules/profile/views/business/others_business_screen.dart';
@@ -56,6 +60,11 @@ class _ChatHeaderState extends State<ChatHeader> {
   );
   final DeleteGroupController deleteGroupController = DeleteGroupController();
   final MuteChatController muteChatController = MuteChatController();
+  final CallController callController = CallController();
+  final SocketService socketService = Get.find<SocketService>();
+  final CallService callService = Get.isRegistered<CallService>()
+      ? Get.find<CallService>()
+      : Get.put(CallService());
 
   @override
   void initState() {
@@ -179,6 +188,93 @@ class _ChatHeaderState extends State<ChatHeader> {
   }
 
   /// Request camera + microphone permissions before starting a call
+  /// Places a one-to-one call.
+  ///
+  /// This mirrors the group/class headers: a call row has to exist on the
+  /// server and the callee has to be told about it. Previously this screen
+  /// jumped straight into a call page holding a hardcoded Agora token and the
+  /// fixed channel "CallDao", and never emitted `callInvite` — so the callee
+  /// was never notified and the caller sat on "Calling..." forever.
+  Future<void> _startCall({required bool video}) async {
+    final receiverId = widget.memberId;
+    if (receiverId == null || receiverId.isEmpty) {
+      showSnackBarMessage(context, 'Cannot start a call with this chat.', true);
+      return;
+    }
+
+    final granted = await _requestCallPermissions(video: video);
+    if (!granted) return;
+
+    final type = video ? 'VIDEO' : 'AUDIO';
+
+    await showLoadingOverLay(
+      msg: 'Please wait...',
+      asyncFunction: () async {
+        // 1 — create the call row (POST /calls) so both sides share a callId.
+        final created = await callController.getRoom(
+          callType: type,
+          mode: 'ONE_TO_ONE',
+          receiverUserId: receiverId,
+        );
+        if (!created) {
+          if (mounted) {
+            showSnackBarMessage(context, callController.errorMessage, true);
+          }
+          return;
+        }
+
+        // 2 — mint the Agora token for that room (POST /calls/token).
+        callService.resetCallSignals();
+        final tokenOk = await callController.getToken(
+          callId: callController.callId,
+          roomId: callController.roomId,
+        );
+        if (!tokenOk) {
+          if (mounted) {
+            showSnackBarMessage(context, callController.errorMessage, true);
+          }
+          return;
+        }
+
+        // 3 — ring the callee: socket `callIncoming` plus the FCM/VoIP push.
+        socketService.socket.emit('callInvite', {
+          "callId": callController.callId,
+          "token": callController.token,
+          "groupName": null,
+          "groupImage": null,
+        });
+
+        if (!mounted) return;
+
+        if (video) {
+          Get.to(
+            () => VideoCallPage(
+              name: widget.name ?? '',
+              photoUrl: widget.image ?? '',
+              chatId: widget.chatId ?? '',
+              channelName: callController.roomId,
+              token: callController.token,
+              uuid: callController.uuid,
+              callId: callController.callId,
+            ),
+          );
+        } else {
+          Get.to(
+            () => AudioCallPage(
+              name: widget.name ?? '',
+              photoUrl: widget.image ?? '',
+              chatId: widget.chatId ?? '',
+              channelName: callController.roomId,
+              token: callController.token,
+              uuid: callController.uuid,
+              callId: callController.callId,
+            ),
+          );
+        }
+      },
+    );
+  }
+
   Future<bool> _requestCallPermissions({bool video = false}) async {
     final perms = video
         ? [Permission.camera, Permission.microphone]
@@ -395,34 +491,13 @@ class _ChatHeaderState extends State<ChatHeader> {
                       asset: Assets.images.video.keyName,
                       size: 18,
                       tooltip: 'Video call',
-                      onTap: () async {
-                        final granted = await _requestCallPermissions(video: true);
-                        if (!granted) return;
-                        Get.to(
-                          () => VideoCallPage(
-                            name: widget.name ?? '',
-                            photoUrl: widget.image ?? '',
-                            chatId: widget.chatId ?? '',
-                          ),
-                        );
-                      },
+                      onTap: () => _startCall(video: true),
                     ),
                     HeaderIcon(
                       asset: Assets.images.call.keyName,
                       size: 17,
                       tooltip: 'Voice call',
-                      onTap: () async {
-                        final granted = await _requestCallPermissions(video: false);
-                        if (!granted) return;
-                        Get.to(
-                          () => VideoCallPage(
-                            name: widget.name ?? '',
-                            photoUrl: widget.image ?? '',
-                            chatId: widget.chatId ?? '',
-                            isAudio: true,
-                          ),
-                        );
-                      },
+                      onTap: () => _startCall(video: false),
                     ),
                   ],
                 ),
