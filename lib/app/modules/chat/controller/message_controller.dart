@@ -34,7 +34,7 @@ class MessageController extends GetxController {
     messages.clear();
     isLoading.value = true;
 
-    getMessages(chatId: chatId ?? '').then((_) => scrollToBottom());
+    getMessages(chatId: chatId ?? '').then((_) => scrollToBottomAfterFrame());
 
     // Wait for socket to be ready before attaching listeners
     _attachSocketListeners();
@@ -126,7 +126,7 @@ class MessageController extends GetxController {
       messages.insert(0, msg);
       print('Senders Name: $senderName id : ${SocketMessageKeys.senderId}');
 
-      scrollToBottom();
+      scrollToBottomAfterFrame();
     } catch (e) {
       print("Socket parse error: $e");
     }
@@ -163,8 +163,25 @@ class MessageController extends GetxController {
   }
 
   /// Scrolls once the newly-added message has actually been laid out.
+  ///
+  /// Calling scrollToBottom() straight after `messages.insert` reads the OLD
+  /// maxScrollExtent — the list has not rebuilt yet — so it lands one bubble
+  /// short of the bottom. Wait for the frame, then settle again once the
+  /// bubble's real height is known (wrapped text and images change it).
   void scrollToBottomAfterFrame() {
-    WidgetsBinding.instance.addPostFrameCallback((_) => scrollToBottom());
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      scrollToBottom();
+      Future.delayed(const Duration(milliseconds: 120), () {
+        if (!scrollController.hasClients) return;
+        final p = scrollController.position;
+        final target = p.axisDirection == AxisDirection.up
+            ? p.minScrollExtent
+            : p.maxScrollExtent;
+        if ((scrollController.offset - target).abs() > 8) {
+          scrollToBottom(animated: false);
+        }
+      });
+    });
   }
 
   void sendMessage(String chatId) {
@@ -282,7 +299,8 @@ class MessageController extends GetxController {
       Get.snackbar("Error", "Failed to load messages");
     } finally {
       isLoading(false);
-      scrollToBottom();
+      // Initial load: the list has not been laid out yet at this point.
+      scrollToBottomAfterFrame();
     }
   }
 
