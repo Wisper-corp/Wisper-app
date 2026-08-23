@@ -139,13 +139,32 @@ class MessageController extends GetxController {
     return "";
   }
 
-  void scrollToBottom() {
+  /// Scrolls to the newest message.
+  ///
+  /// Offset 0 is the newest end only for a `reverse: true` list. The group
+  /// chat renders a normal (non-reversed) list, where offset 0 is the OLDEST
+  /// message — which is why sending there used to jump to the top. Resolve the
+  /// target from the attached viewport instead of assuming a direction.
+  void scrollToBottom({bool animated = true}) {
     if (!scrollController.hasClients) return;
-    scrollController.animateTo(
-      0,
-      duration: const Duration(milliseconds: 300),
-      curve: Curves.easeOut,
-    );
+    final position = scrollController.position;
+    final target = position.axisDirection == AxisDirection.up
+        ? position.minScrollExtent // reversed list: newest sits at offset 0
+        : position.maxScrollExtent; // normal list: newest sits at the end
+    if (animated) {
+      scrollController.animateTo(
+        target,
+        duration: const Duration(milliseconds: 300),
+        curve: Curves.easeOut,
+      );
+    } else {
+      scrollController.jumpTo(target);
+    }
+  }
+
+  /// Scrolls once the newly-added message has actually been laid out.
+  void scrollToBottomAfterFrame() {
+    WidgetsBinding.instance.addPostFrameCallback((_) => scrollToBottom());
   }
 
   void sendMessage(String chatId) {
@@ -197,6 +216,11 @@ class MessageController extends GetxController {
     // Clear everything
     textController.clear();
     imageDecodeController.clearAll();
+
+    // Land on the newest message. The echoed message arrives over the socket a
+    // moment later, so scroll now (for the shrinking composer) and again once
+    // the message has actually been inserted — see the messages listener.
+    scrollToBottomAfterFrame();
   }
 
   Future<void> getMessages({required String chatId}) async {

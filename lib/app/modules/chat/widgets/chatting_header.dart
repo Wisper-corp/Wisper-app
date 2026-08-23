@@ -10,6 +10,7 @@ import 'package:wisper/app/core/utils/show_over_loading.dart';
 import 'package:wisper/app/core/utils/snack_bar.dart';
 import 'package:wisper/app/core/widgets/common/circle_icon.dart';
 import 'package:wisper/app/core/widgets/common/initials_avatar.dart';
+import 'package:wisper/app/core/widgets/common/header_icon.dart';
 import 'package:wisper/app/core/widgets/common/custom_popup.dart';
 import 'package:wisper/app/core/widgets/common/details_card.dart';
 import 'package:wisper/app/modules/chat/controller/block_user_controller.dart';
@@ -316,71 +317,100 @@ class _ChatHeaderState extends State<ChatHeader> {
     );
 
     return SizedBox(
-      height: 100,
+      height: 92.h,
       width: double.infinity,
       child: Padding(
-        padding: const EdgeInsets.all(20.0),
+        // WhatsApp-style bar: bare icons, no chip backgrounds, tight to the edges.
+        padding: EdgeInsets.only(left: 4.w, right: 8.w, bottom: 10.h),
         child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
           mainAxisAlignment: MainAxisAlignment.end,
           children: [
             Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
               crossAxisAlignment: CrossAxisAlignment.center,
               children: [
-                GestureDetector(
-                  onTap: () {
-                    Get.to(
-                      () => widget.isPerson!
-                          ? OthersPersonScreen(userId: widget.memberId ?? '')
-                          : OthersBusinessScreen(userId: widget.memberId ?? ''),
-                    );
-                  },
-                  child: Row(
-                    children: [
-                      CircleIconWidget(
-                        imagePath: Assets.images.arrowBack.keyName,
-                        onTap: () => Navigator.pop(context),
-                        radius: 13,
-                      ),
-                      widthBox10,
-                      InitialsAvatar(
-                        name: widget.name ?? '',
-                        imageUrl: widget.image,
-                        radius: 20,
-                        fontSize: 14,
-                      ),
-                      widthBox10,
-                      Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            widget.name ?? 'Unknown',
-                            style: GoogleFonts.poppins(
-                              fontSize: 14,
-                              fontWeight: FontWeight.w600,
-                              color: Colors.white,
-                            ),
+                HeaderIcon(
+                  asset: Assets.images.arrowBack.keyName,
+                  size: 16,
+                  onTap: () => Navigator.pop(context),
+                  tooltip: 'Back',
+                ),
+                Expanded(
+                  child: GestureDetector(
+                    behavior: HitTestBehavior.opaque,
+                    onTap: () {
+                      Get.to(
+                        () => widget.isPerson == true
+                            ? OthersPersonScreen(userId: widget.memberId ?? '')
+                            : OthersBusinessScreen(userId: widget.memberId ?? ''),
+                      );
+                    },
+                    child: Row(
+                      children: [
+                        InitialsAvatar(
+                          name: widget.name ?? '',
+                          imageUrl: widget.image,
+                          radius: 22.r,
+                          fontSize: 16,
+                        ),
+                        SizedBox(width: 10.w),
+                        Expanded(
+                          child: Column(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                widget.name ?? 'Unknown',
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                                style: GoogleFonts.poppins(
+                                  fontSize: 17.sp,
+                                  fontWeight: FontWeight.w600,
+                                  color: Colors.white,
+                                  height: 1.2,
+                                ),
+                              ),
+                              Text(
+                                widget.status == true ? 'Online' : 'Offline',
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                                style: GoogleFonts.poppins(
+                                  fontSize: 12.sp,
+                                  fontWeight: FontWeight.w400,
+                                  height: 1.3,
+                                  color: widget.status == true
+                                      ? Colors.green
+                                      : LightThemeColors.themeGreyColor,
+                                ),
+                              ),
+                            ],
                           ),
-                          Text(
-                            widget.status == true ? 'Online' : 'Offline',
-                            style: GoogleFonts.poppins(
-                              fontSize: 10,
-                              fontWeight: FontWeight.w400,
-                              color: widget.status == true
-                                  ? Colors.green
-                                  : LightThemeColors.themeGreyColor,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ],
+                        ),
+                      ],
+                    ),
                   ),
                 ),
-                Row(
+                HeaderActionGroup(
                   children: [
-                    CircleIconWidget(
-                      imagePath: Assets.images.call.keyName,
+                    HeaderIcon(
+                      asset: Assets.images.video.keyName,
+                      size: 18,
+                      tooltip: 'Video call',
+                      onTap: () async {
+                        final granted = await _requestCallPermissions(video: true);
+                        if (!granted) return;
+                        Get.to(
+                          () => VideoCallPage(
+                            name: widget.name ?? '',
+                            photoUrl: widget.image ?? '',
+                            chatId: widget.chatId ?? '',
+                          ),
+                        );
+                      },
+                    ),
+                    HeaderIcon(
+                      asset: Assets.images.call.keyName,
+                      size: 17,
+                      tooltip: 'Voice call',
                       onTap: () async {
                         final granted = await _requestCallPermissions(video: false);
                         if (!granted) return;
@@ -393,32 +423,15 @@ class _ChatHeaderState extends State<ChatHeader> {
                           ),
                         );
                       },
-                      radius: 15,
-                    ),
-                    widthBox4,
-                    CircleIconWidget(
-                      imagePath: Assets.images.video.keyName,
-                      onTap: () async {
-                        final granted = await _requestCallPermissions(video: true);
-                        if (!granted) return;
-                        Get.to(
-                          () => VideoCallPage(
-                            name: widget.name ?? '',
-                            photoUrl: widget.image ?? '',
-                            chatId: widget.chatId ?? '',
-                          ),
-                        );
-                      },
-                      radius: 15,
-                    ),
-                    widthBox4,
-                    CircleIconWidget(
-                      key: suffixButtonKey,
-                      imagePath: Assets.images.moreHor.keyName,
-                      onTap: () => customPopupMenu.showMenuAtPosition(context),
-                      radius: 15,
                     ),
                   ],
+                ),
+                HeaderIcon(
+                  key: suffixButtonKey,
+                  asset: Assets.images.moreHor.keyName,
+                  size: 16,
+                  tooltip: 'More options',
+                  onTap: () => customPopupMenu.showMenuAtPosition(context),
                 ),
               ],
             ),

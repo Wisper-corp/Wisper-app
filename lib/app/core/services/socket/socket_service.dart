@@ -219,10 +219,19 @@ class SocketService extends GetxController {
         return;
       }
 
+      // The chat is not in the local list yet — e.g. a community joined after
+      // the list was last loaded. Calling refresh() on an unchanged list is a
+      // no-op, which is why such a chat never showed up in the inbox. Pull the
+      // authoritative list from the server instead.
       if (_listRefreshInFlight) return;
-      // Chat not in list yet — add a basic entry, chatList event will update it properly
-      _listRefreshInFlight = false;
-      _socketFriendList.refresh();
+      _listRefreshInFlight = true;
+      if (Get.isRegistered<AllChatsController>()) {
+        Get.find<AllChatsController>()
+            .getAllChats()
+            .whenComplete(() => _listRefreshInFlight = false);
+      } else {
+        _listRefreshInFlight = false;
+      }
     } catch (e) {
       _listRefreshInFlight = false;
       print('SocketService newMessage list update failed: $e');

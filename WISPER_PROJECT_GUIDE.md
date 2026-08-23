@@ -310,11 +310,11 @@ sshpass -p '=yZb9T-Tfw1IGDoMS' ssh wisper@54.205.198.31 \
 ### Chat list not updating after message
 Flutter fix: use `Map<String, dynamic>.from()` for reactive updates in `all_chats_controller.dart`
 
-### Deep link opens app but not the group
-Check `wisper://` scheme registered in `AndroidManifest.xml` with correct `android:host`
+### Deep link opens app but not the group — ✅ FIXED
+Fix: `wisper://` scheme registered in `AndroidManifest.xml` with correct `android:host`
 
-### Job posting "currency does not exist" error
-The `currency` field must be stripped from payload before Prisma create — handled in `dist/app/modules/job/job.service.js`
+### Job posting "currency does not exist" error — ✅ FIXED
+Fix: `currency` field stripped from payload before Prisma create — handled in `dist/app/modules/job/job.service.js`
 
 ### Server code not updating after `git reset --hard`
 Copy patched dist files directly via `scp` then `pm2 restart server`

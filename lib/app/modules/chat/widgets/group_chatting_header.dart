@@ -25,6 +25,7 @@ import 'package:wisper/app/modules/chat/controller/mute_info_controller.dart';
 import 'package:wisper/app/modules/chat/views/group/group_info_screen.dart';
 import 'package:wisper/app/modules/chat/controller/group/group_info_controller.dart';
 import 'package:wisper/app/core/widgets/common/initials_avatar.dart';
+import 'package:wisper/app/core/widgets/common/header_icon.dart';
 import 'package:wisper/app/modules/dashboard/views/dashboard_screen.dart';
 import 'package:wisper/app/modules/post/views/my_post_section.dart';
 import 'package:wisper/gen/assets.gen.dart';
@@ -354,108 +355,108 @@ class _GroupChatHeaderState extends State<GroupChatHeader> {
     );
 
     return SizedBox(
-      height: 100,
+      height: 92.h,
       width: double.infinity,
       child: Padding(
-        padding: const EdgeInsets.all(20.0),
+        // WhatsApp-style bar: bare icons, no chip backgrounds.
+        padding: EdgeInsets.only(left: 4.w, right: 8.w, bottom: 10.h),
         child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
           mainAxisAlignment: MainAxisAlignment.end,
           children: [
             Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
               crossAxisAlignment: CrossAxisAlignment.center,
               children: [
-                GestureDetector(
-                  onTap: () {
-                    Get.to(
-                      () => GroupInfoScreen(
-                        groupId: widget.groupId,
-                        chatId: widget.chatId,
-                      ),
-                    );
-                  },
-                  child: Row(
-                    children: [
-                      widget.isGeneralChat != true
-                          ? CircleIconWidget(
-                              imagePath: Assets.images.arrowBack.keyName,
-                              onTap: () => Navigator.pop(context),
-                              radius: 13,
-                            )
-                          : const SizedBox(),
-                      widthBox10,
-                      widget.groupImage.isEmpty
-                          ? CrashSafeImage(
-                              Assets.images.userGroup.keyName,
-                              color: const Color(0xff1F7DE9),
-                              height: 20.h,
-                            )
-                          : Obx(() {
-                              // Prefer live data from GroupInfoController if available
-                              final liveImage = Get.isRegistered<GroupInfoController>()
-                                  ? (Get.find<GroupInfoController>().groupInfoData?.image ?? widget.groupImage)
-                                  : widget.groupImage;
-                              final liveName = Get.isRegistered<GroupInfoController>()
-                                  ? (Get.find<GroupInfoController>().groupInfoData?.name ?? widget.groupName)
-                                  : widget.groupName;
-                              return InitialsAvatar(
-                                name: liveName,
-                                imageUrl: liveImage.isNotEmpty ? liveImage : null,
-                                radius: 20,
-                                fontSize: 14,
-                              );
-                            }),
-                      widthBox10,
-                      Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Obx(() {
+                if (widget.isGeneralChat != true)
+                  HeaderIcon(
+                    asset: Assets.images.arrowBack.keyName,
+                    size: 16,
+                    tooltip: 'Back',
+                    onTap: () => Navigator.pop(context),
+                  )
+                else
+                  SizedBox(width: 8.w),
+                Expanded(
+                  child: GestureDetector(
+                    behavior: HitTestBehavior.opaque,
+                    onTap: () {
+                      Get.to(
+                        () => GroupInfoScreen(
+                          groupId: widget.groupId,
+                          chatId: widget.chatId,
+                        ),
+                      );
+                    },
+                    child: Row(
+                      children: [
+                        widget.groupImage.isEmpty
+                            ? CrashSafeImage(
+                                Assets.images.userGroup.keyName,
+                                color: const Color(0xff1F7DE9),
+                                height: 26.h,
+                              )
+                            : Obx(() {
+                                final liveImage = Get.isRegistered<GroupInfoController>()
+                                    ? (Get.find<GroupInfoController>().groupInfoData?.image ?? widget.groupImage)
+                                    : widget.groupImage;
+                                final liveName = Get.isRegistered<GroupInfoController>()
+                                    ? (Get.find<GroupInfoController>().groupInfoData?.name ?? widget.groupName)
+                                    : widget.groupName;
+                                return InitialsAvatar(
+                                  name: liveName,
+                                  imageUrl: liveImage.isNotEmpty ? liveImage : null,
+                                  radius: 22.r,
+                                  fontSize: 16,
+                                );
+                              }),
+                        SizedBox(width: 10.w),
+                        Expanded(
+                          child: Obx(() {
                             final liveName = Get.isRegistered<GroupInfoController>()
                                 ? (Get.find<GroupInfoController>().groupInfoData?.name ?? widget.groupName)
                                 : widget.groupName;
                             return Text(
                               liveName,
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
                               style: GoogleFonts.poppins(
-                                fontSize: 14,
+                                fontSize: 17.sp,
                                 fontWeight: FontWeight.w600,
                                 color: Colors.white,
+                                height: 1.2,
                               ),
                             );
                           }),
-                        ],
-                      ),
-                    ],
+                        ),
+                      ],
+                    ),
                   ),
                 ),
-                Row(
+                HeaderActionGroup(
                   children: [
-                    CircleIconWidget(
-                      imagePath: Assets.images.call.keyName,
-                      onTap: () {
-                        getRoomId('AUDIO', 'GROUP');
-                      },
-                      radius: 15,
-                      iconColor: Colors.white,
-                    ),
-                    widthBox10,
-                    CircleIconWidget(
-                      imagePath: Assets.images.video.keyName,
+                    HeaderIcon(
+                      asset: Assets.images.video.keyName,
+                      size: 18,
+                      tooltip: 'Video call',
                       onTap: () {
                         if (cameras != null) {
                           getRoomId('VIDEO', 'GROUP');
                         }
                       },
-                      radius: 15,
                     ),
-                    widthBox10,
-                    CircleIconWidget(
-                      key: suffixButtonKey,
-                      imagePath: Assets.images.moreHor.keyName,
-                      onTap: () => customPopupMenu.showMenuAtPosition(context),
-                      radius: 15,
+                    HeaderIcon(
+                      asset: Assets.images.call.keyName,
+                      size: 17,
+                      tooltip: 'Voice call',
+                      onTap: () => getRoomId('AUDIO', 'GROUP'),
                     ),
                   ],
+                ),
+                HeaderIcon(
+                  key: suffixButtonKey,
+                  asset: Assets.images.moreHor.keyName,
+                  size: 16,
+                  tooltip: 'More options',
+                  onTap: () => customPopupMenu.showMenuAtPosition(context),
                 ),
               ],
             ),

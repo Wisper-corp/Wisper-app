@@ -26,6 +26,7 @@ import 'package:wisper/app/modules/chat/views/class/class_info.dart';
 import 'package:wisper/app/modules/dashboard/views/dashboard_screen.dart';
 import 'package:wisper/app/modules/post/views/my_post_section.dart';
 import 'package:wisper/gen/assets.gen.dart';
+import 'package:wisper/app/core/widgets/common/header_icon.dart';
 
 class ClassChatHeader extends StatefulWidget {
   final String className;
@@ -359,93 +360,87 @@ class _ClassChatHeaderState extends State<ClassChatHeader> {
     );
 
     return SizedBox(
-      height: 100,
+      height: 92.h,
       width: double.infinity,
       child: Padding(
-        padding: const EdgeInsets.all(20.0),
+        // WhatsApp-style bar: bare icons, no chip backgrounds.
+        padding: EdgeInsets.only(left: 4.w, right: 8.w, bottom: 10.h),
         child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
           mainAxisAlignment: MainAxisAlignment.end,
           children: [
             Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
               crossAxisAlignment: CrossAxisAlignment.center,
               children: [
-                GestureDetector(
-                  onTap: () {
-                    Get.to(
-                      () => ClassInfoScreen(
-                        classId: widget.classId,
-                        chatId: widget.chatId,
-                      ),
-                    );
-                  },
-                  child: Row(
-                    children: [
-                      CircleIconWidget(
-                        imagePath: Assets.images.arrowBack.keyName,
-                        onTap: () => Navigator.pop(context),
-                        radius: 13,
-                      ),
-                      widthBox10,
-                      widget.classImage.isEmpty
-                          ? CrashSafeImage(
-                              Assets.images.education.keyName,
-                              color: const Color(0xff11AE46),
-                              height: 20.h,
-                            )
-                          : CircleAvatar(
-                              backgroundColor: Colors.grey,
-                              backgroundImage: NetworkImage(widget.classImage),
-                              radius: 20,
-                            ),
-                      widthBox10,
-                      Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
+                HeaderIcon(
+                  asset: Assets.images.arrowBack.keyName,
+                  size: 16,
+                  tooltip: 'Back',
+                  onTap: () => Navigator.pop(context),
+                ),
+                Expanded(
+                  child: GestureDetector(
+                    behavior: HitTestBehavior.opaque,
+                    onTap: () {
+                      Get.to(
+                        () => ClassInfoScreen(
+                          classId: widget.classId,
+                          chatId: widget.chatId,
+                        ),
+                      );
+                    },
+                    child: Row(
+                      children: [
+                        widget.classImage.isEmpty
+                            ? CrashSafeImage(
+                                Assets.images.education.keyName,
+                                color: const Color(0xff11AE46),
+                                height: 26.h,
+                              )
+                            : CircleAvatar(
+                                backgroundColor: Colors.grey,
+                                backgroundImage: NetworkImage(widget.classImage),
+                                radius: 22.r,
+                              ),
+                        SizedBox(width: 10.w),
+                        Expanded(
+                          child: Text(
                             widget.className,
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
                             style: GoogleFonts.poppins(
-                              fontSize: 14,
+                              fontSize: 17.sp,
                               fontWeight: FontWeight.w600,
                               color: Colors.white,
+                              height: 1.2,
                             ),
                           ),
-                        ],
-                      ),
-                    ],
+                        ),
+                      ],
+                    ),
                   ),
                 ),
-                Row(
+                HeaderActionGroup(
                   children: [
-                    // âœ… Audio call â€” GROUP mode
-                    CircleIconWidget(
-                      imagePath: Assets.images.call.keyName,
-                      onTap: () {
-                        //print('Audio Call pressed');
-                        getRoomId('AUDIO', 'GROUP');
-                      },
-                      radius: 15,
-                      iconColor: Colors.white,
+                    HeaderIcon(
+                      asset: Assets.images.video.keyName,
+                      size: 18,
+                      tooltip: 'Video call',
+                      onTap: () => getRoomId('VIDEO', 'GROUP'),
                     ),
-                    widthBox10,
-                    // âœ… Video call â€” GROUP mode
-                    CircleIconWidget(
-                      imagePath: Assets.images.video.keyName,
-                      onTap: () {
-                        // print('Video Call pressed');
-                        getRoomId('VIDEO', 'GROUP');
-                      },
-                      radius: 15,
-                    ),
-                    widthBox10,
-                    CircleIconWidget(
-                      key: suffixButtonKey,
-                      imagePath: Assets.images.moreHor.keyName,
-                      onTap: () => customPopupMenu.showMenuAtPosition(context),
-                      radius: 15,
+                    HeaderIcon(
+                      asset: Assets.images.call.keyName,
+                      size: 17,
+                      tooltip: 'Voice call',
+                      onTap: () => getRoomId('AUDIO', 'GROUP'),
                     ),
                   ],
+                ),
+                HeaderIcon(
+                  key: suffixButtonKey,
+                  asset: Assets.images.moreHor.keyName,
+                  size: 16,
+                  tooltip: 'More options',
+                  onTap: () => customPopupMenu.showMenuAtPosition(context),
                 ),
               ],
             ),

@@ -41,6 +41,7 @@ class CommunitiesItemModel {
     CommunitiesItemModel({
         required this.id,
         required this.name,
+        required this.description,
         required this.image,
         required this.createdAt,
         required this.chatId,
@@ -51,6 +52,9 @@ class CommunitiesItemModel {
 
     final String? id;
     final String? name;
+    /// Community tags are encoded in the description as
+    /// "Trade: X | Market: Y | Category: Z | Suffix: S" — see [communityTags].
+    final String? description;
     final String? image;
     final DateTime? createdAt;
     final String? chatId;
@@ -58,10 +62,11 @@ class CommunitiesItemModel {
     final int? memberCount;
     final List<Member> members;
 
-    factory CommunitiesItemModel.fromJson(Map<String, dynamic> json){ 
+    factory CommunitiesItemModel.fromJson(Map<String, dynamic> json){
         return CommunitiesItemModel(
             id: json["id"],
             name: json["name"],
+            description: json["description"],
             image: json["image"],
             createdAt: DateTime.tryParse(json["createdAt"] ?? ""),
             chatId: json["chatId"],

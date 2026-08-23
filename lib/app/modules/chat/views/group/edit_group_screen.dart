@@ -15,21 +15,9 @@ import 'package:wisper/app/modules/chat/controller/group/edit_group_controller.d
 import 'package:wisper/app/modules/chat/controller/group/group_info_controller.dart';
 import 'package:wisper/app/modules/chat/controller/all_chats_controller.dart';
 import 'package:wisper/app/core/widgets/common/searchable_tag_field.dart';
+import 'package:wisper/app/core/constants/community_tag_options.dart';
 
 // ── Community Tag Options ────────────────────────────────────────────────────
-const _tradeTypes = [
-  'Local B2B', 'Local B2C', 'B2B Export',
-  'B2C Export', 'B2B Import', 'B2C Import',
-];
-const _marketTypes = ['Wholesale', 'Retail'];
-const _businessCategories = [
-  'Agriculture & Farming', 'Livestock & Poultry', 'Furniture & Home Décor',
-  'Solar Panels & Energy', 'Electronics & Tech', 'Fashion & Clothing',
-  'Food & Beverages', 'Health & Pharmaceuticals', 'Building & Construction',
-  'Automotive & Spare Parts', 'Beauty & Personal Care',
-  'Stationery & Office Supplies', 'Toys & Baby Products',
-  'Sports & Fitness', 'Industrial Equipment', 'Other',
-];
 
 class EditGroupScreen extends StatefulWidget {
   final String groupId;
@@ -412,7 +400,7 @@ class _EditGroupScreenState extends State<EditGroupScreen> {
               SearchableTagField(
                 label: '1. Trade Type',
                 hint: 'Search trade type (e.g. Local B2B)',
-                options: _tradeTypes,
+                options: kTradeTypes,
                 selected: _selectedTradeType,
                 enabled: _canEditTags,
                 onSelect: (v) => setState(() {
@@ -423,7 +411,7 @@ class _EditGroupScreenState extends State<EditGroupScreen> {
               SearchableTagField(
                 label: '2. Market Type',
                 hint: 'Search market type (e.g. Wholesale)',
-                options: _marketTypes,
+                options: kMarketTypes,
                 selected: _selectedMarketType,
                 enabled: _canEditTags,
                 onSelect: (v) => setState(() {
@@ -434,7 +422,7 @@ class _EditGroupScreenState extends State<EditGroupScreen> {
               SearchableTagField(
                 label: '3. Business Category',
                 hint: 'Search category (e.g. Food & Beverages)',
-                options: _businessCategories,
+                options: kBusinessCategories,
                 selected: _selectedCategory,
                 enabled: _canEditTags,
                 onSelect: (v) => setState(() {

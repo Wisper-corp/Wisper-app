@@ -17,10 +17,14 @@ class CommunityController extends GetxController {
   List<CommunitiesItemModel> get communitiesData =>
       _communitiesModel.value?.data?.groups ?? const [];
 
-  Future<bool> getCommunities() async {
+  Future<bool> getCommunities({String? searchTerm}) async {
     _inProgress.value = true;
 
-    Map<String, dynamic> params = {"limit": "9999"};
+    Map<String, dynamic> params = {
+      "limit": "9999",
+      if (searchTerm != null && searchTerm.trim().isNotEmpty)
+        "searchTerm": searchTerm.trim(),
+    };
     try {
       final NetworkResponse response = await Get.find<NetworkCaller>()
           .getRequest(

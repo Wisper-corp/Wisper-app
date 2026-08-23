@@ -1,24 +1,21 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:get/get.dart';
 import 'package:wisper/app/core/others/custom_size.dart';
-import 'package:wisper/app/core/others/get_storage.dart';
-import 'package:wisper/app/core/services/network_caller/network_caller.dart';
 import 'package:wisper/app/core/widgets/common/circle_icon.dart';
-import 'package:wisper/app/core/widgets/common/initials_avatar.dart';
+import 'package:wisper/app/core/widgets/common/custom_text_filed.dart';
 import 'package:wisper/app/core/widgets/common/line_widget.dart';
-import 'package:wisper/app/modules/homepage/views/chat_section.dart';
-import 'package:wisper/app/modules/homepage/views/community_section.dart';
-import 'package:wisper/app/modules/job/views/job_section.dart';
-import 'package:wisper/app/modules/post/views/post_section.dart';
-import 'package:wisper/app/modules/homepage/views/search_screen.dart';
-import 'package:wisper/app/modules/chat/views/group/group_message_screen.dart';
-import 'package:wisper/app/urls.dart';
+import 'package:wisper/app/modules/chat/controller/all_community_controller.dart';
+import 'package:wisper/app/modules/chat/model/communities_model.dart';
+import 'package:wisper/app/modules/homepage/widget/community_list_view.dart';
 import 'package:wisper/gen/assets.gen.dart';
 
-// General/Announcement chat ID (matches GENERAL_CHAT_ID in server .env)
-const String _kGeneralChatId = '7d1256e7-ad1e-4fd9-ad4b-53dec78b6cb9';
-
+/// Home is community navigation: the communities you have joined ("Home") and
+/// the ones you could join ("Explore"), plus an inline search over both.
+///
+/// All three are driven by a single `/groups/public` call split on `isJoined`.
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
 
@@ -27,77 +24,93 @@ class HomeScreen extends StatefulWidget {
 }
 
 class _HomeScreenState extends State<HomeScreen> {
-  // Real member data
-  final RxList<Map<String, dynamic>> _memberAvatars = <Map<String, dynamic>>[].obs;
-  final RxInt _totalUsers = 0.obs;
+  final CommunityController _communityController =
+      Get.isRegistered<CommunityController>()
+          ? Get.find<CommunityController>()
+          : Get.put(CommunityController());
+
+  static const List<String> _tabs = ['Home', 'Explore'];
+
+  /// Explore only suggests communities with real activity behind them, so the
+  /// list is not flooded with empty or abandoned ones. Joined communities and
+  /// search results are never filtered by size — you already chose those, or
+  /// you are looking for one by name.
+  static const int _minExploreMembers = 30;
+  int _selectedIndex = 0;
+
+  final TextEditingController _searchController = TextEditingController();
+  bool _searching = false;
+  String _query = '';
+  Timer? _debounce;
 
   @override
   void initState() {
     super.initState();
-    _fetchMemberData();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _communityController.getCommunities();
+    });
   }
 
-  Future<void> _fetchMemberData() async {
-    try {
-      // Fetch a large batch so we can find at least 5 with real photos
-      final res = await Get.find<NetworkCaller>().getRequest(
-        '${Urls.roleUrl}?limit=50',
-        accessToken: StorageUtil.getData(StorageUtil.userAccessToken),
+  @override
+  void dispose() {
+    _debounce?.cancel();
+    _searchController.dispose();
+    super.dispose();
+  }
+
+  Future<void> _refresh() => _communityController.getCommunities(
+        searchTerm: _searching && _query.isNotEmpty ? _query : null,
       );
-      if (res.isSuccess && res.responseData != null) {
-        final data = res.responseData;
-        final meta = data['data']?['meta'];
-        final total = meta?['total'] ?? 0;
-        _totalUsers.value = total is int ? total : int.tryParse(total.toString()) ?? 0;
 
-        final roles = data['data']?['roles'] as List? ?? [];
-
-        // Only pick users who actually have a profile photo
-        final withImages = <Map<String, dynamic>>[];
-        for (final r in roles) {
-          final person = r['person'];
-          final business = r['business'];
-          final name = (person?['name'] ?? business?['name'] ?? '').toString().trim();
-          final image = (person?['image'] ?? business?['image'] ?? '').toString().trim();
-          if (image.isNotEmpty) {
-            withImages.add({'name': name.isEmpty ? '?' : name, 'image': image});
-            if (withImages.length == 5) break;
-          }
-        }
-
-        if (withImages.isNotEmpty) {
-          _memberAvatars.value = withImages;
-        }
-      }
-    } catch (e) {
-      debugPrint('[MemberAvatars] fetch error: $e');
-    }
+  void _toggleSearch() {
+    setState(() {
+      _searching = !_searching;
+      _query = '';
+      _searchController.clear();
+    });
+    _communityController.getCommunities();
   }
 
-  /// Format count: real users × 10 (10 signups = 100, 100 = 1K, 1000 = 10K)
-  String _formatMemberCount(int realUsers) {
-    final computed = realUsers * 10;
-    if (computed >= 1000000) return '${(computed / 1000000).toStringAsFixed(1)}M';
-    if (computed >= 1000) return '${(computed / 1000).toStringAsFixed(1)}K';
-    return computed.toString();
+  void _onQueryChanged(String? value) {
+    final query = (value ?? '').trim();
+    setState(() => _query = query);
+
+    // Debounce so a fast typist does not fire a request per keystroke.
+    _debounce?.cancel();
+    _debounce = Timer(const Duration(milliseconds: 350), () {
+      if (!mounted) return;
+      _communityController.getCommunities(
+        searchTerm: query.isEmpty ? null : query,
+      );
+    });
   }
 
-  int selectedIndex = 0;
+  /// Search lists communities you can still join first — that is its purpose.
+  List<CommunitiesItemModel> get _results {
+    final items =
+        List<CommunitiesItemModel>.from(_communityController.communitiesData);
+    items.sort((a, b) {
+      final aJoined = (a.isJoined ?? false) ? 1 : 0;
+      final bJoined = (b.isJoined ?? false) ? 1 : 0;
+      return aJoined.compareTo(bJoined);
+    });
+    return items;
+  }
 
-  // Tab config - Role tab hidden until 5k users
-  final List<Map<String, dynamic>> _tabs = [
-    {'label': 'Announcement', 'width': 110.0},
-    {'label': 'Gig Market',   'width': 80.0},
-    {'label': 'Jobs',         'width': 40.0},
-    // Role tab hidden: {'label': 'Members', 'width': 60.0},
-    {'label': 'Community',    'width': 78.0},
-  ];
+  List<CommunitiesItemModel> _communities({required bool joined}) {
+    final items = _communityController.communitiesData
+        .where((c) => (c.isJoined ?? false) == joined);
+    if (joined) return items.toList();
+    return items
+        .where((c) => (c.memberCount ?? 0) >= _minExploreMembers)
+        .toList();
+  }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       body: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 18.0),
+        padding: EdgeInsets.symmetric(horizontal: 18.w),
         child: Column(
           children: [
             heightBox40,
@@ -105,152 +118,106 @@ class _HomeScreenState extends State<HomeScreen> {
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
                 Text(
-                  'Explore',
+                  _searching ? 'Search' : 'Home',
                   style: TextStyle(
-                    fontFamily: "Segoe UI",
+                    fontFamily: 'Segoe UI',
                     fontSize: 24.sp,
                     fontWeight: FontWeight.w800,
                   ),
                 ),
-                Row(
-                  children: [
-                    CircleIconWidget(
-                      imagePath: Assets.images.search.keyName,
-                      onTap: () {
-                        Get.to(() => SearchScreen());
-                      },
-                      iconRadius: 18.r,
-                    ),
-                  ],
+                CircleIconWidget(
+                  imagePath: Assets.images.search.keyName,
+                  iconRadius: 18.r,
+                  onTap: _toggleSearch,
                 ),
               ],
             ),
-
-            heightBox12,
- 
-            // ── Dummy Members Row ────────────────────────────────────────
-            _buildDummyMembersRow(),
-            heightBox12,
-
-            SizedBox(
-              height: 30.h,
-              width: double.infinity,
-              child: ListView.separated(
-                scrollDirection: Axis.horizontal,
-                itemCount: _tabs.length,
-                separatorBuilder: (_, __) => widthBox20,
-                itemBuilder: (context, index) {
-                  final tab = _tabs[index];
-                  final isSelected = selectedIndex == index;
-                  return GestureDetector(
-                    onTap: () => setState(() => selectedIndex = index),
-                    child: Column(
-                      children: [
-                        Text(
-                          tab['label'] as String,
-                          style: TextStyle(
-                            fontFamily: "Segoe UI",
-                            fontSize: index == 0 ? 15.sp : 14.sp,
-                            fontWeight: FontWeight.w600,
-                            color: isSelected
-                                ? Colors.white
-                                : const Color(0xff93A4B0),
-                          ),
-                        ),
-                        heightBox4,
-                        Container(
-                          height: 2.h,
-                          width: (tab['width'] as double).w,
-                          color: isSelected
-                              ? Colors.blue
-                              : Colors.transparent,
-                        ),
-                      ],
-                    ),
-                  );
-                },
+            heightBox16,
+            if (!_searching) _buildTabs(),
+            if (_searching)
+              Padding(
+                padding: EdgeInsets.only(bottom: 8.h),
+                child: CustomTextField(
+                  controller: _searchController,
+                  hintText: 'Search communities',
+                  prefixIcon: Icons.search_rounded,
+                  onChanged: _onQueryChanged,
+                ),
               ),
-            ),
             StraightLiner(height: 0.4, color: const Color(0xff454545)),
+            Expanded(
+              child: Obx(() {
+                if (_searching) {
+                  return CommunityListView(
+                    isLoading: _communityController.inProgress,
+                    items: _results,
+                    onRefresh: _refresh,
+                    emptyIcon: Icons.search_off_rounded,
+                    emptyTitle: _query.isEmpty
+                        ? 'Find a community'
+                        : 'No matches for "$_query"',
+                    emptyMessage: _query.isEmpty
+                        ? 'Search by name to find a community to join.'
+                        : 'Try a shorter or different name.',
+                  );
+                }
 
-            heightBox8,
-
-            // 0=Announcement 1=Gig Market 2=Jobs 3=Community
-            // Announcement tab embeds the general group chat directly
-            if (selectedIndex == 0) Expanded(
-              child: GroupChatScreen(
-                chatId: _kGeneralChatId,
-                groupId: '',
-                groupName: 'General Chat',
-                groupImage: '',
-                showHeader: false,
-                showTabs: false,
-              ),
+                final isJoinedTab = _selectedIndex == 0;
+                return CommunityListView(
+                  isLoading: _communityController.inProgress,
+                  items: _communities(joined: isJoinedTab),
+                  onRefresh: _refresh,
+                  emptyTitle: isJoinedTab
+                      ? 'No communities yet'
+                      : 'Nothing to suggest right now',
+                  emptyMessage: isJoinedTab
+                      ? 'Communities you join will show up here. Open Explore to find your first one.'
+                      : 'We only suggest communities with at least $_minExploreMembers members. '
+                          'Use search to find a smaller one by name.',
+                );
+              }),
             ),
-            if (selectedIndex == 1) const Expanded(child: PostSection()),
-            if (selectedIndex == 2) const Expanded(child: JobSection()),
-            if (selectedIndex == 3) const CommunitySection(),
-            if (selectedIndex > 3) Container(),
           ],
         ),
       ),
     );
   }
 
-  Widget _buildDummyMembersRow() {
-    const double size = 28;
-    const double overlap = 16;
-
-    return Obx(() {
-      final List<Map<String, dynamic>> avatars = List<Map<String, dynamic>>.from(_memberAvatars);
-      // Show placeholder circles while loading
-      final displayAvatars = avatars.isEmpty
-          ? List.generate(5, (i) => <String, dynamic>{'name': '', 'image': ''})
-          : avatars;
-      final count = displayAvatars.length;
-      final memberLabel = _totalUsers.value > 0
-          ? '${_formatMemberCount(_totalUsers.value)} members'
-          : '620 members';
-
-      return Row(
-        children: [
-          SizedBox(
-            width: size + (count - 1) * (size - overlap),
-            height: size,
-            child: Stack(
-              children: List.generate(count, (i) {
-                final item = displayAvatars[i] as Map<String, dynamic>;
-                return Positioned(
-                  left: i * (size - overlap).toDouble(),
-                  child: Container(
-                    decoration: BoxDecoration(
-                      shape: BoxShape.circle,
-                      border: Border.all(color: Colors.black, width: 1.5),
-                    ),
-                    child: InitialsAvatar(
-                      name: item['name'] as String,
-                      imageUrl: (item['image'] as String).isEmpty
-                          ? null
-                          : item['image'] as String,
-                      radius: size / 2,
-                      fontSize: 10,
+  Widget _buildTabs() {
+    return SizedBox(
+      height: 34.h,
+      child: Row(
+        children: List.generate(_tabs.length, (index) {
+          final isSelected = _selectedIndex == index;
+          return Expanded(
+            child: GestureDetector(
+              behavior: HitTestBehavior.opaque,
+              onTap: () => setState(() => _selectedIndex = index),
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.end,
+                children: [
+                  Text(
+                    _tabs[index],
+                    style: TextStyle(
+                      fontFamily: 'Segoe UI',
+                      fontSize: 15.sp,
+                      fontWeight: FontWeight.w600,
+                      color:
+                          isSelected ? Colors.white : const Color(0xff93A4B0),
                     ),
                   ),
-                );
-              }),
+                  heightBox6,
+                  Container(
+                    height: 2.h,
+                    width: 72.w,
+                    color: isSelected ? Colors.blue : Colors.transparent,
+                  ),
+                ],
+              ),
             ),
-          ),
-          const SizedBox(width: 8),
-          Text(
-            memberLabel,
-            style: TextStyle(
-              fontSize: 13.sp,
-              color: Colors.white70,
-              fontWeight: FontWeight.w500,
-            ),
-          ),
-        ],
-      );
-    });
+          );
+        }),
+      ),
+    );
   }
 }

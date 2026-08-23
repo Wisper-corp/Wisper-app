@@ -41,6 +41,10 @@ class ChatScreen extends StatefulWidget {
 class _ChatScreenState extends State<ChatScreen> {
   final MessageController ctrl = Get.put(MessageController());
   final ScrollController _scrollController = ScrollController();
+
+  /// Set when this user sends; forces the next arriving message to scroll even
+  /// if they had scrolled up. Without it, your own message can land off-screen.
+  bool _justSent = false;
   final SeenMessageController seenMessageController = SeenMessageController();
   late final OfferService _offerService;
   bool _showNewMessageIndicator = false;
@@ -120,11 +124,11 @@ class _ChatScreenState extends State<ChatScreen> {
     if (currentCount > _previousMessageCount) {
       final newMessagesCount = currentCount - _previousMessageCount;
 
-      // If user is at bottom, auto scroll with animation
-      if (_isAtBottom) {
-        Future.delayed(const Duration(milliseconds: 50), () {
-          _scrollToBottom();
-        });
+      // Our own message must always come into view; otherwise only follow
+      // along when the user was already reading at the bottom.
+      if (_isAtBottom || _justSent) {
+        _justSent = false;
+        WidgetsBinding.instance.addPostFrameCallback((_) => _scrollToBottom());
       } else {
         // Show new message indicator
         setState(() {
@@ -621,11 +625,13 @@ class _ChatScreenState extends State<ChatScreen> {
             chatId: widget.chatId ?? '',
             receiverId: widget.receiverId ?? '',
             onSend: () {
+              // The echoed message arrives over the socket after an unknown
+              // delay, so a fixed timer used to scroll to the OLD bottom.
+              // Scroll now for the shrinking composer, and let _justSent scroll
+              // again once the message is actually in the list.
+              _justSent = true;
               ctrl.sendMessage(widget.chatId ?? '');
-              // Auto scroll after sending message
-              Future.delayed(const Duration(milliseconds: 100), () {
-                _scrollToBottom();
-              });
+              WidgetsBinding.instance.addPostFrameCallback((_) => _scrollToBottom());
             },
           ),
         ],

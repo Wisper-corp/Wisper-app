@@ -110,7 +110,17 @@ class AllChatsController extends GetxController {
             final updated = Map<String, dynamic>.from(socketService.socketFriendList[idx]);
             updated['lastMessage'] = lastMessage;
             updated['latestMessageAt'] = latestAt;
+            updated['unreadMessageCount'] =
+                chat['_count']?['messages'] ?? updated['unreadMessageCount'] ?? 0;
             socketService.socketFriendList[idx] = updated;
+          } else {
+            // Chat is not in the local list yet — e.g. a community joined after
+            // the list was last fetched. Previously this was skipped entirely,
+            // so the row never appeared in the inbox even though the server had
+            // the message.
+            socketService.socketFriendList.add(
+              _entryFromChatJson(chat, lastMessage, latestAt),
+            );
           }
         }
         socketService.socketFriendList.sort((a, b) {
@@ -202,13 +212,12 @@ class AllChatsController extends GetxController {
               ..['receiverOnline'] = receiverOnline; // নতুন ফিল্ড যোগ করলাম
           }
         } else {
-          // নতুন চ্যাট → যোগ করো (getAllChats-এর মতোই)
-          socketService.socketFriendList.add({
-            "lastMessage": lastMessage,
-            "receiverOnline": type == 'INDIVIDUAL'
-                ? receiverOnline
-                : false, // এখানেও
-          });
+          // নতুন চ্যাট → যোগ করো (getAllChats-এর মতোই).
+          // This used to add only {lastMessage, receiverOnline} — with no id,
+          // type or name the row rendered as "Unknown" and could not be opened.
+          socketService.socketFriendList.add(
+            _entryFromChatJson(chat, lastMessage, latestMessageAt),
+          );
         }
       }
 
@@ -217,6 +226,49 @@ class AllChatsController extends GetxController {
     } catch (e) {
       print('Error in _handleIncomingChat: $e');
     }
+  }
+
+  /// Builds a chat-list entry from a raw server chat JSON, matching the shape
+  /// [getAllChats] produces. Used when a realtime payload contains a chat the
+  /// local list has not seen yet.
+  Map<String, dynamic> _entryFromChatJson(
+    Map<String, dynamic> chat,
+    String lastMessage,
+    String latestMessageAt,
+  ) {
+    final String type = (chat['type'] ?? 'INDIVIDUAL').toString();
+    final List<dynamic> participants = chat['participants'] ?? [];
+    final other = participants.firstWhere(
+      (p) => p['auth']?['id'] != myAuthId,
+      orElse: () => participants.isNotEmpty ? participants.first : null,
+    );
+    final auth = other?['auth'];
+    final person = auth?['person'];
+    final business = auth?['business'];
+
+    return {
+      'id': chat['id'] ?? '',
+      'type': type,
+      'latestMessageAt': latestMessageAt,
+      'lastMessage': lastMessage,
+      'unreadMessageCount': chat['_count']?['messages'] ?? 0,
+      'group': chat['group'] != null
+          ? {'name': chat['group']['name'], 'image': chat['group']['image']}
+          : null,
+      'groupId': chat['groupId'] ?? '',
+      'classId': chat['classId'] ?? '',
+      'chatClass': chat['class'] != null
+          ? {'name': chat['class']['name'], 'image': chat['class']['image']}
+          : null,
+      'receiverName':
+          type == 'INDIVIDUAL' ? (person?['name'] ?? business?['name'] ?? '') : '',
+      'receiverImage': type == 'INDIVIDUAL'
+          ? (person?['image'] ?? business?['image'] ?? '')
+          : '',
+      'receiverId': type == 'INDIVIDUAL' ? (auth?['id'] ?? '') : '',
+      'isPerson': person != null,
+      'receiverOnline': type == 'INDIVIDUAL' && other?['isOnline'] == true,
+    };
   }
 
   Future<void> getAllChats() async {
