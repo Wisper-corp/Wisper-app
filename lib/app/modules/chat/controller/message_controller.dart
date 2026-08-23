@@ -1,5 +1,6 @@
 // app/modules/chat/controller/message_controller.dart
 import 'package:flutter/material.dart';
+import 'package:wisper/app/core/utils/chat_scroll.dart';
 import 'package:get/get.dart';
 import 'package:wisper/app/modules/chat/model/offer_model.dart';
 import 'package:wisper/app/core/others/get_storage.dart';
@@ -139,50 +140,15 @@ class MessageController extends GetxController {
     return "";
   }
 
-  /// Scrolls to the newest message.
-  ///
-  /// Offset 0 is the newest end only for a `reverse: true` list. The group
-  /// chat renders a normal (non-reversed) list, where offset 0 is the OLDEST
-  /// message — which is why sending there used to jump to the top. Resolve the
-  /// target from the attached viewport instead of assuming a direction.
-  void scrollToBottom({bool animated = true}) {
-    if (!scrollController.hasClients) return;
-    final position = scrollController.position;
-    final target = position.axisDirection == AxisDirection.up
-        ? position.minScrollExtent // reversed list: newest sits at offset 0
-        : position.maxScrollExtent; // normal list: newest sits at the end
-    if (animated) {
-      scrollController.animateTo(
-        target,
-        duration: const Duration(milliseconds: 300),
-        curve: Curves.easeOut,
-      );
-    } else {
-      scrollController.jumpTo(target);
-    }
-  }
+  /// Scrolls to the newest message. Delegates to `chat_scroll.dart` so the
+  /// behaviour is covered by tests (this controller cannot be constructed in a
+  /// widget test — it resolves SocketService in a field initializer).
+  void scrollToBottom({bool animated = true}) =>
+      chatScrollToBottom(scrollController, animated: animated);
 
   /// Scrolls once the newly-added message has actually been laid out.
-  ///
-  /// Calling scrollToBottom() straight after `messages.insert` reads the OLD
-  /// maxScrollExtent — the list has not rebuilt yet — so it lands one bubble
-  /// short of the bottom. Wait for the frame, then settle again once the
-  /// bubble's real height is known (wrapped text and images change it).
-  void scrollToBottomAfterFrame() {
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      scrollToBottom();
-      Future.delayed(const Duration(milliseconds: 120), () {
-        if (!scrollController.hasClients) return;
-        final p = scrollController.position;
-        final target = p.axisDirection == AxisDirection.up
-            ? p.minScrollExtent
-            : p.maxScrollExtent;
-        if ((scrollController.offset - target).abs() > 8) {
-          scrollToBottom(animated: false);
-        }
-      });
-    });
-  }
+  void scrollToBottomAfterFrame() =>
+      chatScrollToBottomAfterFrame(scrollController);
 
   void sendMessage(String chatId) {
     final text = textController.text.trim();
