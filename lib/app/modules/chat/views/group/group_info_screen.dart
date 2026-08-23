@@ -201,8 +201,15 @@ class _GroupInfoScreenState extends State<GroupInfoScreen> {
                           groupCaption:
                               groupInfoController.groupInfoData!.description ??
                               '',
-                          isPublic: false,
-                          isAllowInvitation: false,
+                          // These were hardcoded false, so every edit sent
+                          // isPrivate: true and the community vanished from
+                          // Home/Explore (/groups/public returns public only).
+                          isPublic:
+                              !(groupInfoController.groupInfoData!.isPrivate ??
+                                  true),
+                          isAllowInvitation: groupInfoController
+                                  .groupInfoData!.allowInvitation ??
+                              false,
                         ),
                       ),
                     },

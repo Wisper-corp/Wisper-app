@@ -516,7 +516,11 @@ class _JobDetailsScreenState extends State<JobDetailsScreen> {
                         children: [
                           Text(
                             (() {
-                              final currencySymbol = (job?.currency == 'USD') ? '\$' : '₦'; // default ₦
+                              // Job has no currency column, so job.currency is
+                              // always null — scraped listings are monthly USD.
+                              final isUsd =
+                                  job?.currency == 'USD' || job?.isScraped == true;
+                              final currencySymbol = isUsd ? '\$' : '₦';
                               final salaryVal = job?.salary ?? 0;
                               final shiftLabel = shift == 'mo' ? 'mo' : 'one-off';
                               if (salaryVal <= 0) return 'Salary Negotiable';
