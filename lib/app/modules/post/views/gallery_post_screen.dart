@@ -249,7 +249,7 @@ class _GalleryPostScreenState extends State<GalleryPostScreen> {
                         ),
                       ),
                       Text(
-                        'Post on Marketplace',
+                        'Post your services',
                         style: TextStyle(
                           fontSize: 16.sp,
                           fontWeight: FontWeight.w600,

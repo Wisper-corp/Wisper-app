@@ -50,7 +50,7 @@ class _CreatePostScreenState extends State<CreatePostScreen> {
               },
               imagePath: Assets.images.gallery02.keyName,
               color: Color(0xffD0DFFF),
-              title: "Post on Marketplace",
+              title: "Post your services",
               subtitle: "Share product photos, videos or updates.",
             ),
             StorageUtil.getData(StorageUtil.userRole) != "PERSON"
