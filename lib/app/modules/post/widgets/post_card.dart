@@ -216,17 +216,15 @@ class PostCard extends StatelessWidget {
                   ),
                 ],
 
-                // Images — full width, Twitter style
+                // Images — separated tiles; each one clips itself, so no
+                // outer clip here (it would shave the corner tiles).
                 if (postImage != null && postImage!.isNotEmpty) ...[
                   SizedBox(height: 10.h),
-                  ClipRRect(
-                    borderRadius: BorderRadius.circular(14.r),
-                    child: ImageContainer(
-                      images: postImage,
-                      height: 200,
-                      width: double.infinity,
-                      borderRadius: 14,
-                    ),
+                  ImageContainer(
+                    images: postImage,
+                    height: 200,
+                    width: double.infinity,
+                    borderRadius: 12,
                   ),
                 ],
 

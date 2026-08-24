@@ -17,6 +17,11 @@ class ImageContainer extends StatelessWidget {
     required this.borderRadius,
   });
 
+  /// Tiles are separated rather than butted together: these are products and
+  /// services in a trade catalogue, so each photo should read as its own item
+  /// on a shelf, not as one mosaic. Nothing spans or dominates.
+  static const double _gap = 8;
+
   @override
   Widget build(BuildContext context) {
     final List<String> validImages =
@@ -24,116 +29,131 @@ class ImageContainer extends StatelessWidget {
 
     if (validImages.isEmpty) return const SizedBox.shrink();
 
-    final int displayCount = validImages.length.clamp(1, 4);
-
-    return GestureDetector(
-      onTap: () {
-        Get.to(() => FullScreenImageViewer(
-              imageUrls: validImages,
-              initialIndex: 0,
-            ));
-      },
-      child: ClipRRect(
-        borderRadius: BorderRadius.circular(borderRadius.r),
-        child: _buildImageLayout(displayCount, validImages),
-      ),
-    );
+    return _buildImageLayout(validImages);
   }
 
-  Widget _buildImageLayout(int count, List<String> images) {
+  Widget _buildImageLayout(List<String> images) {
+    final int count = images.length;
+    // Anything past the fourth still opens in the viewer; the fourth tile
+    // carries the count so the post never silently hides photos.
+    final int hidden = count > 4 ? count - 4 : 0;
+
+    // The outer ratio is chosen so each tile lands portrait-ish, which suits
+    // product photography better than the old landscape crops.
     if (count == 1) {
-      // Single image — full width, 16:9 landscape like Twitter/X
+      return AspectRatio(aspectRatio: 16 / 9, child: _tile(images, 0));
+    }
+
+    if (count == 2) {
       return AspectRatio(
-        aspectRatio: 16 / 9,
-        child: _image(images[0]),
-      );
-    } else if (count == 2) {
-      // Two images — side by side, equal width, taller (like Twitter/X)
-      return AspectRatio(
-        aspectRatio: 16 / 12,
+        aspectRatio: 8 / 5,
         child: Row(
           children: [
-            Expanded(child: _image(images[0])),
-            const SizedBox(width: 3),
-            Expanded(child: _image(images[1])),
-          ],
-        ),
-      );
-    } else if (count == 3) {
-      // Twitter/X style: 1 large on left, 2 stacked on right
-      return AspectRatio(
-        aspectRatio: 16 / 10,
-        child: Row(
-          children: [
-            // Large left image
-            Expanded(
-              flex: 6,
-              child: _image(images[0]),
-            ),
-            const SizedBox(width: 3),
-            // Two stacked right
-            Expanded(
-              flex: 5,
-              child: Column(
-                children: [
-                  Expanded(child: _image(images[1])),
-                  const SizedBox(height: 3),
-                  Expanded(child: _image(images[2])),
-                ],
-              ),
-            ),
-          ],
-        ),
-      );
-    } else {
-      // 4 images — 1 large top + 3 in a row below (like Twitter/X)
-      return AspectRatio(
-        aspectRatio: 4 / 5,
-        child: Column(
-          children: [
-            // Top large image
-            Expanded(
-              flex: 3,
-              child: _image(images[0]),
-            ),
-            const SizedBox(height: 3),
-            // Bottom 3 images in a row
-            Expanded(
-              flex: 2,
-              child: Row(
-                children: [
-                  Expanded(child: _image(images[1])),
-                  const SizedBox(width: 3),
-                  Expanded(child: _image(images[2])),
-                  const SizedBox(width: 3),
-                  Expanded(child: _image(images[3])),
-                ],
-              ),
-            ),
+            Expanded(child: _tile(images, 0)),
+            const SizedBox(width: _gap),
+            Expanded(child: _tile(images, 1)),
           ],
         ),
       );
     }
+
+    if (count == 3) {
+      return AspectRatio(
+        aspectRatio: 9 / 4,
+        child: Row(
+          children: [
+            Expanded(child: _tile(images, 0)),
+            const SizedBox(width: _gap),
+            Expanded(child: _tile(images, 1)),
+            const SizedBox(width: _gap),
+            Expanded(child: _tile(images, 2)),
+          ],
+        ),
+      );
+    }
+
+    return AspectRatio(
+      aspectRatio: 1,
+      child: Column(
+        children: [
+          Expanded(
+            child: Row(
+              children: [
+                Expanded(child: _tile(images, 0)),
+                const SizedBox(width: _gap),
+                Expanded(child: _tile(images, 1)),
+              ],
+            ),
+          ),
+          const SizedBox(height: _gap),
+          Expanded(
+            child: Row(
+              children: [
+                Expanded(child: _tile(images, 2)),
+                const SizedBox(width: _gap),
+                Expanded(child: _tile(images, 3, hidden: hidden)),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
   }
 
-  Widget _image(String url) {
+  Widget _tile(List<String> images, int index, {int hidden = 0}) {
+    final radius = BorderRadius.circular(borderRadius.r);
+
     return GestureDetector(
-      onTap: () {
-        final List<String> validImages =
-            images?.where((u) => u.isNotEmpty).toList() ?? [];
-        final int index = validImages.indexOf(url);
-        Get.to(() => FullScreenImageViewer(
-              imageUrls: validImages,
-              initialIndex: index >= 0 ? index : 0,
-            ));
-      },
-      child: Container(
-        decoration: BoxDecoration(
-          color: Colors.grey.shade800,
-          image: DecorationImage(
-            image: NetworkImage(url),
-            fit: BoxFit.cover,
-          ),
+      // Index by position: indexOf() opens the wrong photo when a post
+      // repeats the same URL.
+      onTap: () => Get.to(
+        () => FullScreenImageViewer(imageUrls: images, initialIndex: index),
+      ),
+      child: ClipRRect(
+        borderRadius: radius,
+        child: Stack(
+          fit: StackFit.expand,
+          children: [
+            CachedNetworkImage(
+              imageUrl: images[index],
+              fit: BoxFit.cover,
+              placeholder: (_, __) => const ColoredBox(color: Color(0xff1C1F23)),
+              errorWidget: (_, __, ___) => ColoredBox(
+                color: const Color(0xff1C1F23),
+                child: Icon(
+                  Icons.image_not_supported_outlined,
+                  size: 20.sp,
+                  color: const Color(0xff5A6169),
+                ),
+              ),
+            ),
+            // A hairline keeps a dark photo from bleeding into the dark card
+            // behind it, which is what makes the tiles read as separate.
+            DecoratedBox(
+              decoration: BoxDecoration(
+                borderRadius: radius,
+                border: Border.all(
+                  color: Colors.white.withValues(alpha: 0.08),
+                  width: 0.5,
+                ),
+              ),
+            ),
+            if (hidden > 0)
+              ColoredBox(
+                color: Colors.black.withValues(alpha: 0.55),
+                child: Center(
+                  child: Text(
+                    '+$hidden',
+                    style: TextStyle(
+                      fontFamily: 'Segoe UI',
+                      fontSize: 22.sp,
+                      fontWeight: FontWeight.w700,
+                      color: Colors.white,
+                    ),
+                  ),
+                ),
+              ),
+          ],
         ),
       ),
     );
@@ -177,7 +197,7 @@ class _FullScreenImageViewerState extends State<FullScreenImageViewer> {
     return Scaffold(
       backgroundColor: Colors.black,
       appBar: AppBar(
-        backgroundColor: Colors.black.withOpacity(0.4),
+        backgroundColor: Colors.black.withValues(alpha: 0.4),
         leading: IconButton(
           icon: const Icon(Icons.close, color: Colors.white),
           onPressed: () => Get.back(),
