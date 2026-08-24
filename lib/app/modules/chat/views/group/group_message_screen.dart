@@ -5,6 +5,7 @@ import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:get/get.dart';
 import 'package:wisper/app/core/others/custom_size.dart';
 import 'package:wisper/app/core/others/get_storage.dart';
+import 'package:wisper/app/core/utils/collapsible_header.dart';
 import 'package:wisper/app/core/utils/date_formatter.dart';
 import 'package:wisper/app/core/widgets/common/custom_button.dart';
 import 'package:wisper/app/core/widgets/common/custom_text_filed.dart';
@@ -75,6 +76,25 @@ class _GroupChatScreenState extends State<GroupChatScreen> {
   final RxString _effectiveChatId = ''.obs; // resolved chatId (may come from group info)
 
   static const _tabs = ['General Chat', 'Services', 'Jobs', 'Members'];
+
+  /// Collapsed hides the member-avatars row so the feed gets that height back.
+  /// The title row and tabs stay put, so nothing the user is aiming at moves.
+  bool _headerCollapsed = false;
+
+  bool _onFeedScroll(ScrollNotification notification) {
+    if (notification is! ScrollUpdateNotification) return false;
+    // Only the feed drives this; a nested horizontal strip must not.
+    if (notification.metrics.axis != Axis.vertical) return false;
+
+    final intent = headerCollapseIntent(
+      metrics: notification.metrics,
+      scrollDelta: notification.scrollDelta ?? 0,
+    );
+    if (intent == null || intent == _headerCollapsed) return false;
+
+    setState(() => _headerCollapsed = intent);
+    return false; // keep letting the notification bubble
+  }
 
   // Current user is admin in this group
   bool get _isCurrentUserAdmin {
@@ -1059,13 +1079,28 @@ class _GroupChatScreenState extends State<GroupChatScreen> {
     // ALWAYS use Scaffold as root — never return a plain Column as root
     return Scaffold(
       backgroundColor: Colors.black,
-      body: Column(
+      body: NotificationListener<ScrollNotification>(
+        onNotification: _onFeedScroll,
+        child: Column(
         children: [
           // Header (skip for embedded announcement tab)
           if (widget.showHeader) _buildHeader(),
-          // Member avatars row — ABOVE tabs
+          // Member avatars row — ABOVE tabs. Collapses out of the way as the
+          // feed scrolls down; the rows around it never move, so nothing the
+          // user is reaching for shifts under their thumb.
           if (widget.showTabs && widget.groupId != null && widget.groupId!.isNotEmpty)
-            _buildMemberAvatarsRow(),
+            AnimatedSize(
+              duration: const Duration(milliseconds: 220),
+              curve: Curves.easeOutCubic,
+              alignment: Alignment.topCenter,
+              child: _headerCollapsed
+                  ? const SizedBox(width: double.infinity)
+                  : AnimatedOpacity(
+                      opacity: 1,
+                      duration: const Duration(milliseconds: 160),
+                      child: _buildMemberAvatarsRow(),
+                    ),
+            ),
           // Tabs (skip for embedded announcement tab)
           if (widget.showTabs) _buildTabs(),
 
@@ -1179,6 +1214,7 @@ class _GroupChatScreenState extends State<GroupChatScreen> {
             if (_tabIndex == 3) _buildMembers(),
           ],
         ],
+        ),
       ),
     );
   }
