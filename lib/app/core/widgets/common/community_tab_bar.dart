@@ -3,13 +3,17 @@ import 'package:flutter_screenutil/flutter_screenutil.dart';
 
 /// The community screen's tab strip.
 ///
-/// Two layouts, chosen by measuring rather than guessing:
+/// Two layouts, chosen by measuring the labels rather than guessing:
 ///
-/// * **Everything fits** — the tabs share the width equally, which is how this
-///   bar has always looked and gives the generous gaps between labels.
-/// * **It doesn't** — each label sizes to its own text and the row scrolls, so
+/// * **They fit** — the row spreads them across the full width, so the slack
+///   becomes generous, even gaps. This is the roomy spacing the bar had before
+///   the Forum tab was added.
+/// * **They don't** — each label sizes to its text and the row scrolls, so
 ///   nothing is truncated. Five tabs at 360dp clipped "Members" to "Mem"; that
 ///   is what this branch avoids.
+///
+/// Equal `Expanded` shares are deliberately *not* used: at 390dp four tabs get
+/// 97dp each, and "Services" alone measures 104dp, so it would be truncated.
 ///
 /// One trap worth naming: inside a horizontally scrolling row the width
 /// constraint is unbounded, so a `width: double.infinity` underline resolves to
@@ -29,6 +33,10 @@ class CommunityTabBar extends StatelessWidget {
 
   /// Breathing room either side of each label when the row has to scroll.
   static const double _scrollGap = 14;
+
+  /// The least space a label needs either side before the row gives up on
+  /// fitting them all and scrolls instead.
+  static const double _minGap = 6;
 
   TextStyle _style(bool selected) => TextStyle(
         fontSize: 13.sp,
@@ -73,7 +81,7 @@ class CommunityTabBar extends StatelessWidget {
       // Expanded already gives a bounded width; the scrolling branch does not,
       // so it needs IntrinsicWidth to keep the underline finite.
       child: expanded
-          ? column
+          ? IntrinsicWidth(child: column)
           : Padding(
               padding: EdgeInsets.symmetric(horizontal: _scrollGap.w),
               child: IntrinsicWidth(child: column),
@@ -87,18 +95,19 @@ class CommunityTabBar extends StatelessWidget {
       builder: (context, constraints) {
         final available = constraints.maxWidth;
 
-        // Would the scrolling layout overflow? If not, equal shares look better
-        // and match how this bar read before the Forum tab was added.
-        var natural = 0.0;
+        // Only the labels themselves have to fit; the leftover width becomes
+        // the gaps between them.
+        var labels = 0.0;
         for (final t in tabs) {
-          natural += _labelWidth(context, t) + (_scrollGap.w * 2);
+          labels += _labelWidth(context, t) + (_minGap.w * 2);
         }
 
-        if (available.isFinite && natural <= available) {
+        if (available.isFinite && labels <= available) {
           return Row(
+            mainAxisAlignment: MainAxisAlignment.spaceAround,
             children: List.generate(
               tabs.length,
-              (i) => Expanded(child: _tab(i, expanded: true)),
+              (i) => _tab(i, expanded: true),
             ),
           );
         }

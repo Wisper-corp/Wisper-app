@@ -39,6 +39,11 @@ class ForumPostModel {
 
   /// Drives the blue highlight on your own posts.
   final bool isMine;
+
+  /// Whether this viewer may remove the post — their own, or anyone's if they
+  /// are an admin or moderator. Decided by the server so the rule lives in one
+  /// place.
+  final bool canDelete;
   final List<ForumReplyAvatar> replyAvatars;
 
   ForumPostModel({
@@ -51,6 +56,7 @@ class ForumPostModel {
     required this.reactionCount,
     required this.hasReacted,
     required this.isMine,
+    required this.canDelete,
     required this.replyAvatars,
   });
 
@@ -64,6 +70,8 @@ class ForumPostModel {
         reactionCount: json['reactionCount'] ?? 0,
         hasReacted: json['hasReacted'] ?? false,
         isMine: json['isMine'] ?? false,
+        // Older builds of the API omit this; fall back to own-posts-only.
+        canDelete: json['canDelete'] ?? json['isMine'] ?? false,
         replyAvatars: (json['replyAvatars'] as List?)
                 ?.map((e) => ForumReplyAvatar.fromJson(e))
                 .toList() ??

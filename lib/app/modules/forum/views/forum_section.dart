@@ -58,11 +58,16 @@ class _ForumSectionState extends State<ForumSection> {
     Get.dialog(
       AlertDialog(
         backgroundColor: const Color(0xff17191C),
-        title: const Text('Delete this post?',
-            style: TextStyle(color: Colors.white)),
-        content: const Text(
-          'It will be removed for everyone, along with its replies.',
-          style: TextStyle(color: Color(0xff98A2B3)),
+        title: Text(
+          post.isMine ? 'Delete your post?' : 'Delete this post?',
+          style: const TextStyle(color: Colors.white),
+        ),
+        content: Text(
+          post.isMine
+              ? 'It will be removed for everyone, along with its replies.'
+              : 'This removes ${post.author.name ?? 'this member'}\'s post for '
+                  'everyone, along with its replies.',
+          style: const TextStyle(color: Color(0xff98A2B3)),
         ),
         actions: [
           TextButton(
@@ -158,7 +163,7 @@ class _ForumSectionState extends State<ForumSection> {
                     post: post,
                     onOpenReplies: () => _openReplies(post),
                     onToggleReaction: () => _controller.toggleReaction(post),
-                    onMore: post.isMine ? () => _confirmDelete(post) : null,
+                    onMore: post.canDelete ? () => _confirmDelete(post) : null,
                   );
                 },
               ),

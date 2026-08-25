@@ -29,7 +29,8 @@
       "id": "9e1d1bf7-073f-4546-8d2c-99a1f0298a58",
       "image": "https://example.test/avatar.jpg"
      }
-    ]
+    ],
+    "canDelete": true
    }
   ]
  }

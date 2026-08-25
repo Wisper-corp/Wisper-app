@@ -2,7 +2,7 @@ import 'dart:io';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
-import 'package:wisper/app/core/widgets/common/image_picker.dart';
+import 'package:image_picker/image_picker.dart';
 
 /// The forum composer. Visually the chat input bar, but it posts to the forum
 /// rather than a chat, so it carries none of the chat's socket wiring.
@@ -70,18 +70,36 @@ class _ForumComposerState extends State<ForumComposer> {
   }
 
   Future<void> _pickImages() async {
-    if (_images.length >= kForumMaxImages) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('You can attach up to $kForumMaxImages images.'),
-        ),
-      );
+    final remaining = kForumMaxImages - _images.length;
+    if (remaining <= 0) {
+      _say('You can attach up to $kForumMaxImages images.');
       return;
     }
-    await ImagePickerHelper().pickImagesFromGallery(context, (file) {
-      if (_images.length >= kForumMaxImages) return;
-      setState(() => _images.add(file));
-    });
+
+    // ImagePicker is used directly rather than through ImagePickerHelper:
+    // that helper is written for use inside a dialog and calls
+    // Navigator.pop() when it finishes, which from here closes the community
+    // screen and throws the selection away.
+    try {
+      final picked = await ImagePicker().pickMultiImage();
+      if (picked.isEmpty || !mounted) return;
+
+      final taken = picked.take(remaining).map((x) => File(x.path)).toList();
+      setState(() => _images.addAll(taken));
+
+      if (picked.length > remaining) {
+        _say('Only the first $remaining could be added — '
+            '$kForumMaxImages images is the limit.');
+      }
+    } catch (e) {
+      if (mounted) _say('Could not open your photos.');
+    }
+  }
+
+  void _say(String message) {
+    ScaffoldMessenger.of(context)
+      ..hideCurrentSnackBar()
+      ..showSnackBar(SnackBar(content: Text(message)));
   }
 
   @override

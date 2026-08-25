@@ -82,6 +82,7 @@ void main() {
       reactionCount: 0,
       hasReacted: false,
       isMine: false,
+      canDelete: false,
       replyAvatars: const [],
     );
     await pump(tester, post);
@@ -104,5 +105,81 @@ void main() {
     expect(forumShortAge(now.subtract(const Duration(hours: 3))), '3h');
     expect(forumShortAge(now.subtract(const Duration(days: 2))), '2d');
     expect(forumShortAge(null), '');
+  });
+
+  test('canDelete is read from the server, not inferred', () {
+    final post = livePost();
+    expect(post.canDelete, isTrue, reason: 'own post');
+  });
+
+  testWidgets('a moderator sees the menu on someone else\'s post',
+      (tester) async {
+    final live = livePost();
+    final theirs = ForumPostModel(
+      id: live.id,
+      text: live.text,
+      images: const [],
+      createdAt: live.createdAt,
+      author: live.author,
+      replyCount: 0,
+      reactionCount: 0,
+      hasReacted: false,
+      isMine: false,
+      canDelete: true, // moderator
+      replyAvatars: const [],
+    );
+    await tester.pumpWidget(
+      ScreenUtilInit(
+        designSize: const Size(390, 844),
+        builder: (_, __) => MaterialApp(
+          home: Scaffold(
+            body: ForumPostCard(
+              post: theirs,
+              onOpenReplies: () {},
+              onToggleReaction: () {},
+              onMore: theirs.canDelete ? () {} : null,
+            ),
+          ),
+        ),
+      ),
+    );
+    await tester.pump();
+    expect(find.byIcon(Icons.more_horiz), findsOneWidget,
+        reason: 'moderators need the delete affordance on any post');
+  });
+
+  testWidgets('a plain member gets no menu on someone else\'s post',
+      (tester) async {
+    final live = livePost();
+    final theirs = ForumPostModel(
+      id: live.id,
+      text: live.text,
+      images: const [],
+      createdAt: live.createdAt,
+      author: live.author,
+      replyCount: 0,
+      reactionCount: 0,
+      hasReacted: false,
+      isMine: false,
+      canDelete: false,
+      replyAvatars: const [],
+    );
+    await tester.pumpWidget(
+      ScreenUtilInit(
+        designSize: const Size(390, 844),
+        builder: (_, __) => MaterialApp(
+          home: Scaffold(
+            body: ForumPostCard(
+              post: theirs,
+              onOpenReplies: () {},
+              onToggleReaction: () {},
+              onMore: theirs.canDelete ? () {} : null,
+            ),
+          ),
+        ),
+      ),
+    );
+    await tester.pump();
+    expect(find.byIcon(Icons.more_horiz), findsNothing);
   });
 }
