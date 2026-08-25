@@ -113,28 +113,32 @@ class _ForumComposerState extends State<ForumComposer> {
             if (widget.allowImages) SizedBox(width: 8.w),
             Expanded(
               child: Container(
-                constraints: BoxConstraints(minHeight: 44.h, maxHeight: 120.h),
-                padding: EdgeInsets.symmetric(horizontal: 16.w),
+                // No Center here: Center fills whatever height it is offered,
+                // so with a maxHeight it made the box permanently tall instead
+                // of one line high. The padding does the centring, and the box
+                // grows only as the text wraps.
+                constraints: BoxConstraints(maxHeight: 120.h),
+                padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 11.h),
                 decoration: BoxDecoration(
                   color: const Color(0xff2A2A2A),
                   borderRadius: BorderRadius.circular(24.r),
                 ),
-                child: Center(
-                  child: TextField(
-                    controller: _controller,
-                    focusNode: _focusNode,
-                    minLines: 1,
-                    maxLines: 4,
-                    style: TextStyle(color: Colors.white, fontSize: 15.sp),
-                    cursorColor: const Color(0xFF168DE1),
-                    decoration: InputDecoration(
-                      isDense: true,
-                      border: InputBorder.none,
-                      hintText: widget.hintText,
-                      hintStyle: TextStyle(
-                        color: Colors.grey[500],
-                        fontSize: 15.sp,
-                      ),
+                child: TextField(
+                  controller: _controller,
+                  focusNode: _focusNode,
+                  minLines: 1,
+                  maxLines: 4,
+                  style: TextStyle(color: Colors.white, fontSize: 15.sp, height: 1.3),
+                  cursorColor: const Color(0xFF168DE1),
+                  decoration: InputDecoration(
+                    isDense: true,
+                    contentPadding: EdgeInsets.zero,
+                    border: InputBorder.none,
+                    hintText: widget.hintText,
+                    hintStyle: TextStyle(
+                      color: Colors.grey[500],
+                      fontSize: 15.sp,
+                      height: 1.3,
                     ),
                   ),
                 ),

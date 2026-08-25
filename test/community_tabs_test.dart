@@ -115,4 +115,79 @@ void main() {
     expect(tester.takeException(), isNull);
     expect(find.text('General Chat'), findsOneWidget);
   });
+
+  testWidgets('four tabs spread across the width, not bunched left',
+      (tester) async {
+    await pumpBar(tester, width: 360);
+    final tabs = visibleCommunityTabs(hasGroupId: true);
+    final rects = [for (final t in tabs) tester.getRect(find.text(t))];
+
+    // The last label should end near the right edge, not stop short of it.
+    expect(rects.last.right, greaterThan(300),
+        reason: 'the strip must use the full width, not bunch to the left');
+
+    // And the gaps between labels should be real, roughly even spacing.
+    for (var i = 1; i < rects.length; i++) {
+      final gap = rects[i].left - rects[i - 1].right;
+      expect(gap, greaterThan(8), reason: 'gap ${i - 1}->$i is too tight');
+    }
+  });
+
+  testWidgets('still scrolls when the labels genuinely do not fit',
+      (tester) async {
+    // Five long labels at a narrow width must overflow into a scroll rather
+    // than clip.
+    await pumpBar(tester, width: 260, tabs: kCommunityTabs);
+    expect(tester.takeException(), isNull);
+    for (final t in kCommunityTabs) {
+      expect(find.text(t), findsOneWidget);
+    }
+    final before = tester.getTopLeft(find.text('Members'));
+    await tester.drag(find.byType(CommunityTabBar), const Offset(-140, 0));
+    await tester.pumpAndSettle();
+    expect(tester.getTopLeft(find.text('Members')).dx, lessThan(before.dx));
+  });
+
+  testWidgets('four tabs share the width equally, with generous gaps',
+      (tester) async {
+    await pumpBar(tester, width: 390);
+    expect(tester.takeException(), isNull);
+
+    final tabs = visibleCommunityTabs(hasGroupId: true);
+    final rects = [for (final t in tabs) tester.getRect(find.text(t))];
+
+    // Gaps between adjacent labels must be roomy, not cramped.
+    for (var i = 1; i < rects.length; i++) {
+      final gap = rects[i].left - rects[i - 1].right;
+      expect(gap, greaterThan(16),
+          reason: 'gap before "${tabs[i]}" is only ${gap.toStringAsFixed(1)}');
+    }
+    // Equal shares: the spacing is even across the row.
+    final gaps = [
+      for (var i = 1; i < rects.length; i++) rects[i].left - rects[i - 1].right
+    ];
+    final spread = gaps.reduce((a, b) => a > b ? a : b) -
+        gaps.reduce((a, b) => a < b ? a : b);
+    expect(spread, lessThan(30),
+        reason: 'equal shares should keep the gaps in the same ballpark');
+  });
+
+  testWidgets('the row spans the full width when tabs fit', (tester) async {
+    await pumpBar(tester, width: 390);
+    final tabs = visibleCommunityTabs(hasGroupId: true);
+    final first = tester.getRect(find.text(tabs.first));
+    final last = tester.getRect(find.text(tabs.last));
+    expect(last.right - first.left, greaterThan(390 * 0.7),
+        reason: 'labels should be spread across the bar, not bunched left');
+  });
+
+  testWidgets('falls back to scrolling when five tabs will not fit',
+      (tester) async {
+    await pumpBar(tester, width: 300, tabs: kCommunityTabs);
+    expect(tester.takeException(), isNull);
+    for (final t in kCommunityTabs) {
+      expect(find.text(t), findsOneWidget);
+      expect(tester.getSize(find.text(t)).width.isFinite, isTrue);
+    }
+  });
 }
