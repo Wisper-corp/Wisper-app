@@ -1,6 +1,7 @@
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
+import 'package:wisper/app/core/widgets/common/image_container_widget.dart';
 import 'package:wisper/app/core/widgets/common/initials_avatar.dart';
 import 'package:wisper/app/modules/forum/model/forum_post_model.dart';
 
@@ -133,6 +134,17 @@ class ForumPostCard extends StatelessWidget {
               ),
             ),
           ),
+          // Attached photos, using the same grid as the rest of the app so a
+          // forum post and a service post lay their images out identically.
+          if (post.images.isNotEmpty) ...[
+            SizedBox(height: 10.h),
+            ImageContainer(
+              images: post.images,
+              height: 200,
+              width: double.infinity,
+              borderRadius: 12,
+            ),
+          ],
           if (showActions) ...[
             SizedBox(height: 12.h),
             Row(

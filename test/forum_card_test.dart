@@ -1,3 +1,4 @@
+import 'package:cached_network_image/cached_network_image.dart';
 import 'dart:convert';
 import 'dart:io';
 
@@ -5,6 +6,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:wisper/app/modules/forum/model/forum_post_model.dart';
+import 'package:wisper/app/core/widgets/common/image_container_widget.dart';
 import 'package:wisper/app/modules/forum/widget/forum_post_card.dart';
 
 /// Parsed from a response captured off the live API, so the model is checked
@@ -21,11 +23,15 @@ Future<void> pump(WidgetTester tester, ForumPostModel post) async {
       designSize: const Size(390, 844),
       builder: (_, __) => MaterialApp(
         home: Scaffold(
-          body: ForumPostCard(
+          // The card lives in a ListView in the app; without a scroll parent a
+          // tall image post overflows the test surface.
+          body: SingleChildScrollView(
+            child: ForumPostCard(
             post: post,
             onOpenReplies: () {},
             onToggleReaction: () {},
-            onMore: post.isMine ? () {} : null,
+              onMore: post.isMine ? () {} : null,
+            ),
           ),
         ),
       ),
@@ -181,5 +187,49 @@ void main() {
     );
     await tester.pump();
     expect(find.byIcon(Icons.more_horiz), findsNothing);
+  });
+
+  ForumPostModel withImages(int n) {
+    final live = livePost();
+    return ForumPostModel(
+      id: live.id,
+      text: 'Look at these',
+      images: List.generate(n, (i) => 'https://example.test/p$i.jpg'),
+      createdAt: live.createdAt,
+      author: live.author,
+      replyCount: 0,
+      reactionCount: 0,
+      hasReacted: false,
+      isMine: false,
+      canDelete: false,
+      replyAvatars: const [],
+    );
+  }
+
+  for (final n in [1, 2, 3, 4]) {
+    testWidgets('a post with $n image(s) actually renders them', (tester) async {
+      await pump(tester, withImages(n));
+      // The bug: the whole upload pipeline worked but the card never drew the
+      // photos, so an image post looked like a text-only post.
+      expect(find.byType(ImageContainer), findsOneWidget,
+          reason: 'the card must include the image grid');
+      expect(find.byType(CachedNetworkImage), findsNWidgets(n + 1),
+          reason: '$n photos plus the author avatar');
+      expect(tester.takeException(), isNull);
+    });
+  }
+
+  testWidgets('a text-only post draws no image grid', (tester) async {
+    await pump(tester, livePost());
+    expect(find.byType(ImageContainer), findsNothing);
+  });
+
+  testWidgets('the caption is still shown above the photos', (tester) async {
+    await pump(tester, withImages(2));
+    expect(find.text('Look at these'), findsOneWidget);
+    final caption = tester.getRect(find.text('Look at these'));
+    final grid = tester.getRect(find.byType(ImageContainer));
+    expect(caption.bottom, lessThanOrEqualTo(grid.top),
+        reason: 'caption reads first, then the photos');
   });
 }
