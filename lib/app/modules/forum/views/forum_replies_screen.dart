@@ -26,6 +26,11 @@ class ForumRepliesScreen extends StatefulWidget {
 
 class _ForumRepliesScreenState extends State<ForumRepliesScreen> {
   late final ForumRepliesController _controller;
+
+  /// Per-instance tag. Keying on the post id alone means double-tapping a post
+  /// gives two screens the same controller, and the first one to close deletes
+  /// it out from under the second.
+  late final String _tag = 'forum_replies_${widget.post.id}_$hashCode';
   final GlobalKey<State<ForumComposer>> _composerKey =
       GlobalKey<State<ForumComposer>>();
   final ScrollController _scrollController = ScrollController();
@@ -35,7 +40,7 @@ class _ForumRepliesScreenState extends State<ForumRepliesScreen> {
     super.initState();
     _controller = Get.put(
       ForumRepliesController(widget.post.id),
-      tag: widget.post.id,
+      tag: _tag,
     );
     // Show the post we already have while the replies load, so the screen
     // never opens empty.
@@ -46,7 +51,7 @@ class _ForumRepliesScreenState extends State<ForumRepliesScreen> {
   @override
   void dispose() {
     _scrollController.dispose();
-    Get.delete<ForumRepliesController>(tag: widget.post.id);
+    Get.delete<ForumRepliesController>(tag: _tag);
     super.dispose();
   }
 
