@@ -73,6 +73,42 @@ void main() {
     }
   });
 
+  testWidgets('two images are exactly 4:5 portraits, per the reference',
+      (tester) async {
+    await pump(tester, urls(2));
+    final a = tester.getRect(find.byType(CachedNetworkImage).at(0));
+    final b = tester.getRect(find.byType(CachedNetworkImage).at(1));
+    expect(a.width / a.height, closeTo(0.8, 0.01),
+        reason: 'reference measured 0.795; 4:5 is 0.800');
+    expect(b.width / b.height, closeTo(0.8, 0.01));
+    expect(a.height, closeTo(b.height, 0.5), reason: 'the pair is equal');
+  });
+
+  testWidgets('the 4:5 pair holds at a different card width', (tester) async {
+    // Derived from real width, so it must not depend on one screen size.
+    await tester.pumpWidget(
+      ScreenUtilInit(
+        designSize: const Size(390, 844),
+        builder: (_, __) => MaterialApp(
+          home: Scaffold(
+            body: SizedBox(
+              width: 280,
+              child: ImageContainer(
+                images: urls(2),
+                height: 200,
+                width: double.infinity,
+                borderRadius: 12,
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+    await tester.pump();
+    final a = tester.getRect(find.byType(CachedNetworkImage).at(0));
+    expect(a.width / a.height, closeTo(0.8, 0.01));
+  });
+
   testWidgets('empty or blank urls render nothing', (tester) async {
     await pump(tester, ['', '  '.trim()]);
     expect(find.byType(CachedNetworkImage), findsNothing);

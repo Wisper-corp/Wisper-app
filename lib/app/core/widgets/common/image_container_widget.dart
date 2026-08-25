@@ -45,15 +45,23 @@ class ImageContainer extends StatelessWidget {
     }
 
     if (count == 2) {
-      return AspectRatio(
-        aspectRatio: 8 / 5,
-        child: Row(
-          children: [
-            Expanded(child: _tile(images, 0)),
-            const SizedBox(width: _gap),
-            Expanded(child: _tile(images, 1)),
-          ],
-        ),
+      // A pair reads best as two 4:5 portraits, measured off the reference
+      // design. Derived from the real width rather than a fixed outer ratio so
+      // the tiles stay exactly 4:5 whatever the card width turns out to be.
+      return LayoutBuilder(
+        builder: (context, constraints) {
+          final double tileWidth = (constraints.maxWidth - _gap) / 2;
+          return SizedBox(
+            height: tileWidth * 5 / 4,
+            child: Row(
+              children: [
+                Expanded(child: _tile(images, 0)),
+                const SizedBox(width: _gap),
+                Expanded(child: _tile(images, 1)),
+              ],
+            ),
+          );
+        },
       );
     }
 
