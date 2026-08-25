@@ -1,3 +1,5 @@
+import 'dart:io';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:get/get.dart';
@@ -48,7 +50,7 @@ class _ForumRepliesScreenState extends State<ForumRepliesScreen> {
     super.dispose();
   }
 
-  Future<bool> _send(String text) async {
+  Future<bool> _send(String text, List<File> images) async {
     final ok = await _controller.addReply(text);
     if (!ok && mounted) {
       Get.snackbar('Could not reply', _controller.errorMessage,
@@ -158,6 +160,8 @@ class _ForumRepliesScreenState extends State<ForumRepliesScreen> {
             ForumComposer(
               key: _composerKey,
               hintText: 'Type here...',
+              // Replies are text only.
+              allowImages: false,
               onSend: _send,
             ),
         ],

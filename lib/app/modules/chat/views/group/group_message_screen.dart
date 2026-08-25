@@ -6,6 +6,7 @@ import 'package:get/get.dart';
 import 'package:wisper/app/core/others/custom_size.dart';
 import 'package:wisper/app/core/others/get_storage.dart';
 import 'package:wisper/app/core/utils/collapsible_header.dart';
+import 'package:wisper/app/core/utils/community_tabs.dart';
 import 'package:wisper/app/modules/forum/views/forum_section.dart';
 import 'package:wisper/app/core/utils/date_formatter.dart';
 import 'package:wisper/app/core/widgets/common/custom_button.dart';
@@ -76,7 +77,9 @@ class _GroupChatScreenState extends State<GroupChatScreen> {
   bool _isJoining = false;
   final RxString _effectiveChatId = ''.obs; // resolved chatId (may come from group info)
 
-  static const _tabs = ['General Chat', 'Forum', 'Services', 'Jobs', 'Members'];
+  // Tab list, visibility and index mapping live in core/utils/community_tabs.dart
+  // so they can be tested without standing up this whole screen. General Chat is
+  // hidden there, not deleted: _buildChat() and its controllers are untouched.
 
   /// Collapsed hides the member-avatars row so the feed gets that height back.
   /// The title row and tabs stay put, so nothing the user is aiming at moves.
@@ -107,10 +110,14 @@ class _GroupChatScreenState extends State<GroupChatScreen> {
   String get _myUserId => StorageUtil.getData(StorageUtil.userId) ?? '';
 
   // When no groupId, only show General Chat tab (home announcement feed)
-  List<String> get _activeTabs =>
-      (widget.groupId != null && widget.groupId!.isNotEmpty)
-          ? _tabs
-          : ['General Chat'];
+  List<String> get _activeTabs => visibleCommunityTabs(
+        hasGroupId: widget.groupId != null && widget.groupId!.isNotEmpty,
+      );
+
+  int get _canonicalTabIndex => canonicalTabIndex(
+        hasGroupId: widget.groupId != null && widget.groupId!.isNotEmpty,
+        visibleIndex: _tabIndex,
+      );
 
   @override
   void initState() {
@@ -1132,7 +1139,7 @@ class _GroupChatScreenState extends State<GroupChatScreen> {
             else
               _buildJoinBanner(),
           ] else ...[
-            if (_tabIndex == 0) ...[
+            if (_canonicalTabIndex == 0) ...[
               _buildChat(),
               if (_hasJoined)
                 MessageInputBar(
@@ -1144,13 +1151,13 @@ class _GroupChatScreenState extends State<GroupChatScreen> {
               else
                 _buildJoinBanner(),
             ],
-            if (_tabIndex == 1) Expanded(
+            if (_canonicalTabIndex == 1) Expanded(
               child: ForumSection(
                 groupId: widget.groupId!,
                 canPost: _hasJoined,
               ),
             ),
-            if (_tabIndex == 2) Expanded(
+            if (_canonicalTabIndex == 2) Expanded(
               child: Column(children: [
                 // Search bar — same pattern as Jobs tab
                 Padding(
@@ -1187,7 +1194,7 @@ class _GroupChatScreenState extends State<GroupChatScreen> {
                 if (!_hasJoined) _buildJoinBanner(),
               ]),
             ),
-            if (_tabIndex == 3) Expanded(
+            if (_canonicalTabIndex == 3) Expanded(
               child: Column(children: [
                 Padding(
                   padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 8.h),
@@ -1232,7 +1239,7 @@ class _GroupChatScreenState extends State<GroupChatScreen> {
                 if (!_hasJoined) _buildJoinBanner(),
               ]),
             ),
-            if (_tabIndex == 4) _buildMembers(),
+            if (_canonicalTabIndex == 4) _buildMembers(),
           ],
         ],
         ),

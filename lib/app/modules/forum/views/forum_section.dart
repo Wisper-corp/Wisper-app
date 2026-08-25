@@ -1,3 +1,5 @@
+import 'dart:io';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:get/get.dart';
@@ -43,8 +45,8 @@ class _ForumSectionState extends State<ForumSection> {
     await _controller.getPosts();
   }
 
-  Future<bool> _post(String text) async {
-    final ok = await _controller.createPost(text);
+  Future<bool> _post(String text, List<File> images) async {
+    final ok = await _controller.createPost(text, images: images);
     if (!ok && mounted) {
       Get.snackbar('Could not post', _controller.errorMessage,
           backgroundColor: Colors.red, colorText: Colors.white);

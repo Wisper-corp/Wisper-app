@@ -1,3 +1,5 @@
+import 'dart:io';
+
 import 'package:get/get.dart';
 import 'package:wisper/app/core/others/get_storage.dart';
 import 'package:wisper/app/core/services/network_caller/network_caller.dart';
@@ -40,13 +42,17 @@ class ForumController extends GetxController {
     _inProgress.value = false;
   }
 
-  Future<bool> createPost(String text) async {
+  /// A caption is required even when images are attached, so an empty text is
+  /// rejected here before it reaches the server.
+  Future<bool> createPost(String text, {List<File>? images}) async {
     final trimmed = text.trim();
     if (trimmed.isEmpty) return false;
     try {
       final NetworkResponse res = await Get.find<NetworkCaller>().postRequest(
         Urls.forumUrl,
         body: {'groupId': groupId, 'text': trimmed},
+        images: (images != null && images.isNotEmpty) ? images : null,
+        keyNameImage: 'images',
         accessToken: _token,
       );
       if (res.isSuccess && res.responseData != null) {

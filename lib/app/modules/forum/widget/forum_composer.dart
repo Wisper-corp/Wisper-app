@@ -1,16 +1,27 @@
+import 'dart:io';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
+import 'package:wisper/app/core/widgets/common/image_picker.dart';
 
 /// The forum composer. Visually the chat input bar, but it posts to the forum
 /// rather than a chat, so it carries none of the chat's socket wiring.
+/// A forum post carries at most this many images. The server enforces the same
+/// cap, so this is a courtesy, not the guarantee.
+const int kForumMaxImages = 4;
+
 class ForumComposer extends StatefulWidget {
   final String hintText;
-  final Future<bool> Function(String text) onSend;
+  final Future<bool> Function(String text, List<File> images) onSend;
+
+  /// Replies are text only; the post composer takes images.
+  final bool allowImages;
 
   const ForumComposer({
     super.key,
     required this.onSend,
     this.hintText = 'Type here...',
+    this.allowImages = true,
   });
 
   @override
@@ -20,12 +31,15 @@ class ForumComposer extends StatefulWidget {
 class _ForumComposerState extends State<ForumComposer> {
   final TextEditingController _controller = TextEditingController();
   final FocusNode _focusNode = FocusNode();
+  final List<File> _images = [];
   bool _canSend = false;
   bool _sending = false;
 
   @override
   void initState() {
     super.initState();
+    // A caption is required even when images are attached, so send stays
+    // disabled on images alone.
     _controller.addListener(() {
       final can = _controller.text.trim().isNotEmpty;
       if (can != _canSend) setState(() => _canSend = can);
@@ -46,10 +60,28 @@ class _ForumComposerState extends State<ForumComposer> {
     if (!_canSend || _sending) return;
     final text = _controller.text;
     setState(() => _sending = true);
-    final ok = await widget.onSend(text);
+    final ok = await widget.onSend(text, List<File>.from(_images));
     if (!mounted) return;
-    if (ok) _controller.clear();
+    if (ok) {
+      _controller.clear();
+      _images.clear();
+    }
     setState(() => _sending = false);
+  }
+
+  Future<void> _pickImages() async {
+    if (_images.length >= kForumMaxImages) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('You can attach up to $kForumMaxImages images.'),
+        ),
+      );
+      return;
+    }
+    await ImagePickerHelper().pickImagesFromGallery(context, (file) {
+      if (_images.length >= kForumMaxImages) return;
+      setState(() => _images.add(file));
+    });
   }
 
   @override
@@ -58,19 +90,27 @@ class _ForumComposerState extends State<ForumComposer> {
       top: false,
       child: Padding(
         padding: EdgeInsets.symmetric(horizontal: 8.w, vertical: 6.h),
-        child: Row(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            if (_images.isNotEmpty) _thumbnails(),
+            Row(
           crossAxisAlignment: CrossAxisAlignment.end,
           children: [
-            Container(
-              width: 44.r,
-              height: 44.r,
-              decoration: const BoxDecoration(
-                color: Color(0xff2A2A2A),
-                shape: BoxShape.circle,
+            if (widget.allowImages)
+              GestureDetector(
+                onTap: _pickImages,
+                child: Container(
+                  width: 44.r,
+                  height: 44.r,
+                  decoration: const BoxDecoration(
+                    color: Color(0xff2A2A2A),
+                    shape: BoxShape.circle,
+                  ),
+                  child: Icon(Icons.add, color: Colors.grey[400], size: 22.sp),
+                ),
               ),
-              child: Icon(Icons.add, color: Colors.grey[400], size: 22.sp),
-            ),
-            SizedBox(width: 8.w),
+            if (widget.allowImages) SizedBox(width: 8.w),
             Expanded(
               child: Container(
                 constraints: BoxConstraints(minHeight: 44.h, maxHeight: 120.h),
@@ -125,6 +165,50 @@ class _ForumComposerState extends State<ForumComposer> {
                         color: _canSend ? Colors.white : Colors.grey[600],
                         size: 22.sp,
                       ),
+              ),
+            ),
+          ],
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  /// Selected images sit above the field so the caption stays visible — the
+  /// caption is required, so it must never be pushed out of sight.
+  Widget _thumbnails() {
+    return SizedBox(
+      height: 72.h,
+      child: ListView.separated(
+        scrollDirection: Axis.horizontal,
+        padding: EdgeInsets.only(left: 4.w, right: 4.w, bottom: 8.h),
+        itemCount: _images.length,
+        separatorBuilder: (_, __) => SizedBox(width: 8.w),
+        itemBuilder: (context, i) => Stack(
+          children: [
+            ClipRRect(
+              borderRadius: BorderRadius.circular(10.r),
+              child: Image.file(
+                _images[i],
+                width: 60.r,
+                height: 60.r,
+                fit: BoxFit.cover,
+              ),
+            ),
+            Positioned(
+              top: 0,
+              right: 0,
+              child: GestureDetector(
+                onTap: () => setState(() => _images.removeAt(i)),
+                child: Container(
+                  padding: EdgeInsets.all(2.r),
+                  decoration: const BoxDecoration(
+                    color: Colors.black87,
+                    shape: BoxShape.circle,
+                  ),
+                  child: Icon(Icons.close, size: 14.sp, color: Colors.white),
+                ),
               ),
             ),
           ],
