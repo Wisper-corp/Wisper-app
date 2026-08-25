@@ -100,6 +100,13 @@ class Urls {
   static const String roomUrl = '$_baseUrl/calls';
   static const String callTokenUrl = '$_baseUrl/calls/token';
   static const String allCommunityUrl = '$_baseUrl/groups/public';
+
+  // Forum
+  static const String forumUrl = '$_baseUrl/forum';
+  static String groupForumUrl(String groupId) => '$_baseUrl/forum/group/$groupId';
+  static String forumRepliesUrl(String postId) => '$_baseUrl/forum/$postId/replies';
+  static String forumReactionUrl(String postId) => '$_baseUrl/forum/$postId/reaction';
+  static String forumPostUrl(String postId) => '$_baseUrl/forum/$postId';
   static String addClassMembersById(String id) => '$_baseUrl/classes/members/$id';
   static const String removePerticipantUrl = '$_baseUrl/chats/remove-participant';
   static const String updateParticipantRoleUrl = '$_baseUrl/chats/update-participant-role';

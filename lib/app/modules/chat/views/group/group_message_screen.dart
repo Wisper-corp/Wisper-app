@@ -6,6 +6,7 @@ import 'package:get/get.dart';
 import 'package:wisper/app/core/others/custom_size.dart';
 import 'package:wisper/app/core/others/get_storage.dart';
 import 'package:wisper/app/core/utils/collapsible_header.dart';
+import 'package:wisper/app/modules/forum/views/forum_section.dart';
 import 'package:wisper/app/core/utils/date_formatter.dart';
 import 'package:wisper/app/core/widgets/common/custom_button.dart';
 import 'package:wisper/app/core/widgets/common/custom_text_filed.dart';
@@ -75,7 +76,7 @@ class _GroupChatScreenState extends State<GroupChatScreen> {
   bool _isJoining = false;
   final RxString _effectiveChatId = ''.obs; // resolved chatId (may come from group info)
 
-  static const _tabs = ['General Chat', 'Services', 'Jobs', 'Members'];
+  static const _tabs = ['General Chat', 'Forum', 'Services', 'Jobs', 'Members'];
 
   /// Collapsed hides the member-avatars row so the feed gets that height back.
   /// The title row and tabs stay put, so nothing the user is aiming at moves.
@@ -693,31 +694,45 @@ class _GroupChatScreenState extends State<GroupChatScreen> {
     return Column(
       mainAxisSize: MainAxisSize.min,
       children: [
-        Row(
-          children: List.generate(_activeTabs.length, (i) {
-            final sel = _tabIndex == i;
-            return Expanded(
-              child: GestureDetector(
+        // Five tabs no longer fit in equal shares - "Members" clipped to
+        // "Mem". Each label now sizes to its own text and the row scrolls,
+        // so nothing is truncated on a narrow phone.
+        SingleChildScrollView(
+          scrollDirection: Axis.horizontal,
+          physics: const ClampingScrollPhysics(),
+          padding: EdgeInsets.symmetric(horizontal: 12.w),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: List.generate(_activeTabs.length, (i) {
+              final sel = _tabIndex == i;
+              return GestureDetector(
                 onTap: () => setState(() => _tabIndex = i),
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Padding(
-                      padding: EdgeInsets.symmetric(vertical: 8.h),
-                      child: Text(_activeTabs[i],
-                        textAlign: TextAlign.center,
-                        style: TextStyle(
-                          fontSize: 13.sp, fontWeight: FontWeight.w600,
-                          color: sel ? Colors.white : Colors.white38,
+                behavior: HitTestBehavior.opaque,
+                child: Padding(
+                  padding: EdgeInsets.symmetric(horizontal: 10.w),
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Padding(
+                        padding: EdgeInsets.symmetric(vertical: 8.h),
+                        child: Text(_activeTabs[i],
+                          style: TextStyle(
+                            fontSize: 13.sp, fontWeight: FontWeight.w600,
+                            color: sel ? Colors.white : Colors.white38,
+                          ),
                         ),
                       ),
-                    ),
-                    Container(height: 2, color: sel ? Colors.blue : Colors.transparent),
-                  ],
+                      Container(
+                        height: 2,
+                        width: double.infinity,
+                        color: sel ? Colors.blue : Colors.transparent,
+                      ),
+                    ],
+                  ),
                 ),
-              ),
-            );
-          }),
+              );
+            }),
+          ),
         ),
         StraightLiner(height: 0.4, color: const Color(0xff454545)),
       ],
@@ -1130,6 +1145,12 @@ class _GroupChatScreenState extends State<GroupChatScreen> {
                 _buildJoinBanner(),
             ],
             if (_tabIndex == 1) Expanded(
+              child: ForumSection(
+                groupId: widget.groupId!,
+                canPost: _hasJoined,
+              ),
+            ),
+            if (_tabIndex == 2) Expanded(
               child: Column(children: [
                 // Search bar — same pattern as Jobs tab
                 Padding(
@@ -1166,7 +1187,7 @@ class _GroupChatScreenState extends State<GroupChatScreen> {
                 if (!_hasJoined) _buildJoinBanner(),
               ]),
             ),
-            if (_tabIndex == 2) Expanded(
+            if (_tabIndex == 3) Expanded(
               child: Column(children: [
                 Padding(
                   padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 8.h),
@@ -1211,7 +1232,7 @@ class _GroupChatScreenState extends State<GroupChatScreen> {
                 if (!_hasJoined) _buildJoinBanner(),
               ]),
             ),
-            if (_tabIndex == 3) _buildMembers(),
+            if (_tabIndex == 4) _buildMembers(),
           ],
         ],
         ),

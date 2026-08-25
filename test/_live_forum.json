@@ -1,0 +1,36 @@
+{
+ "success": true,
+ "message": "Forum posts retrieved successfully!",
+ "data": {
+  "meta": {
+   "page": 1,
+   "limit": 10,
+   "total": 1
+  },
+  "posts": [
+   {
+    "id": "3d703c3a-247e-498d-9796-cee53821b457",
+    "text": "Just transitioned to a 100% async remote setup. No more daily standups at 9 AM?",
+    "images": [],
+    "isEdited": false,
+    "createdAt": "2026-08-25T18:29:15.906Z",
+    "author": {
+     "id": "9e1d1bf7-073f-4546-8d2c-99a1f0298a58",
+     "name": "faraz Ahmed",
+     "image": "https://example.test/avatar.jpg",
+     "title": "Flutter Developer"
+    },
+    "replyCount": 1,
+    "reactionCount": 1,
+    "hasReacted": true,
+    "isMine": true,
+    "replyAvatars": [
+     {
+      "id": "9e1d1bf7-073f-4546-8d2c-99a1f0298a58",
+      "image": "https://example.test/avatar.jpg"
+     }
+    ]
+   }
+  ]
+ }
+}
