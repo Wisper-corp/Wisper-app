@@ -1,80 +1,118 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:wisper/app/core/utils/community_tabs.dart';
+import 'package:wisper/app/core/widgets/common/community_tab_bar.dart';
 
-const tabs = ['General Chat', 'Forum', 'Services', 'Jobs', 'Members'];
-
-/// The old row: equal shares. This is what clipped "Members" to "Mem".
-Widget oldRow() => Row(
-      children: List.generate(
-        tabs.length,
-        (i) => Expanded(
-          child: Text(tabs[i],
-              textAlign: TextAlign.center,
-              maxLines: 1,
-              overflow: TextOverflow.clip,
-              style: const TextStyle(fontSize: 13)),
-        ),
-      ),
-    );
-
-/// The new row: labels size to their text, the row scrolls.
-Widget newRow() => SingleChildScrollView(
-      scrollDirection: Axis.horizontal,
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: tabs
-            .map((t) => Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 10),
-                  child: Text(t, style: const TextStyle(fontSize: 13)),
-                ))
-            .toList(),
-      ),
-    );
-
-Future<void> pump(WidgetTester tester, Widget row, double width) async {
+/// Renders the REAL CommunityTabBar. An earlier version of this file tested a
+/// hand-written replica that left out the underline, so it passed while the
+/// shipped strip rendered blank. Always mount the real widget.
+Future<int?> pumpBar(
+  WidgetTester tester, {
+  double width = 360,
+  List<String>? tabs,
+  int selected = 0,
+}) async {
+  int? tapped;
   await tester.pumpWidget(
     ScreenUtilInit(
       designSize: const Size(390, 844),
       builder: (_, __) => MaterialApp(
-        home: Scaffold(body: SizedBox(width: width, child: row)),
+        home: Scaffold(
+          body: SizedBox(
+            width: width,
+            child: CommunityTabBar(
+              tabs: tabs ?? visibleCommunityTabs(hasGroupId: true),
+              selectedIndex: selected,
+              onSelected: (i) => tapped = i,
+            ),
+          ),
+        ),
       ),
     ),
   );
   await tester.pump();
+  return tapped;
 }
 
 void main() {
-  testWidgets('all five labels render in full at 360dp', (tester) async {
-    await pump(tester, newRow(), 360);
-    for (final t in tabs) {
-      expect(find.text(t), findsOneWidget, reason: '$t must be present');
+  testWidgets('the strip actually renders — no blank bar', (tester) async {
+    await pumpBar(tester);
+    // The bug: an unbounded-width underline threw during layout and the whole
+    // strip disappeared, leaving an empty nav bar.
+    expect(tester.takeException(), isNull,
+        reason: 'the tab strip must lay out inside a scrolling row');
+    for (final t in visibleCommunityTabs(hasGroupId: true)) {
+      expect(find.text(t), findsOneWidget, reason: '$t must be visible');
     }
-    // Every label gets the width its text actually needs.
-    for (final t in tabs) {
+  });
+
+  testWidgets('every label has real width and height', (tester) async {
+    await pumpBar(tester);
+    for (final t in visibleCommunityTabs(hasGroupId: true)) {
       final size = tester.getSize(find.text(t));
-      expect(size.width, greaterThan(0));
+      expect(size.width, greaterThan(0), reason: '$t collapsed to zero width');
+      expect(size.height, greaterThan(0));
+      expect(size.width.isFinite, isTrue, reason: '$t got an infinite width');
     }
+  });
+
+  testWidgets('the underline is finite and matches its label', (tester) async {
+    await pumpBar(tester, selected: 0);
+    final barSize = tester.getSize(find.byType(CommunityTabBar));
+    expect(barSize.width.isFinite, isTrue);
+    expect(barSize.height, greaterThan(0));
+    expect(barSize.height, lessThan(120), reason: 'strip should stay compact');
+  });
+
+  testWidgets('tapping a tab reports its position', (tester) async {
+    int? got;
+    await tester.pumpWidget(
+      ScreenUtilInit(
+        designSize: const Size(390, 844),
+        builder: (_, __) => MaterialApp(
+          home: Scaffold(
+            // Wide enough that every tab is on screen, so the tap cannot
+            // miss for reasons unrelated to what is being tested.
+            body: SizedBox(
+              width: 600,
+              child: CommunityTabBar(
+                tabs: visibleCommunityTabs(hasGroupId: true),
+                selectedIndex: 0,
+                onSelected: (i) => got = i,
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+    await tester.pump();
+    await tester.tap(find.text('Jobs'));
+    await tester.pump();
+    expect(got, 2, reason: 'Jobs sits third in the visible strip');
+  });
+
+  testWidgets('scrolls instead of clipping at 320dp', (tester) async {
+    await pumpBar(tester, width: 320);
     expect(tester.takeException(), isNull);
-  });
-
-  testWidgets('the row scrolls rather than clipping', (tester) async {
-    await pump(tester, newRow(), 360);
     final before = tester.getTopLeft(find.text('Members'));
-    await tester.drag(find.byType(SingleChildScrollView), const Offset(-120, 0));
+    await tester.drag(find.byType(CommunityTabBar), const Offset(-150, 0));
     await tester.pumpAndSettle();
-    final after = tester.getTopLeft(find.text('Members'));
-    expect(after.dx, lessThan(before.dx),
-        reason: 'dragging must bring the last tab into view');
+    expect(tester.getTopLeft(find.text('Members')).dx, lessThan(before.dx));
   });
 
-  testWidgets('CONTROL: the old equal-share row squeezes the labels',
+  testWidgets('survives the five-tab case if General Chat is restored',
       (tester) async {
-    await pump(tester, oldRow(), 360);
-    final members = tester.getSize(find.text('Members'));
-    // 5 equal shares of 360 is 72dp each - not enough for "General Chat",
-    // which is why the mockups showed "Mem".
-    expect(members.width, lessThanOrEqualTo(72),
-        reason: 'the old row caps each tab at a fifth of the width');
+    await pumpBar(tester, tabs: kCommunityTabs, selected: 1);
+    expect(tester.takeException(), isNull);
+    for (final t in kCommunityTabs) {
+      expect(find.text(t), findsOneWidget);
+    }
+  });
+
+  testWidgets('single-tab case (home announcement feed) renders', (tester) async {
+    await pumpBar(tester, tabs: visibleCommunityTabs(hasGroupId: false));
+    expect(tester.takeException(), isNull);
+    expect(find.text('General Chat'), findsOneWidget);
   });
 }

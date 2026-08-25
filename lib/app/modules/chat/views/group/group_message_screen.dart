@@ -7,6 +7,7 @@ import 'package:wisper/app/core/others/custom_size.dart';
 import 'package:wisper/app/core/others/get_storage.dart';
 import 'package:wisper/app/core/utils/collapsible_header.dart';
 import 'package:wisper/app/core/utils/community_tabs.dart';
+import 'package:wisper/app/core/widgets/common/community_tab_bar.dart';
 import 'package:wisper/app/modules/forum/views/forum_section.dart';
 import 'package:wisper/app/core/utils/date_formatter.dart';
 import 'package:wisper/app/core/widgets/common/custom_button.dart';
@@ -701,45 +702,10 @@ class _GroupChatScreenState extends State<GroupChatScreen> {
     return Column(
       mainAxisSize: MainAxisSize.min,
       children: [
-        // Five tabs no longer fit in equal shares - "Members" clipped to
-        // "Mem". Each label now sizes to its own text and the row scrolls,
-        // so nothing is truncated on a narrow phone.
-        SingleChildScrollView(
-          scrollDirection: Axis.horizontal,
-          physics: const ClampingScrollPhysics(),
-          padding: EdgeInsets.symmetric(horizontal: 12.w),
-          child: Row(
-            mainAxisSize: MainAxisSize.min,
-            children: List.generate(_activeTabs.length, (i) {
-              final sel = _tabIndex == i;
-              return GestureDetector(
-                onTap: () => setState(() => _tabIndex = i),
-                behavior: HitTestBehavior.opaque,
-                child: Padding(
-                  padding: EdgeInsets.symmetric(horizontal: 10.w),
-                  child: Column(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Padding(
-                        padding: EdgeInsets.symmetric(vertical: 8.h),
-                        child: Text(_activeTabs[i],
-                          style: TextStyle(
-                            fontSize: 13.sp, fontWeight: FontWeight.w600,
-                            color: sel ? Colors.white : Colors.white38,
-                          ),
-                        ),
-                      ),
-                      Container(
-                        height: 2,
-                        width: double.infinity,
-                        color: sel ? Colors.blue : Colors.transparent,
-                      ),
-                    ],
-                  ),
-                ),
-              );
-            }),
-          ),
+        CommunityTabBar(
+          tabs: _activeTabs,
+          selectedIndex: _tabIndex,
+          onSelected: (i) => setState(() => _tabIndex = i),
         ),
         StraightLiner(height: 0.4, color: const Color(0xff454545)),
       ],
