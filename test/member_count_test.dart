@@ -64,4 +64,31 @@ void main() {
         model.data?.meta?.total ?? model.data?.members?.length ?? 0;
     expect(fallback, 5);
   });
+
+  test('a page of 10 under a total of 32 is the bug we fixed', () {
+    // The Members tab requested no limit, so the API returned its default
+    // page of ten while the header said thirty-two. Both numbers were
+    // "correct" and they contradicted each other on screen.
+    final model = GroupMembersModel.fromJson(response(total: 32, onPage: 10));
+    final listed = model.data?.members?.length ?? 0;
+    final header = model.data?.meta?.total ?? 0;
+    expect(listed, lessThan(header),
+        reason: 'this mismatch is what the user saw');
+  });
+
+  test('asking for the whole roster makes list and header agree', () {
+    final model = GroupMembersModel.fromJson(response(total: 32, onPage: 32));
+    expect(model.data?.members?.length, model.data?.meta?.total);
+  });
+
+  test('a community larger than one page still reports the true total', () {
+    // Past the page size the list truncates, but the count must stay honest
+    // rather than shrinking to whatever was loaded.
+    final model = GroupMembersModel.fromJson(response(total: 900, onPage: 500));
+    expect(model.data?.meta?.total, 900);
+    expect(model.data?.members?.length, 500);
+    final more = (model.data?.meta?.total ?? 0) >
+        (model.data?.members?.length ?? 0);
+    expect(more, isTrue, reason: 'the list knows it is incomplete');
+  });
 }

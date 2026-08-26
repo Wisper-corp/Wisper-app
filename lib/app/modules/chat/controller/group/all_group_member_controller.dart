@@ -7,6 +7,11 @@ import 'package:wisper/app/modules/chat/model/group_members_model.dart';
 import 'package:wisper/app/urls.dart';
 
 class GroupMembersController extends GetxController {
+  /// One request covers any realistic community. Past this the list is
+  /// truncated but the header count stays accurate, so the two never
+  /// contradict each other the way they did at ten.
+  static const int _pageSize = 500;
+
   final RxBool _inProgress = false.obs;
   bool get inProgress => _inProgress.value;
 
@@ -24,8 +29,13 @@ class GroupMembersController extends GetxController {
   /// this for anything the user sees as a total.
   int get totalMembers =>
       _groupMemnersModel.value?.data?.meta?.total ??
-      _groupMemnersModel.value?.data?.members?.length ??
+      _groupMemnersModel.value?.data?.members.length ??
       0;
+
+  /// True when the community has more members than one request returned, so
+  /// the list can say so instead of silently ending.
+  bool get hasMoreThanLoaded =>
+      totalMembers > (_groupMemnersModel.value?.data?.members.length ?? 0);
 
   Future<bool> getGroupMembers(String? groupId) async {
     if (groupId == null || groupId.isEmpty) {
@@ -40,6 +50,11 @@ class GroupMembersController extends GetxController {
       final NetworkResponse response = await Get.find<NetworkCaller>()
           .getRequest(
             Urls.groupMembersById(groupId),
+            // Without a limit the API returns its default page of 10, so the
+            // Members tab showed ten rows under a header saying 32. Ask for
+            // the whole roster; [totalMembers] still reads meta.total, so the
+            // count stays right even if a community outgrows this page.
+            queryParams: {'limit': '$_pageSize'},
             accessToken: StorageUtil.getData(StorageUtil.userAccessToken),
           );
 
