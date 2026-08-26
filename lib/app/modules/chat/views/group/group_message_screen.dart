@@ -29,6 +29,7 @@ import 'package:wisper/app/modules/chat/views/person/message_input_bar.dart';
 import 'package:wisper/app/modules/chat/widgets/empty_group_card.dart';
 import 'package:wisper/app/modules/chat/widgets/message_bubble.dart';
 import 'package:wisper/app/modules/job/views/job_post_screen.dart';
+import 'package:wisper/app/modules/job/widgets/job_filter_sheet.dart';
 import 'package:wisper/app/modules/job/views/job_section.dart';
 import 'package:wisper/app/modules/post/views/gallery_post_screen.dart';
 import 'package:wisper/app/modules/post/views/post_section.dart';
@@ -577,6 +578,9 @@ class _GroupChatScreenState extends State<GroupChatScreen> {
                   imageUrl: liveImage,
                   radius: 20.r,
                   fontSize: 14,
+                  // Rounded square, matching the community covers on Home: a
+                  // community is a place, and a circle reads as a person.
+                  cornerRadius: 12.r,
                 );
               }),
               SizedBox(width: 10.w),
@@ -1164,29 +1168,37 @@ class _GroupChatScreenState extends State<GroupChatScreen> {
             ),
             if (_canonicalTabIndex == 3) Expanded(
               child: Column(children: [
+                // Search and filters share one row: the location dropdown used
+                // to sit on its own line and cost a whole row of listings for
+                // a control most people never touch.
                 Padding(
                   padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 8.h),
-                  child: CustomTextField(
-                    controller: _jobSearchCtrl,
-                    hintText: 'Search jobs...',
-                    onChanged: (v) => setState(() => _jobSearchQuery = v ?? ''),
-                  ),
-                ),
-                Padding(
-                  padding: EdgeInsets.symmetric(horizontal: 16.w),
-                  child: CustomTextField(
-                    hintText: 'Location type',
-                    value: _jobLocationType,
-                    items: const [
-                      DropdownMenuItem(value: null, child: Text('Any location')),
-                      DropdownMenuItem(value: 'REMOTE', child: Text('Remote')),
-                      DropdownMenuItem(value: 'ON_SITE', child: Text('On-site')),
-                      DropdownMenuItem(value: 'HYBRID', child: Text('Hybrid')),
+                  child: Row(
+                    crossAxisAlignment: CrossAxisAlignment.center,
+                    children: [
+                      Expanded(
+                        child: CustomTextField(
+                          controller: _jobSearchCtrl,
+                          hintText: 'Search jobs...',
+                          onChanged: (v) =>
+                              setState(() => _jobSearchQuery = v ?? ''),
+                        ),
+                      ),
+                      SizedBox(width: 10.w),
+                      JobFilterButton(
+                        filters: JobFilters(locationType: _jobLocationType),
+                        onTap: () async {
+                          final picked = await showJobFilterSheet(
+                            context,
+                            current: JobFilters(locationType: _jobLocationType),
+                          );
+                          if (picked == null || !mounted) return;
+                          setState(() => _jobLocationType = picked.locationType);
+                        },
+                      ),
                     ],
-                    onChanged: (v) => setState(() => _jobLocationType = v),
                   ),
                 ),
-                SizedBox(height: 8.h),
                 Expanded(child: Stack(children: [
                   Positioned.fill(child: JobSection(
                     key: ValueKey('jobs_${widget.groupId}_$_jobSearchQuery$_jobLocationType'),

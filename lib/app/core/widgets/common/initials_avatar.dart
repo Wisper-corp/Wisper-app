@@ -1,14 +1,21 @@
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 
-/// Displays a circular avatar with:
+/// Displays an avatar with:
 /// - Network image via CachedNetworkImage (handles S3, Google, etc.)
 /// - Initials on a consistent color background as fallback
+///
+/// Circular by default. Pass [cornerRadius] for the rounded-square shape used
+/// by community covers, so a community reads as a place rather than a person.
 class InitialsAvatar extends StatelessWidget {
   final String name;
   final String? imageUrl;
   final double radius;
   final double fontSize;
+
+  /// Null renders a circle. A value renders a rounded square of the same
+  /// diameter, so callers can swap the shape without touching the layout.
+  final double? cornerRadius;
 
   const InitialsAvatar({
     super.key,
@@ -16,7 +23,13 @@ class InitialsAvatar extends StatelessWidget {
     this.imageUrl,
     this.radius = 20,
     this.fontSize = 14,
+    this.cornerRadius,
   });
+
+  double get _diameter => radius * 2;
+
+  BorderRadius? get _shape =>
+      cornerRadius == null ? null : BorderRadius.circular(cornerRadius!);
 
   static Color _colorFromName(String name) {
     const colors = [
@@ -48,18 +61,33 @@ class InitialsAvatar extends StatelessWidget {
   }
 
   Widget _initialsCircle() {
-    return CircleAvatar(
-      radius: radius,
-      backgroundColor: _colorFromName(name),
-      child: Text(
-        _initials(name),
-        style: TextStyle(
-          color: Colors.white,
-          fontSize: fontSize,
-          fontWeight: FontWeight.bold,
-          letterSpacing: 0.5,
-        ),
+    final label = Text(
+      _initials(name),
+      style: TextStyle(
+        color: Colors.white,
+        fontSize: fontSize,
+        fontWeight: FontWeight.bold,
+        letterSpacing: 0.5,
       ),
+    );
+
+    if (_shape == null) {
+      return CircleAvatar(
+        radius: radius,
+        backgroundColor: _colorFromName(name),
+        child: label,
+      );
+    }
+
+    return Container(
+      width: _diameter,
+      height: _diameter,
+      alignment: Alignment.center,
+      decoration: BoxDecoration(
+        color: _colorFromName(name),
+        borderRadius: _shape,
+      ),
+      child: label,
     );
   }
 
@@ -71,14 +99,20 @@ class InitialsAvatar extends StatelessWidget {
 
     return CachedNetworkImage(
       imageUrl: imageUrl!,
-      imageBuilder: (context, imageProvider) => CircleAvatar(
-        radius: radius,
-        backgroundImage: imageProvider,
-      ),
+      imageBuilder: (context, imageProvider) => _shape == null
+          ? CircleAvatar(radius: radius, backgroundImage: imageProvider)
+          : Container(
+              width: _diameter,
+              height: _diameter,
+              decoration: BoxDecoration(
+                borderRadius: _shape,
+                image: DecorationImage(image: imageProvider, fit: BoxFit.cover),
+              ),
+            ),
       placeholder: (context, url) => _initialsCircle(),
       errorWidget: (context, url, error) => _initialsCircle(),
-      width: radius * 2,
-      height: radius * 2,
+      width: _diameter,
+      height: _diameter,
     );
   }
 }
