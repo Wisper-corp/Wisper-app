@@ -48,6 +48,7 @@ class CommunitiesItemModel {
         required this.isJoined,
         required this.memberCount,
         required this.members,
+        this.isFeatured = false,
     });
 
     final String? id;
@@ -60,6 +61,10 @@ class CommunitiesItemModel {
     final String? chatId;
     final bool? isJoined;
     final int? memberCount;
+
+    /// Hand-picked for Explore. A featured community is suggested regardless
+    /// of how many members it has.
+    final bool isFeatured;
     final List<Member> members;
 
     factory CommunitiesItemModel.fromJson(Map<String, dynamic> json){
@@ -72,6 +77,7 @@ class CommunitiesItemModel {
             chatId: json["chatId"],
             isJoined: json["isJoined"],
             memberCount: json["memberCount"],
+            isFeatured: json["isFeatured"] ?? false,
             members: json["members"] == null ? [] : List<Member>.from(json["members"]!.map((x) => Member.fromJson(x))),
         );
     }

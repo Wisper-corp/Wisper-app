@@ -31,10 +31,14 @@ class _HomeScreenState extends State<HomeScreen> {
 
   static const List<String> _tabs = ['Home', 'Explore'];
 
-  /// Explore only suggests communities with real activity behind them, so the
-  /// list is not flooded with empty or abandoned ones. Joined communities and
-  /// search results are never filtered by size — you already chose those, or
-  /// you are looking for one by name.
+  /// Explore suggests communities with real activity behind them, so the list
+  /// is not flooded with empty or abandoned ones. Joined communities and search
+  /// results are never filtered by size — you already chose those, or you are
+  /// looking for one by name.
+  ///
+  /// A community can also be hand-picked (`isFeatured`), which skips the floor:
+  /// curation is a better signal than size, and it lets a new community be
+  /// surfaced before it has grown.
   static const int _minExploreMembers = 30;
   int _selectedIndex = 0;
 
@@ -102,7 +106,8 @@ class _HomeScreenState extends State<HomeScreen> {
         .where((c) => (c.isJoined ?? false) == joined);
     if (joined) return items.toList();
     return items
-        .where((c) => (c.memberCount ?? 0) >= _minExploreMembers)
+        .where((c) =>
+            c.isFeatured || (c.memberCount ?? 0) >= _minExploreMembers)
         .toList();
   }
 
@@ -172,7 +177,7 @@ class _HomeScreenState extends State<HomeScreen> {
                       : 'Nothing to suggest right now',
                   emptyMessage: isJoinedTab
                       ? 'Communities you join will show up here. Open Explore to find your first one.'
-                      : 'We only suggest communities with at least $_minExploreMembers members. '
+                      : 'We suggest hand-picked communities and any with at least $_minExploreMembers members. '
                           'Use search to find a smaller one by name.',
                 );
               }),

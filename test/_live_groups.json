@@ -1,0 +1,252 @@
+{
+ "success": true,
+ "message": "Public groups retrieved successfully!",
+ "data": {
+  "meta": {
+   "page": 1,
+   "limit": 9999,
+   "total": 11
+  },
+  "groups": [
+   {
+    "id": "516b0583-085e-46a8-92fc-ca31dff5c028",
+    "name": "Writers Space STY",
+    "description": "\nCategory: Writing & Content Services | Suffix: STY",
+    "image": null,
+    "createdAt": "2026-08-26T01:07:57.014Z",
+    "isFeatured": false,
+    "chatId": "daf1b7a7-726b-406d-91d2-33e276f7dc17",
+    "isJoined": true,
+    "memberCount": 2,
+    "members": [
+     {
+      "id": "b4014be4-c625-4ae7-b949-11b77c8020a0",
+      "image": "https://example.test/avatar.jpg"
+     },
+     {
+      "id": "9e1d1bf7-073f-4546-8d2c-99a1f0298a58",
+      "image": "https://example.test/avatar.jpg"
+     }
+    ]
+   },
+   {
+    "id": "356a4c7e-099b-47fd-bb3f-769070e53e75",
+    "name": "Designers planet STY",
+    "description": "\nCategory: Design & Branding",
+    "image": null,
+    "createdAt": "2026-08-26T00:53:07.447Z",
+    "isFeatured": false,
+    "chatId": "28f50cfa-4891-4f73-89a5-264a02779066",
+    "isJoined": true,
+    "memberCount": 2,
+    "members": [
+     {
+      "id": "b4014be4-c625-4ae7-b949-11b77c8020a0",
+      "image": "https://example.test/avatar.jpg"
+     },
+     {
+      "id": "9e1d1bf7-073f-4546-8d2c-99a1f0298a58",
+      "image": "https://example.test/avatar.jpg"
+     }
+    ]
+   },
+   {
+    "id": "589ef95f-ea4d-43ca-8f11-227b3d08604a",
+    "name": "Online Marketer Room STY",
+    "description": "\nCategory: Digital Marketing",
+    "image": null,
+    "createdAt": "2026-08-26T00:52:01.560Z",
+    "isFeatured": false,
+    "chatId": "fb1109cb-9e71-4cf1-b1c6-8fffdc43edbe",
+    "isJoined": true,
+    "memberCount": 2,
+    "members": [
+     {
+      "id": "9e1d1bf7-073f-4546-8d2c-99a1f0298a58",
+      "image": "https://example.test/avatar.jpg"
+     },
+     {
+      "id": "b4014be4-c625-4ae7-b949-11b77c8020a0",
+      "image": "https://example.test/avatar.jpg"
+     }
+    ]
+   },
+   {
+    "id": "3f519069-371c-4994-97b8-3f4464e2fe76",
+    "name": "Digital Remote Club STY",
+    "description": "\nCategory: Web & Mobile Development",
+    "image": null,
+    "createdAt": "2026-08-22T20:11:40.725Z",
+    "isFeatured": true,
+    "chatId": "57e4434b-d253-42ea-a0b1-b4e840f7735c",
+    "isJoined": true,
+    "memberCount": 2,
+    "members": [
+     {
+      "id": "b4014be4-c625-4ae7-b949-11b77c8020a0",
+      "image": "https://example.test/avatar.jpg"
+     },
+     {
+      "id": "9e1d1bf7-073f-4546-8d2c-99a1f0298a58",
+      "image": "https://example.test/avatar.jpg"
+     }
+    ]
+   },
+   {
+    "id": "92996adf-9494-41d2-af65-310229019972",
+    "name": "10 Will Fashion MKT",
+    "description": "Connect with reliable Chinese clothing manufacturers, wholesalers, exporters, and buyers. Discover trending fashion products, wholesale prices, supplier contacts, and new business opportunities for importing and selling clothing anywhere in the world.\nTrade: B2B Export | Market: Wholesale | Category: Fashion & Clothing | Suffix: MKT",
+    "image": "https://example.test/cover.jpg",
+    "createdAt": "2026-08-20T18:10:03.924Z",
+    "isFeatured": false,
+    "chatId": "9849f354-a906-456a-9af0-810e3a27119c",
+    "isJoined": true,
+    "memberCount": 2,
+    "members": [
+     {
+      "id": "9e1d1bf7-073f-4546-8d2c-99a1f0298a58",
+      "image": "https://example.test/avatar.jpg"
+     },
+     {
+      "id": "b4014be4-c625-4ae7-b949-11b77c8020a0",
+      "image": "https://example.test/avatar.jpg"
+     }
+    ]
+   },
+   {
+    "id": "1e51a43a-8867-4001-8a9c-282123462fa0",
+    "name": "test group MKT",
+    "description": "no\nSuffix: MKT",
+    "image": null,
+    "createdAt": "2026-08-09T19:50:33.856Z",
+    "isFeatured": false,
+    "chatId": "8426c033-890b-4482-87c1-9bbe85509db8",
+    "isJoined": true,
+    "memberCount": 2,
+    "members": [
+     {
+      "id": "b4014be4-c625-4ae7-b949-11b77c8020a0",
+      "image": "https://example.test/avatar.jpg"
+     },
+     {
+      "id": "9e1d1bf7-073f-4546-8d2c-99a1f0298a58",
+      "image": "https://example.test/avatar.jpg"
+     }
+    ]
+   },
+   {
+    "id": "0d8c4723-8e6a-4f52-a53f-f4866e56458f",
+    "name": "test MKT",
+    "description": "\nSuffix: MKT",
+    "image": null,
+    "createdAt": "2026-08-09T11:59:04.773Z",
+    "isFeatured": false,
+    "chatId": "763a87b2-5dad-4c83-b59e-9e99fe859041",
+    "isJoined": true,
+    "memberCount": 1,
+    "members": [
+     {
+      "id": "9e1d1bf7-073f-4546-8d2c-99a1f0298a58",
+      "image": "https://example.test/avatar.jpg"
+     }
+    ]
+   },
+   {
+    "id": "6c105e1f-efbb-416d-b1f2-098767c35d81",
+    "name": "FMCG Community new name testing phase MKT",
+    "description": "new community market for testing purpose\nTrade: Local B2B | Market: Wholesale | Category: Food & Beverages",
+    "image": "https://example.test/cover.jpg",
+    "createdAt": "2026-08-09T00:53:27.104Z",
+    "isFeatured": false,
+    "chatId": "0f6884dd-4960-4778-b808-390eccb7dc36",
+    "isJoined": true,
+    "memberCount": 3,
+    "members": [
+     {
+      "id": "9ff12653-56bd-4216-9eea-2db1bb9bd750",
+      "image": "https://example.test/avatar.jpg"
+     },
+     {
+      "id": "9e1d1bf7-073f-4546-8d2c-99a1f0298a58",
+      "image": "https://example.test/avatar.jpg"
+     },
+     {
+      "id": "b4014be4-c625-4ae7-b949-11b77c8020a0",
+      "image": "https://example.test/avatar.jpg"
+     }
+    ]
+   },
+   {
+    "id": "f4129a50-2a7b-4f74-b86b-eeb43b36bc10",
+    "name": "Business Moderator Community  Mkt",
+    "description": "for testing purpose\nTrade: Local B2B | Market: Retail | Category: Electronics & Tech",
+    "image": "https://example.test/cover.jpg",
+    "createdAt": "2026-08-06T08:12:47.861Z",
+    "isFeatured": false,
+    "chatId": "f1d45cc0-0f89-43a1-b3f2-c12fa7d4115d",
+    "isJoined": true,
+    "memberCount": 2,
+    "members": [
+     {
+      "id": "9e1d1bf7-073f-4546-8d2c-99a1f0298a58",
+      "image": "https://example.test/avatar.jpg"
+     },
+     {
+      "id": "b4014be4-c625-4ae7-b949-11b77c8020a0",
+      "image": "https://example.test/avatar.jpg"
+     }
+    ]
+   },
+   {
+    "id": "7d1256e7-ad1e-4fd9-ad4b-53dec78b6cb9",
+    "name": "General Chat",
+    "description": "General chat for all Wisper users",
+    "image": null,
+    "createdAt": "2026-07-21T19:13:17.498Z",
+    "isFeatured": false,
+    "chatId": "7d1256e7-ad1e-4fd9-ad4b-53dec78b6cb9",
+    "isJoined": true,
+    "memberCount": 7,
+    "members": [
+     {
+      "id": "68590479-a1b0-4f12-a942-dca1257ec266",
+      "image": null
+     },
+     {
+      "id": "bb76c08c-0980-4d4f-aedb-0bb78f8ee289",
+      "image": null
+     },
+     {
+      "id": "51341a76-d081-48c9-ba4b-8ad8fbdd87b4",
+      "image": "https://example.test/avatar.jpg"
+     }
+    ]
+   },
+   {
+    "id": "795f1d09-ebb3-4124-8ccc-59bb9030dff0",
+    "name": "FMCG Mkt",
+    "description": "for testing purpose\nTrade: Local B2B | Market: Wholesale | Category: Food & Beverages",
+    "image": null,
+    "createdAt": "2026-07-21T04:26:44.124Z",
+    "isFeatured": false,
+    "chatId": "97878222-9fa8-4ed8-9bf1-2f98a711c100",
+    "isJoined": false,
+    "memberCount": 4,
+    "members": [
+     {
+      "id": "bb76c08c-0980-4d4f-aedb-0bb78f8ee289",
+      "image": null
+     },
+     {
+      "id": "51341a76-d081-48c9-ba4b-8ad8fbdd87b4",
+      "image": "https://example.test/avatar.jpg"
+     },
+     {
+      "id": "f60b7d65-5dba-474c-a3bc-c6bf1092b417",
+      "image": "https://example.test/avatar.jpg"
+     }
+    ]
+   }
+  ]
+ }
+}
