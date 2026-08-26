@@ -538,7 +538,6 @@ class _GroupChatScreenState extends State<GroupChatScreen> {
   Widget _buildHeader() {
     return Obx(() {
       final members = _membersCtrl.groupMemnersData ?? [];
-      final memberCount = members.length;
       final previewMembers = members.take(3).toList();
 
       return GestureDetector(
@@ -637,7 +636,10 @@ class _GroupChatScreenState extends State<GroupChatScreen> {
       final members = _membersCtrl.groupMemnersData ?? [];
       if (members.isEmpty) return const SizedBox.shrink();
       final preview = members.take(5).toList();
-      final extra = members.length - preview.length;
+      // The list is one page of 10; the community may be far larger, so the
+      // overflow chip and the label both count against the real total.
+      final total = _membersCtrl.totalMembers;
+      final extra = total - preview.length;
       return Container(
         color: Colors.black,
         padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 6.h),
@@ -687,7 +689,7 @@ class _GroupChatScreenState extends State<GroupChatScreen> {
             ),
             SizedBox(width: 10.w),
             Text(
-              '${members.length} member${members.length == 1 ? '' : 's'}',
+              '$total member${total == 1 ? '' : 's'}',
               style: TextStyle(fontSize: 12.sp, color: Colors.white60,
                 fontWeight: FontWeight.w500),
             ),
@@ -748,7 +750,7 @@ class _GroupChatScreenState extends State<GroupChatScreen> {
                 child: EmptyGroupInfoCard(
                   isGroup: true,
                   name: widget.groupName ?? '',
-                  member: _membersCtrl.groupMemnersData?.length.toString() ?? '0',
+                  member: _membersCtrl.totalMembers.toString(),
                 ),
               )),
             ],

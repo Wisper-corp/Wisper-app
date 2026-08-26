@@ -17,6 +17,16 @@ class GroupMembersController extends GetxController {
   List<GroupMembersItemModel>? get groupMemnersData =>
       _groupMemnersModel.value?.data?.members ?? [];
 
+  /// How many members the community actually has.
+  ///
+  /// [groupMemnersData] is one page — the API returns 10 at a time — so
+  /// counting it under-reports every community with more than a pageful. Use
+  /// this for anything the user sees as a total.
+  int get totalMembers =>
+      _groupMemnersModel.value?.data?.meta?.total ??
+      _groupMemnersModel.value?.data?.members?.length ??
+      0;
+
   Future<bool> getGroupMembers(String? groupId) async {
     if (groupId == null || groupId.isEmpty) {
       print('getGroupMembers: groupId is empty — skipping');
