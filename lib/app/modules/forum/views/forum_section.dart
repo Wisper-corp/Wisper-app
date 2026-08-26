@@ -239,8 +239,15 @@ class _ForumSectionState extends State<ForumSection> {
                 ),
                 itemBuilder: (context, index) {
                   final post = _controller.posts[index];
+                  // Hand the card the colour above it so two neighbouring
+                  // names never come out the same.
+                  final previous =
+                      index == 0 ? null : _controller.posts[index - 1];
                   return ForumPostCard(
                     post: post,
+                    avoidNameColor: previous == null || previous.isMine
+                        ? null
+                        : forumNameColor(previous.author.id),
                     onOpenReplies: () => _openReplies(post),
                     onToggleReaction: () => _controller.toggleReaction(post),
                     onMore: () => _openMenu(post),

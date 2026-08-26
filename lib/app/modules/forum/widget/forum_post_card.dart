@@ -7,24 +7,40 @@ import 'package:wisper/app/core/widgets/common/initials_avatar.dart';
 import 'package:wisper/app/modules/forum/model/forum_post_model.dart';
 import 'package:wisper/app/modules/forum/widget/forum_poll_view.dart';
 
+/// The name colours, chosen to stay legible on the dark card and to be
+/// distinguishable from each other rather than merely different — several
+/// blues would read as "all blue" at a glance, which is the thing to avoid.
+const List<Color> kForumNameColors = [
+  Color(0xffE5484D), // red
+  Color(0xff30A46C), // green
+  Color(0xff4DA3F5), // blue
+  Color(0xffF76808), // orange
+  Color(0xffB44BD6), // purple
+  Color(0xff00B4C4), // teal
+  Color(0xffE5A50A), // amber
+  Color(0xffEC5E9E), // pink
+  Color(0xff7C8CF8), // indigo
+  Color(0xff8FBF3F), // lime
+];
+
 /// A stable colour per author, so the same person reads the same way down the
 /// feed. Derived from their id rather than their position in the list, which
 /// would shuffle as posts arrive.
-Color forumNameColor(String? id) {
-  const palette = [
-    Color(0xffE5484D), // red
-    Color(0xff30A46C), // green
-    Color(0xff0091FF), // blue
-    Color(0xffF76808), // orange
-    Color(0xff8E4EC6), // purple
-    Color(0xff00A2C7), // teal
-  ];
+///
+/// [avoid] is the colour used by the post directly above. Two neighbours
+/// sharing a colour is what actually looks wrong on screen, so when the hash
+/// collides the colour is nudged to the next one in the palette. The author
+/// keeps a consistent colour everywhere else in the feed.
+Color forumNameColor(String? id, {Color? avoid}) {
   if (id == null || id.isEmpty) return Colors.white;
   var hash = 0;
   for (final unit in id.codeUnits) {
     hash = (hash * 31 + unit) & 0x7fffffff;
   }
-  return palette[hash % palette.length];
+  final index = hash % kForumNameColors.length;
+  final colour = kForumNameColors[index];
+  if (avoid == null || colour != avoid) return colour;
+  return kForumNameColors[(index + 1) % kForumNameColors.length];
 }
 
 /// Compact age for the corner of a card: "12m", "2h", "3d". The shared
@@ -50,6 +66,10 @@ class ForumPostCard extends StatelessWidget {
   /// Null while a vote is in flight, which disables the poll rows.
   final void Function(ForumPollOption option)? onVote;
 
+  /// The name colour of the post directly above, so two neighbours never share
+  /// one. Null for the first card in the list.
+  final Color? avoidNameColor;
+
   /// The replies screen shows the original post as a quiet header: no actions,
   /// because the counts sit in their own strip beneath it.
   final bool showActions;
@@ -61,6 +81,7 @@ class ForumPostCard extends StatelessWidget {
     required this.onToggleReaction,
     this.onMore,
     this.onVote,
+    this.avoidNameColor,
     this.showActions = true,
   });
 
@@ -95,7 +116,8 @@ class ForumPostCard extends StatelessWidget {
                         fontWeight: FontWeight.w700,
                         color: post.isMine
                             ? Colors.white
-                            : forumNameColor(author.id),
+                            : forumNameColor(author.id,
+                                avoid: avoidNameColor),
                       ),
                     ),
                     if ((author.title ?? '').isNotEmpty)
