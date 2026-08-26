@@ -3,6 +3,7 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:image_picker/image_picker.dart';
+import 'package:wisper/app/modules/forum/widget/forum_poll_editor.dart';
 
 /// The forum composer. Visually the chat input bar, but it posts to the forum
 /// rather than a chat, so it carries none of the chat's socket wiring.
@@ -12,7 +13,11 @@ const int kForumMaxImages = 4;
 
 class ForumComposer extends StatefulWidget {
   final String hintText;
-  final Future<bool> Function(String text, List<File> images) onSend;
+  final Future<bool> Function(
+    String text,
+    List<File> images,
+    List<String>? pollOptions,
+  ) onSend;
 
   /// Replies are text only; the post composer takes images.
   final bool allowImages;
@@ -32,6 +37,7 @@ class _ForumComposerState extends State<ForumComposer> {
   final TextEditingController _controller = TextEditingController();
   final FocusNode _focusNode = FocusNode();
   final List<File> _images = [];
+  List<String> _pollOptions = [];
   bool _canSend = false;
   bool _sending = false;
 
@@ -60,11 +66,16 @@ class _ForumComposerState extends State<ForumComposer> {
     if (!_canSend || _sending) return;
     final text = _controller.text;
     setState(() => _sending = true);
-    final ok = await widget.onSend(text, List<File>.from(_images));
+    final ok = await widget.onSend(
+      text,
+      List<File>.from(_images),
+      _pollOptions.isEmpty ? null : List<String>.from(_pollOptions),
+    );
     if (!mounted) return;
     if (ok) {
       _controller.clear();
       _images.clear();
+      _pollOptions = [];
     }
     setState(() => _sending = false);
   }
@@ -96,6 +107,12 @@ class _ForumComposerState extends State<ForumComposer> {
     }
   }
 
+  Future<void> _editPoll() async {
+    final options = await showForumPollEditor(context, initial: _pollOptions);
+    if (options == null || !mounted) return;
+    setState(() => _pollOptions = options);
+  }
+
   void _say(String message) {
     ScaffoldMessenger.of(context)
       ..hideCurrentSnackBar()
@@ -111,6 +128,7 @@ class _ForumComposerState extends State<ForumComposer> {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
+            if (_pollOptions.isNotEmpty) _pollChip(),
             if (_images.isNotEmpty) _thumbnails(),
             Row(
           crossAxisAlignment: CrossAxisAlignment.end,
@@ -129,6 +147,29 @@ class _ForumComposerState extends State<ForumComposer> {
                 ),
               ),
             if (widget.allowImages) SizedBox(width: 8.w),
+            if (widget.allowImages) ...[
+              GestureDetector(
+                onTap: _editPoll,
+                child: Container(
+                  width: 44.r,
+                  height: 44.r,
+                  decoration: BoxDecoration(
+                    color: _pollOptions.isEmpty
+                        ? const Color(0xff2A2A2A)
+                        : const Color(0xff1E3A57),
+                    shape: BoxShape.circle,
+                  ),
+                  child: Icon(
+                    Icons.bar_chart_rounded,
+                    color: _pollOptions.isEmpty
+                        ? Colors.grey[400]
+                        : const Color(0xff168DE1),
+                    size: 22.sp,
+                  ),
+                ),
+              ),
+              SizedBox(width: 8.w),
+            ],
             Expanded(
               child: Container(
                 // No Center here: Center fills whatever height it is offered,
@@ -192,6 +233,55 @@ class _ForumComposerState extends State<ForumComposer> {
           ],
             ),
           ],
+        ),
+      ),
+    );
+  }
+
+  /// A poll in progress shows as a single line above the field, so the caption
+  /// - which is the poll's question - stays in view while you write it.
+  Widget _pollChip() {
+    return Padding(
+      padding: EdgeInsets.only(left: 4.w, right: 4.w, bottom: 8.h),
+      child: GestureDetector(
+        onTap: _editPoll,
+        behavior: HitTestBehavior.opaque,
+        child: Container(
+          padding: EdgeInsets.symmetric(horizontal: 12.w, vertical: 10.h),
+          decoration: BoxDecoration(
+            color: const Color(0xff17191C),
+            borderRadius: BorderRadius.circular(10.r),
+            border: Border.all(color: const Color(0xff2A2F35), width: 0.6),
+          ),
+          child: Row(
+            children: [
+              Icon(Icons.bar_chart_rounded,
+                  size: 16.sp, color: const Color(0xff168DE1)),
+              SizedBox(width: 8.w),
+              Expanded(
+                child: Text(
+                  'Poll with ${_pollOptions.length} options',
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: TextStyle(
+                    fontFamily: 'Segoe UI',
+                    fontSize: 13.sp,
+                    fontWeight: FontWeight.w600,
+                    color: Colors.white,
+                  ),
+                ),
+              ),
+              GestureDetector(
+                onTap: () => setState(() => _pollOptions = []),
+                behavior: HitTestBehavior.opaque,
+                child: Padding(
+                  padding: EdgeInsets.only(left: 10.w),
+                  child: Icon(Icons.close,
+                      size: 16.sp, color: const Color(0xff8B949E)),
+                ),
+              ),
+            ],
+          ),
         ),
       ),
     );

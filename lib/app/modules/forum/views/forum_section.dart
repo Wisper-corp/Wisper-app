@@ -8,6 +8,12 @@ import 'package:wisper/app/modules/forum/model/forum_post_model.dart';
 import 'package:wisper/app/modules/forum/views/forum_replies_screen.dart';
 import 'package:wisper/app/modules/forum/widget/forum_composer.dart';
 import 'package:wisper/app/modules/forum/widget/forum_post_card.dart';
+import 'package:wisper/app/modules/forum/widget/forum_post_menu.dart';
+import 'package:wisper/app/core/services/network_caller/network_caller.dart';
+import 'package:wisper/app/core/services/network_caller/network_response.dart';
+import 'package:wisper/app/core/others/get_storage.dart';
+import 'package:wisper/app/modules/chat/views/person/message_screen.dart';
+import 'package:wisper/app/urls.dart';
 
 /// The Forum tab: a community's discussion feed, with the composer pinned at
 /// the bottom the way the chat tab has one.
@@ -45,13 +51,87 @@ class _ForumSectionState extends State<ForumSection> {
     await _controller.getPosts();
   }
 
-  Future<bool> _post(String text, List<File> images) async {
-    final ok = await _controller.createPost(text, images: images);
+  Future<bool> _post(
+    String text,
+    List<File> images,
+    List<String>? pollOptions,
+  ) async {
+    final ok = await _controller.createPost(
+      text,
+      images: images,
+      pollOptions: pollOptions,
+    );
     if (!ok && mounted) {
       Get.snackbar('Could not post', _controller.errorMessage,
           backgroundColor: Colors.red, colorText: Colors.white);
     }
     return ok;
+  }
+
+  Future<void> _openMenu(ForumPostModel post) async {
+    final action = await showForumPostMenu(
+      context,
+      isFollowing: post.isFollowing,
+      canDelete: post.canDelete,
+      isMine: post.isMine,
+      authorName: post.author.name ?? 'the author',
+    );
+    if (action == null || !mounted) return;
+
+    switch (action) {
+      case ForumPostAction.replyPrivately:
+        await _replyPrivately(post);
+        break;
+      case ForumPostAction.toggleFollow:
+        final now = await _controller.toggleFollow(post);
+        if (!mounted) return;
+        Get.snackbar(
+          now ? 'Following this post' : 'Stopped following',
+          now
+              ? 'We\'ll notify you when someone replies.'
+              : 'You will not be notified about new replies.',
+          snackPosition: SnackPosition.BOTTOM,
+          backgroundColor: const Color(0xff17191C),
+          colorText: Colors.white,
+        );
+        break;
+      case ForumPostAction.delete:
+        _confirmDelete(post);
+        break;
+    }
+  }
+
+  /// Opens the one-to-one chat with the author. POST /chats is get-or-create,
+  /// so this reuses an existing conversation rather than starting a second.
+  Future<void> _replyPrivately(ForumPostModel post) async {
+    final authorId = post.author.id;
+    if (authorId == null || authorId.isEmpty) return;
+
+    try {
+      final NetworkResponse res = await Get.find<NetworkCaller>().postRequest(
+        Urls.createChatsUrl,
+        body: {'participantId': authorId},
+        accessToken: StorageUtil.getData(StorageUtil.userAccessToken),
+      );
+      if (!mounted) return;
+      if (res.isSuccess && res.responseData != null) {
+        Get.to(() => ChatScreen(
+              receiverId: authorId,
+              receiverName: post.author.name,
+              receiverImage: post.author.image,
+              chatId: res.responseData!['data']?['id'],
+              isPerson: true,
+            ));
+      } else {
+        Get.snackbar('Could not open the chat', res.errorMessage,
+            backgroundColor: Colors.red, colorText: Colors.white);
+      }
+    } catch (e) {
+      if (mounted) {
+        Get.snackbar('Could not open the chat', 'Please try again.',
+            backgroundColor: Colors.red, colorText: Colors.white);
+      }
+    }
   }
 
   void _confirmDelete(ForumPostModel post) {
@@ -163,7 +243,8 @@ class _ForumSectionState extends State<ForumSection> {
                     post: post,
                     onOpenReplies: () => _openReplies(post),
                     onToggleReaction: () => _controller.toggleReaction(post),
-                    onMore: post.canDelete ? () => _confirmDelete(post) : null,
+                    onMore: () => _openMenu(post),
+                    onVote: (option) => _controller.vote(post, option),
                   );
                 },
               ),

@@ -55,7 +55,7 @@ class _ForumRepliesScreenState extends State<ForumRepliesScreen> {
     super.dispose();
   }
 
-  Future<bool> _send(String text, List<File> images) async {
+  Future<bool> _send(String text, List<File> images, List<String>? _) async {
     final ok = await _controller.addReply(text);
     if (!ok && mounted) {
       Get.snackbar('Could not reply', _controller.errorMessage,

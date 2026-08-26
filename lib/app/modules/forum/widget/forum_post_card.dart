@@ -4,6 +4,7 @@ import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:wisper/app/core/widgets/common/image_container_widget.dart';
 import 'package:wisper/app/core/widgets/common/initials_avatar.dart';
 import 'package:wisper/app/modules/forum/model/forum_post_model.dart';
+import 'package:wisper/app/modules/forum/widget/forum_poll_view.dart';
 
 /// A stable colour per author, so the same person reads the same way down the
 /// feed. Derived from their id rather than their position in the list, which
@@ -45,6 +46,9 @@ class ForumPostCard extends StatelessWidget {
   final VoidCallback onToggleReaction;
   final VoidCallback? onMore;
 
+  /// Null while a vote is in flight, which disables the poll rows.
+  final void Function(ForumPollOption option)? onVote;
+
   /// The replies screen shows the original post as a quiet header: no actions,
   /// because the counts sit in their own strip beneath it.
   final bool showActions;
@@ -55,6 +59,7 @@ class ForumPostCard extends StatelessWidget {
     required this.onOpenReplies,
     required this.onToggleReaction,
     this.onMore,
+    this.onVote,
     this.showActions = true,
   });
 
@@ -134,6 +139,12 @@ class ForumPostCard extends StatelessWidget {
               ),
             ),
           ),
+          // The poll sits directly under the question it belongs to, before
+          // any photos, so the two never read as one block.
+          if (post.poll != null) ...[
+            SizedBox(height: 12.h),
+            ForumPollView(poll: post.poll!, onVote: onVote),
+          ],
           // Attached photos, using the same grid as the rest of the app so a
           // forum post and a service post lay their images out identically.
           if (post.images.isNotEmpty) ...[

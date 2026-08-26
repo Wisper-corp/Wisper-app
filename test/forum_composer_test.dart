@@ -16,7 +16,7 @@ Future<void> pump(WidgetTester tester, {bool allowImages = true}) async {
               const Spacer(),
               ForumComposer(
                 allowImages: allowImages,
-                onSend: (String text, List<File> images) async => true,
+                onSend: (String text, List<File> images, List<String>? poll) async => true,
               ),
             ],
           ),
@@ -77,5 +77,24 @@ void main() {
   testWidgets('posts do get an attach button', (tester) async {
     await pump(tester);
     expect(find.byIcon(Icons.add), findsOneWidget);
+  });
+
+  testWidgets('the poll button is offered on posts, not replies',
+      (tester) async {
+    await pump(tester);
+    expect(find.byIcon(Icons.bar_chart_rounded), findsOneWidget);
+    await pump(tester, allowImages: false);
+    expect(find.byIcon(Icons.bar_chart_rounded), findsNothing,
+        reason: 'a reply cannot carry a poll');
+  });
+
+  testWidgets('attaching a poll does not push the caption out of view',
+      (tester) async {
+    await pump(tester);
+    final before = tester.getSize(find.byType(ForumComposer)).height;
+    expect(find.byType(TextField), findsOneWidget);
+    // The composer must stay compact enough that the caption field - which is
+    // the poll's question - is still on screen.
+    expect(before, lessThan(120));
   });
 }

@@ -44,13 +44,22 @@ class ForumController extends GetxController {
 
   /// A caption is required even when images are attached, so an empty text is
   /// rejected here before it reaches the server.
-  Future<bool> createPost(String text, {List<File>? images}) async {
+  Future<bool> createPost(
+    String text, {
+    List<File>? images,
+    List<String>? pollOptions,
+  }) async {
     final trimmed = text.trim();
     if (trimmed.isEmpty) return false;
     try {
       final NetworkResponse res = await Get.find<NetworkCaller>().postRequest(
         Urls.forumUrl,
-        body: {'groupId': groupId, 'text': trimmed},
+        body: {
+          'groupId': groupId,
+          'text': trimmed,
+          if (pollOptions != null && pollOptions.isNotEmpty)
+            'pollOptions': pollOptions,
+        },
         images: (images != null && images.isNotEmpty) ? images : null,
         keyNameImage: 'images',
         accessToken: _token,
@@ -97,6 +106,50 @@ class ForumController extends GetxController {
       post.reactionCount = wasCount;
     }
     posts.refresh();
+  }
+
+  /// Records a vote and swaps in the server's recomputed tallies, so every
+  /// client shows the same percentages rather than each rounding its own.
+  Future<void> vote(ForumPostModel post, ForumPollOption option) async {
+    final poll = post.poll;
+    if (poll == null) return;
+    try {
+      final NetworkResponse res = await Get.find<NetworkCaller>().postRequest(
+        Urls.forumPollVoteUrl(post.id),
+        body: {'optionId': option.id},
+        accessToken: _token,
+      );
+      if (res.isSuccess && res.responseData != null) {
+        post.poll = ForumPoll.fromJson(res.responseData!['data']);
+        posts.refresh();
+      } else {
+        _errorMessage.value = res.errorMessage;
+      }
+    } catch (e) {
+      _errorMessage.value = 'Could not record your vote.';
+    }
+  }
+
+  Future<bool> toggleFollow(ForumPostModel post) async {
+    final was = post.isFollowing;
+    post.isFollowing = !was;
+    posts.refresh();
+    try {
+      final NetworkResponse res = await Get.find<NetworkCaller>().patchRequest(
+        Urls.forumFollowUrl(post.id),
+        body: const {},
+        accessToken: _token,
+      );
+      if (res.isSuccess && res.responseData != null) {
+        post.isFollowing = res.responseData!['data']?['isFollowing'] ?? !was;
+      } else {
+        post.isFollowing = was;
+      }
+    } catch (e) {
+      post.isFollowing = was;
+    }
+    posts.refresh();
+    return post.isFollowing;
   }
 
   Future<bool> deletePost(ForumPostModel post) async {
