@@ -1,6 +1,7 @@
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
+import 'package:wisper/app/core/widgets/common/expandable_text.dart';
 import 'package:wisper/app/core/widgets/common/image_container_widget.dart';
 import 'package:wisper/app/core/widgets/common/initials_avatar.dart';
 import 'package:wisper/app/modules/forum/model/forum_post_model.dart';
@@ -130,9 +131,13 @@ class ForumPostCard extends StatelessWidget {
           SizedBox(height: 8.h),
           Padding(
             padding: EdgeInsets.only(left: 2.w),
-            child: Text(
+            // A long post collapses to four lines with an inline "Show more",
+            // so one wordy member cannot push every other post off the screen.
+            child: ExpandableText(
               post.text,
+              maxLines: 4,
               style: TextStyle(
+                fontFamily: 'Segoe UI',
                 fontSize: 15.sp,
                 height: 1.4,
                 color: Colors.white,

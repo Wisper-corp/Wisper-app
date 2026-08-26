@@ -5,6 +5,7 @@ import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:get/get.dart';
 import 'package:wisper/app/modules/forum/controller/forum_controller.dart';
 import 'package:wisper/app/modules/forum/model/forum_post_model.dart';
+import 'package:wisper/app/core/widgets/common/expandable_text.dart';
 import 'package:wisper/app/modules/forum/widget/forum_composer.dart';
 import 'package:wisper/app/modules/forum/widget/forum_post_card.dart';
 
@@ -236,9 +237,15 @@ class _ReplyRow extends StatelessWidget {
             ],
           ),
           SizedBox(height: 6.h),
-          Text(
+          ExpandableText(
             reply.text,
-            style: TextStyle(fontSize: 15.sp, height: 1.4, color: Colors.white),
+            maxLines: 4,
+            style: TextStyle(
+              fontFamily: 'Segoe UI',
+              fontSize: 15.sp,
+              height: 1.4,
+              color: Colors.white,
+            ),
           ),
         ],
       ),
