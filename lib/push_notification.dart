@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:io';
 
 import 'package:firebase_messaging/firebase_messaging.dart';
@@ -5,6 +6,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_callkit_incoming/entities/entities.dart';
 import 'package:flutter_callkit_incoming/flutter_callkit_incoming.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
+import 'package:wisper/app/core/services/notifications/rich_notification.dart';
 import 'package:uuid/uuid.dart';
 import 'package:wisper/app/core/others/get_storage.dart';
 
@@ -30,20 +32,18 @@ Future<void> firebaseMessagingBackgroundHandler(RemoteMessage message) async {
   );
   await plugin.initialize(initSettings);
 
-  await plugin.show(
-    DateTime.now().millisecondsSinceEpoch ~/ 1000,
-    message.notification?.title ?? 'New Notification',
-    message.notification?.body ?? '',
-    const NotificationDetails(
-      android: AndroidNotificationDetails(
-        'default_channel_id',
-        'Default Channel',
-        channelDescription: 'General notifications',
-        importance: Importance.max,
-        priority: Priority.high,
-      ),
-      iOS: DarwinNotificationDetails(),
-    ),
+  // The look of a notification is decided here, from the kind and avatar the
+  // server sent - a message shows the sender's face, a forum reply the
+  // author's, an activity update neither.
+  final rich = RichNotification(plugin);
+  await rich.createChannels();
+  await rich.show(
+    title: message.notification?.title ?? 'Wisper',
+    body: message.notification?.body ?? '',
+    kind: message.data['type'] as String?,
+    avatarUrl: message.data['avatar_url'] as String?,
+    payload: message.data['chatId'] as String? ??
+        message.data['post_id'] as String?,
   );
 }
 
@@ -163,7 +163,11 @@ class PushNotificationService {
       _showNotification(
         title: message.notification?.title,
         body: message.notification?.body,
-        payload: message.data['route'],
+        kind: message.data['type'] as String?,
+        avatarUrl: message.data['avatar_url'] as String?,
+        payload: message.data['route'] as String? ??
+            message.data['chatId'] as String? ??
+            message.data['post_id'] as String?,
       );
     });
 
@@ -302,22 +306,14 @@ class PushNotificationService {
     String? title,
     String? body,
     String? payload,
+    String? kind,
+    String? avatarUrl,
   }) async {
-    await _localNotifications.show(
-      DateTime.now().millisecondsSinceEpoch ~/ 1000,
-      title ?? 'Notification',
-      body ?? '',
-      const NotificationDetails(
-        android: AndroidNotificationDetails(
-          'default_channel_id',
-          'Default Channel',
-          channelDescription: 'General notifications',
-          importance: Importance.max,
-          priority: Priority.high,
-          icon: '@mipmap/ic_launcher',
-        ),
-        iOS: DarwinNotificationDetails(),
-      ),
+    await RichNotification(_localNotifications).show(
+      title: title ?? 'Wisper',
+      body: body ?? '',
+      kind: kind,
+      avatarUrl: avatarUrl,
       payload: payload,
     );
   }
