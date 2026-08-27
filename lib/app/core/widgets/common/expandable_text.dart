@@ -25,6 +25,11 @@ class ExpandableText extends StatefulWidget {
   /// Colour of the inline link.
   final Color linkColor;
 
+  /// Tapping the text itself — but not the link. Handled inside the same
+  /// [RichText] rather than by an ancestor [GestureDetector], because an
+  /// ancestor wins the gesture arena and swallows the link's own tap.
+  final VoidCallback? onTap;
+
   const ExpandableText(
     this.text, {
     super.key,
@@ -33,6 +38,7 @@ class ExpandableText extends StatefulWidget {
     this.moreLabel = 'Show more',
     this.lessLabel = 'Show less',
     this.linkColor = const Color(0xff4DA3F5),
+    this.onTap,
   });
 
   @override
@@ -41,6 +47,13 @@ class ExpandableText extends StatefulWidget {
 
 class _ExpandableTextState extends State<ExpandableText> {
   bool _expanded = false;
+  TapGestureRecognizer? _bodyTap;
+
+  @override
+  void dispose() {
+    _bodyTap?.dispose();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -69,8 +82,21 @@ class _ExpandableTextState extends State<ExpandableText> {
           maxLines: widget.maxLines,
         ).didExceedMaxLines;
 
+        _bodyTap?.dispose();
+        _bodyTap = widget.onTap == null
+            ? null
+            : (TapGestureRecognizer()..onTap = widget.onTap);
+
         // Nothing to collapse — render it plainly.
-        if (fits) return Text(widget.text, style: widget.style);
+        if (fits) {
+          return Text.rich(
+            TextSpan(
+              text: widget.text,
+              style: widget.style,
+              recognizer: _bodyTap,
+            ),
+          );
+        }
 
         final recognizer = TapGestureRecognizer()
           ..onTap = () => setState(() => _expanded = !_expanded);
@@ -80,7 +106,7 @@ class _ExpandableTextState extends State<ExpandableText> {
             TextSpan(
               style: widget.style,
               children: [
-                TextSpan(text: widget.text),
+                TextSpan(text: widget.text, recognizer: _bodyTap),
                 const TextSpan(text: '  '),
                 TextSpan(
                   text: widget.lessLabel,
@@ -125,7 +151,10 @@ class _ExpandableTextState extends State<ExpandableText> {
           TextSpan(
             style: widget.style,
             children: [
-              TextSpan(text: '${widget.text.substring(0, cut).trimRight()}… '),
+              TextSpan(
+                text: '${widget.text.substring(0, cut).trimRight()}… ',
+                recognizer: _bodyTap,
+              ),
               TextSpan(
                 text: widget.moreLabel,
                 style: linkStyle,

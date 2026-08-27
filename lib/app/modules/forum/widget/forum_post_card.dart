@@ -97,7 +97,14 @@ class ForumPostCard extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Row(
+          // The author row opens the thread as well, matching the body. It is
+          // wrapped separately rather than wrapping the whole card, because an
+          // ancestor gesture wins the arena and would swallow the inline
+          // "Show more" tap.
+          GestureDetector(
+            onTap: showActions ? onOpenReplies : null,
+            behavior: HitTestBehavior.opaque,
+            child: Row(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               _avatar(author),
@@ -150,19 +157,27 @@ class ForumPostCard extends StatelessWidget {
                 ),
             ],
           ),
+          ),
           SizedBox(height: 8.h),
-          Padding(
-            padding: EdgeInsets.only(left: 2.w),
-            // A long post collapses to four lines with an inline "Show more",
-            // so one wordy member cannot push every other post off the screen.
-            child: ExpandableText(
-              post.text,
-              maxLines: 4,
-              style: TextStyle(
-                fontFamily: 'Segoe UI',
-                fontSize: 15.sp,
-                height: 1.4,
-                color: Colors.white,
+          // Tapping the body opens the replies, the way a timeline post does.
+          // "Show more" carries its own tap recogniser inside the text, so it
+          // still expands rather than navigating - the two do not fight.
+          GestureDetector(
+            onTap: showActions ? onOpenReplies : null,
+            behavior: HitTestBehavior.opaque,
+            child: Padding(
+              padding: EdgeInsets.only(left: 2.w),
+              // A long post collapses to four lines with an inline "Show more",
+              // so one wordy member cannot push every other post off the screen.
+              child: ExpandableText(
+                post.text,
+                maxLines: 4,
+                style: TextStyle(
+                  fontFamily: 'Segoe UI',
+                  fontSize: 15.sp,
+                  height: 1.4,
+                  color: Colors.white,
+                ),
               ),
             ),
           ),
