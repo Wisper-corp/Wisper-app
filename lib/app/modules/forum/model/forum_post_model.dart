@@ -145,12 +145,37 @@ class ForumReplyModel {
   final DateTime? createdAt;
   final ForumAuthor author;
 
-  const ForumReplyModel({
+  /// Null for a reply to the post itself; set for a reply to another reply.
+  final String? parentId;
+
+  /// Mutable so a like settles without refetching the whole thread.
+  int reactionCount;
+  bool hasReacted;
+
+  final bool isMine;
+
+  /// How many replies this one has in total — the server sends only the first
+  /// couple inline, so this is what "Show more replies" counts against.
+  final int replyCount;
+
+  /// The children sent inline with this reply.
+  List<ForumReplyModel> replies;
+
+  ForumReplyModel({
     required this.id,
     required this.text,
     required this.createdAt,
     required this.author,
-  });
+    this.parentId,
+    this.reactionCount = 0,
+    this.hasReacted = false,
+    this.isMine = false,
+    this.replyCount = 0,
+    List<ForumReplyModel>? replies,
+  }) : replies = replies ?? [];
+
+  /// True when the server is holding back children behind "Show more replies".
+  bool get hasHiddenReplies => replyCount > replies.length;
 
   factory ForumReplyModel.fromJson(Map<String, dynamic> json) =>
       ForumReplyModel(
@@ -158,5 +183,13 @@ class ForumReplyModel {
         text: json['text'] ?? '',
         createdAt: DateTime.tryParse(json['createdAt'] ?? ''),
         author: ForumAuthor.fromJson(json['author']),
+        parentId: json['parentId'],
+        reactionCount: json['reactionCount'] ?? 0,
+        hasReacted: json['hasReacted'] ?? false,
+        isMine: json['isMine'] ?? false,
+        replyCount: json['replyCount'] ?? 0,
+        replies: (json['replies'] as List? ?? [])
+            .map((e) => ForumReplyModel.fromJson(e))
+            .toList(),
       );
 }

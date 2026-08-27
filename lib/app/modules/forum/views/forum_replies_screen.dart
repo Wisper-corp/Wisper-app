@@ -5,9 +5,9 @@ import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:get/get.dart';
 import 'package:wisper/app/modules/forum/controller/forum_controller.dart';
 import 'package:wisper/app/modules/forum/model/forum_post_model.dart';
-import 'package:wisper/app/core/widgets/common/expandable_text.dart';
 import 'package:wisper/app/modules/forum/widget/forum_composer.dart';
 import 'package:wisper/app/modules/forum/widget/forum_post_card.dart';
+import 'package:wisper/app/modules/forum/widget/forum_reply_tile.dart';
 
 /// The comment section for a single forum post: the post on top, a counts
 /// strip, then the replies, with the composer pinned at the bottom.
@@ -34,7 +34,11 @@ class _ForumRepliesScreenState extends State<ForumRepliesScreen> {
   late final String _tag = 'forum_replies_${widget.post.id}_$hashCode';
   final GlobalKey<State<ForumComposer>> _composerKey =
       GlobalKey<State<ForumComposer>>();
+  final FocusNode _composerFocus = FocusNode();
   final ScrollController _scrollController = ScrollController();
+
+  /// The reply being answered, or null when writing to the post itself.
+  ForumReplyModel? _replyingTo;
 
   @override
   void initState() {
@@ -52,12 +56,14 @@ class _ForumRepliesScreenState extends State<ForumRepliesScreen> {
   @override
   void dispose() {
     _scrollController.dispose();
+    _composerFocus.dispose();
     Get.delete<ForumRepliesController>(tag: _tag);
     super.dispose();
   }
 
   Future<bool> _send(String text, List<File> images, List<String>? _) async {
-    final ok = await _controller.addReply(text);
+    final ok = await _controller.addReply(text, parentId: _replyingTo?.id);
+    if (ok && mounted) setState(() => _replyingTo = null);
     if (!ok && mounted) {
       Get.snackbar('Could not reply', _controller.errorMessage,
           backgroundColor: Colors.red, colorText: Colors.white);
@@ -157,19 +163,72 @@ class _ForumRepliesScreenState extends State<ForumRepliesScreen> {
                       ),
                     )
                   else
-                    ...replies.map((reply) => _ReplyRow(reply: reply)),
+                    ...replies.map(
+                      (reply) => Padding(
+                        padding: EdgeInsets.fromLTRB(16.w, 14.h, 16.w, 14.h),
+                        child: ForumReplyTile(
+                          reply: reply,
+                          onReply: (r) {
+                            setState(() => _replyingTo = r);
+                            _composerFocus.requestFocus();
+                          },
+                          onToggleReaction: _controller.toggleReplyReaction,
+                          onShowMore: _controller.loadThread,
+                        ),
+                      ),
+                    ),
                 ],
               );
             }),
           ),
-          if (widget.canReply)
+          if (widget.canReply) ...[
+            if (_replyingTo != null) _replyingToBanner(),
             ForumComposer(
               key: _composerKey,
-              hintText: 'Type here...',
+              focusNode: _composerFocus,
+              hintText: _replyingTo == null
+                  ? 'Type here...'
+                  : 'Reply to ${_replyingTo!.author.name ?? 'this'}...',
               // Replies are text only.
               allowImages: false,
               onSend: _send,
             ),
+          ],
+        ],
+      ),
+    );
+  }
+
+  /// Makes it unmistakable which reply the composer is aimed at - otherwise a
+  /// nested reply lands at the top level and the thread quietly breaks.
+  Widget _replyingToBanner() {
+    return Container(
+      color: const Color(0xff17191C),
+      padding: EdgeInsets.fromLTRB(16.w, 8.h, 12.w, 8.h),
+      child: Row(
+        children: [
+          Icon(Icons.reply_rounded, size: 15.sp, color: const Color(0xff8B949E)),
+          SizedBox(width: 8.w),
+          Expanded(
+            child: Text(
+              'Replying to ${_replyingTo!.author.name ?? 'this reply'}',
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: TextStyle(
+                fontSize: 12.5.sp,
+                color: const Color(0xff98A2B3),
+              ),
+            ),
+          ),
+          GestureDetector(
+            onTap: () => setState(() => _replyingTo = null),
+            behavior: HitTestBehavior.opaque,
+            child: Padding(
+              padding: EdgeInsets.all(4.r),
+              child: Icon(Icons.close,
+                  size: 15.sp, color: const Color(0xff8B949E)),
+            ),
+          ),
         ],
       ),
     );
@@ -181,74 +240,4 @@ class _ForumRepliesScreenState extends State<ForumRepliesScreen> {
         fontWeight: FontWeight.w500,
         color: const Color(0xffC9D1D9),
       );
-}
-
-class _ReplyRow extends StatelessWidget {
-  final ForumReplyModel reply;
-  const _ReplyRow({required this.reply});
-
-  @override
-  Widget build(BuildContext context) {
-    // Replies reuse the post card's shape by hand rather than the widget
-    // itself: they carry no counts, so none of its action pills apply.
-    final author = reply.author;
-    return Padding(
-      padding: EdgeInsets.fromLTRB(16.w, 14.h, 16.w, 14.h),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      author.name ?? 'User',
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                      style: TextStyle(
-                        fontFamily: 'Segoe UI',
-                        fontSize: 15.sp,
-                        fontWeight: FontWeight.w700,
-                        color: forumNameColor(author.id),
-                      ),
-                    ),
-                    if ((author.title ?? '').isNotEmpty)
-                      Text(
-                        author.title!,
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                        style: TextStyle(
-                          fontSize: 13.sp,
-                          color: const Color(0xff98A2B3),
-                        ),
-                      ),
-                  ],
-                ),
-              ),
-              SizedBox(width: 8.w),
-              Text(
-                forumShortAge(reply.createdAt),
-                style:
-                    TextStyle(fontSize: 12.sp, color: const Color(0xff8B949E)),
-              ),
-            ],
-          ),
-          SizedBox(height: 6.h),
-          ExpandableText(
-            reply.text,
-            maxLines: 4,
-            style: TextStyle(
-              fontFamily: 'Segoe UI',
-              fontSize: 15.sp,
-              height: 1.4,
-              color: Colors.white,
-            ),
-          ),
-        ],
-      ),
-    );
-  }
 }

@@ -22,11 +22,16 @@ class ForumComposer extends StatefulWidget {
   /// Replies are text only; the post composer takes images.
   final bool allowImages;
 
+  /// Lets the parent put the caret here — tapping Reply on a reply should
+  /// open the keyboard, not make you tap the field as well.
+  final FocusNode? focusNode;
+
   const ForumComposer({
     super.key,
     required this.onSend,
     this.hintText = 'Type here...',
     this.allowImages = true,
+    this.focusNode,
   });
 
   @override
@@ -35,7 +40,7 @@ class ForumComposer extends StatefulWidget {
 
 class _ForumComposerState extends State<ForumComposer> {
   final TextEditingController _controller = TextEditingController();
-  final FocusNode _focusNode = FocusNode();
+  late final FocusNode _focusNode = widget.focusNode ?? FocusNode();
   final List<File> _images = [];
   List<String> _pollOptions = [];
   bool _canSend = false;
@@ -55,7 +60,8 @@ class _ForumComposerState extends State<ForumComposer> {
   @override
   void dispose() {
     _controller.dispose();
-    _focusNode.dispose();
+    // Only dispose a node we created; the parent owns one it passed in.
+    if (widget.focusNode == null) _focusNode.dispose();
     super.dispose();
   }
 

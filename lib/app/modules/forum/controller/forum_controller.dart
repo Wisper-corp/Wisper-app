@@ -209,25 +209,97 @@ class ForumRepliesController extends GetxController {
     _inProgress.value = false;
   }
 
-  Future<bool> addReply(String text) async {
+  /// Adds a reply. With [parentId] it joins that reply's thread instead of
+  /// the post's top level.
+  Future<bool> addReply(String text, {String? parentId}) async {
     final trimmed = text.trim();
     if (trimmed.isEmpty) return false;
     try {
       final NetworkResponse res = await Get.find<NetworkCaller>().postRequest(
         Urls.forumRepliesUrl(postId),
-        body: {'text': trimmed},
+        body: {
+          'text': trimmed,
+          if (parentId != null) 'parentId': parentId,
+        },
         accessToken: _token,
       );
-      if (res.isSuccess && res.responseData != null) {
-        // Oldest first, so a new reply belongs at the end.
-        replies.add(ForumReplyModel.fromJson(res.responseData!['data']));
-        return true;
+      if (!res.isSuccess || res.responseData == null) {
+        _errorMessage.value = res.errorMessage;
+        return false;
       }
-      _errorMessage.value = res.errorMessage;
-      return false;
+
+      final created = ForumReplyModel.fromJson(res.responseData!['data']);
+      if (parentId == null) {
+        // Oldest first, so a new top-level reply belongs at the end.
+        replies.add(created);
+      } else {
+        // Slot it under its parent so the thread updates without a refetch.
+        final parent = _findReply(parentId);
+        parent?.replies.add(created);
+        replies.refresh();
+      }
+      return true;
     } catch (e) {
       _errorMessage.value = 'Could not post your reply.';
       return false;
+    }
+  }
+
+  ForumReplyModel? _findReply(String id) {
+    for (final r in replies) {
+      if (r.id == id) return r;
+      for (final c in r.replies) {
+        if (c.id == id) return c;
+      }
+    }
+    return null;
+  }
+
+  /// Likes or unlikes a reply, flipping immediately and reverting if the
+  /// request fails, so the count never sits lying to the user.
+  Future<void> toggleReplyReaction(ForumReplyModel reply) async {
+    final wasReacted = reply.hasReacted;
+    final wasCount = reply.reactionCount;
+    reply.hasReacted = !wasReacted;
+    reply.reactionCount = wasCount + (wasReacted ? -1 : 1);
+    replies.refresh();
+
+    try {
+      final NetworkResponse res = await Get.find<NetworkCaller>().patchRequest(
+        Urls.forumReplyReactionUrl(reply.id),
+        body: const {},
+        accessToken: _token,
+      );
+      if (res.isSuccess && res.responseData != null) {
+        final data = res.responseData!['data'] ?? {};
+        reply.hasReacted = data['hasReacted'] ?? reply.hasReacted;
+        reply.reactionCount = data['reactionCount'] ?? reply.reactionCount;
+      } else {
+        reply.hasReacted = wasReacted;
+        reply.reactionCount = wasCount;
+      }
+    } catch (e) {
+      reply.hasReacted = wasReacted;
+      reply.reactionCount = wasCount;
+    }
+    replies.refresh();
+  }
+
+  /// Loads the rest of one reply's thread, behind "Show more replies".
+  Future<void> loadThread(ForumReplyModel reply) async {
+    try {
+      final NetworkResponse res = await Get.find<NetworkCaller>().getRequest(
+        Urls.forumReplyThreadUrl(reply.id),
+        queryParams: {'limit': '100'},
+        accessToken: _token,
+      );
+      if (res.isSuccess && res.responseData != null) {
+        final list = (res.responseData!['data']?['replies'] as List?) ?? [];
+        reply.replies = list.map((e) => ForumReplyModel.fromJson(e)).toList();
+        replies.refresh();
+      }
+    } catch (e) {
+      _errorMessage.value = 'Could not load the rest of this thread.';
     }
   }
 }

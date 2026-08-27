@@ -1,0 +1,80 @@
+{
+ "data": {
+  "meta": {
+   "page": 1,
+   "limit": 10,
+   "total": 4
+  },
+  "post": {
+   "id": "e4bd82a9-d561-4455-a215-e48cc49cc60a",
+   "text": "Reply thread fixture",
+   "images": [],
+   "createdAt": "2026-08-27T20:49:46.344Z",
+   "author": {
+    "id": "9e1d1bf7-073f-4546-8d2c-99a1f0298a58",
+    "name": "faraz Ahmed",
+    "image": "https://example.test/a.jpg",
+    "title": "Flutter Developer"
+   },
+   "replyCount": 4,
+   "reactionCount": 0
+  },
+  "replies": [
+   {
+    "id": "7b3825e5-57f4-41f1-bad5-8510c8377f20",
+    "text": "Testing this new feature",
+    "isEdited": false,
+    "createdAt": "2026-08-27T20:49:47.062Z",
+    "parentId": null,
+    "author": {
+     "id": "9e1d1bf7-073f-4546-8d2c-99a1f0298a58",
+     "name": "faraz Ahmed",
+     "image": "https://example.test/a.jpg",
+     "title": "Flutter Developer"
+    },
+    "reactionCount": 1,
+    "hasReacted": true,
+    "isMine": true,
+    "replyCount": 3,
+    "replies": [
+     {
+      "id": "ca1d76ad-8672-4498-ad28-15cbcc928ec4",
+      "text": "Looks clean! Is there API documentation yet.",
+      "isEdited": false,
+      "createdAt": "2026-08-27T20:49:47.762Z",
+      "parentId": "7b3825e5-57f4-41f1-bad5-8510c8377f20",
+      "author": {
+       "id": "9e1d1bf7-073f-4546-8d2c-99a1f0298a58",
+       "name": "faraz Ahmed",
+       "image": "https://example.test/a.jpg",
+       "title": "Flutter Developer"
+      },
+      "reactionCount": 0,
+      "hasReacted": false,
+      "isMine": true,
+      "replyCount": 0,
+      "replies": []
+     },
+     {
+      "id": "06e812cd-2e7f-4cf8-8a5e-da574d2a0f6a",
+      "text": "Second child so the cap shows",
+      "isEdited": false,
+      "createdAt": "2026-08-27T20:49:48.472Z",
+      "parentId": "7b3825e5-57f4-41f1-bad5-8510c8377f20",
+      "author": {
+       "id": "9e1d1bf7-073f-4546-8d2c-99a1f0298a58",
+       "name": "faraz Ahmed",
+       "image": "https://example.test/a.jpg",
+       "title": "Flutter Developer"
+      },
+      "reactionCount": 0,
+      "hasReacted": false,
+      "isMine": true,
+      "replyCount": 0,
+      "replies": []
+     }
+    ]
+   }
+  ]
+ }
+}
