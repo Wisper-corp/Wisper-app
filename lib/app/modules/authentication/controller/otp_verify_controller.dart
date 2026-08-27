@@ -1,4 +1,6 @@
 import 'package:get/get.dart';
+import 'dart:async';
+import 'package:wisper/push_notification.dart';
 import 'package:jwt_decoder/jwt_decoder.dart';
 import 'package:wisper/app/core/others/get_storage.dart';
 import 'package:wisper/app/core/services/network_caller/network_caller.dart';
@@ -70,6 +72,10 @@ class OtpVerifyController extends GetxController {
             await StorageUtil.saveData(StorageUtil.userId, authId);
             await StorageUtil.saveData(StorageUtil.userAuthId, authId);
           }
+
+          // Same as sign-in: the token predates the session, so register it
+          // against the user who just signed in.
+          unawaited(PushNotificationService().syncTokenToServer());
         }
 
         _inProgress.value = false;

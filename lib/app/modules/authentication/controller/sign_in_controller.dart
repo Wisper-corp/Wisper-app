@@ -1,4 +1,6 @@
 import 'package:get/get.dart';
+import 'dart:async';
+import 'package:wisper/push_notification.dart';
 import 'package:jwt_decoder/jwt_decoder.dart';
 import 'package:wisper/app/core/others/get_storage.dart';
 import 'package:wisper/app/core/services/network_caller/network_caller.dart';
@@ -44,6 +46,10 @@ class SignInController extends GetxController {
           StorageUtil.userAccessToken,
           response.responseData['data']['accessToken'],
         );
+
+        // The device's push token is fetched at launch, before anyone is
+        // signed in, so it has no user to attach to. Hand it over now.
+        unawaited(PushNotificationService().syncTokenToServer());
 
         _inProgress.value = false;
         return true;

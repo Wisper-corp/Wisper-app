@@ -6,6 +6,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter_callkit_incoming/entities/entities.dart';
 import 'package:flutter_callkit_incoming/flutter_callkit_incoming.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
+import 'package:get/get.dart';
+import 'package:wisper/app/core/services/network_caller/network_caller.dart';
+import 'package:wisper/app/urls.dart';
 import 'package:wisper/app/core/services/notifications/rich_notification.dart';
 import 'package:uuid/uuid.dart';
 import 'package:wisper/app/core/others/get_storage.dart';
@@ -236,6 +239,10 @@ class PushNotificationService {
     try {
       final token = await getToken();
       debugPrint('📱 FCM Token: $token');
+      // Storing it locally is not enough: the server sends the notification,
+      // so it needs the address. Without this the token column never changes
+      // and every push fails with NotRegistered after the first reinstall.
+      await syncTokenToServer(token);
     } catch (e) {
       debugPrint('❌ FCM token error: $e');
       return;
@@ -244,7 +251,41 @@ class PushNotificationService {
     FirebaseMessaging.instance.onTokenRefresh.listen((t) async {
       debugPrint('🔄 FCM Token refreshed: $t');
       await StorageUtil.setFcmToken(t);
+      // Firebase rotates tokens on reinstall, restore and clear-data. Each
+      // rotation must reach the server or delivery stops silently.
+      await syncTokenToServer(t);
     });
+  }
+
+  /// Hands the device's token to the server.
+  ///
+  /// Safe to call repeatedly and safe to call while signed out - without an
+  /// access token there is no user to attach it to, so it waits. Call it again
+  /// after login, which is why it is public.
+  Future<void> syncTokenToServer([String? token]) async {
+    try {
+      final accessToken = StorageUtil.getData(StorageUtil.userAccessToken);
+      if (accessToken == null || accessToken.toString().isEmpty) {
+        debugPrint('ℹ️ FCM token not sent: signed out');
+        return;
+      }
+
+      final value = token ?? await FirebaseMessaging.instance.getToken();
+      if (value == null || value.isEmpty) return;
+
+      final res = await Get.find<NetworkCaller>().patchRequest(
+        Urls.updateFcmTokenUrl,
+        body: {'fcmToken': value},
+        accessToken: accessToken,
+      );
+      debugPrint(res.isSuccess
+          ? '✅ FCM token saved to server'
+          : '⚠️ FCM token not saved: ${res.errorMessage}');
+    } catch (e) {
+      // Never let this break startup - a missing notification is bad, a
+      // crash on launch is worse.
+      debugPrint('⚠️ FCM token sync failed: $e');
+    }
   }
 
   Future<String?> getToken({
