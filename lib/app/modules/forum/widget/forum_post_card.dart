@@ -1,6 +1,7 @@
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
+import 'package:wisper/app/modules/saved/widget/save_button.dart';
 import 'package:wisper/app/core/widgets/common/expandable_text.dart';
 import 'package:wisper/app/core/widgets/common/image_container_widget.dart';
 import 'package:wisper/app/core/widgets/common/initials_avatar.dart';
@@ -240,6 +241,9 @@ class ForumPostCard extends StatelessWidget {
                     ],
                   ),
                 ),
+                const Spacer(),
+                // Keeping a post for later, same gesture as on a service card.
+                SaveButton(kind: 'forum', itemId: post.id, size: 18.sp),
               ],
             ),
           ],

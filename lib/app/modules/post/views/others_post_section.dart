@@ -62,6 +62,7 @@ class _OthersPostSectionState extends State<OthersPostSection> {
               padding: const EdgeInsets.symmetric(vertical: 8.0),
               
               child: PostCard(
+                postId: post.id,
                 isPerson: post.author?.person != null,
                 isComment: false,
                 onTapComment: () {

@@ -64,6 +64,7 @@ class FeedPostItemModel {
     this.ratingCount = 0,
     this.count,
     this.groupId,
+    this.isSaved = false,
   });
 
   final String? id;
@@ -81,8 +82,12 @@ class FeedPostItemModel {
   final PostCount? count;
   final String? groupId;
 
+  /// Whether the signed-in person has bookmarked this post.
+  final bool isSaved;
+
   factory FeedPostItemModel.fromJson(Map<String, dynamic> json) {
     return FeedPostItemModel(
+      isSaved: json["isSaved"] ?? false,
       id: json["id"],
       caption: json["caption"],
       images: json["images"] == null

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import 'package:wisper/app/modules/saved/controller/saved_controller.dart';
 import 'package:wisper/app/core/config/theme/light_theme_colors.dart';
 import 'package:wisper/app/core/utils/date_formatter.dart';
 import 'package:wisper/app/core/widgets/shimmer/gallery_post_shimmer.dart';
@@ -20,6 +21,10 @@ class PostSection extends StatefulWidget {
 }
 
 class _PostSectionState extends State<PostSection> {
+  final SavedController savedController = Get.isRegistered<SavedController>()
+      ? Get.find<SavedController>()
+      : Get.put(SavedController(), permanent: true);
+
   late final AllFeedPostController controller;
 
   String get _tag => widget.groupId != null && widget.groupId!.isNotEmpty
@@ -74,6 +79,12 @@ class _PostSectionState extends State<PostSection> {
             final formattedTime = DateFormatter(
               post.createdAt!,
             ).getRelativeTimeFormat();
+
+            // The listing already told us whether this is bookmarked, so the
+            // icon can be right on first paint instead of asking again.
+            if (post.id != null) {
+              savedController.seed('service', post.id!, post.isSaved);
+            }
 
             return _PostItem(
               post: post,
@@ -184,6 +195,7 @@ class _PostItemState extends State<_PostItem> {
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 8.0),
       child: PostCard(
+        postId: post.id,
         isPerson: post.author?.person != null,
         onTapComment: () {
           Get.to(CommentScreen(postId: post.id ?? ''));

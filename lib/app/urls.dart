@@ -111,6 +111,12 @@ class Urls {
   static String forumFollowUrl(String postId) => '$_baseUrl/forum/$postId/follow';
   static String forumReplyThreadUrl(String replyId) => '$_baseUrl/forum/reply/$replyId/thread';
   static String forumReplyReactionUrl(String replyId) => '$_baseUrl/forum/reply/$replyId/reaction';
+
+  // Saved posts. `kind` is 'service' or 'forum'; the toggle works in both
+  // directions, since tapping a filled bookmark means unsave.
+  static const String savedUrl = '$_baseUrl/saved';
+  static String savedToggleUrl(String kind, String id) =>
+      '$_baseUrl/saved/$kind/$id';
   static String addClassMembersById(String id) => '$_baseUrl/classes/members/$id';
   static const String removePerticipantUrl = '$_baseUrl/chats/remove-participant';
   static const String updateParticipantRoleUrl = '$_baseUrl/chats/update-participant-role';

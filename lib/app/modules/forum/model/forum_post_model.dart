@@ -93,6 +93,9 @@ class ForumPostModel {
   /// Whether this viewer gets notified about new replies.
   bool isFollowing;
 
+  /// Whether the signed-in person has bookmarked this post.
+  bool isSaved;
+
   /// Drives the blue highlight on your own posts.
   final bool isMine;
 
@@ -113,6 +116,7 @@ class ForumPostModel {
     required this.hasReacted,
     this.poll,
     this.isFollowing = false,
+    this.isSaved = false,
     required this.isMine,
     required this.canDelete,
     required this.replyAvatars,
@@ -129,6 +133,7 @@ class ForumPostModel {
         hasReacted: json['hasReacted'] ?? false,
         poll: json['poll'] == null ? null : ForumPoll.fromJson(json['poll']),
         isFollowing: json['isFollowing'] ?? false,
+        isSaved: json['isSaved'] ?? false,
         isMine: json['isMine'] ?? false,
         // Older builds of the API omit this; fall back to own-posts-only.
         canDelete: json['canDelete'] ?? json['isMine'] ?? false,

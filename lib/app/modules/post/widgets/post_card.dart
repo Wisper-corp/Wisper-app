@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
+import 'package:wisper/app/modules/saved/widget/save_button.dart';
 import 'package:get/get.dart';
 import 'package:wisper/app/core/utils/currency_helper.dart';
 import 'package:wisper/app/core/config/theme/light_theme_colors.dart';
@@ -28,6 +29,10 @@ class PostCard extends StatelessWidget {
   final Widget? ratingWidget;
   final String? currency; // "NGN" or "USD"
 
+  /// The post's own id, so the bookmark knows what it is saving. Without one
+  /// the bookmark is not drawn at all rather than drawn and inert.
+  final String? postId;
+
   const PostCard({
     super.key,
     required this.trailing,
@@ -47,6 +52,7 @@ class PostCard extends StatelessWidget {
     this.ratingWidget,
     this.currency,
     this.isPerson = true,
+    this.postId,
   });
 
   String _formatViews(String? views) {
@@ -256,16 +262,8 @@ class PostCard extends StatelessWidget {
                       ),
                     SizedBox(width: 10.w),
                     // Bookmark
-                    GestureDetector(
-                      onTap: () => ScaffoldMessenger.of(context).showSnackBar(
-                        const SnackBar(
-                          content: Text('Save post — coming soon'),
-                          duration: Duration(seconds: 2),
-                          backgroundColor: Color(0xff1F7DE9),
-                        ),
-                      ),
-                      child: Icon(Icons.bookmark_border_rounded, size: 16.sp, color: Colors.grey),
-                    ),
+                    if (postId != null && postId!.isNotEmpty)
+                      SaveButton(kind: 'service', itemId: postId!),
                   ],
                 ),
                 // Divider between posts

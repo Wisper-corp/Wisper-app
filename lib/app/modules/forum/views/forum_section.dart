@@ -3,6 +3,7 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:get/get.dart';
+import 'package:wisper/app/modules/saved/controller/saved_controller.dart';
 import 'package:wisper/app/modules/forum/controller/forum_controller.dart';
 import 'package:wisper/app/modules/forum/model/forum_post_model.dart';
 import 'package:wisper/app/modules/forum/views/forum_replies_screen.dart';
@@ -34,6 +35,10 @@ class ForumSection extends StatefulWidget {
 }
 
 class _ForumSectionState extends State<ForumSection> {
+  final SavedController _savedController = Get.isRegistered<SavedController>()
+      ? Get.find<SavedController>()
+      : Get.put(SavedController(), permanent: true);
+
   late final ForumController _controller;
 
   @override
@@ -239,6 +244,9 @@ class _ForumSectionState extends State<ForumSection> {
                 ),
                 itemBuilder: (context, index) {
                   final post = _controller.posts[index];
+                  // The listing already said whether this is bookmarked, so
+                  // the icon is right on first paint.
+                  _savedController.seed('forum', post.id, post.isSaved);
                   // Hand the card the colour above it so two neighbouring
                   // names never come out the same.
                   final previous =

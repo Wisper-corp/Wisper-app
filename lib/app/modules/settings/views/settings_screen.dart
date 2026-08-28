@@ -14,6 +14,7 @@ import 'package:wisper/app/modules/kyc/views/kyc_home_screen.dart';
 import 'package:wisper/app/modules/post/views/my_post_section.dart';
 import 'package:wisper/app/modules/profile/controller/buisness/buisness_controller.dart';
 import 'package:wisper/app/modules/profile/controller/person/profile_controller.dart';
+import 'package:wisper/app/modules/saved/views/saved_screen.dart';
 import 'package:wisper/app/modules/settings/views/change_password_screen.dart';
 import 'package:wisper/app/modules/settings/views/content_screen.dart';
 import 'package:wisper/app/modules/profile/views/profile_screen.dart';
@@ -114,6 +115,17 @@ class _SettingsScreenState extends State<SettingsScreen> {
                       title: 'Change Password',
                       onTap: () {
                         Get.to(() => const ChangePasswordScreen());
+                      },
+                    ),
+                    heightBox10,
+                    StraightLiner(height: 0.5),
+                    heightBox10,
+                    // Bookmarked service and forum posts. Sits beside
+                    // Favorites, which is the same idea for jobs.
+                    SettingsFeatureRow(
+                      title: 'Saved Posts',
+                      onTap: () {
+                        Get.to(() => const SavedScreen());
                       },
                     ),
                     heightBox10,

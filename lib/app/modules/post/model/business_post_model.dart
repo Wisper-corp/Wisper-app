@@ -57,6 +57,7 @@ class BusinessFeedPostItemModel {
     required this.createdAt,
     required this.commentAccess,
     required this.author,
+    this.isSaved = false,
   });
 
   final String? id;
@@ -66,6 +67,9 @@ class BusinessFeedPostItemModel {
   final DateTime? createdAt;
   final String? commentAccess;
   final Author? author;
+
+  /// Whether the signed-in person has bookmarked this post.
+  final bool isSaved;
 
   factory BusinessFeedPostItemModel.fromJson(Map<String, dynamic> json) {
     return BusinessFeedPostItemModel(
@@ -78,6 +82,7 @@ class BusinessFeedPostItemModel {
       createdAt: DateTime.tryParse(json["createdAt"] ?? ""),
       commentAccess: json["commentAccess"],
       author: json["author"] == null ? null : Author.fromJson(json["author"]),
+      isSaved: json["isSaved"] ?? false,
     );
   }
 }
