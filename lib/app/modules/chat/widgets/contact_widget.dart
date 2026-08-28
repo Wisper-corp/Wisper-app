@@ -23,7 +23,13 @@ class ContactWidget extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final isNetworkUrl = imagePath.startsWith('http');
-    return Row(
+    // onTap was accepted and never wired to anything, so every caller's
+    // callback was dead: tapping a contact did nothing at all. The whole row
+    // is the target, not just the name, and opaque so the gaps count too.
+    return GestureDetector(
+      onTap: onTap,
+      behavior: HitTestBehavior.opaque,
+      child: Row(
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children: [
         Row(
@@ -59,6 +65,7 @@ class ContactWidget extends StatelessWidget {
         ),
         trailing == null ? const SizedBox() : trailing!,
       ],
+      ),
     );
   }
 }
