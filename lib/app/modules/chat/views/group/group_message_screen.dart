@@ -955,8 +955,10 @@ class _GroupChatScreenState extends State<GroupChatScreen> {
                 },
               ),
             ),
-            // Leave Community button — only for non-admin members
-            if (!isAdmin)
+            // Leave Community — only for someone who is actually in the
+            // community. Testing !isAdmin alone offered it to visitors, who
+            // were being shown the way out of somewhere they had not entered.
+            if (_hasJoined && !isAdmin)
               Padding(
                 padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 12.h),
                 child: SizedBox(
