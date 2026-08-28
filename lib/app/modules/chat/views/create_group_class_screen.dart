@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:get/get.dart';
+import 'package:wisper/app/modules/chat/utils/open_direct_chat.dart';
 import 'package:wisper/app/core/others/custom_size.dart';
 import 'package:wisper/app/core/widgets/common/circle_icon.dart';
 import 'package:wisper/app/core/widgets/common/custom_text_filed.dart';
@@ -10,8 +11,6 @@ import 'package:wisper/app/modules/chat/views/class/create_class_screen.dart';
 import 'package:wisper/app/modules/chat/views/group/create_group_screen.dart';
 import 'package:wisper/app/modules/chat/widgets/contact_widget.dart';
 import 'package:wisper/app/modules/chat/widgets/create_widget.dart';
-import 'package:wisper/app/modules/profile/views/business/others_business_screen.dart';
-import 'package:wisper/app/modules/profile/views/person/others_person_screen.dart';
 import 'package:wisper/gen/assets.gen.dart';
 
 class CreateGroupClassScreen extends StatefulWidget {
@@ -155,29 +154,20 @@ class _CreateGroupClassScreenState extends State<CreateGroupClassScreen> {
                         : connection.partner?.business?.image;
                     '';
 
-                    bool isPerson = connection.partner?.person != null
-                        ? true
-                        : false;
-
                     return Padding(
                       padding: const EdgeInsets.symmetric(vertical: 6.0),
                       child: ContactWidget(
                         imagePath: imagePath ?? '',
                         title: name ?? '',
                         subtitle: title ?? '',
-                        onTap: () {
-                          isPerson == true
-                              ? Get.to(
-                                  () => OthersPersonScreen(
-                                    userId: connection.partner?.id ?? '',
-                                  ),
-                                )
-                              : Get.to(
-                                  () => OthersBusinessScreen(
-                                    userId: connection.partner?.id ?? '',
-                                  ),
-                                );
-                        },
+                        // Picking someone here means "message them", not
+                        // "look at them" — this list exists to start a
+                        // conversation.
+                        onTap: () => openDirectChat(
+                          userId: connection.partner?.id,
+                          name: name,
+                          image: imagePath,
+                        ),
                       ),
                     );
                   },
