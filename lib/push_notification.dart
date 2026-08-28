@@ -145,6 +145,10 @@ class PushNotificationService {
   final FlutterLocalNotificationsPlugin _localNotifications =
       FlutterLocalNotificationsPlugin();
 
+  /// Whether [_initLocalNotifications] has run. The plugin cannot be used at
+  /// all before it has.
+  bool _localReady = false;
+
   // Notification tap callback (non-call notifications এর জন্য)
   Function(String? payload)? onNotificationTap;
 
@@ -329,6 +333,26 @@ class PushNotificationService {
     return token;
   }
 
+  /// Clears every notification this app has posted.
+  ///
+  /// The launcher badge on Android is derived from what is sitting in the
+  /// notification tray, not from anything we count ourselves - so a "4" stays
+  /// on the icon until those four are dismissed. Nothing used to dismiss them,
+  /// which is why opening the app left the count behind.
+  ///
+  /// Safe to call often: cancelling nothing is not an error.
+  Future<void> clearDeliveredNotifications() async {
+    try {
+      // The plugin throws if it has never been initialised, so a clear that
+      // runs before startup finished would quietly do nothing.
+      if (!_localReady) await _initLocalNotifications();
+      await _localNotifications.cancelAll();
+    } catch (e) {
+      // A badge that will not clear is a blemish; a crash on resume is not.
+      debugPrint('⚠️ Could not clear notifications: $e');
+    }
+  }
+
   Future<void> _initLocalNotifications() async {
     const initSettings = InitializationSettings(
       android: AndroidInitializationSettings('@drawable/ic_notification'),
@@ -342,6 +366,7 @@ class PushNotificationService {
         onNotificationTap?.call(response.payload);
       },
     );
+    _localReady = true;
 
     if (Platform.isAndroid) {
       const channel = AndroidNotificationChannel(

@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:get/get.dart';
@@ -21,6 +23,7 @@ import 'package:wisper/app/modules/profile/controller/buisness/buisness_controll
 import 'package:wisper/app/modules/profile/controller/person/profile_controller.dart';
 import 'package:wisper/app/modules/profile/views/person/edit_person_profile_screen.dart';
 import 'package:wisper/app/modules/profile/views/profile_screen.dart';
+import 'package:wisper/push_notification.dart';
 import 'package:wisper/gen/assets.gen.dart';
 
 class MainButtonNavbarScreen extends StatefulWidget {
@@ -78,6 +81,9 @@ class _MainButtonNavbarScreenState extends State<MainButtonNavbarScreen>
       _initializeData();
       socketService.onInit();
       callService.checkAndShowPendingCallDialogIfNeeded();
+      // Opening the app means the news has been seen: drop the notifications
+      // still in the tray, which is what the launcher badge counts.
+      unawaited(PushNotificationService().clearDeliveredNotifications());
       connectivityService.suppressDialog.value = selectedKey == 3;
     });
   }
@@ -87,6 +93,10 @@ class _MainButtonNavbarScreenState extends State<MainButtonNavbarScreen>
     super.didChangeAppLifecycleState(state);
     if (state == AppLifecycleState.resumed) {
       callService.checkAndShowPendingCallDialogIfNeeded();
+      // Coming back from the background counts as seeing them too - otherwise
+      // anything that arrived while the app was open-but-backgrounded would
+      // leave the badge behind.
+      unawaited(PushNotificationService().clearDeliveredNotifications());
     }
   }
 
