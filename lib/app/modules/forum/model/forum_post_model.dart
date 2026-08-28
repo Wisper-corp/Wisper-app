@@ -6,13 +6,24 @@ class ForumAuthor {
   /// The professional title shown under the name on every card.
   final String? title;
 
-  const ForumAuthor({this.id, this.name, this.image, this.title});
+  /// A person and a business have different profile screens, so tapping an
+  /// author has to know which of the two this is.
+  final bool isPerson;
+
+  const ForumAuthor({
+    this.id,
+    this.name,
+    this.image,
+    this.title,
+    this.isPerson = true,
+  });
 
   factory ForumAuthor.fromJson(Map<String, dynamic>? json) => ForumAuthor(
         id: json?['id'],
         name: json?['name'],
         image: json?['image'],
         title: json?['title'],
+        isPerson: json?['isPerson'] ?? true,
       );
 }
 

@@ -1,6 +1,7 @@
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
+import 'package:wisper/app/modules/forum/widget/author_tap.dart';
 import 'package:wisper/app/modules/saved/widget/save_button.dart';
 import 'package:wisper/app/core/widgets/common/expandable_text.dart';
 import 'package:wisper/app/core/widgets/common/image_container_widget.dart';
@@ -108,37 +109,51 @@ class ForumPostCard extends StatelessWidget {
             child: Row(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              _avatar(author),
-              SizedBox(width: 10.w),
+              // The face and the name go to the person; the rest of the row
+              // still opens the thread. Nested inside that gesture on purpose
+              // — the innermost detector wins the arena.
               Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      author.name ?? 'User',
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                      style: TextStyle(
-                        fontFamily: 'Segoe UI',
-                        fontSize: 15.sp,
-                        fontWeight: FontWeight.w700,
-                        color: post.isMine
-                            ? Colors.white
-                            : forumNameColor(author.id,
-                                avoid: avoidNameColor),
-                      ),
-                    ),
-                    if ((author.title ?? '').isNotEmpty)
-                      Text(
-                        author.title!,
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                        style: TextStyle(
-                          fontSize: 13.sp,
-                          color: const Color(0xff98A2B3),
+                child: GestureDetector(
+                  onTap: () => openForumAuthor(author),
+                  behavior: HitTestBehavior.opaque,
+                  child: Row(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      _avatar(author),
+                      SizedBox(width: 10.w),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              author.name ?? 'User',
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                              style: TextStyle(
+                                fontFamily: 'Segoe UI',
+                                fontSize: 15.sp,
+                                fontWeight: FontWeight.w700,
+                                color: post.isMine
+                                    ? Colors.white
+                                    : forumNameColor(author.id,
+                                        avoid: avoidNameColor),
+                              ),
+                            ),
+                            if ((author.title ?? '').isNotEmpty)
+                              Text(
+                                author.title!,
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                                style: TextStyle(
+                                  fontSize: 13.sp,
+                                  color: const Color(0xff98A2B3),
+                                ),
+                              ),
+                          ],
                         ),
                       ),
-                  ],
+                    ],
+                  ),
                 ),
               ),
               SizedBox(width: 8.w),

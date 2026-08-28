@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:wisper/app/core/widgets/common/expandable_text.dart';
 import 'package:wisper/app/core/widgets/common/initials_avatar.dart';
+import 'package:wisper/app/modules/forum/widget/author_tap.dart';
 import 'package:wisper/app/modules/forum/model/forum_post_model.dart';
 import 'package:wisper/app/modules/forum/widget/forum_post_card.dart';
 
@@ -112,10 +113,18 @@ class ForumReplyTile extends StatelessWidget {
     return Row(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        _avatar(author),
+        // Same as on a post: the face and the name go to the person.
+        GestureDetector(
+          onTap: () => openForumAuthor(author),
+          behavior: HitTestBehavior.opaque,
+          child: _avatar(author),
+        ),
         SizedBox(width: 10.w),
         Expanded(
-          child: Column(
+          child: GestureDetector(
+            onTap: () => openForumAuthor(author),
+            behavior: HitTestBehavior.opaque,
+            child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Text(
@@ -140,6 +149,7 @@ class ForumReplyTile extends StatelessWidget {
                   ),
                 ),
             ],
+          ),
           ),
         ),
         SizedBox(width: 8.w),
