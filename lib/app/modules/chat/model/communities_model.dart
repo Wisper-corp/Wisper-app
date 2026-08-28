@@ -49,6 +49,8 @@ class CommunitiesItemModel {
         required this.memberCount,
         required this.members,
         this.isFeatured = false,
+        this.myActivityCount = 0,
+        this.myLastActivityAt,
     });
 
     final String? id;
@@ -67,6 +69,15 @@ class CommunitiesItemModel {
     final bool isFeatured;
     final List<Member> members;
 
+    /// What the signed-in person has done in this community over the last 30
+    /// days — messages, forum posts, forum replies. Home leads with the
+    /// communities they actually use; zero for anything they have not joined.
+    final int myActivityCount;
+
+    /// When they last did any of it, used to break ties between equally busy
+    /// communities. Null when they have done nothing.
+    final DateTime? myLastActivityAt;
+
     factory CommunitiesItemModel.fromJson(Map<String, dynamic> json){
         return CommunitiesItemModel(
             id: json["id"],
@@ -78,6 +89,8 @@ class CommunitiesItemModel {
             isJoined: json["isJoined"],
             memberCount: json["memberCount"],
             isFeatured: json["isFeatured"] ?? false,
+            myActivityCount: json["myActivityCount"] ?? 0,
+            myLastActivityAt: DateTime.tryParse(json["myLastActivityAt"] ?? ""),
             members: json["members"] == null ? [] : List<Member>.from(json["members"]!.map((x) => Member.fromJson(x))),
         );
     }

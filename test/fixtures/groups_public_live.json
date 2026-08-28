@@ -1,0 +1,101 @@
+[
+  {
+    "id": "516b0583-085e-46a8-92fc-ca31dff5c028",
+    "name": "Writers Space STY",
+    "createdAt": "2026-08-26T01:07:57.014Z",
+    "isJoined": true,
+    "memberCount": 2,
+    "myActivityCount": 0,
+    "myLastActivityAt": null
+  },
+  {
+    "id": "356a4c7e-099b-47fd-bb3f-769070e53e75",
+    "name": "Designers planet STY",
+    "createdAt": "2026-08-26T00:53:07.447Z",
+    "isJoined": true,
+    "memberCount": 2,
+    "myActivityCount": 0,
+    "myLastActivityAt": null
+  },
+  {
+    "id": "589ef95f-ea4d-43ca-8f11-227b3d08604a",
+    "name": "Online Marketer Room STY",
+    "createdAt": "2026-08-26T00:52:01.560Z",
+    "isJoined": true,
+    "memberCount": 2,
+    "myActivityCount": 0,
+    "myLastActivityAt": null
+  },
+  {
+    "id": "3f519069-371c-4994-97b8-3f4464e2fe76",
+    "name": "Remote Tech Space STY",
+    "createdAt": "2026-08-22T20:11:40.725Z",
+    "isJoined": true,
+    "memberCount": 32,
+    "myActivityCount": 4,
+    "myLastActivityAt": "2026-08-28T16:59:08.977Z"
+  },
+  {
+    "id": "92996adf-9494-41d2-af65-310229019972",
+    "name": "10 Will Fashion MKT",
+    "createdAt": "2026-08-20T18:10:03.924Z",
+    "isJoined": true,
+    "memberCount": 2,
+    "myActivityCount": 1,
+    "myLastActivityAt": "2026-08-22T18:16:59.673Z"
+  },
+  {
+    "id": "1e51a43a-8867-4001-8a9c-282123462fa0",
+    "name": "test group MKT",
+    "createdAt": "2026-08-09T19:50:33.856Z",
+    "isJoined": true,
+    "memberCount": 2,
+    "myActivityCount": 2,
+    "myLastActivityAt": "2026-08-22T18:16:57.950Z"
+  },
+  {
+    "id": "0d8c4723-8e6a-4f52-a53f-f4866e56458f",
+    "name": "test MKT",
+    "createdAt": "2026-08-09T11:59:04.773Z",
+    "isJoined": true,
+    "memberCount": 1,
+    "myActivityCount": 2,
+    "myLastActivityAt": "2026-08-22T18:17:05.161Z"
+  },
+  {
+    "id": "6c105e1f-efbb-416d-b1f2-098767c35d81",
+    "name": "FMCG Community new name testing phase MKT",
+    "createdAt": "2026-08-09T00:53:27.104Z",
+    "isJoined": true,
+    "memberCount": 3,
+    "myActivityCount": 2,
+    "myLastActivityAt": "2026-08-22T18:17:01.459Z"
+  },
+  {
+    "id": "f4129a50-2a7b-4f74-b86b-eeb43b36bc10",
+    "name": "Business Moderator Community  Mkt",
+    "createdAt": "2026-08-06T08:12:47.861Z",
+    "isJoined": true,
+    "memberCount": 2,
+    "myActivityCount": 2,
+    "myLastActivityAt": "2026-08-22T18:17:06.879Z"
+  },
+  {
+    "id": "7d1256e7-ad1e-4fd9-ad4b-53dec78b6cb9",
+    "name": "General Chat",
+    "createdAt": "2026-07-21T19:13:17.498Z",
+    "isJoined": true,
+    "memberCount": 7,
+    "myActivityCount": 3,
+    "myLastActivityAt": "2026-08-22T18:17:03.319Z"
+  },
+  {
+    "id": "795f1d09-ebb3-4124-8ccc-59bb9030dff0",
+    "name": "FMCG Mkt",
+    "createdAt": "2026-07-21T04:26:44.124Z",
+    "isJoined": false,
+    "memberCount": 4,
+    "myActivityCount": 0,
+    "myLastActivityAt": null
+  }
+]

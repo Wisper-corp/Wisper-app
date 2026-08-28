@@ -3,9 +3,11 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:get/get.dart';
+import 'package:wisper/app/core/config/theme/light_theme_colors.dart';
 import 'package:wisper/app/core/others/custom_size.dart';
 import 'package:wisper/app/core/widgets/common/circle_icon.dart';
 import 'package:wisper/app/core/widgets/common/custom_text_filed.dart';
+import 'package:wisper/app/core/utils/community_engagement.dart';
 import 'package:wisper/app/core/widgets/common/line_widget.dart';
 import 'package:wisper/app/modules/chat/controller/all_community_controller.dart';
 import 'package:wisper/app/modules/chat/model/communities_model.dart';
@@ -104,7 +106,7 @@ class _HomeScreenState extends State<HomeScreen> {
   List<CommunitiesItemModel> _communities({required bool joined}) {
     final items = _communityController.communitiesData
         .where((c) => (c.isJoined ?? false) == joined);
-    if (joined) return items.toList();
+    if (joined) return sortByEngagement(items.toList());
     return items
         .where((c) =>
             c.isFeatured || (c.memberCount ?? 0) >= _minExploreMembers)
@@ -130,11 +132,27 @@ class _HomeScreenState extends State<HomeScreen> {
                     fontWeight: FontWeight.w800,
                   ),
                 ),
-                CircleIconWidget(
-                  imagePath: Assets.images.search.keyName,
-                  iconRadius: 18.r,
-                  onTap: _toggleSearch,
-                ),
+                // In search the same button is the way *out*, so it reads as a
+                // back arrow: a second magnifier gave no hint that tapping it
+                // returned you to Home.
+                _searching
+                    ? GestureDetector(
+                        onTap: _toggleSearch,
+                        child: CircleAvatar(
+                          backgroundColor: LightThemeColors.circleIconColor,
+                          radius: 17,
+                          child: Icon(
+                            Icons.arrow_back_rounded,
+                            size: 18.r,
+                            semanticLabel: 'Back to Home',
+                          ),
+                        ),
+                      )
+                    : CircleIconWidget(
+                        imagePath: Assets.images.search.keyName,
+                        iconRadius: 18.r,
+                        onTap: _toggleSearch,
+                      ),
               ],
             ),
             heightBox16,
