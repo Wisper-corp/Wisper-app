@@ -85,6 +85,19 @@ class ValidatorService {
   }
 
   // Confirm Password Validator
+  /// The password the account already has, which only has to be typed
+  /// correctly — the server decides whether it is right.
+  ///
+  /// Deliberately not [validatePassword]: holding an existing password to the
+  /// current strength rules locks anyone whose password predates them out of
+  /// changing it, and tells them their *old* password needs a capital letter.
+  static String? validateCurrentPassword(String? password) {
+    if (password == null || password.isEmpty) {
+      return 'Password is required';
+    }
+    return null;
+  }
+
   static String? validateConfirmPassword(
     String? confirmPassword,
     String originalPassword,

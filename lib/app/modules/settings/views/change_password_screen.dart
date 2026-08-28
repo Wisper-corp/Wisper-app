@@ -32,22 +32,31 @@ class _ChangePasswordScreenState extends State<ChangePasswordScreen> {
 
   void changePassword() {
     showLoadingOverLay(
-      asyncFunction: () async => await performChangePassword(context),
+      asyncFunction: performChangePassword,
       msg: 'Please wait...',
     );
   }
 
-  Future<void> performChangePassword(BuildContext context) async {
+  Future<void> performChangePassword() async {
     final bool isSuccess = await changePasswordController.changePassword(
       oldPassword: oldPasswordController.text,
       newPassword: passwordController.text,
     );
 
+    if (!mounted) return;
+
     if (isSuccess) {
       Get.to(() => PasswordUpdateSuccessScreen());
-    } else {
-      showSnackBarMessage(context, changePasswordController.errorMessage, true);
+      return;
     }
+
+    // Never fail silently: an empty error would leave the button looking dead.
+    final reason = changePasswordController.errorMessage.trim();
+    showSnackBarMessage(
+      context,
+      reason.isEmpty ? 'Could not change your password. Please try again.' : reason,
+      true,
+    );
   }
 
   @override
@@ -73,7 +82,10 @@ class _ChangePasswordScreenState extends State<ChangePasswordScreen> {
                   hintText: '********',
                   obscureText: true,
                   keyboardType: TextInputType.text,
-                  validator: (value) => ValidatorService.validatePassword(
+                  // Only that something was typed: the account's existing
+                  // password need not satisfy today's strength rules, and the
+                  // server is what decides whether it is correct.
+                  validator: (value) => ValidatorService.validateCurrentPassword(
                     oldPasswordController.text,
                   ),
                 ),
