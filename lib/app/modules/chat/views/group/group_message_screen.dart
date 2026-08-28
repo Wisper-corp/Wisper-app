@@ -1003,7 +1003,9 @@ class _GroupChatScreenState extends State<GroupChatScreen> {
                   ),
                   SizedBox(height: 2.h),
                   Text(
-                    'Join to participate in chats and post services',
+                    // The banner shows on every tab now, so the wording cannot
+                    // promise only chats and services.
+                    'Join to post, reply and connect with its subscribers',
                     style: TextStyle(fontSize: 11.sp, color: Colors.white38),
                   ),
                 ],
@@ -1119,9 +1121,7 @@ class _GroupChatScreenState extends State<GroupChatScreen> {
                   chatId: _effectiveChatId.value.isNotEmpty ? _effectiveChatId.value : widget.chatId ?? '',
                   receiverId: '',
                   onSend: () => _ctrl.sendMessage(_effectiveChatId.value.isNotEmpty ? _effectiveChatId.value : widget.chatId ?? ''),
-                )
-              else
-                _buildJoinBanner(),
+                ),
             ],
             if (_canonicalTabIndex == 1) Expanded(
               child: ForumSection(
@@ -1163,7 +1163,6 @@ class _GroupChatScreenState extends State<GroupChatScreen> {
                     ),
                   ]),
                 ),
-                if (!_hasJoined) _buildJoinBanner(),
               ]),
             ),
             if (_canonicalTabIndex == 3) Expanded(
@@ -1216,10 +1215,13 @@ class _GroupChatScreenState extends State<GroupChatScreen> {
                         : const SizedBox.shrink(),
                   ),
                 ])),
-                if (!_hasJoined) _buildJoinBanner(),
               ]),
             ),
             if (_canonicalTabIndex == 4) _buildMembers(),
+            // Every tab, not just the two that happened to carry their own
+            // copy: someone who lands on Forum or Members needs the way in
+            // just as much as someone on Services.
+            if (!_hasJoined) _buildJoinBanner(),
           ],
         ],
         ),
