@@ -1,4 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <color name="ic_launcher_background">#ffffff</color>
+    <!-- Tint Android applies to the notification badge and header. -->
+    <color name="notification_accent">#1877F2</color>
 </resources>

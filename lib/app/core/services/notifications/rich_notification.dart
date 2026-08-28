@@ -107,7 +107,10 @@ class RichNotification {
         channelDescription: channel[1],
         importance: Importance.max,
         priority: Priority.high,
-        icon: '@mipmap/ic_launcher',
+        // A monochrome silhouette, not the launcher icon: Android throws away
+        // a small icon's colour and keeps only its alpha, so a fully opaque
+        // launcher PNG is drawn as a solid white square.
+        icon: '@drawable/ic_notification',
         largeIcon: avatar == null ? null : ByteArrayAndroidBitmap(avatar),
         styleInformation: style,
         // A missed call is time-sensitive; the rest can wait to be read.

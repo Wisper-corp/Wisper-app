@@ -15,6 +15,21 @@ import 'package:wisper/app/core/others/get_storage.dart';
 
 // ─────────────────────────────────────────────────────────────
 // BACKGROUND HANDLER — top-level function (must be outside class)
+// Android pushes arrive data-only so that this app, not the system tray, draws
+// them - only a notification we build ourselves can carry the sender's photo as
+// its large icon. Title and body therefore come out of `data`; the
+// `notification` block is only still read as a fallback.
+String _pushTitle(RemoteMessage m) =>
+    (m.data['title'] as String?)?.trim().isNotEmpty == true
+        ? m.data['title'] as String
+        : (m.notification?.title ?? 'Wisper');
+
+String _pushBody(RemoteMessage m) =>
+    (m.data['body'] as String?)?.trim().isNotEmpty == true
+        ? m.data['body'] as String
+        : (m.notification?.body ?? '');
+
+// ─────────────────────────────────────────────────────────────
 // App killed বা background এ থাকলে এই function call হবে
 // ─────────────────────────────────────────────────────────────
 @pragma('vm:entry-point')
@@ -30,7 +45,7 @@ Future<void> firebaseMessagingBackgroundHandler(RemoteMessage message) async {
   // ── Regular notification ──
   final plugin = FlutterLocalNotificationsPlugin();
   const initSettings = InitializationSettings(
-    android: AndroidInitializationSettings('@mipmap/ic_launcher'),
+    android: AndroidInitializationSettings('@drawable/ic_notification'),
     iOS: DarwinInitializationSettings(),
   );
   await plugin.initialize(initSettings);
@@ -41,8 +56,8 @@ Future<void> firebaseMessagingBackgroundHandler(RemoteMessage message) async {
   final rich = RichNotification(plugin);
   await rich.createChannels();
   await rich.show(
-    title: message.notification?.title ?? 'Wisper',
-    body: message.notification?.body ?? '',
+    title: _pushTitle(message),
+    body: _pushBody(message),
     kind: message.data['type'] as String?,
     avatarUrl: message.data['avatar_url'] as String?,
     payload: message.data['chatId'] as String? ??
@@ -164,8 +179,8 @@ class PushNotificationService {
       }
 
       _showNotification(
-        title: message.notification?.title,
-        body: message.notification?.body,
+        title: _pushTitle(message),
+        body: _pushBody(message),
         kind: message.data['type'] as String?,
         avatarUrl: message.data['avatar_url'] as String?,
         payload: message.data['route'] as String? ??
@@ -316,7 +331,7 @@ class PushNotificationService {
 
   Future<void> _initLocalNotifications() async {
     const initSettings = InitializationSettings(
-      android: AndroidInitializationSettings('@mipmap/ic_launcher'),
+      android: AndroidInitializationSettings('@drawable/ic_notification'),
       iOS: DarwinInitializationSettings(),
     );
 

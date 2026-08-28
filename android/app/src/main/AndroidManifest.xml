@@ -95,6 +95,17 @@
 
         </activity>
 
+        <!-- Notifications the *system* renders (a push that arrives while the
+             app is backgrounded) take their icon from here. Without it Android
+             falls back to the launcher icon, which is fully opaque and so gets
+             drawn as a plain white square. -->
+        <meta-data
+            android:name="com.google.firebase.messaging.default_notification_icon"
+            android:resource="@drawable/ic_notification" />
+        <meta-data
+            android:name="com.google.firebase.messaging.default_notification_color"
+            android:resource="@color/notification_accent" />
+
         <meta-data
             android:name="flutterEmbedding"
             android:value="2"/>
