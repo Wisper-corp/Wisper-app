@@ -1,5 +1,6 @@
 
 
+import 'dart:async';
 import 'dart:io';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
@@ -26,9 +27,44 @@ import 'package:wisper/app/modules/chat/views/group/group_message_screen.dart';
 
 import 'package:smile_id/smile_id.dart';
 import 'package:wisper/firebase_options.dart';
+import 'package:wisper/push_notification.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
+
+  // A build failure in release renders an unpainted grey box, which on a dark
+  // theme reads as "the app is blank" and says nothing about why. Show the
+  // reason instead: a screenshot of it is worth more than a black screen.
+  ErrorWidget.builder = (FlutterErrorDetails details) {
+    FlutterError.presentError(details);
+    return Material(
+      color: const Color(0xff121212),
+      child: Padding(
+        padding: const EdgeInsets.all(24),
+        child: SingleChildScrollView(
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const Text(
+                'Something went wrong on this screen.',
+                style: TextStyle(
+                  color: Colors.white,
+                  fontSize: 16,
+                  fontWeight: FontWeight.w700,
+                ),
+              ),
+              const SizedBox(height: 12),
+              Text(
+                details.exceptionAsString(),
+                style: const TextStyle(color: Colors.white70, fontSize: 12),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  };
 
   // Initialize SmileID SDK
   SmileID.initialize(useSandbox: false, enableCrashReporting: false);
@@ -52,6 +88,19 @@ void main() async {
 
   Get.put(ConnectivityService());
   Get.put(DeepLinkService());
+
+  // PushNotificationService.init() was never called from anywhere, so the
+  // background handler was never registered. That went unnoticed while the
+  // server sent a `notification` block, which Android's own tray draws --
+  // data-only pushes have to be drawn by this app or they do not appear.
+  // Unawaited and guarded: notifications must never hold up the first frame.
+  unawaited(() async {
+    try {
+      await PushNotificationService().init();
+    } catch (e) {
+      debugPrint('🔥 Notification init failed (non-fatal): $e');
+    }
+  }());
 
   SystemChrome.setPreferredOrientations([
     DeviceOrientation.portraitUp,

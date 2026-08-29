@@ -45,7 +45,7 @@ Future<void> firebaseMessagingBackgroundHandler(RemoteMessage message) async {
   // ── Regular notification ──
   final plugin = FlutterLocalNotificationsPlugin();
   const initSettings = InitializationSettings(
-    android: AndroidInitializationSettings('@drawable/ic_notification'),
+    android: AndroidInitializationSettings('ic_notification'),
     iOS: DarwinInitializationSettings(),
   );
   await plugin.initialize(initSettings);
@@ -355,7 +355,7 @@ class PushNotificationService {
 
   Future<void> _initLocalNotifications() async {
     const initSettings = InitializationSettings(
-      android: AndroidInitializationSettings('@drawable/ic_notification'),
+      android: AndroidInitializationSettings('ic_notification'),
       iOS: DarwinInitializationSettings(),
     );
 

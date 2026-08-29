@@ -110,7 +110,11 @@ class RichNotification {
         // A monochrome silhouette, not the launcher icon: Android throws away
         // a small icon's colour and keeps only its alpha, so a fully opaque
         // launcher PNG is drawn as a solid white square.
-        icon: '@drawable/ic_notification',
+        //
+        // The bare resource name, not "@drawable/...": the plugin resolves it
+        // with getIdentifier(name, "drawable", package), which returns 0 for a
+        // prefixed name and makes initialize() fail outright.
+        icon: 'ic_notification',
         largeIcon: avatar == null ? null : ByteArrayAndroidBitmap(avatar),
         styleInformation: style,
         // A missed call is time-sensitive; the rest can wait to be read.
