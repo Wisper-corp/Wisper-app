@@ -110,11 +110,17 @@ class MyFeedPostController extends GetxController {
     }
   }
 
+  /// Clears what is loaded and fetches it again.
+  ///
+  /// This used to clear only. Publishing a service calls it, and the profile's
+  /// Post tab is already mounted by then, so nothing refetched -- posting a
+  /// service emptied the very list it was supposed to appear in.
   void resetPagination() {
     page = 0; // Reset to 0 so first call uses page 1
     lastPage = null;
     _allPostList.clear();
     update();
+    getAllPost();
   }
 
   void setPostCommentCount({required String postId, required int count}) {

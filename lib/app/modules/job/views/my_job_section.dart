@@ -3,7 +3,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:get/get.dart';
-import 'package:wisper/app/core/others/get_storage.dart';
 import 'package:wisper/app/core/utils/date_formatter.dart';
 import 'package:wisper/app/core/utils/connectivity_services.dart';
 import 'package:wisper/app/core/utils/show_over_loading.dart';
@@ -33,10 +32,10 @@ class _MyJobSectionState extends State<MyJobSection> {
   @override
   void initState() {
     super.initState();
-    final userId = StorageUtil.getData(StorageUtil.userId);
-    if (userId != null) {
-      controller.getJobs(authorId: userId);
-    }
+    // Reset rather than fetch: the controller is shared and keeps its page
+    // counter, so a plain fetch asks for the page after the one already
+    // loaded and appends nothing.
+    controller.resetPagination();
   }
 
   void deleteJob(String jobId) {

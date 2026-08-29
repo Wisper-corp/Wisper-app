@@ -96,10 +96,20 @@ class MyFeedJobController extends GetxController {
     }
   }
 
+  /// Clears what is loaded and fetches it again.
+  ///
+  /// This used to clear only. Publishing a job calls it, and the profile's Job
+  /// tab is already mounted by then, so nothing refetched -- posting a job
+  /// emptied the very list it was supposed to appear in.
   void resetPagination() {
     page = 0; // Reset to 0 so first call uses page 1
     lastPage = null;
     _allJobList.clear();
     update();
+
+    final userId = StorageUtil.getData(StorageUtil.userId);
+    if (userId != null && userId.toString().isNotEmpty) {
+      getJobs(authorId: userId);
+    }
   }
 }

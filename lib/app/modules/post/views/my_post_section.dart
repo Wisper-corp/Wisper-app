@@ -41,7 +41,10 @@ class _MyPostSectionState extends State<MyPostSection> {
     super.initState();
 
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      controller.getAllPost();
+      // Reset rather than fetch: the controller is shared and keeps its page
+      // counter, so a plain fetch asks for the page after the one already
+      // loaded and appends nothing.
+      controller.resetPagination();
     });
   }
 
