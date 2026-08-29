@@ -1,5 +1,6 @@
 import 'dart:typed_data';
 
+import 'package:flutter/material.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:http/http.dart' as http;
 
@@ -78,6 +79,19 @@ class RichNotification {
     }
   }
 
+  /// The id a notification is posted under.
+  ///
+  /// Messages from one chat share an id, so a second message updates that
+  /// conversation instead of stacking a duplicate of the same person beneath
+  /// the first. Everything else gets a fresh id and stands on its own.
+  static int notificationId(String? kind, String? payload) {
+    if (kind == 'message' && payload != null && payload.isNotEmpty) {
+      // Positive and within the 32-bit range Android allows.
+      return payload.hashCode & 0x7fffffff;
+    }
+    return DateTime.now().millisecondsSinceEpoch ~/ 1000;
+  }
+
   Future<void> show({
     required String title,
     required String body,
@@ -92,13 +106,38 @@ class RichNotification {
     final wantsAvatar = kind == 'message' || kind == 'forum';
     final avatar = wantsAvatar ? await _fetchAvatar(avatarUrl) : null;
 
-    final StyleInformation style = (kind == 'message' || kind == 'forum')
-        ? BigTextStyleInformation(
-            body,
-            contentTitle: title,
-            summaryText: kind == 'message' ? 'Message' : 'Forum',
+    // A chat message is drawn the way every messaging app draws one:
+    // MessagingStyle promotes the sender's photo to the round icon on the
+    // left and badges the app icon onto it. A plain largeIcon cannot do that
+    // — Android always puts it on the right, with the app icon taking the
+    // left, which is backwards for a message from a person.
+    final bool isMessage = kind == 'message';
+
+    final Person? sender = isMessage
+        ? Person(
+            name: title,
+            // Keyed by name so replies from the same person are recognised as
+            // the same conversation rather than a new one each time.
+            key: title,
+            icon: avatar == null ? null : ByteArrayAndroidIcon(avatar),
+            important: true,
           )
-        : const DefaultStyleInformation(false, false);
+        : null;
+
+    final StyleInformation style = isMessage
+        ? MessagingStyleInformation(
+            sender!,
+            // One-to-one: naming the conversation would repeat the sender.
+            groupConversation: false,
+            messages: [Message(body, DateTime.now(), sender)],
+          )
+        : kind == 'forum'
+            ? BigTextStyleInformation(
+                body,
+                contentTitle: title,
+                summaryText: 'Forum',
+              )
+            : const DefaultStyleInformation(false, false);
 
     final details = NotificationDetails(
       android: AndroidNotificationDetails(
@@ -115,7 +154,15 @@ class RichNotification {
         // with getIdentifier(name, "drawable", package), which returns 0 for a
         // prefixed name and makes initialize() fail outright.
         icon: 'ic_notification',
-        largeIcon: avatar == null ? null : ByteArrayAndroidBitmap(avatar),
+        // The badge Android stamps onto the sender's photo is the small icon,
+        // tinted with this. Left unset it comes out grey; WhatsApp's is its
+        // own green, so ours is Wisper blue.
+        color: const Color(0xff1F7DE9),
+        // MessagingStyle carries the face itself; setting largeIcon as well
+        // would put a second copy of it on the right.
+        largeIcon: (avatar == null || isMessage)
+            ? null
+            : ByteArrayAndroidBitmap(avatar),
         styleInformation: style,
         // A missed call is time-sensitive; the rest can wait to be read.
         category: kind == 'call_missed'
@@ -132,7 +179,7 @@ class RichNotification {
     );
 
     await _plugin.show(
-      DateTime.now().millisecondsSinceEpoch ~/ 1000,
+      notificationId(kind, payload),
       title,
       body,
       details,
