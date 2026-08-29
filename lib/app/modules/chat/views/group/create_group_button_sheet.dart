@@ -412,6 +412,8 @@ class _CreateGroupButtomSheetState extends State<CreateGroupButtomSheet> {
                           hint: 'Search category (e.g. Food & Beverages)',
                           options: kBusinessCategories,
                           selected: _selectedCategory,
+                          // The one tag people genuinely outgrow.
+                          allowCustom: true,
                           onSelect: (v) => setState(() => _selectedCategory = v),
                         ),
 

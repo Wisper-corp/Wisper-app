@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
+import 'package:wisper/app/core/utils/community_tags.dart';
 
 /// A dropdown button field for selecting from a list of tag options.
 /// Shows selected value with a dropdown arrow. Tapping opens a searchable bottom sheet.
@@ -11,6 +12,13 @@ class SearchableTagField extends StatefulWidget {
   final bool enabled;
   final void Function(String) onSelect;
 
+  /// Whether someone may enter a value the list does not have.
+  ///
+  /// Off by default: Trade and Market are fixed taxonomies, and a stray value
+  /// there means nothing to anyone reading it. Category is the one people
+  /// genuinely outgrow.
+  final bool allowCustom;
+
   const SearchableTagField({
     super.key,
     required this.label,
@@ -19,6 +27,7 @@ class SearchableTagField extends StatefulWidget {
     required this.selected,
     required this.onSelect,
     this.enabled = true,
+    this.allowCustom = false,
   });
 
   @override
@@ -32,6 +41,7 @@ class _SearchableTagFieldState extends State<SearchableTagField> {
 
     final searchCtrl = TextEditingController();
     List<String> filtered = List.from(widget.options);
+    String query = '';
 
     showModalBottomSheet(
       context: context,
@@ -98,6 +108,7 @@ class _SearchableTagFieldState extends State<SearchableTagField> {
                         ),
                         onChanged: (q) {
                           setSheetState(() {
+                            query = q;
                             filtered = q.isEmpty
                                 ? List.from(widget.options)
                                 : widget.options
@@ -108,6 +119,16 @@ class _SearchableTagFieldState extends State<SearchableTagField> {
                       ),
                     ),
                     SizedBox(height: 8.h),
+                    // Nothing in the list fits — offer what was typed.
+                    if (widget.allowCustom)
+                      _CustomTagRow(
+                        query: query,
+                        options: widget.options,
+                        onUse: (value) {
+                          widget.onSelect(value);
+                          Navigator.pop(ctx);
+                        },
+                      ),
                     // Options list
                     Flexible(
                       child: ListView.separated(
@@ -213,6 +234,78 @@ class _SearchableTagFieldState extends State<SearchableTagField> {
         ),
         SizedBox(height: 16.h),
       ],
+    );
+  }
+}
+
+/// The "use what I typed" row inside the picker sheet.
+///
+/// Hidden until there is something to add that the list does not already
+/// have — offering to add an option that exists would create a near-duplicate.
+class _CustomTagRow extends StatelessWidget {
+  const _CustomTagRow({
+    required this.query,
+    required this.options,
+    required this.onUse,
+  });
+
+  final String query;
+  final List<String> options;
+  final ValueChanged<String> onUse;
+
+  @override
+  Widget build(BuildContext context) {
+    final cleaned = sanitizeTagValue(query);
+    if (cleaned.isEmpty) return const SizedBox.shrink();
+
+    final exists =
+        options.any((o) => o.toLowerCase() == cleaned.toLowerCase());
+    if (exists) return const SizedBox.shrink();
+
+    // Sanitising strips the characters that would break the tag line and caps
+    // the length, so say so when what is offered is not what was typed.
+    final trimmed = cleaned != query.trim();
+
+    return Padding(
+      padding: EdgeInsets.symmetric(horizontal: 16.w),
+      child: InkWell(
+        onTap: () => onUse(cleaned),
+        child: Padding(
+          padding: EdgeInsets.symmetric(vertical: 10.h),
+          child: Row(
+            children: [
+              const Icon(Icons.add_circle_outline,
+                  color: Color(0xff2799EA), size: 18),
+              SizedBox(width: 10.w),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'Use "$cleaned"',
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: TextStyle(
+                        color: const Color(0xff2799EA),
+                        fontSize: 14.sp,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                    if (trimmed)
+                      Text(
+                        'Shortened to fit',
+                        style: TextStyle(
+                          color: const Color(0xff8C8C8C),
+                          fontSize: 11.sp,
+                        ),
+                      ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
     );
   }
 }

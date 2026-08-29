@@ -8,6 +8,7 @@ import 'package:wisper/app/core/utils/snack_bar.dart';
 import 'package:wisper/app/core/utils/validator_service.dart';
 import 'package:wisper/app/core/widgets/common/custom_button.dart';
 import 'package:wisper/app/core/widgets/common/custom_text_filed.dart';
+import 'package:wisper/app/core/widgets/common/industry_search_field.dart';
 import 'package:wisper/app/core/widgets/common/label.dart';
 import 'package:wisper/app/modules/authentication/controller/google_sign_up_controller.dart';
 import 'package:wisper/app/modules/authentication/controller/sign_up_controller.dart';
@@ -30,37 +31,12 @@ class _RecruiterSignUpScreenState extends State<RecruiterSignUpScreen> {
   final TextEditingController emailController = TextEditingController();
   final TextEditingController phoneController = TextEditingController();
   final TextEditingController passwordController = TextEditingController();
-  final TextEditingController industryController = TextEditingController();
   final GoogleSignUpAuthController googleAuthController = Get.put(
     GoogleSignUpAuthController(),
   );
   final formKey = GlobalKey<FormState>();
 
   String _selectedIndustry = '';
-  List<Map<String, dynamic>> _industrySuggestions = [];
-  bool _showSuggestions = false;
-  bool _loadingSuggestions = false;
-
-  Future<void> _searchIndustries(String query) async {
-    if (query.trim().isEmpty) {
-      setState(() { _industrySuggestions = []; _showSuggestions = false; });
-      return;
-    }
-    setState(() => _loadingSuggestions = true);
-    try {
-      final NetworkResponse response = await Get.find<NetworkCaller>().getRequest(
-        Urls.industrySearchUrl(query),
-      );
-      if (response.isSuccess && response.responseData != null) {
-        final data = response.responseData['data'] as List? ?? [];
-        setState(() {
-          _industrySuggestions = data.cast<Map<String, dynamic>>();
-          _showSuggestions = _industrySuggestions.isNotEmpty;
-        });
-      }
-    } catch (_) {}
-    setState(() => _loadingSuggestions = false);
-  }
 
   void signInGoogle() {
     showLoadingOverLay(
@@ -158,82 +134,36 @@ class _RecruiterSignUpScreenState extends State<RecruiterSignUpScreen> {
                 heightBox16,
                 Label(label: 'Industry'),
                 heightBox10,
-                Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    // Industry search field
-                    TextFormField(
-                      controller: industryController,
-                      style: const TextStyle(color: Colors.white, fontSize: 14),
-                      decoration: InputDecoration(
-                        hintText: 'Search industry (e.g. Software Development)',
-                        hintStyle: const TextStyle(color: Color(0xff8C8C8C), fontSize: 14),
-                        filled: true,
-                        fillColor: const Color(0xff1E1E1E),
-                        border: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(12.r),
-                          borderSide: BorderSide.none,
-                        ),
-                        enabledBorder: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(12.r),
-                          borderSide: const BorderSide(color: Color(0xff2C2C2E)),
-                        ),
-                        focusedBorder: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(12.r),
-                          borderSide: const BorderSide(color: Color(0xff2799EA)),
-                        ),
-                        contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
-                        suffixIcon: _loadingSuggestions
-                            ? const Padding(
-                                padding: EdgeInsets.all(12),
-                                child: SizedBox(width: 16, height: 16, child: CircularProgressIndicator(strokeWidth: 2, color: Color(0xff2799EA))))
-                            : _selectedIndustry.isNotEmpty
-                                ? Icon(Icons.check_circle, color: const Color(0xff2799EA), size: 20.sp)
-                                : Icon(Icons.arrow_drop_down, color: Colors.grey, size: 20.sp),
+                // The shared list can never cover every business, so a
+                // business whose industry is missing can enter its own.
+                FormField<String>(
+                  validator: (_) =>
+                      _selectedIndustry.isEmpty ? 'Please select an industry' : null,
+                  builder: (state) => Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      IndustrySearchField(
+                        initialValue: _selectedIndustry.isEmpty
+                            ? null
+                            : _selectedIndustry,
+                        onSelected: (value) {
+                          setState(() => _selectedIndustry = value);
+                          state.didChange(value);
+                        },
                       ),
-                      validator: (v) => _selectedIndustry.isEmpty ? 'Please select an industry' : null,
-                      onChanged: (v) {
-                        _selectedIndustry = '';
-                        _searchIndustries(v);
-                      },
-                    ),
-
-                    // Suggestions dropdown
-                    if (_showSuggestions)
-                      Container(
-                        margin: const EdgeInsets.only(top: 4),
-                        decoration: BoxDecoration(
-                          color: const Color(0xff1E1E1E),
-                          borderRadius: BorderRadius.circular(12.r),
-                          border: Border.all(color: const Color(0xff2C2C2E)),
+                      if (state.hasError)
+                        Padding(
+                          padding: EdgeInsets.only(top: 6.h, left: 12.w),
+                          child: Text(
+                            state.errorText!,
+                            style: TextStyle(
+                              color: Colors.redAccent,
+                              fontSize: 12.sp,
+                            ),
+                          ),
                         ),
-                        constraints: BoxConstraints(maxHeight: 200.h),
-                        child: ListView.separated(
-                          shrinkWrap: true,
-                          padding: const EdgeInsets.symmetric(vertical: 4),
-                          itemCount: _industrySuggestions.length,
-                          separatorBuilder: (_, __) => const Divider(height: 1, color: Color(0xff2C2C2E)),
-                          itemBuilder: (context, index) {
-                            final item = _industrySuggestions[index];
-                            final name = item['name'] as String? ?? '';
-                            final sector = item['sector'] as String? ?? '';
-                            return ListTile(
-                              dense: true,
-                              title: Text(name, style: const TextStyle(color: Colors.white, fontSize: 13)),
-                              subtitle: Text(sector, style: const TextStyle(color: Color(0xff8C8C8C), fontSize: 11)),
-                              onTap: () {
-                                setState(() {
-                                  _selectedIndustry = name;
-                                  industryController.text = name;
-                                  _showSuggestions = false;
-                                  _industrySuggestions = [];
-                                });
-                              },
-                            );
-                          },
-                        ),
-                      ),
-                  ],
+                    ],
+                  ),
                 ),
 
                 heightBox16,

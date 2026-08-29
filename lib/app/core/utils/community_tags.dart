@@ -46,3 +46,22 @@ String formatSubscriberCount(int count) {
   }
   return '$count';
 }
+
+/// Makes a value safe to put into the pipe-encoded tag line.
+///
+/// Tags live inside the description as
+/// "Trade: X | Market: Y | Category: Z | Suffix: S", so a value containing a
+/// pipe or a colon would split into a tag that was never meant to exist — or
+/// silently swallow the ones after it. Newlines end the line entirely.
+///
+/// Also caps the length: these are shown inline as pills beside a community
+/// name, where a long one pushes everything else off the row.
+String sanitizeTagValue(String value, {int maxLength = 32}) {
+  final cleaned = value
+      .replaceAll(RegExp(r'[|:\n\r]'), ' ')
+      .replaceAll(RegExp(r'\s+'), ' ')
+      .trim();
+  return cleaned.length <= maxLength
+      ? cleaned
+      : cleaned.substring(0, maxLength).trim();
+}
