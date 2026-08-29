@@ -29,7 +29,7 @@ import 'package:wisper/app/modules/chat/views/person/message_input_bar.dart';
 import 'package:wisper/app/modules/chat/widgets/empty_group_card.dart';
 import 'package:wisper/app/modules/chat/widgets/message_bubble.dart';
 import 'package:wisper/app/modules/job/views/job_post_screen.dart';
-import 'package:wisper/app/modules/job/widgets/job_filter_sheet.dart';
+import 'package:wisper/app/core/widgets/common/location_filter_sheet.dart';
 import 'package:wisper/app/modules/job/views/job_section.dart';
 import 'package:wisper/app/modules/post/views/gallery_post_screen.dart';
 import 'package:wisper/app/modules/post/views/post_section.dart';
@@ -73,7 +73,8 @@ class _GroupChatScreenState extends State<GroupChatScreen> {
   final TextEditingController _jobSearchCtrl = TextEditingController();
   String _serviceSearchQuery = '';
   String _jobSearchQuery = '';
-  String? _jobLocationType;
+  LocationFilters _jobFilters = const LocationFilters();
+  LocationFilters _serviceFilters = const LocationFilters();
   List<String> _tagPills = [];
   late bool _hasJoined;
   bool _isJoining = false;
@@ -1136,11 +1137,33 @@ class _GroupChatScreenState extends State<GroupChatScreen> {
                 // Search bar — same pattern as Jobs tab
                 Padding(
                   padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 8.h),
-                  child: CustomTextField(
-                    controller: _serviceSearchCtrl,
-                    hintText: 'Search services...',
-                    prefixIcon: Icons.search_rounded,
-                    onChanged: (v) => setState(() => _serviceSearchQuery = v ?? ''),
+                  child: Row(
+                    crossAxisAlignment: CrossAxisAlignment.center,
+                    children: [
+                      Expanded(
+                        child: CustomTextField(
+                          controller: _serviceSearchCtrl,
+                          hintText: 'Search services...',
+                          prefixIcon: Icons.search_rounded,
+                          onChanged: (v) =>
+                              setState(() => _serviceSearchQuery = v ?? ''),
+                        ),
+                      ),
+                      SizedBox(width: 10.w),
+                      FilterIconButton(
+                        active: !_serviceFilters.isEmpty,
+                        onTap: () async {
+                          final picked = await showLocationFilterSheet(
+                            context,
+                            current: _serviceFilters,
+                            options: kServiceLocationOptions,
+                            ctaLabel: 'Show services',
+                          );
+                          if (picked == null || !mounted) return;
+                          setState(() => _serviceFilters = picked);
+                        },
+                      ),
+                    ],
                   ),
                 ),
                 // Service posts filtered by groupId + searchQuery
@@ -1148,9 +1171,13 @@ class _GroupChatScreenState extends State<GroupChatScreen> {
                   child: Stack(children: [
                     Positioned.fill(
                       child: PostSection(
-                        key: ValueKey('services_${widget.groupId}_$_serviceSearchQuery'),
+                        key: ValueKey('services_${widget.groupId}_'
+                            '$_serviceSearchQuery${_serviceFilters.value}'),
                         groupId: widget.groupId,
-                        searchQuery: _serviceSearchQuery.isEmpty ? null : _serviceSearchQuery,
+                        searchQuery: _serviceSearchQuery.isEmpty
+                            ? null
+                            : _serviceSearchQuery,
+                        local: _serviceFilters.isLocal,
                         isAdmin: _isCurrentUserAdmin,
                       ),
                     ),
@@ -1186,15 +1213,17 @@ class _GroupChatScreenState extends State<GroupChatScreen> {
                         ),
                       ),
                       SizedBox(width: 10.w),
-                      JobFilterButton(
-                        filters: JobFilters(locationType: _jobLocationType),
+                      FilterIconButton(
+                        active: !_jobFilters.isEmpty,
                         onTap: () async {
-                          final picked = await showJobFilterSheet(
+                          final picked = await showLocationFilterSheet(
                             context,
-                            current: JobFilters(locationType: _jobLocationType),
+                            current: _jobFilters,
+                            options: kJobLocationOptions,
+                            ctaLabel: 'Show jobs',
                           );
                           if (picked == null || !mounted) return;
-                          setState(() => _jobLocationType = picked.locationType);
+                          setState(() => _jobFilters = picked);
                         },
                       ),
                     ],
@@ -1202,10 +1231,12 @@ class _GroupChatScreenState extends State<GroupChatScreen> {
                 ),
                 Expanded(child: Stack(children: [
                   Positioned.fill(child: JobSection(
-                    key: ValueKey('jobs_${widget.groupId}_$_jobSearchQuery$_jobLocationType'),
+                    key: ValueKey('jobs_${widget.groupId}_'
+                        '$_jobSearchQuery${_jobFilters.value}'),
                     groupId: widget.groupId,
                     searchQuery: _jobSearchQuery.isEmpty ? null : _jobSearchQuery,
-                    jobType: _jobLocationType,
+                    jobType: _jobFilters.locationType,
+                    local: _jobFilters.isLocal,
                   )),
                   Positioned(
                     bottom: 16.h, left: 20.w, right: 20.w,

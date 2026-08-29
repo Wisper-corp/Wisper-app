@@ -31,7 +31,12 @@ class AllFeedPostController extends GetxController {
     update(); // Ensure UI updates
   }
 
-  Future<bool> getAllPost({String? categoryId, String? groupId, String? searchQuery}) async {
+  Future<bool> getAllPost({
+    String? categoryId,
+    String? groupId,
+    String? searchQuery,
+    bool local = false,
+  }) async {
     if (_inProgress.value) {
       print('Fetch already in progress, skipping');
       return false;
@@ -58,6 +63,10 @@ class AllFeedPostController extends GetxController {
       }
       if (searchQuery != null && searchQuery.isNotEmpty) {
         queryParams['searchTerm'] = searchQuery;
+      }
+      // Only sent when on: an absent parameter is clearer than an explicit no.
+      if (local) {
+        queryParams['local'] = 'true';
       }
 
       // Use group-specific URL if groupId provided
@@ -109,12 +118,17 @@ class AllFeedPostController extends GetxController {
     }
   }
 
-  void resetPagination({String? groupId, String? searchQuery}) {
+  void resetPagination({String? groupId, String? searchQuery, bool local = false}) {
     page = 0;
     lastPage = null;
     _allPostList.clear();
     print('Pagination reset, fetching with categoryId: $_selectedCategoryId, groupId: $groupId');
-    getAllPost(categoryId: _selectedCategoryId.value, groupId: groupId, searchQuery: searchQuery);
+    getAllPost(
+      categoryId: _selectedCategoryId.value,
+      groupId: groupId,
+      searchQuery: searchQuery,
+      local: local,
+    );
   }
 
   // Track which posts have already been viewed this session to avoid duplicate calls

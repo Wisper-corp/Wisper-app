@@ -9,7 +9,17 @@ class JobSection extends StatefulWidget {
   final String? searchQuery;
   final String? jobType;
   final String? groupId;
-  const JobSection({super.key, this.searchQuery, this.jobType, this.groupId});
+
+  /// Only jobs where the signed-in person is.
+  final bool local;
+
+  const JobSection({
+    super.key,
+    this.searchQuery,
+    this.jobType,
+    this.groupId,
+    this.local = false,
+  });
 
   @override 
   State<JobSection> createState() => _JobSectionState(); 
@@ -34,7 +44,9 @@ class _JobSectionState extends State<JobSection> {
       controller.resetPagination();
       controller.getJobs(
         searchQuery: widget.searchQuery,
+        locationType: widget.jobType,
         groupId: widget.groupId,
+        local: widget.local,
       );
     });
   }
@@ -43,11 +55,14 @@ class _JobSectionState extends State<JobSection> {
   void didUpdateWidget(covariant JobSection oldWidget) {
     super.didUpdateWidget(oldWidget);
     if (widget.searchQuery != oldWidget.searchQuery ||
-        widget.jobType != oldWidget.jobType) {
+        widget.jobType != oldWidget.jobType ||
+        widget.local != oldWidget.local) {
       controller.resetPagination();
       controller.getJobs(
         searchQuery: widget.searchQuery,
+        locationType: widget.jobType,
         groupId: widget.groupId,
+        local: widget.local,
       );
     }
   }

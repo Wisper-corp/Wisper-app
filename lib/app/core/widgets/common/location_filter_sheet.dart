@@ -1,59 +1,74 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 
-/// The job filters, as a set rather than a pile of loose arguments — adding a
-/// filter later means one field here and one row in the sheet, not another
+/// The value meaning "only things in my own location".
+///
+/// It sits alongside the job location types rather than beside them because
+/// that is how it reads to someone using it: one list of places to look, of
+/// which "near me" is a choice.
+const String kLocalFilterValue = 'LOCAL';
+
+/// A location filter, as a set rather than a pile of loose arguments — adding
+/// a filter later means one field here and one row in the sheet, not another
 /// control competing for space above the listings.
-class JobFilters {
-  /// null means any location type.
-  final String? locationType;
+class LocationFilters {
+  /// null means any location.
+  final String? value;
 
-  const JobFilters({this.locationType});
+  const LocationFilters({this.value});
 
-  bool get isEmpty => locationType == null;
+  bool get isEmpty => value == null;
 
-  /// How many filters are active, for the badge on the button.
-  int get activeCount => locationType == null ? 0 : 1;
+  /// Whether to ask the server for things near the signed-in person.
+  bool get isLocal => value == kLocalFilterValue;
 
-  JobFilters copyWith({Object? locationType = _unset}) => JobFilters(
-        locationType: locationType == _unset
-            ? this.locationType
-            : locationType as String?,
+  /// The job location type to send, if the choice was one. "Local" is not a
+  /// location *type* — it is a different question — so it is sent separately.
+  String? get locationType => isLocal ? null : value;
+
+  LocationFilters copyWith({Object? value = _unset}) => LocationFilters(
+        value: value == _unset ? this.value : value as String?,
       );
 
   static const Object _unset = Object();
 }
 
-const _locationOptions = <String?, String>{
-  null: 'Any location',
-  'REMOTE': 'Remote',
-  'ON_SITE': 'On-site',
-  'HYBRID': 'Hybrid',
-};
-
 /// Opens the filter sheet. Returns the chosen filters, or null if dismissed.
-Future<JobFilters?> showJobFilterSheet(
+Future<LocationFilters?> showLocationFilterSheet(
   BuildContext context, {
-  required JobFilters current,
+  required LocationFilters current,
+  required Map<String?, String> options,
+  required String ctaLabel,
 }) {
-  return showModalBottomSheet<JobFilters>(
+  return showModalBottomSheet<LocationFilters>(
     context: context,
     backgroundColor: Colors.transparent,
     isScrollControlled: true,
-    builder: (_) => _JobFilterSheet(initial: current),
+    builder: (_) => _LocationFilterSheet(
+      initial: current,
+      options: options,
+      ctaLabel: ctaLabel,
+    ),
   );
 }
 
-class _JobFilterSheet extends StatefulWidget {
-  final JobFilters initial;
-  const _JobFilterSheet({required this.initial});
+class _LocationFilterSheet extends StatefulWidget {
+  final LocationFilters initial;
+  final Map<String?, String> options;
+  final String ctaLabel;
+
+  const _LocationFilterSheet({
+    required this.initial,
+    required this.options,
+    required this.ctaLabel,
+  });
 
   @override
-  State<_JobFilterSheet> createState() => _JobFilterSheetState();
+  State<_LocationFilterSheet> createState() => _LocationFilterSheetState();
 }
 
-class _JobFilterSheetState extends State<_JobFilterSheet> {
-  late JobFilters _filters = widget.initial;
+class _LocationFilterSheetState extends State<_LocationFilterSheet> {
+  late LocationFilters _filters = widget.initial;
 
   @override
   Widget build(BuildContext context) {
@@ -96,7 +111,8 @@ class _JobFilterSheetState extends State<_JobFilterSheet> {
                   const Spacer(),
                   if (!_filters.isEmpty)
                     GestureDetector(
-                      onTap: () => setState(() => _filters = const JobFilters()),
+                      onTap: () =>
+                          setState(() => _filters = const LocationFilters()),
                       behavior: HitTestBehavior.opaque,
                       child: Text(
                         'Clear all',
@@ -125,13 +141,12 @@ class _JobFilterSheetState extends State<_JobFilterSheet> {
                 ),
               ),
             ),
-            for (final entry in _locationOptions.entries)
+            for (final entry in widget.options.entries)
               _Option(
                 label: entry.value,
-                selected: _filters.locationType == entry.key,
-                onTap: () => setState(
-                  () => _filters = _filters.copyWith(locationType: entry.key),
-                ),
+                selected: _filters.value == entry.key,
+                onTap: () =>
+                    setState(() => _filters = _filters.copyWith(value: entry.key)),
               ),
             SizedBox(height: 20.h),
             Padding(
@@ -149,7 +164,7 @@ class _JobFilterSheetState extends State<_JobFilterSheet> {
                     ),
                   ),
                   child: Text(
-                    'Show jobs',
+                    widget.ctaLabel,
                     style: TextStyle(
                       fontFamily: 'Segoe UI',
                       fontSize: 15.sp,
@@ -181,8 +196,9 @@ class _Option extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return InkWell(
+    return GestureDetector(
       onTap: onTap,
+      behavior: HitTestBehavior.opaque,
       child: Padding(
         padding: EdgeInsets.symmetric(horizontal: 20.w, vertical: 13.h),
         child: Row(
@@ -200,7 +216,7 @@ class _Option extends StatelessWidget {
             ),
             if (selected)
               Icon(Icons.check_rounded,
-                  size: 19.sp, color: const Color(0xff4DA3F5)),
+                  size: 20.sp, color: const Color(0xff4DA3F5)),
           ],
         ),
       ),
@@ -208,20 +224,19 @@ class _Option extends StatelessWidget {
   }
 }
 
-/// The compact button that sits beside the search field.
-class JobFilterButton extends StatelessWidget {
-  final JobFilters filters;
+/// The compact button that opens the sheet, beside a search field.
+class FilterIconButton extends StatelessWidget {
+  final bool active;
   final VoidCallback onTap;
 
-  const JobFilterButton({
+  const FilterIconButton({
     super.key,
-    required this.filters,
+    required this.active,
     required this.onTap,
   });
 
   @override
   Widget build(BuildContext context) {
-    final active = !filters.isEmpty;
     return GestureDetector(
       onTap: onTap,
       behavior: HitTestBehavior.opaque,
@@ -265,3 +280,20 @@ class JobFilterButton extends StatelessWidget {
     );
   }
 }
+
+/// The choices offered on the Jobs tab. "Local jobs" sits with the rest
+/// because to someone filtering, "near me" is just another place to look.
+const Map<String?, String> kJobLocationOptions = {
+  null: 'Any location',
+  kLocalFilterValue: 'Local jobs',
+  'REMOTE': 'Remote',
+  'ON_SITE': 'On-site',
+  'HYBRID': 'Hybrid',
+};
+
+/// Services have no remote/on-site distinction — a service post carries no
+/// location of its own, only the person offering it.
+const Map<String?, String> kServiceLocationOptions = {
+  null: 'Any location',
+  kLocalFilterValue: 'Local services',
+};

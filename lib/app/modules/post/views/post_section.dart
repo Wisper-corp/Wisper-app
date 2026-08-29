@@ -14,7 +14,17 @@ class PostSection extends StatefulWidget {
   final String? groupId;
   final String? searchQuery;
   final bool isAdmin;
-  const PostSection({super.key, this.groupId, this.searchQuery, this.isAdmin = false});
+
+  /// Only services offered by people where the signed-in person is.
+  final bool local;
+
+  const PostSection({
+    super.key,
+    this.groupId,
+    this.searchQuery,
+    this.isAdmin = false,
+    this.local = false,
+  });
 
   @override
   State<PostSection> createState() => _PostSectionState();
@@ -41,15 +51,24 @@ class _PostSectionState extends State<PostSection> {
 
     WidgetsBinding.instance.addPostFrameCallback((_) {
       // Single call — resetPagination passes groupId into the fetch
-      controller.resetPagination(groupId: widget.groupId, searchQuery: widget.searchQuery);
+      controller.resetPagination(
+        groupId: widget.groupId,
+        searchQuery: widget.searchQuery,
+        local: widget.local,
+      );
     });
   }
 
   @override
   void didUpdateWidget(covariant PostSection oldWidget) {
     super.didUpdateWidget(oldWidget);
-    if (widget.searchQuery != oldWidget.searchQuery) {
-      controller.resetPagination(groupId: widget.groupId, searchQuery: widget.searchQuery);
+    if (widget.searchQuery != oldWidget.searchQuery ||
+        widget.local != oldWidget.local) {
+      controller.resetPagination(
+        groupId: widget.groupId,
+        searchQuery: widget.searchQuery,
+        local: widget.local,
+      );
     }
   }
 

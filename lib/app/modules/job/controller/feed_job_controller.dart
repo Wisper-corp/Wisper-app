@@ -26,6 +26,7 @@ class AllFeedJobController extends GetxController {
   String? searchQuery,
   String? locationType,
   String? groupId,
+  bool local = false,
 }) async {
   if (_inProgress.value) {
     print('Fetch already in progress → skipping');
@@ -57,6 +58,12 @@ class AllFeedJobController extends GetxController {
 
     if (locationType != null && locationType.isNotEmpty) {
       queryParams['locationType'] = locationType;
+    }
+
+    // Only sent when on: the server matches "false" as a string, but an absent
+    // parameter is clearer than an explicit no.
+    if (local) {
+      queryParams['local'] = 'true';
     }
 
     // Use group-specific URL if groupId provided
