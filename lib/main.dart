@@ -69,43 +69,30 @@ void main() async {
   // Initialize SmileID SDK
   SmileID.initialize(useSandbox: false, enableCrashReporting: false);
 
+  // Local set-up only. Nothing above runApp may touch the network: the first
+  // frame cannot be drawn until main() reaches runApp, so anything that waits
+  // on a server holds the screen black for exactly as long as it waits.
   await Firebase.initializeApp(
     options: DefaultFirebaseOptions.currentPlatform,
   );
 
   await StorageUtil.init();
 
-  final SocketService socketService = Get.put(SocketService());
-  await socketService.init();
-
-  await Future.delayed(const Duration(milliseconds: 300));
-
-  try {
-    await _initFCMToken();
-  } catch (e) {
-    debugPrint("🔥 FCM init prevented crash: $e");
-  }
-
+  Get.put(SocketService());
   Get.put(ConnectivityService());
   Get.put(DeepLinkService());
 
-  // PushNotificationService.init() was never called from anywhere, so the
-  // background handler was never registered. That went unnoticed while the
-  // server sent a `notification` block, which Android's own tray draws --
-  // data-only pushes have to be drawn by this app or they do not appear.
-  // Unawaited and guarded: notifications must never hold up the first frame.
-  unawaited(() async {
-    try {
-      await PushNotificationService().init();
-    } catch (e) {
-      debugPrint('🔥 Notification init failed (non-fatal): $e');
-    }
-  }());
-
-  SystemChrome.setPreferredOrientations([
+  // A platform-channel round trip the first frame has no reason to wait on.
+  unawaited(SystemChrome.setPreferredOrientations([
     DeviceOrientation.portraitUp,
     DeviceOrientation.portraitDown,
-  ]).then((_) {
+  ]));
+
+  // Sockets, the FCM token and the notification handlers all reach the
+  // network. They start once the UI exists.
+  unawaited(_startServices());
+
+  {
     runApp(
       ScreenUtilInit(
         designSize: const Size(375, 812),
@@ -160,7 +147,31 @@ void main() async {
         },
       ),
     );
-  });
+  }
+}
+
+/// Everything that talks to a server, started after the first frame.
+///
+/// This used to run before runApp. On a first launch there is no cached FCM
+/// token, so getToken() makes a network round trip -- and with no timeout, a
+/// slow or blocked connection held the screen black until it finished. The
+/// second launch read the cached token and returned at once, which is why the
+/// app only ever looked broken the first time it was opened.
+Future<void> _startServices() async {
+  try {
+    await Get.find<SocketService>().init();
+  } catch (e) {
+    debugPrint('🔌 Socket init failed (non-fatal): $e');
+  }
+
+  await _initFCMToken();
+
+  try {
+    // Registers the FCM background handler, which nothing else does.
+    await PushNotificationService().init();
+  } catch (e) {
+    debugPrint('🔥 Notification init failed (non-fatal): $e');
+  }
 }
 
 Future<void> _initFCMToken() async {
@@ -173,9 +184,13 @@ Future<void> _initFCMToken() async {
       );
     }
 
-    final fcmToken = await FirebaseMessaging.instance.getToken();
+    // Bounded on purpose: an unbounded getToken() is what made a first launch
+    // hang. A missing token costs notifications until the next launch, which
+    // is survivable; a hang costs the whole app.
+    final fcmToken = await FirebaseMessaging.instance
+        .getToken()
+        .timeout(const Duration(seconds: 20));
     debugPrint("✅ FCM Token: $fcmToken");
-
   } catch (e) {
     debugPrint("❌ FCM Token Error: $e");
   }
