@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:wisper/app/core/widgets/common/pinned_tabs_header.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:get/get.dart';
 import 'package:wisper/app/core/config/theme/light_theme_colors.dart';
@@ -214,9 +215,38 @@ class _OthersBusinessScreenState extends State<OthersBusinessScreen> {
               : DateFormatter(DateTime.now());
 
           final String? connectionId = controller.profileData?.connection?.id;
-          return Column(
-            children: [
-              SizedBox(height: 30.h),
+          return NestedScrollView(
+            headerSliverBuilder: (context, _) => [
+              // The card carries its own back button, but it scrolls away --
+              // so back and the name live up here instead.
+              SliverAppBar(
+                pinned: true,
+                backgroundColor: Theme.of(context).scaffoldBackgroundColor,
+                surfaceTintColor: Colors.transparent,
+                elevation: 0,
+                toolbarHeight: 44.h,
+                titleSpacing: 0,
+                leading: IconButton(
+                  icon: Icon(Icons.arrow_back, size: 22.r),
+                  color: Colors.white,
+                  onPressed: () => Navigator.of(context).pop(),
+                  tooltip: 'Back',
+                ),
+                title: Text(
+                  business?.name ?? '',
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: TextStyle(
+                    fontSize: 17.sp,
+                    fontWeight: FontWeight.w700,
+                    color: Colors.white,
+                  ),
+                ),
+              ),
+              SliverToBoxAdapter(
+                child: Column(
+                  children: [
+                    SizedBox(height: 8.h),
               InfoCard(
                 isBack: true,
                 isEditImage: false,
@@ -321,9 +351,21 @@ class _OthersBusinessScreenState extends State<OthersBusinessScreen> {
                 location: business?.address ?? 'No Address',
                 date: dateFormatter.getFullDateFormat(),
               ),
-              SizedBox(height: 20.h),
-              const StraightLiner(height: 0.4, color: Color(0xff454545)),
-              SizedBox(height: 10.h),
+                  ],
+                ),
+              ),
+              SliverPersistentHeader(
+                pinned: true,
+                delegate: PinnedTabsHeader(
+                  height: kProfileTabsHeight,
+                  child: Container(
+                    color: Theme.of(context).scaffoldBackgroundColor,
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        const StraightLiner(
+                            height: 0.4, color: Color(0xff454545)),
+                        SizedBox(height: 10.h),
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceAround,
                 children: [
@@ -347,14 +389,17 @@ class _OthersBusinessScreenState extends State<OthersBusinessScreen> {
                   ),
                 ],
               ),
-              const StraightLiner(height: 0.4, color: Color(0xff454545)),
-              SizedBox(height: 10.h),
-              Expanded(
-                child: selectedIndex == 0
-                    ? OthersPostSection(userId: widget.userId)
-                    : OthersJobSection(userId: widget.userId),
+                        const StraightLiner(
+                            height: 0.4, color: Color(0xff454545)),
+                      ],
+                    ),
+                  ),
+                ),
               ),
             ],
+            body: selectedIndex == 0
+                ? OthersPostSection(userId: widget.userId)
+                : OthersJobSection(userId: widget.userId),
           );
         }),
       ),

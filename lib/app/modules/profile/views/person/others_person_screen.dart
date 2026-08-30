@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:wisper/app/core/widgets/common/pinned_tabs_header.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:get/get.dart';
 import 'package:wisper/app/core/config/theme/light_theme_colors.dart';
@@ -225,12 +226,45 @@ class _OthersPersonScreenState extends State<OthersPersonScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold( 
-      body: Padding(
-        padding: EdgeInsets.symmetric(horizontal: 20.w),
-        child: Column(
-          children: [
-            SizedBox(height: 30.h),
+    return Scaffold(
+      // The card scrolls away with the list and the tabs pin, matching your
+      // own profile — someone reading a stranger's posts should not lose
+      // half the screen to a card they have already read.
+      body: NestedScrollView(
+        headerSliverBuilder: (context, _) => [
+          SliverAppBar(
+            pinned: true,
+            backgroundColor: Theme.of(context).scaffoldBackgroundColor,
+            surfaceTintColor: Colors.transparent,
+            elevation: 0,
+            toolbarHeight: 44.h,
+            titleSpacing: 0,
+            leading: IconButton(
+              icon: Icon(Icons.arrow_back, size: 22.r),
+              color: Colors.white,
+              onPressed: () => Navigator.of(context).pop(),
+              tooltip: 'Back',
+            ),
+            title: Obx(() {
+              final person = controller.othersProfileData?.auth?.person;
+              return Text(
+                person?.name ?? '',
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: TextStyle(
+                  fontSize: 17.sp,
+                  fontWeight: FontWeight.w700,
+                  color: Colors.white,
+                ),
+              );
+            }),
+          ),
+          SliverToBoxAdapter(
+            child: Padding(
+              padding: EdgeInsets.symmetric(horizontal: 20.w),
+              child: Column(
+                children: [
+                  SizedBox(height: 8.h),
 
             // প্রোফাইল কার্ড
             Obx(() {
@@ -415,11 +449,23 @@ class _OthersPersonScreenState extends State<OthersPersonScreen> {
                     'No Location',
               );
             }),
-
-            SizedBox(height: 20.h),
-            const StraightLiner(height: 0.4, color: Color(0xff454545)),
-            SizedBox(height: 10.h),
-
+                ],
+              ),
+            ),
+          ),
+          SliverPersistentHeader(
+            pinned: true,
+            delegate: PinnedTabsHeader(
+              height: kProfileTabsHeight,
+              child: Container(
+                color: Theme.of(context).scaffoldBackgroundColor,
+                padding: EdgeInsets.symmetric(horizontal: 20.w),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    const StraightLiner(
+                        height: 0.4, color: Color(0xff454545)),
+                    SizedBox(height: 10.h),
             // ট্যাব: Post / Resume
             Row(
               mainAxisAlignment: MainAxisAlignment.center,
@@ -445,17 +491,19 @@ class _OthersPersonScreenState extends State<OthersPersonScreen> {
                 ),
               ],
             ),
-
-            const StraightLiner(height: 0.4, color: Color(0xff454545)),
-            SizedBox(height: 10.h),
-
-            // ট্যাব কন্টেন্ট
-            Expanded(
-              child: selectedIndex == 0
-                  ? OthersPostSection(userId: widget.userId)
-                  : MyResumeSection(userId: widget.userId),
+                    const StraightLiner(
+                        height: 0.4, color: Color(0xff454545)),
+                  ],
+                ),
+              ),
             ),
-          ],
+          ),
+        ],
+        body: Padding(
+          padding: EdgeInsets.symmetric(horizontal: 20.w),
+          child: selectedIndex == 0
+              ? OthersPostSection(userId: widget.userId)
+              : MyResumeSection(userId: widget.userId),
         ),
       ),
     );

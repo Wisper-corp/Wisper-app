@@ -25,7 +25,8 @@ void main() {
   test('the tabs stay put once the card is gone', () {
     expect(source, contains('SliverPersistentHeader'));
     expect(source, contains('pinned: true'));
-    expect(source, contains('class _PinnedTabs extends SliverPersistentHeaderDelegate'));
+    // The delegate is shared by every profile screen now.
+    expect(source, contains('PinnedTabsHeader'));
   });
 
   test('the profile name stays pinned above the tabs', () {
@@ -126,10 +127,14 @@ void main() {
 
   test('the pinned bar has one fixed height', () {
     // A pinned sliver must state its height up front; min and max must agree
-    // or it would collapse as it scrolls.
-    expect(source, contains('double get minExtent => height'));
-    expect(source, contains('double get maxExtent => height'));
-    expect(source, contains('final double kProfileTabsHeight = 56.h'));
+    // or it would collapse as it scrolls. It lives in the shared delegate.
+    final shared = File(
+      'lib/app/core/widgets/common/pinned_tabs_header.dart',
+    ).readAsStringSync();
+    expect(shared, contains('double get minExtent => height'));
+    expect(shared, contains('double get maxExtent => height'));
+    expect(shared, contains('final double kProfileTabsHeight = 56.h'));
+    expect(source, contains('kProfileTabsHeight'));
   });
 
   testWidgets('the delegate pins its child and rebuilds when it changes',

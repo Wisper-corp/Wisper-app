@@ -5,6 +5,7 @@
 import 'dart:async'; // ← নতুন যোগ করা (StreamSubscription-এর জন্য)
 import 'dart:io';
 import 'package:flutter/material.dart';
+import 'package:wisper/app/core/widgets/common/pinned_tabs_header.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:get/get.dart';
 import 'package:geocoding/geocoding.dart';
@@ -481,7 +482,7 @@ class _ProfileScreenState extends State<ProfileScreen> with WidgetsBindingObserv
             ),
             SliverPersistentHeader(
               pinned: true,
-              delegate: _PinnedTabs(
+              delegate: PinnedTabsHeader(
                 height: kProfileTabsHeight,
                 child: Container(
                   color: Theme.of(context).scaffoldBackgroundColor,
@@ -533,39 +534,4 @@ class _ProfileScreenState extends State<ProfileScreen> with WidgetsBindingObserv
       );
     });
   }
-}
-/// How tall the pinned tab bar is: a divider, the tabs, a divider.
-///
-/// A pinned sliver must state its height up front, so this is measured rather
-/// than left to the content — the tabs are a fixed-size row.
-final double kProfileTabsHeight = 56.h;
-
-/// Keeps the profile's tabs at the top once the card above them has scrolled
-/// away, so switching tab never means scrolling back up first.
-class _PinnedTabs extends SliverPersistentHeaderDelegate {
-  const _PinnedTabs({required this.child, required this.height});
-
-  final Widget child;
-  final double height;
-
-  @override
-  double get minExtent => height;
-
-  @override
-  double get maxExtent => height;
-
-  @override
-  Widget build(
-    BuildContext context,
-    double shrinkOffset,
-    bool overlapsContent,
-  ) {
-    // Opaque: the list scrolls underneath it, and a transparent bar would let
-    // the posts show through the tabs.
-    return SizedBox.expand(child: child);
-  }
-
-  @override
-  bool shouldRebuild(_PinnedTabs oldDelegate) =>
-      oldDelegate.child != child || oldDelegate.height != height;
 }
