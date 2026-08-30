@@ -318,11 +318,18 @@ class _ProfileScreenState extends State<ProfileScreen> with WidgetsBindingObserv
           : (businessController.buisnessData?.ratingCount ?? 0);
 
       return Scaffold(
-        body: Padding(
-          padding: EdgeInsets.symmetric(horizontal: 20.w),
-          child: Column(
-            children: [
-              SizedBox(height: 40.h),
+        // The profile leads with a card that costs most of the screen. It
+        // scrolls away as the list moves, the way a profile does everywhere
+        // else, leaving the tabs pinned so switching between them never
+        // requires scrolling back up.
+        body: NestedScrollView(
+          headerSliverBuilder: (context, _) => [
+            SliverToBoxAdapter(
+              child: Padding(
+                padding: EdgeInsets.symmetric(horizontal: 20.w),
+                child: Column(
+                  children: [
+                    SizedBox(height: 40.h),
 
               // InfoCard + বাকি UI একদম একই
               InfoCard(
@@ -435,11 +442,23 @@ class _ProfileScreenState extends State<ProfileScreen> with WidgetsBindingObserv
                   date: dateFormatter.getFullDateFormat(),
                 ),
               ),
-
-              SizedBox(height: 20.h),
-              const StraightLiner(height: 0.4, color: Color(0xff454545)),
-              SizedBox(height: 10.h),
-
+                  ],
+                ),
+              ),
+            ),
+            SliverPersistentHeader(
+              pinned: true,
+              delegate: _PinnedTabs(
+                height: kProfileTabsHeight,
+                child: Container(
+                  color: Theme.of(context).scaffoldBackgroundColor,
+                  padding: EdgeInsets.symmetric(horizontal: 20.w),
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      const StraightLiner(
+                          height: 0.4, color: Color(0xff454545)),
+                      SizedBox(height: 10.h),
               Row(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: tabs.asMap().entries.map((entry) {
@@ -465,12 +484,55 @@ class _ProfileScreenState extends State<ProfileScreen> with WidgetsBindingObserv
 
               const StraightLiner(height: 0.4, color: Color(0xff454545)),
               SizedBox(height: 10.h),
-
-              Expanded(child: _getTabContent(selectedIndex)),
-            ],
+                      const StraightLiner(
+                          height: 0.4, color: Color(0xff454545)),
+                    ],
+                  ),
+                ),
+              ),
+            ),
+          ],
+          body: Padding(
+            padding: EdgeInsets.symmetric(horizontal: 20.w),
+            child: _getTabContent(selectedIndex),
           ),
         ),
       );
     });
   }
+}
+/// How tall the pinned tab bar is: a divider, the tabs, a divider.
+///
+/// A pinned sliver must state its height up front, so this is measured rather
+/// than left to the content — the tabs are a fixed-size row.
+final double kProfileTabsHeight = 56.h;
+
+/// Keeps the profile's tabs at the top once the card above them has scrolled
+/// away, so switching tab never means scrolling back up first.
+class _PinnedTabs extends SliverPersistentHeaderDelegate {
+  const _PinnedTabs({required this.child, required this.height});
+
+  final Widget child;
+  final double height;
+
+  @override
+  double get minExtent => height;
+
+  @override
+  double get maxExtent => height;
+
+  @override
+  Widget build(
+    BuildContext context,
+    double shrinkOffset,
+    bool overlapsContent,
+  ) {
+    // Opaque: the list scrolls underneath it, and a transparent bar would let
+    // the posts show through the tabs.
+    return SizedBox.expand(child: child);
+  }
+
+  @override
+  bool shouldRebuild(_PinnedTabs oldDelegate) =>
+      oldDelegate.child != child || oldDelegate.height != height;
 }
