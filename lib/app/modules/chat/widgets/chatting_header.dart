@@ -28,6 +28,12 @@ import 'package:wisper/app/modules/profile/views/business/others_business_screen
 import 'package:wisper/app/modules/profile/views/person/others_person_screen.dart';
 import 'package:wisper/gen/assets.gen.dart';
 
+/// Half the height of the name-and-status block the avatar sits beside.
+///
+/// Kept in one place so every chat header — one-to-one, community, class —
+/// uses the same size rather than each picking its own.
+final double kChatHeaderAvatarRadius = 18.r;
+
 class ChatHeader extends StatefulWidget {
   final String? name;
   final String? image;
@@ -442,11 +448,16 @@ class _ChatHeaderState extends State<ChatHeader> {
                     },
                     child: Row(
                       children: [
+                        // Sized to the text beside it rather than to itself:
+                        // the name is 17 at 1.2 and the status 12 at 1.3,
+                        // which is 36 tall, so the avatar is 36 across. At 44
+                        // it stood taller than the block it belongs to and
+                        // crowded the back arrow.
                         InitialsAvatar(
                           name: widget.name ?? '',
                           imageUrl: widget.image,
-                          radius: 22.r,
-                          fontSize: 16,
+                          radius: kChatHeaderAvatarRadius,
+                          fontSize: 14,
                         ),
                         SizedBox(width: 10.w),
                         Expanded(
