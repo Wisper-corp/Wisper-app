@@ -27,6 +27,13 @@ class ForumReplyTile extends StatelessWidget {
   /// Child replies are drawn against the rule; top-level ones are not.
   final bool nested;
 
+  /// True when the reply directly above this one is by the same person.
+  ///
+  /// Their name, face and title are already on screen a line above, so
+  /// repeating the whole block makes one person answering twice look like two
+  /// different people saying the same thing.
+  final bool groupedWithPrevious;
+
   const ForumReplyTile({
     super.key,
     required this.reply,
@@ -34,6 +41,7 @@ class ForumReplyTile extends StatelessWidget {
     required this.onToggleReaction,
     required this.onShowMore,
     this.onMore,
+    this.groupedWithPrevious = false,
     this.nested = false,
   });
 
@@ -46,8 +54,10 @@ class ForumReplyTile extends StatelessWidget {
     final body = Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        _header(),
-        SizedBox(height: 6.h),
+        if (!groupedWithPrevious) ...[
+          _header(),
+          SizedBox(height: 6.h),
+        ],
         ExpandableText(
           reply.text,
           maxLines: 4,
@@ -61,11 +71,18 @@ class ForumReplyTile extends StatelessWidget {
         SizedBox(height: 10.h),
         _actions(),
         // Children, and the way into the rest of the thread.
-        for (final child in reply.replies) ...[
-          SizedBox(height: 12.h),
+        for (final entry in reply.replies.asMap().entries) ...[
+          SizedBox(height: entry.value.author.id ==
+                  (entry.key == 0 ? null : reply.replies[entry.key - 1].author.id)
+              ? 8.h
+              : 12.h),
           ForumReplyTile(
-            reply: child,
+            reply: entry.value,
             nested: true,
+            groupedWithPrevious: entry.key > 0 &&
+                entry.value.author.id != null &&
+                entry.value.author.id ==
+                    reply.replies[entry.key - 1].author.id,
             onReply: onReply,
             onToggleReaction: onToggleReaction,
             onShowMore: onShowMore,
