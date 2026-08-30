@@ -388,33 +388,37 @@ class _CreateGroupButtomSheetState extends State<CreateGroupButtomSheet> {
                         ),
                         heightBox16,
 
-                        // ── Tag 1: Trade Type ────────────────────────────────
+                        // ── Tag 1: Community Category (searchable) ───────────
+                        // First because it is the one that says what the
+                        // community actually is; trade and market qualify it.
                         SearchableTagField(
-                          label: '1. Trade Type',
-                          hint: 'Search trade type (e.g. Local B2B)',
-                          options: kTradeTypes,
-                          selected: _selectedTradeType,
-                          onSelect: (v) => setState(() => _selectedTradeType = v),
-                        ),
-
-                        // ── Tag 2: Market Type ───────────────────────────────
-                        SearchableTagField(
-                          label: '2. Market Type',
-                          hint: 'Search market type (e.g. Wholesale)',
-                          options: kMarketTypes,
-                          selected: _selectedMarketType,
-                          onSelect: (v) => setState(() => _selectedMarketType = v),
-                        ),
-
-                        // ── Tag 3: Business Category (searchable) ────────────
-                        SearchableTagField(
-                          label: '3. Business Category',
+                          label: '1. Community Category',
                           hint: 'Search category (e.g. Food & Beverages)',
                           options: kBusinessCategories,
                           selected: _selectedCategory,
                           // The one tag people genuinely outgrow.
                           allowCustom: true,
                           onSelect: (v) => setState(() => _selectedCategory = v),
+                        ),
+
+                        // ── Tag 2: Trade Type ────────────────────────────────
+                        SearchableTagField(
+                          label: '2. Trade Type',
+                          hint: 'Search trade type (e.g. Local B2B)',
+                          options: kTradeTypes,
+                          selected: _selectedTradeType,
+                          optional: true,
+                          onSelect: (v) => setState(() => _selectedTradeType = v),
+                        ),
+
+                        // ── Tag 3: Market Type ───────────────────────────────
+                        SearchableTagField(
+                          label: '3. Market Type',
+                          hint: 'Search market type (e.g. Wholesale)',
+                          options: kMarketTypes,
+                          selected: _selectedMarketType,
+                          optional: true,
+                          onSelect: (v) => setState(() => _selectedMarketType = v),
                         ),
 
                         heightBox12,

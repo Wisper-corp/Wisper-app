@@ -19,6 +19,10 @@ class SearchableTagField extends StatefulWidget {
   /// genuinely outgrow.
   final bool allowCustom;
 
+  /// Says so beside the label. Every tag has always been optional in the code,
+  /// but a numbered list of fields reads as a form you must fill in.
+  final bool optional;
+
   const SearchableTagField({
     super.key,
     required this.label,
@@ -28,6 +32,7 @@ class SearchableTagField extends StatefulWidget {
     required this.onSelect,
     this.enabled = true,
     this.allowCustom = false,
+    this.optional = false,
   });
 
   @override
@@ -184,13 +189,30 @@ class _SearchableTagFieldState extends State<SearchableTagField> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(
-          widget.label,
-          style: TextStyle(
-            fontSize: 13.sp,
-            fontWeight: FontWeight.w600,
-            color: widget.enabled ? Colors.white70 : Colors.white30,
-          ),
+        Row(
+          crossAxisAlignment: CrossAxisAlignment.baseline,
+          textBaseline: TextBaseline.alphabetic,
+          children: [
+            Text(
+              widget.label,
+              style: TextStyle(
+                fontSize: 13.sp,
+                fontWeight: FontWeight.w600,
+                color: widget.enabled ? Colors.white70 : Colors.white30,
+              ),
+            ),
+            if (widget.optional) ...[
+              SizedBox(width: 6.w),
+              Text(
+                'Optional',
+                style: TextStyle(
+                  fontSize: 11.sp,
+                  fontWeight: FontWeight.w400,
+                  color: const Color(0xff8C8C8C),
+                ),
+              ),
+            ],
+          ],
         ),
         SizedBox(height: 8.h),
         GestureDetector(

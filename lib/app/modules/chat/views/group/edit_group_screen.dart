@@ -397,36 +397,41 @@ class _EditGroupScreenState extends State<EditGroupScreen> {
               heightBox16,
 
               // Tag rows — searchable dropdowns
+              // Same order as the create sheet: the category says what the
+              // community is, trade and market only qualify it.
               SearchableTagField(
-                label: '1. Trade Type',
+                label: '1. Community Category',
+                hint: 'Search category (e.g. Food & Beverages)',
+                options: kBusinessCategories,
+                selected: _selectedCategory,
+                enabled: _canEditTags,
+                allowCustom: true,
+                onSelect: (v) => setState(() {
+                  _selectedCategory = v;
+                  _tagsChanged = true;
+                }),
+              ),
+              SearchableTagField(
+                label: '2. Trade Type',
                 hint: 'Search trade type (e.g. Local B2B)',
                 options: kTradeTypes,
                 selected: _selectedTradeType,
                 enabled: _canEditTags,
+                optional: true,
                 onSelect: (v) => setState(() {
                   _selectedTradeType = v;
                   _tagsChanged = true;
                 }),
               ),
               SearchableTagField(
-                label: '2. Market Type',
+                label: '3. Market Type',
                 hint: 'Search market type (e.g. Wholesale)',
                 options: kMarketTypes,
                 selected: _selectedMarketType,
                 enabled: _canEditTags,
+                optional: true,
                 onSelect: (v) => setState(() {
                   _selectedMarketType = v;
-                  _tagsChanged = true;
-                }),
-              ),
-              SearchableTagField(
-                label: '3. Business Category',
-                hint: 'Search category (e.g. Food & Beverages)',
-                options: kBusinessCategories,
-                selected: _selectedCategory,
-                enabled: _canEditTags,
-                onSelect: (v) => setState(() {
-                  _selectedCategory = v;
                   _tagsChanged = true;
                 }),
               ),
