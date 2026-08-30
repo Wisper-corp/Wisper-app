@@ -30,7 +30,9 @@ class MessageInputBar extends StatelessWidget {
           child: Padding(
             padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
             child: Row(
-              crossAxisAlignment: CrossAxisAlignment.center,
+              // Matches the field's own row: with an attachment above it, a
+              // centred send button drifts up away from the field.
+              crossAxisAlignment: CrossAxisAlignment.end,
               children: [
                 Expanded(
                   child: ChattingFieldWidget(

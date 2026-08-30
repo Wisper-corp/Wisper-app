@@ -32,8 +32,16 @@ void main() {
         ],
         child: GestureDetector(
           onTap: onOpen,
-          child: Container(height: 72, color: Colors.black,
-              child: const Text('Eze Miracle')),
+          // Full width, as a list row is: the cover can only hide the buttons
+          // if the row it wraps actually spans them.
+          child: SizedBox(
+            width: double.infinity,
+            height: 72,
+            child: Align(
+              alignment: Alignment.centerLeft,
+              child: const Text('Eze Miracle'),
+            ),
+          ),
         ),
       );
 
@@ -101,6 +109,38 @@ void main() {
 
     // Still flush left — there is nothing to reveal on that side.
     expect(tester.getTopLeft(find.text('Eze Miracle')).dx, 0);
+  });
+
+  testWidgets('the buttons are hidden until the row is swiped',
+      (tester) async {
+    // The regression that shipped: a list row paints no background, so the
+    // buttons behind it showed through every row before anything was swiped.
+    await tester.pumpWidget(host(row(onMute: () {}, onDelete: () {})));
+    await tester.pumpAndSettle();
+
+    final rowRect = tester.getRect(find.byType(SwipeActions));
+    final deleteRect = tester.getRect(find.bySemanticsLabel('Delete'));
+
+    expect(find.bySemanticsLabel('Delete'), findsOneWidget);
+
+    // The cover must actually overlap where the button is, not merely exist.
+    final cover = tester.getRect(
+      find
+          .descendant(
+            of: find.byType(SwipeActions),
+            matching: find.byType(ColoredBox),
+          )
+          .first,
+    );
+    expect(
+      cover.overlaps(deleteRect),
+      isTrue,
+      reason: 'the row does not paint over the buttons, so they show through',
+    );
+    expect(cover.width, greaterThanOrEqualTo(rowRect.width - 0.5),
+        reason: 'the cover must span the whole row');
+    // And the buttons stay inside the row rather than spilling past it.
+    expect(deleteRect.right, lessThanOrEqualTo(rowRect.right + 0.5));
   });
 
   testWidgets('with no actions it is just the row', (tester) async {

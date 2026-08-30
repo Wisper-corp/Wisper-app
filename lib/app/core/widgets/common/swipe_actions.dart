@@ -28,11 +28,16 @@ class SwipeActions extends StatefulWidget {
     required this.child,
     required this.actions,
     this.actionWidth = 72,
+    this.background,
   });
 
   final Widget child;
   final List<SwipeAction> actions;
   final double actionWidth;
+
+  /// What the row paints over the buttons with. Defaults to the scaffold's
+  /// own colour, which is right wherever a list sits directly on it.
+  final Color? background;
 
   @override
   State<SwipeActions> createState() => _SwipeActionsState();
@@ -141,7 +146,15 @@ class _SwipeActionsState extends State<SwipeActions>
               onTap: _offset > 0 ? close : null,
               child: AbsorbPointer(
                 absorbing: _offset > 0,
-                child: widget.child,
+                // Opaque, and this is the whole trick: the buttons sit behind
+                // the row and are meant to be hidden by it. A list row paints
+                // no background of its own, so without this they showed
+                // through every row at once, before anything was swiped.
+                child: ColoredBox(
+                  color: widget.background ??
+                      Theme.of(context).scaffoldBackgroundColor,
+                  child: widget.child,
+                ),
               ),
             ),
           ),

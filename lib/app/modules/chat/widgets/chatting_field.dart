@@ -109,10 +109,13 @@ class _ChattingFieldWidgetState extends State<ChattingFieldWidget> {
 
   @override
   Widget build(BuildContext context) {
+    // Bottom-aligned, not centred: the attachment preview sits above the field
+    // inside this row, so centring floated the plus button halfway up beside
+    // the thumbnail and left the field stranded below it.
     return Row(
-      crossAxisAlignment: CrossAxisAlignment.center,
+      crossAxisAlignment: CrossAxisAlignment.end,
       children: [
-        // Plus button – centered vertically
+        // Plus button, level with the field it belongs to
         CircleIconWidget(
           imagePath: Assets.images.plus.keyName,
           radius: 20,
@@ -132,6 +135,9 @@ class _ChattingFieldWidgetState extends State<ChattingFieldWidget> {
                 // Attachment preview — only shown when there's something
                 if (hasAttachment)
                   Padding(
+                    // Keyed so a test can tell the preview apart from the
+                    // other small images in this row.
+                    key: const ValueKey('attachment-preview'),
                     padding: const EdgeInsets.only(bottom: 6),
                     child: _buildAttachmentPreview(),
                   ),
