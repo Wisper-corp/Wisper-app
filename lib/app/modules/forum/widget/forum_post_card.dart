@@ -2,9 +2,9 @@ import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:wisper/app/modules/forum/widget/author_tap.dart';
+import 'package:wisper/app/modules/forum/widget/forum_attachments_view.dart';
 import 'package:wisper/app/modules/saved/widget/save_button.dart';
 import 'package:wisper/app/core/widgets/common/expandable_text.dart';
-import 'package:wisper/app/core/widgets/common/image_container_widget.dart';
 import 'package:wisper/app/core/widgets/common/initials_avatar.dart';
 import 'package:wisper/app/modules/forum/model/forum_post_model.dart';
 import 'package:wisper/app/modules/forum/widget/forum_poll_view.dart';
@@ -203,16 +203,11 @@ class ForumPostCard extends StatelessWidget {
             SizedBox(height: 12.h),
             ForumPollView(poll: post.poll!, onVote: onVote),
           ],
-          // Attached photos, using the same grid as the rest of the app so a
-          // forum post and a service post lay their images out identically.
+          // Photos keep the grid the rest of the app uses; a video or document
+          // gets a row of its own, since neither can be shown as a picture.
           if (post.images.isNotEmpty) ...[
             SizedBox(height: 10.h),
-            ImageContainer(
-              images: post.images,
-              height: 200,
-              width: double.infinity,
-              borderRadius: 12,
-            ),
+            ForumAttachmentsView(urls: post.images),
           ],
           if (showActions) ...[
             SizedBox(height: 12.h),

@@ -2,14 +2,17 @@ import 'dart:io';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
+import 'package:file_picker/file_picker.dart';
 import 'package:image_picker/image_picker.dart';
+import 'package:wisper/app/core/utils/attachment_kind.dart';
+import 'package:wisper/app/modules/forum/widget/forum_attachment_sheet.dart';
 import 'package:wisper/app/modules/forum/widget/forum_poll_editor.dart';
 
 /// The forum composer. Visually the chat input bar, but it posts to the forum
 /// rather than a chat, so it carries none of the chat's socket wiring.
-/// A forum post carries at most this many images. The server enforces the same
-/// cap, so this is a courtesy, not the guarantee.
-const int kForumMaxImages = 4;
+/// A forum post carries at most this many attachments. The server enforces the
+/// same cap, so this is a courtesy, not the guarantee.
+const int kForumMaxAttachments = 4;
 
 class ForumComposer extends StatefulWidget {
   final String hintText;
@@ -41,7 +44,7 @@ class ForumComposer extends StatefulWidget {
 class _ForumComposerState extends State<ForumComposer> {
   final TextEditingController _controller = TextEditingController();
   late final FocusNode _focusNode = widget.focusNode ?? FocusNode();
-  final List<File> _images = [];
+  final List<File> _attachments = [];
   List<String> _pollOptions = [];
   bool _canSend = false;
   bool _sending = false;
@@ -74,42 +77,92 @@ class _ForumComposerState extends State<ForumComposer> {
     setState(() => _sending = true);
     final ok = await widget.onSend(
       text,
-      List<File>.from(_images),
+      List<File>.from(_attachments),
       _pollOptions.isEmpty ? null : List<String>.from(_pollOptions),
     );
     if (!mounted) return;
     if (ok) {
       _controller.clear();
-      _images.clear();
+      _attachments.clear();
       _pollOptions = [];
     }
     setState(() => _sending = false);
   }
 
-  Future<void> _pickImages() async {
-    final remaining = kForumMaxImages - _images.length;
-    if (remaining <= 0) {
-      _say('You can attach up to $kForumMaxImages images.');
+  /// The "+" used to open the photo library directly, because a photo was the
+  /// only thing a post could carry. With video and documents alongside it, the
+  /// choice comes first.
+  Future<void> _attach() async {
+    if (_remaining <= 0) {
+      _say('You can attach up to $kForumMaxAttachments files.');
       return;
     }
 
+    final choice = await showForumAttachmentSheet(context);
+    if (choice == null || !mounted) return;
+
+    switch (choice) {
+      case ForumAttachmentChoice.image:
+        await _pickImages();
+      case ForumAttachmentChoice.video:
+        await _pickVideo();
+      case ForumAttachmentChoice.document:
+        await _pickDocuments();
+    }
+  }
+
+  int get _remaining => kForumMaxAttachments - _attachments.length;
+
+  void _addAll(List<File> picked) {
+    if (picked.isEmpty) return;
+    final taken = picked.take(_remaining).toList();
+    setState(() => _attachments.addAll(taken));
+    if (picked.length > taken.length) {
+      _say('Only the first ${taken.length} could be added — '
+          '$kForumMaxAttachments files is the limit.');
+    }
+  }
+
+  Future<void> _pickImages() async {
     // ImagePicker is used directly rather than through ImagePickerHelper:
     // that helper is written for use inside a dialog and calls
     // Navigator.pop() when it finishes, which from here closes the community
     // screen and throws the selection away.
     try {
       final picked = await ImagePicker().pickMultiImage();
-      if (picked.isEmpty || !mounted) return;
-
-      final taken = picked.take(remaining).map((x) => File(x.path)).toList();
-      setState(() => _images.addAll(taken));
-
-      if (picked.length > remaining) {
-        _say('Only the first $remaining could be added — '
-            '$kForumMaxImages images is the limit.');
-      }
+      if (!mounted) return;
+      _addAll(picked.map((x) => File(x.path)).toList());
     } catch (e) {
       if (mounted) _say('Could not open your photos.');
+    }
+  }
+
+  Future<void> _pickVideo() async {
+    try {
+      final picked =
+          await ImagePicker().pickVideo(source: ImageSource.gallery);
+      if (picked == null || !mounted) return;
+      _addAll([File(picked.path)]);
+    } catch (e) {
+      if (mounted) _say('Could not open your videos.');
+    }
+  }
+
+  Future<void> _pickDocuments() async {
+    try {
+      final result = await FilePicker.platform.pickFiles(
+        allowMultiple: true,
+        type: FileType.any,
+      );
+      if (result == null || !mounted) return;
+      _addAll(
+        result.paths
+            .whereType<String>()
+            .map(File.new)
+            .toList(),
+      );
+    } catch (e) {
+      if (mounted) _say('Could not open your files.');
     }
   }
 
@@ -135,13 +188,13 @@ class _ForumComposerState extends State<ForumComposer> {
           mainAxisSize: MainAxisSize.min,
           children: [
             if (_pollOptions.isNotEmpty) _pollChip(),
-            if (_images.isNotEmpty) _thumbnails(),
+            if (_attachments.isNotEmpty) _thumbnails(),
             Row(
           crossAxisAlignment: CrossAxisAlignment.end,
           children: [
             if (widget.allowImages)
               GestureDetector(
-                onTap: _pickImages,
+                onTap: _attach,
                 child: Container(
                   width: 44.r,
                   height: 44.r,
@@ -293,44 +346,80 @@ class _ForumComposerState extends State<ForumComposer> {
     );
   }
 
-  /// Selected images sit above the field so the caption stays visible — the
+  /// Chosen attachments sit above the field so the caption stays visible — the
   /// caption is required, so it must never be pushed out of sight.
+  ///
+  /// Only an image can show itself. A video gets its play badge and a document
+  /// its name, because a filename is the only thing that distinguishes one
+  /// PDF from another before it is opened.
   Widget _thumbnails() {
     return SizedBox(
       height: 72.h,
       child: ListView.separated(
         scrollDirection: Axis.horizontal,
         padding: EdgeInsets.only(left: 4.w, right: 4.w, bottom: 8.h),
-        itemCount: _images.length,
+        itemCount: _attachments.length,
         separatorBuilder: (_, __) => SizedBox(width: 8.w),
-        itemBuilder: (context, i) => Stack(
-          children: [
-            ClipRRect(
-              borderRadius: BorderRadius.circular(10.r),
-              child: Image.file(
-                _images[i],
-                width: 60.r,
-                height: 60.r,
-                fit: BoxFit.cover,
+        itemBuilder: (context, i) {
+          final file = _attachments[i];
+          final kind = attachmentKindOf(file.path);
+          return Stack(
+            children: [
+              ClipRRect(
+                borderRadius: BorderRadius.circular(10.r),
+                child: kind == AttachmentKind.image
+                    ? Image.file(
+                        file,
+                        width: 60.r,
+                        height: 60.r,
+                        fit: BoxFit.cover,
+                      )
+                    : _fileTile(file, kind),
               ),
-            ),
-            Positioned(
-              top: 0,
-              right: 0,
-              child: GestureDetector(
-                onTap: () => setState(() => _images.removeAt(i)),
-                child: Container(
-                  padding: EdgeInsets.all(2.r),
-                  decoration: const BoxDecoration(
-                    color: Colors.black87,
-                    shape: BoxShape.circle,
+              Positioned(
+                top: 0,
+                right: 0,
+                child: GestureDetector(
+                  onTap: () => setState(() => _attachments.removeAt(i)),
+                  child: Container(
+                    padding: EdgeInsets.all(2.r),
+                    decoration: const BoxDecoration(
+                      color: Colors.black87,
+                      shape: BoxShape.circle,
+                    ),
+                    child: Icon(Icons.close, size: 14.sp, color: Colors.white),
                   ),
-                  child: Icon(Icons.close, size: 14.sp, color: Colors.white),
                 ),
+              ),
+            ],
+          );
+        },
+      ),
+    );
+  }
+
+  Widget _fileTile(File file, AttachmentKind kind) {
+    return Container(
+      width: kind == AttachmentKind.video ? 60.r : 110.r,
+      height: 60.r,
+      color: const Color(0xff2A2A2A),
+      padding: EdgeInsets.symmetric(horizontal: 6.w),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Icon(attachmentIcon(kind), size: 20.sp, color: Colors.grey[300]),
+          if (kind == AttachmentKind.document) ...[
+            SizedBox(width: 6.w),
+            Expanded(
+              child: Text(
+                attachmentDisplayName(file.path),
+                maxLines: 2,
+                overflow: TextOverflow.ellipsis,
+                style: TextStyle(fontSize: 10.sp, color: Colors.grey[300]),
               ),
             ),
           ],
-        ),
+        ],
       ),
     );
   }
