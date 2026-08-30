@@ -1,6 +1,8 @@
 // ignore_for_file: library_prefixes, avoid_print
 
 import 'package:get/get.dart';
+import 'package:flutter/material.dart';
+import 'package:wisper/app/core/utils/chat_preview.dart';
 import 'package:socket_io_client/socket_io_client.dart' as IO;
 import 'package:wisper/app/core/others/get_storage.dart';
 import 'package:wisper/app/core/services/call/controller/call_services.dart';
@@ -194,12 +196,15 @@ class SocketService extends GetxController {
       );
 
       final String text = (data['text'] ?? '').toString();
-      final dynamic file = data['file'];
-      final String lastMessage = text.isNotEmpty
-          ? text
-          : (file == null || file.toString().isEmpty)
-          ? 'file'
-          : 'photo';
+      // The same preview rule the inbox uses, so a message arriving live
+      // reads the same as one loaded from the server.
+      final preview = chatPreview(
+        fileType: data['fileType']?.toString(),
+        fileUrl: data['file']?.toString(),
+        text: text,
+      );
+      final String lastMessage = preview.label;
+      final IconData? lastMessageIcon = preview.icon;
 
       final String createdAt =
           (data['createdAt'] ?? DateTime.now().toIso8601String()).toString();
@@ -207,6 +212,7 @@ class SocketService extends GetxController {
       if (index != -1) {
         _socketFriendList[index]
           ..['lastMessage'] = lastMessage
+          ..['lastMessageIcon'] = lastMessageIcon
           ..['latestMessageAt'] = createdAt;
         _socketFriendList.sort((a, b) {
           final DateTime aTime =

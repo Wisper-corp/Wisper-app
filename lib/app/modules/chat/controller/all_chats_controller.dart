@@ -2,7 +2,9 @@
 
 import 'dart:convert';
 
+import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import 'package:wisper/app/core/utils/chat_preview.dart';
 import 'package:wisper/app/core/others/get_storage.dart';
 import 'package:wisper/app/core/services/network_caller/network_caller.dart';
 import 'package:wisper/app/core/services/socket/socket_service.dart';
@@ -95,20 +97,25 @@ class AllChatsController extends GetxController {
           if (chatId.isEmpty) continue;
           final msgs = chat['messages'] as List? ?? [];
           String lastMessage = '';
+          IconData? lastMessageIcon;
           if (msgs.isNotEmpty) {
             final firstMsg = msgs.first as Map<String, dynamic>;
-            final fileType = firstMsg['fileType'] ?? '';
-            final text = firstMsg['text'] ?? '';
-            if (fileType == 'IMAGE') lastMessage = '📷 Photo';
-            else if (fileType == 'VIDEO') lastMessage = '🎥 Video';
-            else if (fileType != null && fileType != '' && fileType != 'OFFER') lastMessage = '📄 File';
-            else lastMessage = text;
+            // The label and its icon are decided in one place, so the inbox
+            // and anything else showing a preview agree.
+            final preview = chatPreview(
+              fileType: firstMsg['fileType']?.toString(),
+              fileUrl: firstMsg['file']?.toString(),
+              text: firstMsg['text']?.toString(),
+            );
+            lastMessage = preview.label;
+            lastMessageIcon = preview.icon;
           }
           final latestAt = chat['latestMessageAt'] ?? '';
           final idx = socketService.socketFriendList.indexWhere((e) => e['id'] == chatId);
           if (idx != -1) {
             final updated = Map<String, dynamic>.from(socketService.socketFriendList[idx]);
             updated['lastMessage'] = lastMessage;
+            updated['lastMessageIcon'] = lastMessageIcon;
             updated['latestMessageAt'] = latestAt;
             updated['unreadMessageCount'] =
                 chat['_count']?['messages'] ?? updated['unreadMessageCount'] ?? 0;
@@ -119,7 +126,7 @@ class AllChatsController extends GetxController {
             // so the row never appeared in the inbox even though the server had
             // the message.
             socketService.socketFriendList.add(
-              _entryFromChatJson(chat, lastMessage, latestAt),
+              _entryFromChatJson(chat, lastMessage, lastMessageIcon, latestAt),
             );
           }
         }
@@ -145,21 +152,18 @@ class AllChatsController extends GetxController {
 
         final String type = chat['type'] ?? 'INDIVIDUAL';
 
-        // last message — check fileType for offers, images, etc.
+        // last message — the same preview rule as everywhere else.
         String lastMessage = 'No messages';
+        IconData? lastMessageIcon;
         if (chat['messages'] != null && (chat['messages'] as List).isNotEmpty) {
           final firstMsg = chat['messages'].first;
-          final fileType = firstMsg['fileType'] ?? '';
-          final text = firstMsg['text'] ?? '';
-          if (fileType == 'IMAGE') {
-            lastMessage = '📷 Photo';
-          } else if (fileType == 'VIDEO') {
-            lastMessage = '🎥 Video';
-          } else if (fileType != null && fileType != '' && fileType != 'OFFER') {
-            lastMessage = '📄 File';
-          } else {
-            lastMessage = text.isNotEmpty ? text : 'No messages';
-          }
+          final preview = chatPreview(
+            fileType: firstMsg['fileType']?.toString(),
+            fileUrl: firstMsg['file']?.toString(),
+            text: firstMsg['text']?.toString(),
+          );
+          lastMessage = preview.label.isNotEmpty ? preview.label : 'No messages';
+          lastMessageIcon = preview.icon;
         }
 
         // latest time
@@ -202,6 +206,7 @@ class AllChatsController extends GetxController {
           // Existing chat → শুধু আপডেট করো
           socketService.socketFriendList[index]
             ..['lastMessage'] = lastMessage
+            ..['lastMessageIcon'] = lastMessageIcon
             ..['latestMessageAt'] = latestMessageAt
             ..['unreadMessageCount'] = unreadCount;
 
@@ -216,7 +221,7 @@ class AllChatsController extends GetxController {
           // This used to add only {lastMessage, receiverOnline} — with no id,
           // type or name the row rendered as "Unknown" and could not be opened.
           socketService.socketFriendList.add(
-            _entryFromChatJson(chat, lastMessage, latestMessageAt),
+            _entryFromChatJson(chat, lastMessage, lastMessageIcon, latestMessageAt),
           );
         }
       }
@@ -234,6 +239,7 @@ class AllChatsController extends GetxController {
   Map<String, dynamic> _entryFromChatJson(
     Map<String, dynamic> chat,
     String lastMessage,
+    IconData? lastMessageIcon,
     String latestMessageAt,
   ) {
     final String type = (chat['type'] ?? 'INDIVIDUAL').toString();
@@ -251,6 +257,7 @@ class AllChatsController extends GetxController {
       'type': type,
       'latestMessageAt': latestMessageAt,
       'lastMessage': lastMessage,
+      'lastMessageIcon': lastMessageIcon,
       'unreadMessageCount': chat['_count']?['messages'] ?? 0,
       'group': chat['group'] != null
           ? {'name': chat['group']['name'], 'image': chat['group']['image']}

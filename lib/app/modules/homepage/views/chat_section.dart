@@ -145,6 +145,7 @@ class ChatSection extends StatefulWidget {
               imagePath: image,
               name: name,
               message: lastMessage,
+              messageIcon: item['lastMessageIcon'] as IconData?,
               time: formattedTime,
               unreadMessageCount: unread > 0 ? unread.toString() : '',
             );

@@ -12,6 +12,10 @@ class MemberListTile extends StatelessWidget {
   final String imagePath;
   final String name;
   final String message;
+
+  /// Shown before the message when it stands for a file rather than words.
+  /// Null for an ordinary text message.
+  final IconData? messageIcon;
   final String time;
   final String unreadMessageCount;
   final bool isOnline;
@@ -24,6 +28,7 @@ class MemberListTile extends StatelessWidget {
     required this.imagePath,
     required this.name,
     required this.message,
+    this.messageIcon,
     required this.time,
     required this.unreadMessageCount,
     required this.isClass,
@@ -157,17 +162,31 @@ class MemberListTile extends StatelessWidget {
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
                         Expanded(
-                          child: Text(
-                            message,
-                            style: TextStyle(
-                              fontSize: 12.sp,
-                              fontWeight: FontWeight.w400,
-                              color: message.contains('🧾')
-                                  ? const Color(0xff2799EA)
-                                  : const Color(0xff98A2B3),
-                            ),
-                            overflow: TextOverflow.ellipsis,
-                            maxLines: 1,
+                          child: Row(
+                            children: [
+                              if (messageIcon != null) ...[
+                                Icon(
+                                  messageIcon,
+                                  size: 14.sp,
+                                  color: const Color(0xff98A2B3),
+                                ),
+                                SizedBox(width: 5.w),
+                              ],
+                              Flexible(
+                                child: Text(
+                                  message,
+                                  style: TextStyle(
+                                    fontSize: 12.sp,
+                                    fontWeight: FontWeight.w400,
+                                    color: message.contains('🧾')
+                                        ? const Color(0xff2799EA)
+                                        : const Color(0xff98A2B3),
+                                  ),
+                                  overflow: TextOverflow.ellipsis,
+                                  maxLines: 1,
+                                ),
+                              ),
+                            ],
                           ),
                         ),
                         Text(
