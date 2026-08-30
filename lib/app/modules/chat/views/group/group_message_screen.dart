@@ -964,13 +964,19 @@ class _GroupChatScreenState extends State<GroupChatScreen> {
                 padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 12.h),
                 child: SizedBox(
                   width: double.infinity,
+                  // The same blue as Join, which this is the counterpart of.
+                  // Orange read as a warning for something that is reversible
+                  // and asks for confirmation anyway.
                   child: OutlinedButton.icon(
                     onPressed: _confirmLeaveGroup,
-                    icon: const Icon(Icons.exit_to_app, color: Colors.orange),
+                    icon: const Icon(Icons.exit_to_app, color: Color(0xff1F7DE9)),
                     label: const Text('Leave Community',
-                        style: TextStyle(color: Colors.orange, fontWeight: FontWeight.w600)),
+                        style: TextStyle(
+                          color: Color(0xff1F7DE9),
+                          fontWeight: FontWeight.w600,
+                        )),
                     style: OutlinedButton.styleFrom(
-                      side: const BorderSide(color: Colors.orange),
+                      side: const BorderSide(color: Color(0xff1F7DE9)),
                       padding: EdgeInsets.symmetric(vertical: 12.h),
                       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12.r)),
                     ),
