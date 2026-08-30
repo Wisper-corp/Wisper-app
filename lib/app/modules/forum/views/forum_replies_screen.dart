@@ -242,25 +242,15 @@ class _ForumRepliesScreenState extends State<ForumRepliesScreen> {
                       ),
                     )
                   else
-                    ...replies.asMap().entries.map(
-                      (entry) {
-                        final index = entry.key;
-                        final reply = entry.value;
-                        // Two replies in a row from one person are drawn as
-                        // one block, so the gap between them is tighter.
-                        final grouped = index > 0 &&
-                            reply.author.id != null &&
-                            reply.author.id == replies[index - 1].author.id;
-                        return Padding(
-                        padding: EdgeInsets.fromLTRB(
-                            16.w, grouped ? 6.h : 14.h, 16.w, 14.h),
+                    ...replies.map(
+                      (reply) => Padding(
+                        padding: EdgeInsets.fromLTRB(16.w, 14.h, 16.w, 14.h),
                         child: Builder(builder: (_) {
                           // The listing already said whether each reply is
                           // bookmarked, so the icon is right on first paint.
                           _seedSaved(reply);
                           return ForumReplyTile(
                           reply: reply,
-                          groupedWithPrevious: grouped,
                           onReply: (r) {
                             setState(() => _replyingTo = r);
                             _composerFocus.requestFocus();
@@ -270,8 +260,7 @@ class _ForumRepliesScreenState extends State<ForumRepliesScreen> {
                           onMore: _openReplyMenu,
                         );
                         }),
-                      );
-                      },
+                      ),
                     ),
                 ],
               );
