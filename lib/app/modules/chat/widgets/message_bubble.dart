@@ -14,6 +14,12 @@ import 'package:wisper/app/modules/profile/views/business/others_business_screen
 import 'package:wisper/app/modules/profile/views/person/others_person_screen.dart';
 import 'package:wisper/gen/assets.gen.dart';
 
+/// How tall a picture or clip may get inside a bubble.
+///
+/// Media keeps its own shape rather than being cropped to a fixed band, so
+/// something needs to stop one very tall photo filling the screen.
+final double kChatMediaMaxHeight = 320.h;
+
 class MessageBubble extends StatelessWidget {
   final Map<String, dynamic> message;
   final bool isMe;
@@ -330,9 +336,16 @@ class MessageBubble extends StatelessWidget {
                               // Concentric with the bubble: 16 outer, 3 of
                               // padding, so 13 inside.
                               borderRadius: BorderRadius.circular(13.r),
-                              child: Image.network(
+                              // No fixed height: the picture keeps its own
+                              // shape, as it does in every messaging app. A
+                              // 200-high letterbox cropped a tall photo to a
+                              // band and left a wide one floating in filler.
+                              // Capped so one very tall picture cannot take
+                              // the whole screen.
+                              child: ConstrainedBox(
+                                constraints: BoxConstraints(maxHeight: kChatMediaMaxHeight),
+                                child: Image.network(
                                 fileUrl,
-                                height: 200.h,
                                 width: double.infinity,
                                 fit: BoxFit.cover,
                                 loadingBuilder:
@@ -365,6 +378,7 @@ class MessageBubble extends StatelessWidget {
                                   ),
                                 ),
                               ),
+                              ),
                             ),
                           )
                         else if (fileType == 'VIDEO')
@@ -374,8 +388,11 @@ class MessageBubble extends StatelessWidget {
                                 () => VideoPlayerScreen(videoUrl: fileUrl),
                               );
                             },
+                            // Nothing here knows the clip's real shape -- no
+                            // thumbnail is generated -- so it takes the frame
+                            // a video usually has rather than a squat band.
                             child: Container(
-                              height: 200.h,
+                              height: kChatMediaMaxHeight * 0.75,
                               width: double.infinity,
                               decoration: BoxDecoration(
                                 color: Colors.black54,
