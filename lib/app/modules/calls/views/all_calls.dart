@@ -38,7 +38,7 @@ class AllCalls extends StatelessWidget {
           );
         }
 
-        if (ctrl.allCalls.isEmpty) {
+        if (ctrl.visibleCalls.isEmpty) {
           return Center(
             child: Column(
               mainAxisSize: MainAxisSize.min,
@@ -46,7 +46,11 @@ class AllCalls extends StatelessWidget {
                 Icon(Icons.call_outlined, color: Colors.grey, size: 48.sp),
                 SizedBox(height: 10.h),
                 Text(
-                  'No calls yet',
+                  // A search that matched nothing is not the same as having
+                  // no calls at all.
+                  ctrl.searchTerm.value.isEmpty
+                      ? 'No calls yet'
+                      : 'No calls match "${ctrl.searchTerm.value}"',
                   style: TextStyle(color: Colors.grey, fontSize: 13.sp),
                 ),
               ],
@@ -58,14 +62,14 @@ class AllCalls extends StatelessWidget {
           onRefresh: ctrl.fetchCallLogs,
           child: ListView.separated(
             padding: EdgeInsets.zero,
-            itemCount: ctrl.allCalls.length,
+            itemCount: ctrl.visibleCalls.length,
             separatorBuilder: (_, __) => Divider(
               color: const Color(0xff2A2A2A),
               height: 1,
               thickness: 0.5,
             ),
             itemBuilder: (context, index) {
-              final call = ctrl.allCalls[index];
+              final call = ctrl.visibleCalls[index];
               return CallListTile(
                 name: call.otherName,
                 imageUrl: call.otherImage,

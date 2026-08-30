@@ -10,6 +10,25 @@ class CallLogsController extends GetxController {
   final RxBool isLoading = false.obs;
   final RxBool hasError = false.obs;
 
+  /// What is typed in the search box. The lists below are filtered by it, so
+  /// the box was previously decorative: it had no controller at all and
+  /// nothing read what was typed.
+  final RxString searchTerm = ''.obs;
+
+  void search(String? term) => searchTerm.value = (term ?? '').trim();
+
+  List<CallLogItem> _matching(List<CallLogItem> calls) {
+    final needle = searchTerm.value.toLowerCase();
+    if (needle.isEmpty) return calls;
+    return calls
+        .where((call) => call.otherName.toLowerCase().contains(needle))
+        .toList();
+  }
+
+  /// The lists the screen shows: everything, narrowed by the search box.
+  List<CallLogItem> get visibleCalls => _matching(allCalls);
+  List<CallLogItem> get visibleMissedCalls => _matching(missedCalls);
+
   @override
   void onInit() {
     super.onInit();

@@ -38,7 +38,7 @@ class MissedCalls extends StatelessWidget {
           );
         }
 
-        if (ctrl.missedCalls.isEmpty) {
+        if (ctrl.visibleMissedCalls.isEmpty) {
           return Center(
             child: Column(
               mainAxisSize: MainAxisSize.min,
@@ -46,7 +46,11 @@ class MissedCalls extends StatelessWidget {
                 Icon(Icons.phone_missed_rounded, color: Colors.grey, size: 48.sp),
                 SizedBox(height: 10.h),
                 Text(
-                  'No missed calls',
+                  // A search that matched nothing is not the same as having
+                  // no calls at all.
+                  ctrl.searchTerm.value.isEmpty
+                      ? 'No missed calls'
+                      : 'No calls match "${ctrl.searchTerm.value}"',
                   style: TextStyle(color: Colors.grey, fontSize: 13.sp),
                 ),
               ],
@@ -58,14 +62,14 @@ class MissedCalls extends StatelessWidget {
           onRefresh: ctrl.fetchCallLogs,
           child: ListView.separated(
             padding: EdgeInsets.zero,
-            itemCount: ctrl.missedCalls.length,
+            itemCount: ctrl.visibleMissedCalls.length,
             separatorBuilder: (_, __) => Divider(
               color: const Color(0xff2A2A2A),
               height: 1,
               thickness: 0.5,
             ),
             itemBuilder: (context, index) {
-              final call = ctrl.missedCalls[index];
+              final call = ctrl.visibleMissedCalls[index];
               return CallListTile(
                 name: call.otherName,
                 imageUrl: call.otherImage,

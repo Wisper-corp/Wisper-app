@@ -19,12 +19,24 @@ class CallScreen extends StatefulWidget {
 class _CallScreenState extends State<CallScreen> {
   int selectIndex = 0;
   late final CallLogsController _ctrl;
+  final TextEditingController _searchCtrl = TextEditingController();
 
   @override
   void initState() {
     super.initState();
     _ctrl = Get.put(CallLogsController());
   }
+
+  @override
+  void dispose() {
+    _searchCtrl.dispose();
+    // Leaving a term behind would filter the list on the next visit, with a
+    // search box that looks empty.
+    _ctrl.search('');
+    super.dispose();
+  }
+
+  @override
   Widget build(BuildContext context) {
     return Scaffold(
       body: Padding(
@@ -40,7 +52,14 @@ class _CallScreenState extends State<CallScreen> {
             heightBox10,
             SizedBox(
               height: 48.h,
-              child: CustomTextField(hintText: 'Search calls'),
+              // The field had no controller and nothing read what was typed,
+              // so searching did nothing at all.
+              child: CustomTextField(
+                controller: _searchCtrl,
+                hintText: 'Search calls',
+                prefixIcon: Icons.search_rounded,
+                onChanged: _ctrl.search,
+              ),
             ),
             heightBox20,
             Container(
