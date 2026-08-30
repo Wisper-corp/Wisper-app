@@ -123,14 +123,13 @@ void main() {
 
     expect(find.bySemanticsLabel('Delete'), findsOneWidget);
 
-    // The cover must actually overlap where the button is, not merely exist.
+    // The cover is the one wrapping the row itself. Found by what it wraps,
+    // not by order: an action button is a coloured box too.
     final cover = tester.getRect(
-      find
-          .descendant(
-            of: find.byType(SwipeActions),
-            matching: find.byType(ColoredBox),
-          )
-          .first,
+      find.ancestor(
+        of: find.text('Eze Miracle'),
+        matching: find.byType(ColoredBox),
+      ),
     );
     expect(
       cover.overlaps(deleteRect),
