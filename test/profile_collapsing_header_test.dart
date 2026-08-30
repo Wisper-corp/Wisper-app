@@ -77,6 +77,53 @@ void main() {
         reason: 'the name should still say whose profile this is');
   });
 
+  test('a back arrow appears only when there is something to go back to', () {
+    // The screen is both the Profile tab and a pushed screen from Settings.
+    expect(source, contains('Navigator.of(context).canPop()'));
+    expect(source, contains('automaticallyImplyLeading: false'));
+  });
+
+  testWidgets('pushed: the arrow is there and pops', (tester) async {
+    var popped = false;
+    await tester.pumpWidget(ScreenUtilInit(
+      designSize: const Size(390, 844),
+      builder: (_, __) => MaterialApp(
+        home: Scaffold(
+          body: Builder(
+            builder: (context) => TextButton(
+              onPressed: () => Navigator.of(context).push(
+                MaterialPageRoute<void>(
+                  builder: (_) => const _FakeProfile(),
+                ),
+              ).then((_) => popped = true),
+              child: const Text('open'),
+            ),
+          ),
+        ),
+      ),
+    ));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('open'));
+    await tester.pumpAndSettle();
+
+    expect(find.byTooltip('Back'), findsOneWidget);
+    await tester.tap(find.byTooltip('Back'));
+    await tester.pumpAndSettle();
+    expect(popped, isTrue);
+  });
+
+  testWidgets('as a root tab: no arrow, because there is no back',
+      (tester) async {
+    await tester.pumpWidget(ScreenUtilInit(
+      designSize: const Size(390, 844),
+      builder: (_, __) => const MaterialApp(home: _FakeProfile()),
+    ));
+    await tester.pumpAndSettle();
+
+    expect(find.byTooltip('Back'), findsNothing);
+    expect(find.text('Chisom Alaoma'), findsOneWidget);
+  });
+
   test('the pinned bar has one fixed height', () {
     // A pinned sliver must state its height up front; min and max must agree
     // or it would collapse as it scrolls.
@@ -155,4 +202,39 @@ class _TestPinned extends SliverPersistentHeaderDelegate {
   @override
   bool shouldRebuild(_TestPinned oldDelegate) =>
       oldDelegate.child != child || oldDelegate.height != height;
+}
+
+/// The same pinned bar the profile builds, so the rule about when a back
+/// arrow appears is exercised rather than read.
+class _FakeProfile extends StatelessWidget {
+  const _FakeProfile();
+
+  @override
+  Widget build(BuildContext context) {
+    final canPop = Navigator.of(context).canPop();
+    return Scaffold(
+      body: NestedScrollView(
+        headerSliverBuilder: (context, _) => [
+          SliverAppBar(
+            pinned: true,
+            automaticallyImplyLeading: false,
+            leading: canPop
+                ? IconButton(
+                    icon: const Icon(Icons.arrow_back),
+                    onPressed: () => Navigator.of(context).pop(),
+                    tooltip: 'Back',
+                  )
+                : null,
+            title: const Text('Chisom Alaoma'),
+          ),
+        ],
+        body: ListView(
+          children: List.generate(
+            20,
+            (i) => SizedBox(height: 80, child: Text('post $i')),
+          ),
+        ),
+      ),
+    );
+  }
 }

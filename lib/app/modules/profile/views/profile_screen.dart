@@ -328,11 +328,23 @@ class _ProfileScreenState extends State<ProfileScreen> with WidgetsBindingObserv
             // profile this is, so the name stays pinned above the tabs.
             SliverAppBar(
               pinned: true,
+              // This screen is both the Profile tab and a pushed screen from
+              // Settings. A back arrow is drawn only when there is something
+              // to go back to, rather than a button that does nothing on the
+              // tab.
               automaticallyImplyLeading: false,
+              leading: Navigator.of(context).canPop()
+                  ? IconButton(
+                      icon: Icon(Icons.arrow_back, size: 22.r),
+                      color: Colors.white,
+                      onPressed: () => Navigator.of(context).pop(),
+                      tooltip: 'Back',
+                    )
+                  : null,
               backgroundColor: Theme.of(context).scaffoldBackgroundColor,
               surfaceTintColor: Colors.transparent,
               elevation: 0,
-              titleSpacing: 20.w,
+              titleSpacing: Navigator.of(context).canPop() ? 0 : 20.w,
               toolbarHeight: 44.h,
               title: Text(
                 displayName,
