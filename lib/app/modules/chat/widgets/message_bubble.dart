@@ -83,6 +83,13 @@ class MessageBubble extends StatelessWidget {
     }
   }
 
+  /// Whether this bubble is carrying a picture or a clip.
+  ///
+  /// A document is not media here: it is drawn as a bordered row that reads as
+  /// part of the bubble, so it keeps the padding text has.
+  bool get _isMedia =>
+      fileUrl.isNotEmpty && (fileType == 'IMAGE' || fileType == 'VIDEO');
+
   void _openFullScreenImage() {
     Get.to(
       () => Scaffold(
@@ -289,10 +296,13 @@ class MessageBubble extends StatelessWidget {
 
                 Container(
                   margin: EdgeInsets.symmetric(vertical: 5.h),
-                  padding: EdgeInsets.symmetric(
-                    horizontal: 14.w,
-                    vertical: 10.h,
-                  ),
+                  // A picture or a clip nearly fills its bubble, the way every
+                  // messaging app shows one: the wide padding meant for text
+                  // left a thick band of bubble colour framing the media.
+                  // A caption still gets room, added under the media itself.
+                  padding: _isMedia
+                      ? EdgeInsets.all(3.r)
+                      : EdgeInsets.symmetric(horizontal: 14.w, vertical: 10.h),
                   decoration: BoxDecoration(
                     gradient: LinearGradient(
                       colors: isMe
@@ -317,7 +327,9 @@ class MessageBubble extends StatelessWidget {
                           GestureDetector(
                             onTap: _openFullScreenImage,
                             child: ClipRRect(
-                              borderRadius: BorderRadius.circular(12.r),
+                              // Concentric with the bubble: 16 outer, 3 of
+                              // padding, so 13 inside.
+                              borderRadius: BorderRadius.circular(13.r),
                               child: Image.network(
                                 fileUrl,
                                 height: 200.h,
@@ -367,7 +379,8 @@ class MessageBubble extends StatelessWidget {
                               width: double.infinity,
                               decoration: BoxDecoration(
                                 color: Colors.black54,
-                                borderRadius: BorderRadius.circular(12.r),
+                                // Concentric with the bubble, as the image is.
+                                borderRadius: BorderRadius.circular(13.r),
                               ),
                               child: Stack(
                                 alignment: Alignment.center,
@@ -375,7 +388,7 @@ class MessageBubble extends StatelessWidget {
                                   // Video thumbnail (if available)
                                   Container(
                                     decoration: BoxDecoration(
-                                      borderRadius: BorderRadius.circular(12.r),
+                                      borderRadius: BorderRadius.circular(13.r),
                                     ),
                                     child: const Icon(
                                       Icons.play_circle_filled,
@@ -470,15 +483,20 @@ class MessageBubble extends StatelessWidget {
                               ),
                             ),
                           ),
-                        SizedBox(height: 8.h),
+                        if (!_isMedia) SizedBox(height: 8.h),
                       ],
 
                       // Text Message
                       if (message['text'].toString().isNotEmpty)
                         Padding(
-                          padding: EdgeInsets.only(
-                            top: fileUrl.isNotEmpty ? 8.h : 0,
-                          ),
+                          // The bubble no longer pads a media message, so a
+                          // caption brings its own margins rather than sitting
+                          // flush against the edge.
+                          padding: _isMedia
+                              ? EdgeInsets.fromLTRB(11.w, 8.h, 11.w, 7.h)
+                              : EdgeInsets.only(
+                                  top: fileUrl.isNotEmpty ? 8.h : 0,
+                                ),
                           child: Text(
                             message['text'].toString(),
                             style: TextStyle(
