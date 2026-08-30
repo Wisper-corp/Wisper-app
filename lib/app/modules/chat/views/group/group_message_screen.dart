@@ -1208,6 +1208,8 @@ class _GroupChatScreenState extends State<GroupChatScreen> {
                         child: CustomTextField(
                           controller: _jobSearchCtrl,
                           hintText: 'Search jobs...',
+                          // The same magnifier the Services tab beside it uses.
+                          prefixIcon: Icons.search_rounded,
                           onChanged: (v) =>
                               setState(() => _jobSearchQuery = v ?? ''),
                         ),
