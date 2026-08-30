@@ -443,13 +443,18 @@ class _ChatScreenState extends State<ChatScreen> {
                   if (ctrl.messages.isEmpty) {
                     return Column(
                       children: [
+                        // At the top, where it is the first thing read on
+                        // opening a new chat, and where a chat with messages
+                        // already shows it. At the bottom it sat against the
+                        // input bar and read like part of it.
+                        _buildEncryptionNotice(),
                         Expanded(
                           child: Center(
                             child: Column(
                               mainAxisAlignment: MainAxisAlignment.center,
                               children: [
                                 Text(
-                                  "No messages yet 3", 
+                                  "No messages yet",
                                   style: TextStyle(
                                     fontSize: 16.sp,
                                     color: Colors.grey,
@@ -468,7 +473,6 @@ class _ChatScreenState extends State<ChatScreen> {
                             ),
                           ),
                         ),
-                        _buildEncryptionNotice(),
                       ],
                     );
                   }
