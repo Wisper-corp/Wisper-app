@@ -246,6 +246,12 @@ class Urls {
     return '$_baseUrl/chats/$id';
   }
 
+  /// Removes a chat from your own inbox. The other side keeps theirs.
+  static String deleteChatUrl(String chatId) => '$_baseUrl/chats/$chatId';
+
+  static String unmuteChatUrl(String chatId) =>
+      '$_baseUrl/chats/unmute/$chatId';
+
   static String messagesById(String id) {
     return '$_baseUrl/messages/$id';
   } 

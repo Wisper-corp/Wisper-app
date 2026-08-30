@@ -2,6 +2,11 @@
 
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import 'package:flutter_screenutil/flutter_screenutil.dart';
+import 'package:wisper/app/core/utils/snack_bar.dart';
+import 'package:wisper/app/modules/chat/controller/mute_chat_controller.dart';
+import 'package:wisper/app/modules/chat/controller/delete_chat_controller.dart';
+import 'package:wisper/app/core/widgets/common/swipe_actions.dart';
 import 'package:wisper/app/core/services/socket/socket_service.dart';
 import 'package:wisper/app/core/utils/date_formatter.dart';
 import 'package:wisper/app/modules/chat/controller/all_chats_controller.dart';
@@ -42,6 +47,103 @@ class _ChatListScreenState extends State<ChatListScreen> {
   void dispose() {
     _searchController.dispose();
     super.dispose();
+  }
+
+  final MuteChatController _muteController = MuteChatController();
+  final DeleteChatController _deleteController = DeleteChatController();
+
+  /// The same three durations the chat screen's menu offers, so muting from
+  /// the inbox and muting from inside a chat mean the same thing.
+  Future<void> _muteChat(
+    BuildContext context,
+    String chatId,
+    String name,
+  ) async {
+    final choice = await showModalBottomSheet<String>(
+      context: context,
+      backgroundColor: const Color(0xff121417),
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20.r)),
+      ),
+      builder: (sheet) => SafeArea(
+        top: false,
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            SizedBox(height: 16.h),
+            Text('Mute $name',
+                style: TextStyle(
+                  fontSize: 16.sp,
+                  fontWeight: FontWeight.w600,
+                  color: Colors.white,
+                )),
+            SizedBox(height: 8.h),
+            for (final option in const [
+              ('EIGHT_HOURS', 'For 8 hours'),
+              ('ONE_WEEK', 'For a week'),
+              ('ALWAYS', 'Until I turn it back on'),
+            ])
+              ListTile(
+                title: Text(option.$2,
+                    style: const TextStyle(color: Colors.white)),
+                onTap: () => Navigator.of(sheet).pop(option.$1),
+              ),
+            SizedBox(height: 8.h),
+          ],
+        ),
+      ),
+    );
+    if (choice == null || !mounted) return;
+
+    final ok = await _muteController.muteChat(chatId: chatId, muteFor: choice);
+    if (!mounted) return;
+    showSnackBarMessage(
+      context,
+      ok ? 'Muted $name' : _muteController.errorMessage,
+      !ok,
+    );
+  }
+
+  Future<void> _confirmDeleteChat(
+    BuildContext context,
+    String chatId,
+    String name,
+  ) async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (dialog) => AlertDialog(
+        backgroundColor: const Color(0xff17191C),
+        title: const Text('Delete chat?',
+            style: TextStyle(color: Colors.white)),
+        // Deleting is per person: the other side keeps their copy.
+        content: Text(
+          'This removes the conversation with $name from your inbox. '
+          'They keep theirs.',
+          style: const TextStyle(color: Color(0xff98A2B3)),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(dialog).pop(false),
+            child: const Text('Cancel',
+                style: TextStyle(color: Color(0xff98A2B3))),
+          ),
+          TextButton(
+            onPressed: () => Navigator.of(dialog).pop(true),
+            child: const Text('Delete',
+                style: TextStyle(color: Color(0xffE5484D))),
+          ),
+        ],
+      ),
+    );
+    if (confirmed != true || !mounted) return;
+
+    final ok = await _deleteController.deleteChat(chatId);
+    if (!mounted) return;
+    if (ok) {
+      await Get.find<AllChatsController>().getAllChats();
+    } else {
+      showSnackBarMessage(context, _deleteController.errorMessage, true);
+    }
   }
 
   @override
@@ -116,7 +218,22 @@ class _ChatListScreenState extends State<ChatListScreen> {
             ).getRelativeTimeFormat();
             final int unread = item['unreadMessageCount'] ?? 0;
 
-            return MemberListTile(
+            return SwipeActions(
+              actions: [
+                SwipeAction(
+                  icon: Icons.notifications_off_outlined,
+                  colour: const Color(0xffE5A34D),
+                  semanticLabel: 'Mute',
+                  onTap: () => _muteChat(context, chatId, name),
+                ),
+                SwipeAction(
+                  icon: Icons.delete_outline_rounded,
+                  colour: const Color(0xffE5484D),
+                  semanticLabel: 'Delete',
+                  onTap: () => _confirmDeleteChat(context, chatId, name),
+                ),
+              ],
+              child: MemberListTile(
               isOnline: item['receiverOnline'] ?? false,
               onTap: () {
                 if (type == 'GROUP') {
@@ -165,6 +282,7 @@ class _ChatListScreenState extends State<ChatListScreen> {
               message: lastMessage,
               time: formattedTime,
               unreadMessageCount: unread > 0 ? unread.toString() : '',
+              ),
             );
           },
         );
