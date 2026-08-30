@@ -285,6 +285,39 @@ class ForumRepliesController extends GetxController {
     replies.refresh();
   }
 
+  /// Removes a reply, and with it anything replying to it — the server
+  /// cascades, so a thread never outlives the comment it hangs from.
+  Future<bool> deleteReply(ForumReplyModel reply) async {
+    try {
+      final NetworkResponse res = await Get.find<NetworkCaller>().deleteRequest(
+        Urls.forumReplyUrl(reply.id),
+        accessToken: _token,
+      );
+      if (!res.isSuccess) {
+        _errorMessage.value = res.errorMessage;
+        return false;
+      }
+      _removeReply(replies, reply.id);
+      replies.refresh();
+      return true;
+    } catch (e) {
+      _errorMessage.value = 'Could not delete that reply.';
+      return false;
+    }
+  }
+
+  /// Replies nest, so the one being removed may be anywhere in the tree.
+  bool _removeReply(List<ForumReplyModel> list, String id) {
+    for (var i = 0; i < list.length; i++) {
+      if (list[i].id == id) {
+        list.removeAt(i);
+        return true;
+      }
+      if (_removeReply(list[i].replies, id)) return true;
+    }
+    return false;
+  }
+
   /// Loads the rest of one reply's thread, behind "Show more replies".
   Future<void> loadThread(ForumReplyModel reply) async {
     try {

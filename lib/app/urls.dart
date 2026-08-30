@@ -111,6 +111,7 @@ class Urls {
   static String forumFollowUrl(String postId) => '$_baseUrl/forum/$postId/follow';
   static String forumReplyThreadUrl(String replyId) => '$_baseUrl/forum/reply/$replyId/thread';
   static String forumReplyReactionUrl(String replyId) => '$_baseUrl/forum/reply/$replyId/reaction';
+  static String forumReplyUrl(String replyId) => '$_baseUrl/forum/reply/$replyId';
 
   // Saved posts. `kind` is 'service' or 'forum'; the toggle works in both
   // directions, since tapping a filled bookmark means unsave.

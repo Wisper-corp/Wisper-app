@@ -4,6 +4,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:get/get.dart';
 import 'package:wisper/app/modules/forum/controller/forum_controller.dart';
+import 'package:wisper/app/modules/forum/widget/forum_post_menu.dart';
+import 'package:wisper/app/modules/chat/utils/open_direct_chat.dart';
+import 'package:wisper/app/modules/saved/controller/saved_controller.dart';
 import 'package:wisper/app/modules/forum/model/forum_post_model.dart';
 import 'package:wisper/app/modules/forum/widget/forum_composer.dart';
 import 'package:wisper/app/modules/forum/widget/forum_post_card.dart';
@@ -79,6 +82,82 @@ class _ForumRepliesScreenState extends State<ForumRepliesScreen> {
       }
     });
     return true;
+  }
+
+  final SavedController _savedController = Get.isRegistered<SavedController>()
+      ? Get.find<SavedController>()
+      : Get.put(SavedController(), permanent: true);
+
+  /// Seeds this reply and everything nested under it.
+  void _seedSaved(ForumReplyModel reply) {
+    _savedController.seed('reply', reply.id, reply.isSaved);
+    for (final child in reply.replies) {
+      _seedSaved(child);
+    }
+  }
+
+  /// The reply's overflow menu. Following is a property of the post, not of
+  /// one comment inside it, so it is not offered here.
+  Future<void> _openReplyMenu(ForumReplyModel reply) async {
+    final action = await showForumReplyMenu(
+      context,
+      canDelete: reply.canDelete,
+      isMine: reply.isMine,
+      authorName: reply.author.name ?? 'the author',
+    );
+    if (action == null || !mounted) return;
+
+    switch (action) {
+      case ForumReplyAction.replyPrivately:
+        await openDirectChat(
+          userId: reply.author.id,
+          name: reply.author.name,
+          image: reply.author.image,
+        );
+      case ForumReplyAction.delete:
+        _confirmDeleteReply(reply);
+    }
+  }
+
+  void _confirmDeleteReply(ForumReplyModel reply) {
+    Get.dialog(
+      AlertDialog(
+        backgroundColor: const Color(0xff17191C),
+        title: const Text('Delete reply?',
+            style: TextStyle(color: Colors.white)),
+        content: Text(
+          reply.replyCount > 0
+              ? 'Anything replying to it goes too. This cannot be undone.'
+              : 'This cannot be undone.',
+          style: const TextStyle(color: Color(0xff98A2B3)),
+        ),
+        actions: [
+          TextButton(
+            onPressed: Get.back,
+            child: const Text('Cancel',
+                style: TextStyle(color: Color(0xff98A2B3))),
+          ),
+          TextButton(
+            onPressed: () async {
+              Get.back();
+              final ok = await _controller.deleteReply(reply);
+              if (!mounted) return;
+              if (!ok) {
+                Get.snackbar(
+                  'Could not delete',
+                  _controller.errorMessage,
+                  snackPosition: SnackPosition.BOTTOM,
+                  backgroundColor: const Color(0xff17191C),
+                  colorText: Colors.white,
+                );
+              }
+            },
+            child: const Text('Delete',
+                style: TextStyle(color: Color(0xffE5484D))),
+          ),
+        ],
+      ),
+    );
   }
 
   @override
@@ -166,7 +245,11 @@ class _ForumRepliesScreenState extends State<ForumRepliesScreen> {
                     ...replies.map(
                       (reply) => Padding(
                         padding: EdgeInsets.fromLTRB(16.w, 14.h, 16.w, 14.h),
-                        child: ForumReplyTile(
+                        child: Builder(builder: (_) {
+                          // The listing already said whether each reply is
+                          // bookmarked, so the icon is right on first paint.
+                          _seedSaved(reply);
+                          return ForumReplyTile(
                           reply: reply,
                           onReply: (r) {
                             setState(() => _replyingTo = r);
@@ -174,7 +257,9 @@ class _ForumRepliesScreenState extends State<ForumRepliesScreen> {
                           },
                           onToggleReaction: _controller.toggleReplyReaction,
                           onShowMore: _controller.loadThread,
-                        ),
+                          onMore: _openReplyMenu,
+                        );
+                        }),
                       ),
                     ),
                 ],

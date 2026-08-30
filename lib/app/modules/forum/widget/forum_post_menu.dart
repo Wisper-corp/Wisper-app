@@ -3,6 +3,10 @@ import 'package:flutter_screenutil/flutter_screenutil.dart';
 
 enum ForumPostAction { replyPrivately, toggleFollow, delete }
 
+/// A reply's overflow menu. Following belongs to the post, not to one comment
+/// inside it, so it is not offered here.
+enum ForumReplyAction { replyPrivately, delete }
+
 /// The post's overflow menu. Actions are ordered by how often they are wanted
 /// and how hard they are to undo, so the destructive one sits last and apart.
 Future<ForumPostAction?> showForumPostMenu(
@@ -73,6 +77,73 @@ Future<ForumPostAction?> showForumPostMenu(
                 destructive: true,
                 onTap: () =>
                     Navigator.of(sheetContext).pop(ForumPostAction.delete),
+              ),
+            ],
+            SizedBox(height: 8.h),
+          ],
+        ),
+      ),
+    ),
+  );
+}
+
+/// The reply's overflow menu, sharing the post menu's rows so a comment and a
+/// post do not offer the same action in two different shapes.
+Future<ForumReplyAction?> showForumReplyMenu(
+  BuildContext context, {
+  required bool canDelete,
+  required bool isMine,
+  required String authorName,
+}) {
+  return showModalBottomSheet<ForumReplyAction>(
+    context: context,
+    backgroundColor: Colors.transparent,
+    builder: (sheetContext) => Container(
+      decoration: BoxDecoration(
+        color: const Color(0xff121417),
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20.r)),
+      ),
+      padding: EdgeInsets.only(top: 12.h, bottom: 8.h),
+      child: SafeArea(
+        top: false,
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Container(
+              width: 38.w,
+              height: 4.h,
+              decoration: BoxDecoration(
+                color: const Color(0xff3A4048),
+                borderRadius: BorderRadius.circular(2.r),
+              ),
+            ),
+            SizedBox(height: 14.h),
+            if (!isMine)
+              _Item(
+                icon: Icons.mail_outline_rounded,
+                label: 'Reply privately',
+                detail: 'Message $authorName instead of the whole community',
+                onTap: () => Navigator.of(sheetContext)
+                    .pop(ForumReplyAction.replyPrivately),
+              ),
+            if (canDelete) ...[
+              if (!isMine)
+                Divider(
+                  height: 20.h,
+                  thickness: 0.5,
+                  color: const Color(0xff2A2F35),
+                  indent: 20.w,
+                  endIndent: 20.w,
+                ),
+              _Item(
+                icon: Icons.delete_outline_rounded,
+                label: 'Delete reply',
+                detail: isMine
+                    ? 'Removes it, and anything replying to it'
+                    : 'Removes it for everyone, as a moderator',
+                destructive: true,
+                onTap: () =>
+                    Navigator.of(sheetContext).pop(ForumReplyAction.delete),
               ),
             ],
             SizedBox(height: 8.h),

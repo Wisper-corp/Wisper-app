@@ -170,6 +170,13 @@ class ForumReplyModel {
 
   final bool isMine;
 
+  /// The author can always remove their own; a moderator can remove anyone's,
+  /// so this is not the same question as [isMine].
+  final bool canDelete;
+
+  /// Mutable, like [hasReacted]: the bookmark fills in without a refetch.
+  bool isSaved;
+
   /// How many replies this one has in total — the server sends only the first
   /// couple inline, so this is what "Show more replies" counts against.
   final int replyCount;
@@ -186,6 +193,8 @@ class ForumReplyModel {
     this.reactionCount = 0,
     this.hasReacted = false,
     this.isMine = false,
+    this.canDelete = false,
+    this.isSaved = false,
     this.replyCount = 0,
     List<ForumReplyModel>? replies,
   }) : replies = replies ?? [];
@@ -203,6 +212,10 @@ class ForumReplyModel {
         reactionCount: json['reactionCount'] ?? 0,
         hasReacted: json['hasReacted'] ?? false,
         isMine: json['isMine'] ?? false,
+        // An older server sends neither; falling back to isMine keeps a
+        // person's own replies deletable rather than nobody's.
+        canDelete: json['canDelete'] ?? json['isMine'] ?? false,
+        isSaved: json['isSaved'] ?? false,
         replyCount: json['replyCount'] ?? 0,
         replies: (json['replies'] as List? ?? [])
             .map((e) => ForumReplyModel.fromJson(e))

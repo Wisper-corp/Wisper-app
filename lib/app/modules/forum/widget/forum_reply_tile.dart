@@ -4,6 +4,7 @@ import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:wisper/app/core/widgets/common/expandable_text.dart';
 import 'package:wisper/app/core/widgets/common/initials_avatar.dart';
 import 'package:wisper/app/modules/forum/widget/author_tap.dart';
+import 'package:wisper/app/modules/saved/widget/save_button.dart';
 import 'package:wisper/app/modules/forum/model/forum_post_model.dart';
 import 'package:wisper/app/modules/forum/widget/forum_post_card.dart';
 
@@ -200,6 +201,9 @@ class ForumReplyTile extends StatelessWidget {
             ],
           ),
         ),
+        const Spacer(),
+        // Keeping a reply, the same gesture as on a post.
+        SaveButton(kind: 'reply', itemId: reply.id, size: 17.sp),
       ],
     );
   }
