@@ -324,12 +324,33 @@ class _ProfileScreenState extends State<ProfileScreen> with WidgetsBindingObserv
         // requires scrolling back up.
         body: NestedScrollView(
           headerSliverBuilder: (context, _) => [
+            // Once the card has scrolled away nothing on screen says whose
+            // profile this is, so the name stays pinned above the tabs.
+            SliverAppBar(
+              pinned: true,
+              automaticallyImplyLeading: false,
+              backgroundColor: Theme.of(context).scaffoldBackgroundColor,
+              surfaceTintColor: Colors.transparent,
+              elevation: 0,
+              titleSpacing: 20.w,
+              toolbarHeight: 44.h,
+              title: Text(
+                displayName,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: TextStyle(
+                  fontSize: 17.sp,
+                  fontWeight: FontWeight.w700,
+                  color: Colors.white,
+                ),
+              ),
+            ),
             SliverToBoxAdapter(
               child: Padding(
                 padding: EdgeInsets.symmetric(horizontal: 20.w),
                 child: Column(
                   children: [
-                    SizedBox(height: 40.h),
+                    SizedBox(height: 8.h),
 
               // InfoCard + বাকি UI একদম একই
               InfoCard(

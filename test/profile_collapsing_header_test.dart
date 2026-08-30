@@ -28,6 +28,55 @@ void main() {
     expect(source, contains('class _PinnedTabs extends SliverPersistentHeaderDelegate'));
   });
 
+  test('the profile name stays pinned above the tabs', () {
+    // Once the card scrolls away nothing else on screen says whose profile
+    // this is.
+    expect(source, contains('SliverAppBar'));
+    expect(source, contains('title: Text(\n                displayName'));
+    // Above the tabs, not below them.
+    expect(
+      source.indexOf('SliverAppBar'),
+      lessThan(source.indexOf('SliverPersistentHeader')),
+    );
+  });
+
+  testWidgets('a pinned bar survives the list scrolling under it',
+      (tester) async {
+    await tester.pumpWidget(ScreenUtilInit(
+      designSize: const Size(390, 844),
+      builder: (_, __) => MaterialApp(
+        home: Scaffold(
+          body: NestedScrollView(
+            headerSliverBuilder: (context, _) => [
+              const SliverAppBar(
+                pinned: true,
+                automaticallyImplyLeading: false,
+                title: Text('Chisom Alaoma'),
+              ),
+              const SliverToBoxAdapter(
+                child: SizedBox(height: 400, child: Text('profile card')),
+              ),
+            ],
+            body: ListView(
+              children: List.generate(
+                30,
+                (i) => SizedBox(height: 80, child: Text('post $i')),
+              ),
+            ),
+          ),
+        ),
+      ),
+    ));
+    await tester.pumpAndSettle();
+
+    await tester.drag(find.text('post 1'), const Offset(0, -600));
+    await tester.pumpAndSettle();
+
+    expect(find.text('profile card'), findsNothing);
+    expect(find.text('Chisom Alaoma'), findsOneWidget,
+        reason: 'the name should still say whose profile this is');
+  });
+
   test('the pinned bar has one fixed height', () {
     // A pinned sliver must state its height up front; min and max must agree
     // or it would collapse as it scrolls.
