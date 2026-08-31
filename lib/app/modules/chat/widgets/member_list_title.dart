@@ -63,20 +63,26 @@ class MemberListTile extends StatelessWidget {
                     child: isGroup
                         ? InitialsAvatar(
                             name: name,
-                            imageUrl: imagePath.startsWith('http') ? imagePath : null,
+                            imageUrl: imagePath.startsWith('http')
+                                ? imagePath
+                                : null,
                             radius: 25.r,
                             fontSize: 16,
                           )
                         : isClass
                         ? InitialsAvatar(
                             name: name,
-                            imageUrl: imagePath.startsWith('http') ? imagePath : null,
+                            imageUrl: imagePath.startsWith('http')
+                                ? imagePath
+                                : null,
                             radius: 25.r,
                             fontSize: 16,
                           )
                         : InitialsAvatar(
                             name: name,
-                            imageUrl: imagePath.startsWith('http') ? imagePath : null,
+                            imageUrl: imagePath.startsWith('http')
+                                ? imagePath
+                                : null,
                             radius: 25.r,
                             fontSize: 16,
                           ),
@@ -142,62 +148,75 @@ class MemberListTile extends StatelessWidget {
                             ],
                           ),
                         ),
-                        if (unreadCount > 0)
-                          CircleAvatar(
-                            radius: 10.r,
-                            backgroundColor: Colors.blue,
-                            child: Text(
-                              unreadCount > 99 ? '99+' : unreadCount.toString(),
-                              style: GoogleFonts.poppins(
-                                fontSize: 10.sp,
-                                color: Colors.white,
-                                fontWeight: FontWeight.w500,
-                              ),
+                        // The time belongs beside the name, not alone on a
+                        // line of its own -- a community with no messages yet
+                        // has nothing else to put on the second row.
+                        if (time.isNotEmpty) ...[
+                          SizedBox(width: 8.w),
+                          Text(
+                            time,
+                            style: TextStyle(
+                              fontSize: 10.sp,
+                              color: const Color.fromARGB(255, 207, 208, 209),
                             ),
                           ),
+                        ],
                       ],
                     ),
-                    const SizedBox(height: 4),
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        Expanded(
-                          child: Row(
-                            children: [
-                              if (messageIcon != null) ...[
-                                Icon(
-                                  messageIcon,
-                                  size: 14.sp,
-                                  color: const Color(0xff98A2B3),
-                                ),
-                                SizedBox(width: 5.w),
-                              ],
-                              Flexible(
-                                child: Text(
-                                  message,
-                                  style: TextStyle(
-                                    fontSize: 12.sp,
-                                    fontWeight: FontWeight.w400,
-                                    color: message.contains('🧾')
-                                        ? const Color(0xff2799EA)
-                                        : const Color(0xff98A2B3),
+                    // Nothing to say and nothing unread: no empty second line.
+                    if (message.isNotEmpty || unreadCount > 0) ...[
+                      const SizedBox(height: 4),
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          Expanded(
+                            child: Row(
+                              children: [
+                                if (messageIcon != null) ...[
+                                  Icon(
+                                    messageIcon,
+                                    size: 14.sp,
+                                    color: const Color(0xff98A2B3),
                                   ),
-                                  overflow: TextOverflow.ellipsis,
-                                  maxLines: 1,
+                                  SizedBox(width: 5.w),
+                                ],
+                                Flexible(
+                                  child: Text(
+                                    message,
+                                    style: TextStyle(
+                                      fontSize: 12.sp,
+                                      fontWeight: FontWeight.w400,
+                                      color: message.contains('🧾')
+                                          ? const Color(0xff2799EA)
+                                          : const Color(0xff98A2B3),
+                                    ),
+                                    overflow: TextOverflow.ellipsis,
+                                    maxLines: 1,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                          if (unreadCount > 0) ...[
+                            SizedBox(width: 8.w),
+                            CircleAvatar(
+                              radius: 10.r,
+                              backgroundColor: Colors.blue,
+                              child: Text(
+                                unreadCount > 99
+                                    ? '99+'
+                                    : unreadCount.toString(),
+                                style: GoogleFonts.poppins(
+                                  fontSize: 10.sp,
+                                  color: Colors.white,
+                                  fontWeight: FontWeight.w500,
                                 ),
                               ),
-                            ],
-                          ),
-                        ),
-                        Text(
-                          time,
-                          style: TextStyle(
-                            fontSize: 10.sp,
-                            color: const Color.fromARGB(255, 207, 208, 209),
-                          ),
-                        ),
-                      ],
-                    ),
+                            ),
+                          ],
+                        ],
+                      ),
+                    ],
                     // Members row for groups/classes
                     if ((isGroup || isClass) && memberCount != null) ...[
                       const SizedBox(height: 6),
@@ -216,7 +235,8 @@ class MemberListTile extends StatelessWidget {
   }
 
   String _formatMemberCount(int count) {
-    if (count >= 1000000) return '${(count / 1000000).toStringAsFixed(1)}M members';
+    if (count >= 1000000)
+      return '${(count / 1000000).toStringAsFixed(1)}M members';
     if (count >= 1000) return '${(count / 1000).toStringAsFixed(1)}K members';
     return '$count members';
   }
