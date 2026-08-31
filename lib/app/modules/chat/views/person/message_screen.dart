@@ -71,6 +71,10 @@ class _ChatScreenState extends State<ChatScreen> {
       _offerService = Get.put(OfferService());
     }
 
+    // What the caller knew, until the socket says otherwise. Most callers know
+    // nothing, which is why every chat used to open as Offline.
+    if (widget.isOnline != null) ctrl.peerOnline.value = widget.isOnline!;
+
     WidgetsBinding.instance.addPostFrameCallback((_) {
       seenMessageController.seenMessage(widget.chatId!);
       ctrl.setupChat(chatId: widget.chatId);
@@ -79,6 +83,9 @@ class _ChatScreenState extends State<ChatScreen> {
     });
 
     _scrollController.addListener(_scrollListener);
+    // Nothing in the app ever told the server we were typing, so the other
+    // side could never be shown it.
+    ctrl.textController.addListener(_onComposerChanged);
     super.initState();
   }
 
@@ -88,6 +95,16 @@ class _ChatScreenState extends State<ChatScreen> {
   Future<void> _loadOffers() async {
     // No-op: offers are now returned as part of getMessages with offerData embedded
     // Calling getOffersByChatId separately caused race conditions and duplicates
+  }
+
+  void _onComposerChanged() {
+    // Clearing the box is a stop, not a start -- otherwise deleting the last
+    // character leaves them waiting on the idle timer.
+    if (ctrl.textController.text.trim().isEmpty) {
+      ctrl.stopTypingNow();
+    } else {
+      ctrl.notifyTyping();
+    }
   }
 
   void _scrollListener() {
@@ -417,6 +434,9 @@ class _ChatScreenState extends State<ChatScreen> {
   @override
   void dispose() {
     _scrollController.removeListener(_scrollListener);
+    ctrl.textController.removeListener(_onComposerChanged);
+    // Leaving the screen mid-word must not leave them typing for good.
+    ctrl.stopTypingNow();
     // Not disposed here: it belongs to MessageController, which disposes it.
     super.dispose();
   }
@@ -428,13 +448,20 @@ class _ChatScreenState extends State<ChatScreen> {
         mainAxisSize: MainAxisSize.min,
         mainAxisAlignment: MainAxisAlignment.end,
         children: [
-          ChatHeader(
-            isPerson: widget.isPerson,
-            chatId: widget.chatId,
-            name: widget.receiverName,
-            image: widget.receiverImage,
-            memberId: widget.receiverId,
-            status: widget.isOnline,
+          // Live, not a snapshot: the socket pushes the chat list again every
+          // time anyone connects or disconnects, and a typing event whenever
+          // they start or stop. The header used to keep whatever was passed in
+          // when the screen opened.
+          Obx(
+            () => ChatHeader(
+              isPerson: widget.isPerson,
+              chatId: widget.chatId,
+              name: widget.receiverName,
+              image: widget.receiverImage,
+              memberId: widget.receiverId,
+              status: ctrl.peerOnline.value,
+              isTyping: ctrl.peerTyping.value,
+            ),
           ),
 
           Expanded(

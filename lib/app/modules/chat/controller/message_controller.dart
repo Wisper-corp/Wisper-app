@@ -1,5 +1,8 @@
 // app/modules/chat/controller/message_controller.dart
 import 'package:flutter/material.dart';
+import 'dart:async';
+
+import 'package:wisper/app/core/utils/chat_presence.dart';
 import 'package:wisper/app/core/utils/chat_scroll.dart';
 import 'package:get/get.dart';
 import 'package:wisper/app/modules/chat/model/offer_model.dart';
@@ -20,6 +23,24 @@ class MessageController extends GetxController {
   var messages = <Map<String, dynamic>>[].obs; // newest first
   String _currentChatId = '';
 
+  /// Whether the other person is connected, and whether they are typing.
+  ///
+  /// Both come from events the socket was already delivering. The header used
+  /// to take a bool passed in when the screen opened, so it never changed; the
+  /// typing event was received and only printed.
+  final RxBool peerOnline = false.obs;
+  final RxBool peerTyping = false.obs;
+
+  /// Stops the indicator if a stop event is lost -- a peer who closes the app
+  /// mid-word would otherwise be typing for good.
+  Timer? _peerTypingTimeout;
+
+  /// Our own typing, throttled: one start per burst, one stop once quiet.
+  bool _typingSent = false;
+  Timer? _typingIdle;
+
+  Worker? _chatListWorker;
+
   final ScrollController scrollController = ScrollController();
   final TextEditingController textController = TextEditingController();
   late String userAuthId;
@@ -32,6 +53,8 @@ class MessageController extends GetxController {
 
   void setupChat({required String? chatId}) {
     _currentChatId = chatId ?? '';
+    // Presence belongs to the conversation being opened, not the last one.
+    peerTyping.value = false;
     messages.clear();
     isLoading.value = true;
 
@@ -52,6 +75,12 @@ class MessageController extends GetxController {
       socketService.socket.on('chatList', _handleIncomingChat);
       socketService.socket.on('newMessage', _handleIncomingMessage);
       socketService.socket.on('typingStatus', _handleTypingStatus);
+
+      // The chat list is pushed again whenever anyone connects or disconnects,
+      // carrying isOnline for every participant. That is the presence feed.
+      _chatListWorker?.dispose();
+      _chatListWorker = ever(socketService.chatListPayload, _handleChatList);
+      _handleChatList(socketService.chatListPayload.value);
     } catch (e) {
       // Socket not ready yet, retry
       Future.delayed(const Duration(seconds: 1), _attachSocketListeners);
@@ -76,9 +105,59 @@ class MessageController extends GetxController {
     socketService.socketFriendList.refresh(); // GetX UI update
   }
 
+  void _handleChatList(dynamic payload) {
+    if (payload == null || _currentChatId.isEmpty) return;
+    final online = peerOnlineFromChatList(
+      payload,
+      chatId: _currentChatId,
+      myAuthId: userAuthId,
+    );
+    // Null is "this update says nothing about them", not "offline".
+    if (online != null) peerOnline.value = online;
+  }
+
   void _handleTypingStatus(dynamic data) {
-    print('typingStatus called');
-    print(data);
+    final typing = peerTypingFromEvent(
+      data,
+      chatId: _currentChatId,
+      myAuthId: userAuthId,
+    );
+    if (typing == null) return;
+
+    peerTyping.value = typing;
+    _peerTypingTimeout?.cancel();
+    if (typing) {
+      // A stop event can be lost -- a peer who closes the app mid-word would
+      // otherwise show as typing until the screen is left.
+      _peerTypingTimeout = Timer(
+        const Duration(seconds: 6),
+        () => peerTyping.value = false,
+      );
+    }
+  }
+
+  /// Call on every keystroke. Sends one start per burst and one stop once the
+  /// typing has actually stopped, rather than an event per character.
+  void notifyTyping() {
+    if (_currentChatId.isEmpty || !socketService.isInitialized) return;
+
+    if (!_typingSent) {
+      _typingSent = true;
+      socketService.socket.emit('startTyping', {'chatId': _currentChatId});
+    }
+
+    _typingIdle?.cancel();
+    _typingIdle = Timer(const Duration(seconds: 2), stopTypingNow);
+  }
+
+  /// Sends the stop immediately -- on send, and when the screen closes.
+  void stopTypingNow() {
+    _typingIdle?.cancel();
+    _typingIdle = null;
+    if (!_typingSent) return;
+    _typingSent = false;
+    if (_currentChatId.isEmpty || !socketService.isInitialized) return;
+    socketService.socket.emit('stopTyping', {'chatId': _currentChatId});
   }
 
   void _handleIncomingMessage(dynamic data) {
@@ -196,6 +275,8 @@ class MessageController extends GetxController {
     print('sendMessage emitted: chatId=$chatId text=$text');
     print('User Id : $userId');
 
+    stopTypingNow();
+
     // Clear everything
     textController.clear();
     imageDecodeController.clearAll();
@@ -292,6 +373,10 @@ class MessageController extends GetxController {
   @override
   void onClose() {
     socketService.socket.off('newMessage');
+    _peerTypingTimeout?.cancel();
+    _typingIdle?.cancel();
+    _chatListWorker?.dispose();
+    stopTypingNow();
     scrollController.dispose();
     textController.dispose();
     super.onClose();

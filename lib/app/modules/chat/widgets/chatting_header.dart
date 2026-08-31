@@ -38,6 +38,10 @@ class ChatHeader extends StatefulWidget {
   final String? name;
   final String? image;
   final bool? status;
+
+  /// Takes the place of Online/Offline while it is true, the way every
+  /// messaging app does it.
+  final bool isTyping;
   final String? memberId;
   final String? chatId;
   final bool? isPerson;
@@ -47,6 +51,7 @@ class ChatHeader extends StatefulWidget {
     this.name,
     this.image,
     this.status,
+    this.isTyping = false,
     this.memberId,
     this.chatId,
     this.isPerson,
@@ -477,14 +482,18 @@ class _ChatHeaderState extends State<ChatHeader> {
                                 ),
                               ),
                               Text(
-                                widget.status == true ? 'Online' : 'Offline',
+                                widget.isTyping
+                                    ? 'typing...'
+                                    : widget.status == true
+                                        ? 'Online'
+                                        : 'Offline',
                                 maxLines: 1,
                                 overflow: TextOverflow.ellipsis,
                                 style: GoogleFonts.poppins(
                                   fontSize: 12.sp,
                                   fontWeight: FontWeight.w400,
                                   height: 1.3,
-                                  color: widget.status == true
+                                  color: widget.isTyping || widget.status == true
                                       ? Colors.green
                                       : LightThemeColors.themeGreyColor,
                                 ),

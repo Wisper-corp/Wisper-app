@@ -29,7 +29,10 @@ void main() {
   });
 
   test('the header still shows a status, which is what it is sized to', () {
-    expect(source, contains("widget.status == true ? 'Online' : 'Offline'"));
+    // The words themselves, not the expression that picks between them --
+    // "typing..." joined them later and the avatar sizing did not change.
+    expect(source, contains("'Online'"));
+    expect(source, contains("'Offline'"));
     expect(source, contains('fontSize: 17.sp'));
     expect(source, contains('fontSize: 12.sp'));
   });
