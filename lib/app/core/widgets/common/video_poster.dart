@@ -17,6 +17,7 @@ class VideoPoster extends StatefulWidget {
     required this.onTap,
     this.aspectRatio = 16 / 9,
     this.borderRadius = 12,
+    this.maxHeight,
   });
 
   final String url;
@@ -25,6 +26,11 @@ class VideoPoster extends StatefulWidget {
   /// Used until the video reports its own, so the tile does not jump.
   final double aspectRatio;
   final double borderRadius;
+
+  /// Stops a portrait clip running the height of the screen. The poster keeps
+  /// its proportions and narrows instead, which is what a tall video looks
+  /// like in any messaging app.
+  final double? maxHeight;
 
   @override
   State<VideoPoster> createState() => _VideoPosterState();
@@ -74,7 +80,7 @@ class _VideoPosterState extends State<VideoPoster> {
         ? _controller!.value.aspectRatio
         : widget.aspectRatio;
 
-    return GestureDetector(
+    final poster = GestureDetector(
       onTap: widget.onTap,
       behavior: HitTestBehavior.opaque,
       child: ClipRRect(
@@ -95,10 +101,6 @@ class _VideoPosterState extends State<VideoPoster> {
                 )
               else
                 const ColoredBox(color: Color(0xff17191C)),
-              // A scrim so the button reads against a bright frame.
-              const DecoratedBox(
-                decoration: BoxDecoration(color: Color(0x33000000)),
-              ),
               Center(
                 child: Container(
                   width: 54.r,
@@ -119,6 +121,15 @@ class _VideoPosterState extends State<VideoPoster> {
             ],
           ),
         ),
+      ),
+    );
+
+    if (widget.maxHeight == null) return poster;
+    return Align(
+      alignment: Alignment.centerLeft,
+      child: ConstrainedBox(
+        constraints: BoxConstraints(maxHeight: widget.maxHeight!),
+        child: poster,
       ),
     );
   }

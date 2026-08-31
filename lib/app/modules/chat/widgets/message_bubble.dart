@@ -388,6 +388,9 @@ class MessageBubble extends StatelessWidget {
                           VideoPoster(
                             url: fileUrl,
                             borderRadius: 13,
+                            // The same ceiling the picture has, so a portrait
+                            // clip cannot tower over every other message.
+                            maxHeight: kChatMediaMaxHeight,
                             onTap: () => Get.to(
                               () => VideoPlayerScreen(videoUrl: fileUrl),
                             ),
