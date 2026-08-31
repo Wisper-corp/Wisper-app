@@ -35,9 +35,10 @@ void main() {
   });
 
   test('the corners are concentric with the bubble', () {
-    // 16 outer, 3 of padding, so 13 inside — for both the image and the clip.
-    expect('BorderRadius.circular(13.r)'.allMatches(source).length,
-        greaterThanOrEqualTo(3));
+    // 16 outer, 3 of padding, so 13 inside — for the image directly, and
+    // handed to the video poster, which rounds itself.
+    expect(source, contains('BorderRadius.circular(13.r)'));
+    expect(source, contains('borderRadius: 13'));
   });
 
   test('the bubble itself keeps its shape', () {
