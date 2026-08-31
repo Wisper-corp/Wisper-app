@@ -277,7 +277,6 @@ class _OthersPersonScreenState extends State<OthersPersonScreen> {
                   controller.othersProfileData?.connection?.id;
 
               return InfoCard(
-                isBack: true,
                 isEditImage: false,
                 isTrailing: false,
                 imagePath: person?.image ?? '',
