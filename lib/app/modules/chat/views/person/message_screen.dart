@@ -1,5 +1,6 @@
 // ChatScreen with WhatsApp-like message animation
 import 'package:flutter/material.dart';
+import 'package:wisper/app/core/utils/chat_scroll.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:get/get.dart';
 import 'package:wisper/app/core/others/get_storage.dart';
@@ -40,7 +41,13 @@ class ChatScreen extends StatefulWidget {
 
 class _ChatScreenState extends State<ChatScreen> {
   final MessageController ctrl = Get.put(MessageController());
-  final ScrollController _scrollController = ScrollController();
+  /// The controller's own, not a second one. getMessages() pins this to the
+  /// newest message across several frames once the history lands; a private
+  /// controller here was never attached to anything it pinned, so opening a
+  /// chat left the view wherever the first partial layout happened to end --
+  /// the middle of the conversation. The group and class screens already use
+  /// this one.
+  ScrollController get _scrollController => ctrl.scrollController;
 
   /// Set when this user sends; forces the next arriving message to scroll even
   /// if they had scrolled up. Without it, your own message can land off-screen.
@@ -102,16 +109,15 @@ class _ChatScreenState extends State<ChatScreen> {
   }
 
   void _scrollToBottom({bool animated = true}) {
-    if (_scrollController.hasClients) {
-      if (animated) {
-        _scrollController.animateTo(
-          _scrollController.position.maxScrollExtent,
-          duration: const Duration(milliseconds: 300),
-          curve: Curves.easeOut,
-        );
-      } else {
-        _scrollController.jumpTo(_scrollController.position.maxScrollExtent);
-      }
+    if (animated) {
+      chatScrollToBottom(_scrollController);
+    } else {
+      // Not a single jump: images and wrapped text finish laying out after the
+      // frame that inserted them, so one jump lands short. This pins across
+      // several frames.
+      chatScrollToBottomAfterFrame(_scrollController);
+    }
+    if (mounted) {
       setState(() {
         _showNewMessageIndicator = false;
       });
@@ -128,7 +134,13 @@ class _ChatScreenState extends State<ChatScreen> {
       // along when the user was already reading at the bottom.
       if (_isAtBottom || _justSent) {
         _justSent = false;
-        WidgetsBinding.instance.addPostFrameCallback((_) => _scrollToBottom());
+        // The first batch is the whole history arriving at once. Animating
+        // towards an extent that is still growing lands somewhere in the
+        // middle, so that one is pinned rather than animated.
+        final isFirstBatch = _previousMessageCount == 0;
+        WidgetsBinding.instance.addPostFrameCallback(
+          (_) => _scrollToBottom(animated: !isFirstBatch),
+        );
       } else {
         // Show new message indicator
         setState(() {
@@ -405,7 +417,7 @@ class _ChatScreenState extends State<ChatScreen> {
   @override
   void dispose() {
     _scrollController.removeListener(_scrollListener);
-    _scrollController.dispose();
+    // Not disposed here: it belongs to MessageController, which disposes it.
     super.dispose();
   }
 
