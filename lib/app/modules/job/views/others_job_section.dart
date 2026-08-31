@@ -33,58 +33,58 @@ class _OthersJobSectionState extends State<OthersJobSection> {
 
   @override
   Widget build(BuildContext context) {
-    return Expanded(
-      // Expanded Obx এর বাইরে → সমস্যা সমাধান!
-      child: Obx(() {
-        if (controller.inProgress) {
-          return PostShimmerEffectWidget();
-        }
+    // No Expanded here. This section is shown inside a NestedScrollView body,
+    // which is not a Flex, so an Expanded root threw on every build. The body
+    // already hands down a bounded height, which is all the list needed.
+    return Obx(() {
+      if (controller.inProgress) {
+        return PostShimmerEffectWidget();
+      }
 
-        if (controller.allJobData.isEmpty) {
-          if (!connectivityService.isOnline.value) {
-            return const Center(child: PostShimmerEffectWidget());
-          }
-          return const Center(
-            child: Text(
-              'No posts yet',
-              style: TextStyle(color: Colors.white70, fontSize: 14),
+      if (controller.allJobData.isEmpty) {
+        if (!connectivityService.isOnline.value) {
+          return const Center(child: PostShimmerEffectWidget());
+        }
+        return const Center(
+          child: Text(
+            'No posts yet',
+            style: TextStyle(color: Colors.white70, fontSize: 14),
+          ),
+        );
+      }
+
+      return ListView.builder(
+        padding: EdgeInsets.zero,
+        itemCount: controller.allJobData.length,
+        itemBuilder: (context, index) {
+          final job = controller.allJobData[index];
+          final formattedTime = DateFormatter(
+            job.createdAt!,
+          ).getRelativeTimeFormat();
+
+          return Padding(
+            padding: EdgeInsets.symmetric(vertical: 8.h),
+            child: JobCard(
+              showAction: false,
+              ontap: null,
+              postId: job.id ?? '',
+              ownerId: job.author?.id ?? '',
+              isPerson: job.author?.person != null,
+              ownerImage: job.author?.business?.image ?? '',
+              ownerName: job.author?.business?.name ?? 'Unknown Company',
+              ownerDesignation: job.author?.business?.industry ?? '',
+              jobTitle: job.title ?? 'No Title',
+              salary: job.salary?.toString() ?? 'Negotiable',
+              isScraped: job.isScraped ?? false,
+              location: job.location ?? 'Remote',
+              jobType: job.type ?? 'Full Time',
+              jobDescription: job.description ?? '',
+              shiftType: job.compensationType ?? 'Hourly',
+              date: formattedTime,
             ),
           );
-        }
-
-        return ListView.builder(
-          padding: EdgeInsets.zero,
-          itemCount: controller.allJobData.length,
-          itemBuilder: (context, index) {
-            final job = controller.allJobData[index];
-            final formattedTime = DateFormatter(
-              job.createdAt!,
-            ).getRelativeTimeFormat();
-
-            return Padding(
-              padding: EdgeInsets.symmetric(vertical: 8.h),
-              child: JobCard(
-                showAction: false,
-                ontap: null,
-                postId: job.id ?? '',
-                ownerId: job.author?.id ?? '',
-                isPerson: job.author?.person != null,
-                ownerImage: job.author?.business?.image ?? '',
-                ownerName: job.author?.business?.name ?? 'Unknown Company',
-                ownerDesignation: job.author?.business?.industry ?? '',
-                jobTitle: job.title ?? 'No Title',
-                salary: job.salary?.toString() ?? 'Negotiable',
-                isScraped: job.isScraped ?? false,
-                location: job.location ?? 'Remote',
-                jobType: job.type ?? 'Full Time',
-                jobDescription: job.description ?? '',
-                shiftType: job.compensationType ?? 'Hourly',
-                date: formattedTime,
-              ),
-            );
-          },
-        );
-      }),
-    );
+        },
+      );
+    });
   }
 }

@@ -189,31 +189,31 @@ class _MyResumeSectionState extends State<MyResumeSection> {
         );
       }
 
-      return Expanded(
-        child: ListView.builder(
-          padding: EdgeInsets.zero,
-          itemCount: resumes.length,
-          itemBuilder: (context, index) {
-            final resume = resumes[index];
-            final isMyResume =
-                widget.userId == StorageUtil.getData(StorageUtil.userId);
+      // No Expanded here: this section is shown inside a NestedScrollView
+      // body, which is not a Flex, so an Expanded root threw on every build.
+      return ListView.builder(
+        padding: EdgeInsets.zero,
+        itemCount: resumes.length,
+        itemBuilder: (context, index) {
+          final resume = resumes[index];
+          final isMyResume =
+              widget.userId == StorageUtil.getData(StorageUtil.userId);
 
-            return Padding(
-              padding: EdgeInsets.symmetric(vertical: 4.h, horizontal: 4.w),
-              child: DocInfo(
-                isMyResume: isMyResume,
-                onDelete: () {
-                  if (resume.id != null) {
-                    _showDeleteResume(resume.id!);
-                  }
-                },
-                title: resume.name ?? 'Untitled Resume',
-                isDownloaded: true,
-                onTap: () => _openResumeFile(resume),
-              ),
-            );
-          },
-        ),
+          return Padding(
+            padding: EdgeInsets.symmetric(vertical: 4.h, horizontal: 4.w),
+            child: DocInfo(
+              isMyResume: isMyResume,
+              onDelete: () {
+                if (resume.id != null) {
+                  _showDeleteResume(resume.id!);
+                }
+              },
+              title: resume.name ?? 'Untitled Resume',
+              isDownloaded: true,
+              onTap: () => _openResumeFile(resume),
+            ),
+          );
+        },
       );
     });
   }

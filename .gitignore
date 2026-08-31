@@ -44,3 +44,6 @@ app.*.map.json
 /android/app/profile
 /android/app/release
 output/
+
+# JVM heap dumps from Gradle OOM
+*.hprof

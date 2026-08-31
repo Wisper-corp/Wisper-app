@@ -13,7 +13,7 @@ class OthersPostSection extends StatefulWidget {
 
   @override
   State<OthersPostSection> createState() => _OthersPostSectionState();
-} 
+}
 
 class _OthersPostSectionState extends State<OthersPostSection> {
   final OthersFeedPostController controller = Get.put(
@@ -33,64 +33,64 @@ class _OthersPostSectionState extends State<OthersPostSection> {
 
   @override
   Widget build(BuildContext context) {
-    return Expanded(
-      // Expanded Obx এর বাইরে → সমস্যা সমাধান!
-      child: Obx(() {
-        if (controller.inProgress) {
-          return PostShimmerEffectWidget();
-        }
+    // No Expanded here. This section is shown inside a NestedScrollView body,
+    // which is not a Flex, so an Expanded root threw on every build. The body
+    // already hands down a bounded height, which is all the list needed.
+    return Obx(() {
+      if (controller.inProgress) {
+        return PostShimmerEffectWidget();
+      }
 
-        if (controller.allPostData.isEmpty) {
-          return const Center(
-            child: Text(
-              'No posts yet',
-              style: TextStyle(color: Colors.white70, fontSize: 16),
+      if (controller.allPostData.isEmpty) {
+        return const Center(
+          child: Text(
+            'No posts yet',
+            style: TextStyle(color: Colors.white70, fontSize: 16),
+          ),
+        );
+      }
+
+      return ListView.builder(
+        padding: EdgeInsets.zero,
+        itemCount: controller.allPostData.length,
+        itemBuilder: (context, index) {
+          final post = controller.allPostData[index];
+          final formattedTime = DateFormatter(
+            post.createdAt!,
+          ).getRelativeTimeFormat();
+
+          return Padding(
+            padding: const EdgeInsets.symmetric(vertical: 8.0),
+
+            child: PostCard(
+              postId: post.id,
+              isPerson: post.author?.person != null,
+              isComment: false,
+              onTapComment: () {
+                Get.to(CommentScreen(postId: post.id ?? ''));
+              },
+              ownerId: post.author?.id ?? '',
+              trailing: const SizedBox.shrink(),
+              ownerName: post.author?.person != null
+                  ? post.author?.person?.name ?? ''
+                  : post.author?.business?.name ?? '',
+              ownerImage: post.author?.person != null
+                  ? post.author?.person?.image
+                  : post.author?.business?.image ?? '',
+              ownerProfession: post.author?.person != null
+                  ? post.author?.person?.title
+                  : post.author?.business?.industry ?? '',
+              postImage: post.images.isNotEmpty ? post.images : [],
+              postDescription: post.caption ?? '',
+              postTime: formattedTime,
+              views: post.views.toString(),
+              price: post.price,
+              currency: post.currency,
+              deliveryTime: post.deliveryTime,
             ),
           );
-        }
-
-        return ListView.builder(
-          padding: EdgeInsets.zero,
-          itemCount: controller.allPostData.length,
-          itemBuilder: (context, index) {
-            final post = controller.allPostData[index];
-            final formattedTime = DateFormatter(
-              post.createdAt!,
-            ).getRelativeTimeFormat();
-
-            return Padding(
-              padding: const EdgeInsets.symmetric(vertical: 8.0),
-              
-              child: PostCard(
-                postId: post.id,
-                isPerson: post.author?.person != null,
-                isComment: false,
-                onTapComment: () {
-                   Get.to(CommentScreen(postId: post.id ?? ''));
-                },
-                ownerId: post.author?.id ?? '',
-                trailing: const SizedBox.shrink(),
-                ownerName: post.author?.person != null
-                    ? post.author?.person?.name ?? ''
-                    : post.author?.business?.name ?? '',
-                ownerImage: post.author?.person != null
-                    ? post.author?.person?.image
-                    : post.author?.business?.image ?? '',
-                ownerProfession: post.author?.person != null
-                    ? post.author?.person?.title
-                    : post.author?.business?.industry ?? '',
-                postImage: post.images.isNotEmpty ? post.images : [],
-                postDescription: post.caption ?? '',
-                postTime: formattedTime,
-                views: post.views.toString(),
-                price: post.price,
-                currency: post.currency,
-                deliveryTime: post.deliveryTime,
-              ),
-            );
-          },
-        );
-      }),
-    );
+        },
+      );
+    });
   }
 }
