@@ -164,14 +164,18 @@ Future<void> _startServices() async {
     debugPrint('🔌 Socket init failed (non-fatal): $e');
   }
 
-  await _initFCMToken();
-
+  // Before the token, not after. This asks for the notification permission,
+  // and it used to sit behind a token fetch that is allowed twenty seconds --
+  // so on a first install the prompt could arrive long after the user had
+  // moved on, or not at all. Nothing here needs the token.
   try {
     // Registers the FCM background handler, which nothing else does.
     await PushNotificationService().init();
   } catch (e) {
     debugPrint('🔥 Notification init failed (non-fatal): $e');
   }
+
+  await _initFCMToken();
 }
 
 Future<void> _initFCMToken() async {
