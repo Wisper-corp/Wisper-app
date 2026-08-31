@@ -1,4 +1,5 @@
 import 'package:dio/dio.dart';
+import 'package:wisper/app/core/widgets/common/video_poster.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:get/get.dart';
@@ -382,62 +383,13 @@ class MessageBubble extends StatelessWidget {
                             ),
                           )
                         else if (fileType == 'VIDEO')
-                          GestureDetector(
-                            onTap: () {
-                              Get.to(
-                                () => VideoPlayerScreen(videoUrl: fileUrl),
-                              );
-                            },
-                            // Nothing here knows the clip's real shape -- no
-                            // thumbnail is generated -- so it takes the frame
-                            // a video usually has rather than a squat band.
-                            child: Container(
-                              height: kChatMediaMaxHeight * 0.75,
-                              width: double.infinity,
-                              decoration: BoxDecoration(
-                                color: Colors.black54,
-                                // Concentric with the bubble, as the image is.
-                                borderRadius: BorderRadius.circular(13.r),
-                              ),
-                              child: Stack(
-                                alignment: Alignment.center,
-                                children: [
-                                  // Video thumbnail (if available)
-                                  Container(
-                                    decoration: BoxDecoration(
-                                      borderRadius: BorderRadius.circular(13.r),
-                                    ),
-                                    child: const Icon(
-                                      Icons.play_circle_filled,
-                                      size: 60,
-                                      color: Colors.white70,
-                                    ),
-                                  ),
-                                  Positioned(
-                                    bottom: 8,
-                                    right: 8,
-                                    child: Container(
-                                      padding: EdgeInsets.symmetric(
-                                        horizontal: 8.w,
-                                        vertical: 4.h,
-                                      ),
-                                      decoration: BoxDecoration(
-                                        color: Colors.black45,
-                                        borderRadius: BorderRadius.circular(
-                                          4.r,
-                                        ),
-                                      ),
-                                      child: Text(
-                                        'Video',
-                                        style: TextStyle(
-                                          color: Colors.white,
-                                          fontSize: 12.sp,
-                                        ),
-                                      ),
-                                    ),
-                                  ),
-                                ],
-                              ),
+                          // Its own first frame with a play button, the way a
+                          // feed shows a video, rather than a black box.
+                          VideoPoster(
+                            url: fileUrl,
+                            borderRadius: 13,
+                            onTap: () => Get.to(
+                              () => VideoPlayerScreen(videoUrl: fileUrl),
                             ),
                           )
                         else // Other files (pdf, doc, etc.)

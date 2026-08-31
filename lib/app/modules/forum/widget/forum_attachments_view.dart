@@ -1,6 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:url_launcher/url_launcher.dart';
+import 'package:get/get.dart';
+import 'package:wisper/app/core/utils/video_player.dart';
+import 'package:wisper/app/core/widgets/common/video_poster.dart';
 import 'package:wisper/app/core/utils/attachment_kind.dart';
 import 'package:wisper/app/core/widgets/common/image_container_widget.dart';
 
@@ -39,7 +42,15 @@ class ForumAttachmentsView extends StatelessWidget {
           ),
         for (final url in others) ...[
           SizedBox(height: 8.h),
-          _FileRow(url: url),
+          // A video is shown the way a feed shows one — its own frame with a
+          // play button — rather than as a row saying "Video".
+          if (attachmentKindOf(url) == AttachmentKind.video)
+            VideoPoster(
+              url: url,
+              onTap: () => Get.to(() => VideoPlayerScreen(videoUrl: url)),
+            )
+          else
+            _FileRow(url: url),
         ],
       ],
     );

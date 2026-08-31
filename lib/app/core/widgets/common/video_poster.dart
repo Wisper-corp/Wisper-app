@@ -1,0 +1,125 @@
+import 'package:flutter/material.dart';
+import 'package:flutter_screenutil/flutter_screenutil.dart';
+import 'package:video_player/video_player.dart';
+
+/// A video shown the way a feed shows one: its own first frame, with a play
+/// button over it.
+///
+/// The frame comes from video_player, which is already a dependency — the
+/// controller is initialised and never played, so what is on screen is a real
+/// frame of the video rather than a stand-in. Before it loads, and if it never
+/// does, a dark poster with the same play button stands in its place, so the
+/// tile never changes shape.
+class VideoPoster extends StatefulWidget {
+  const VideoPoster({
+    super.key,
+    required this.url,
+    required this.onTap,
+    this.aspectRatio = 16 / 9,
+    this.borderRadius = 12,
+  });
+
+  final String url;
+  final VoidCallback onTap;
+
+  /// Used until the video reports its own, so the tile does not jump.
+  final double aspectRatio;
+  final double borderRadius;
+
+  @override
+  State<VideoPoster> createState() => _VideoPosterState();
+}
+
+class _VideoPosterState extends State<VideoPoster> {
+  VideoPlayerController? _controller;
+  bool _ready = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadFirstFrame();
+  }
+
+  Future<void> _loadFirstFrame() async {
+    final uri = Uri.tryParse(widget.url);
+    if (uri == null) return;
+
+    final controller = VideoPlayerController.networkUrl(uri);
+    try {
+      await controller.initialize();
+      // Never played: initialising is enough to have a frame to show.
+      if (!mounted) {
+        await controller.dispose();
+        return;
+      }
+      setState(() {
+        _controller = controller;
+        _ready = true;
+      });
+    } catch (_) {
+      // A frame that will not load is not worth failing the post over.
+      await controller.dispose();
+    }
+  }
+
+  @override
+  void dispose() {
+    _controller?.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final ratio = _ready && _controller!.value.aspectRatio > 0
+        ? _controller!.value.aspectRatio
+        : widget.aspectRatio;
+
+    return GestureDetector(
+      onTap: widget.onTap,
+      behavior: HitTestBehavior.opaque,
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(widget.borderRadius.r),
+        child: AspectRatio(
+          aspectRatio: ratio,
+          child: Stack(
+            fit: StackFit.expand,
+            children: [
+              if (_ready)
+                FittedBox(
+                  fit: BoxFit.cover,
+                  child: SizedBox(
+                    width: _controller!.value.size.width,
+                    height: _controller!.value.size.height,
+                    child: VideoPlayer(_controller!),
+                  ),
+                )
+              else
+                const ColoredBox(color: Color(0xff17191C)),
+              // A scrim so the button reads against a bright frame.
+              const DecoratedBox(
+                decoration: BoxDecoration(color: Color(0x33000000)),
+              ),
+              Center(
+                child: Container(
+                  width: 54.r,
+                  height: 54.r,
+                  decoration: BoxDecoration(
+                    color: Colors.black.withValues(alpha: 0.55),
+                    shape: BoxShape.circle,
+                    border: Border.all(color: Colors.white70, width: 1.5),
+                  ),
+                  child: Icon(
+                    Icons.play_arrow_rounded,
+                    color: Colors.white,
+                    size: 32.sp,
+                    semanticLabel: 'Play video',
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}

@@ -28,10 +28,12 @@ void main() {
     expect(source, contains('final double kChatMediaMaxHeight = 320.h'));
   });
 
-  test('a clip gets a video-shaped frame, not a squat band', () {
-    final videoBranch = source.substring(videoAt, videoAt + 900);
-    expect(videoBranch, contains('kChatMediaMaxHeight * 0.75'));
+  test('a clip is shown as its own frame with a play button', () {
+    final videoBranch = source.substring(videoAt, videoAt + 600);
+    // No fixed box: the poster takes the video's own aspect ratio.
+    expect(videoBranch, contains('VideoPoster'));
     expect(videoBranch, isNot(contains('height: 200.h')));
+    expect(videoBranch, isNot(contains('Colors.black54')));
   });
 
   test('placeholders keep a fixed height, having nothing to measure', () {
