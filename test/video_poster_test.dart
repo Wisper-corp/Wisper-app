@@ -104,6 +104,57 @@ void main() {
     expect(tester.getRect(find.byType(AspectRatio)).width, 300);
   });
 
+  testWidgets('a feed caps a portrait clip at four-by-five', (tester) async {
+    // The complaint that prompted this: a phone-shot clip stood taller than
+    // the screen, so one post was the whole feed.
+    await tester.pumpWidget(host(
+      SizedBox(
+        width: 320,
+        child: VideoPoster(
+          url: 'https://example.test/portrait.mp4',
+          onTap: () {},
+          aspectRatio: 9 / 16,
+          maxHeight: 320 * 5 / 4,
+          alignment: Alignment.center,
+        ),
+      ),
+    ));
+    await tester.pump();
+
+    final rect = tester.getRect(find.byType(AspectRatio));
+    expect(rect.height, lessThanOrEqualTo(400.5));
+    // Uncapped it would have been 320 * 16 / 9.
+    expect(rect.height, lessThan(320 * 16 / 9));
+    expect(rect.width / rect.height, closeTo(9 / 16, 0.02));
+  });
+
+  testWidgets('a landscape clip is untouched by that cap', (tester) async {
+    await tester.pumpWidget(host(
+      SizedBox(
+        width: 320,
+        child: VideoPoster(
+          url: 'https://example.test/wide.mp4',
+          onTap: () {},
+          aspectRatio: 16 / 9,
+          maxHeight: 320 * 5 / 4,
+          alignment: Alignment.center,
+        ),
+      ),
+    ));
+    await tester.pump();
+
+    // Already far shorter than the ceiling, so it still fills the width.
+    expect(tester.getRect(find.byType(AspectRatio)).width, 320);
+  });
+
+  test('the forum caps its video, the way the feed images are capped', () {
+    final source = File(
+      'lib/app/modules/forum/widget/forum_attachments_view.dart',
+    ).readAsStringSync();
+    expect(source, contains('maxHeight:'));
+    expect(source, contains('5 / 4'));
+  });
+
   test('the frame is not dimmed by a scrim', () {
     // The play button carries its own contrast; a scrim over the whole poster
     // just dulls the picture.

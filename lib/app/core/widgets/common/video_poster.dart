@@ -18,6 +18,7 @@ class VideoPoster extends StatefulWidget {
     this.aspectRatio = 16 / 9,
     this.borderRadius = 12,
     this.maxHeight,
+    this.alignment = Alignment.centerLeft,
   });
 
   final String url;
@@ -31,6 +32,10 @@ class VideoPoster extends StatefulWidget {
   /// its proportions and narrows instead, which is what a tall video looks
   /// like in any messaging app.
   final double? maxHeight;
+
+  /// Where a capped poster sits in the space it no longer fills. A bubble
+  /// hangs its media off the leading edge; a feed centres it.
+  final Alignment alignment;
 
   @override
   State<VideoPoster> createState() => _VideoPosterState();
@@ -126,7 +131,7 @@ class _VideoPosterState extends State<VideoPoster> {
 
     if (widget.maxHeight == null) return poster;
     return Align(
-      alignment: Alignment.centerLeft,
+      alignment: widget.alignment,
       child: ConstrainedBox(
         constraints: BoxConstraints(maxHeight: widget.maxHeight!),
         child: poster,

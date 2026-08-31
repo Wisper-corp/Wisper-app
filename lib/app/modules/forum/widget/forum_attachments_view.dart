@@ -45,9 +45,17 @@ class ForumAttachmentsView extends StatelessWidget {
           // A video is shown the way a feed shows one — its own frame with a
           // play button — rather than as a row saying "Video".
           if (attachmentKindOf(url) == AttachmentKind.video)
-            VideoPoster(
-              url: url,
-              onTap: () => Get.to(() => VideoPlayerScreen(videoUrl: url)),
+            // Capped at four-by-five, the tallest a feed lets a portrait clip
+            // stand. Uncapped, a phone-shot video is taller than the screen
+            // and one post is the whole feed. Landscape is unaffected: it is
+            // already far wider than this.
+            LayoutBuilder(
+              builder: (context, constraints) => VideoPoster(
+                url: url,
+                maxHeight: constraints.maxWidth * 5 / 4,
+                alignment: Alignment.center,
+                onTap: () => Get.to(() => VideoPlayerScreen(videoUrl: url)),
+              ),
             )
           else
             _FileRow(url: url),
