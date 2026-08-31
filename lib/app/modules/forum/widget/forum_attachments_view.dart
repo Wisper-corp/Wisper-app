@@ -50,11 +50,14 @@ class ForumAttachmentsView extends StatelessWidget {
             // and one post is the whole feed. Landscape is unaffected: it is
             // already far wider than this.
             LayoutBuilder(
-              builder: (context, constraints) => VideoPoster(
-                url: url,
-                maxHeight: constraints.maxWidth * 5 / 4,
-                alignment: Alignment.center,
-                onTap: () => Get.to(() => VideoPlayerScreen(videoUrl: url)),
+              builder: (context, constraints) => Center(
+                // The poster sizes to itself, so a portrait clip that has been
+                // narrowed by the cap needs centring in the column it sits in.
+                child: VideoPoster(
+                  url: url,
+                  maxHeight: constraints.maxWidth * 5 / 4,
+                  onTap: () => Get.to(() => VideoPlayerScreen(videoUrl: url)),
+                ),
               ),
             )
           else

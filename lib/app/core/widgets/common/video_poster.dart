@@ -18,7 +18,6 @@ class VideoPoster extends StatefulWidget {
     this.aspectRatio = 16 / 9,
     this.borderRadius = 12,
     this.maxHeight,
-    this.alignment = Alignment.centerLeft,
   });
 
   final String url;
@@ -32,10 +31,6 @@ class VideoPoster extends StatefulWidget {
   /// its proportions and narrows instead, which is what a tall video looks
   /// like in any messaging app.
   final double? maxHeight;
-
-  /// Where a capped poster sits in the space it no longer fills. A bubble
-  /// hangs its media off the leading edge; a feed centres it.
-  final Alignment alignment;
 
   @override
   State<VideoPoster> createState() => _VideoPosterState();
@@ -130,8 +125,16 @@ class _VideoPosterState extends State<VideoPoster> {
     );
 
     if (widget.maxHeight == null) return poster;
+    // The factors are the point: an Align without them fills the width it is
+    // offered, which left a chat bubble stretched to full width with the
+    // narrowed clip in a field of bubble colour. With them it takes the size
+    // of what it holds, so the bubble follows the clip in. The Align still
+    // earns its place by passing loose constraints down -- under a tight
+    // parent the height cap would otherwise have nothing to bite on.
+    // Anything wanting the poster centred in a wider space says so itself.
     return Align(
-      alignment: widget.alignment,
+      widthFactor: 1,
+      heightFactor: 1,
       child: ConstrainedBox(
         constraints: BoxConstraints(maxHeight: widget.maxHeight!),
         child: poster,

@@ -115,7 +115,6 @@ void main() {
           onTap: () {},
           aspectRatio: 9 / 16,
           maxHeight: 320 * 5 / 4,
-          alignment: Alignment.center,
         ),
       ),
     ));
@@ -137,7 +136,6 @@ void main() {
           onTap: () {},
           aspectRatio: 16 / 9,
           maxHeight: 320 * 5 / 4,
-          alignment: Alignment.center,
         ),
       ),
     ));
@@ -153,6 +151,40 @@ void main() {
     ).readAsStringSync();
     expect(source, contains('maxHeight:'));
     expect(source, contains('5 / 4'));
+  });
+
+  testWidgets('a capped poster takes no more width than it draws',
+      (tester) async {
+    // The shape of a chat bubble: a Column inside a fixed width, so the poster
+    // is offered the whole width and the bubble sizes to whatever it takes.
+    // An Align with no factors accepts all of it, which left the bubble at
+    // full width with a band of colour beside the narrowed clip.
+    await tester.pumpWidget(host(
+      SizedBox(
+        width: 300,
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            VideoPoster(
+              url: 'https://example.test/portrait.mp4',
+              onTap: () {},
+              aspectRatio: 9 / 16,
+              maxHeight: 200,
+            ),
+          ],
+        ),
+      ),
+    ));
+    await tester.pump();
+
+    final drawn = tester.getRect(find.byType(AspectRatio));
+    final occupied = tester.getRect(find.byType(VideoPoster));
+
+    expect(drawn.width, lessThan(300), reason: 'the cap should narrow it');
+    // The widget claims no more room than the frame it actually paints, so
+    // the bubble around it can close in.
+    expect(occupied.width, closeTo(drawn.width, 1));
   });
 
   test('the frame is not dimmed by a scrim', () {
