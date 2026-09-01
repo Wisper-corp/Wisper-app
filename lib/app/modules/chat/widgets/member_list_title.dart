@@ -44,7 +44,10 @@ class MemberListTile extends StatelessWidget {
       // Nothing below the separator: it is the last thing this tile draws, so
       // the swipe buttons revealed behind the row end level with it rather
       // than running on past into the gap under it.
-      padding: const EdgeInsets.only(top: 4),
+      // The 12 that used to sit under the line lives up here instead, so the
+      // distance from one row's line to the next row's picture is what it
+      // always was. 4 + 12.
+      padding: const EdgeInsets.only(top: 16),
       child: InkWell(
         onTap: onTap,
         child: Column(
@@ -242,7 +245,8 @@ class MemberListTile extends StatelessWidget {
                 ],
               ),
             ),
-            const SizedBox(height: 12),
+            // Just clear of the picture, where this line has always sat.
+            const SizedBox(height: 3),
             // Indented to line up with the text, not the picture: avatar (50) plus
             // the 12 beside it plus the row's own 8 of padding.
             Padding(

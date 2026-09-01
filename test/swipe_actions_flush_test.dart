@@ -99,4 +99,25 @@ void main() {
     final tile = tester.getRect(find.byType(MemberListTile));
     expect(tile.bottom, closeTo(line.bottom, 0.5));
   });
+
+  testWidgets('the separator sits just clear of the picture, as it always did',
+      (tester) async {
+    // Dropping the empty second line once pulled this line up under the name,
+    // where it cut across the avatar on a community with no messages. It
+    // belongs just below the picture, and in the same place whether or not
+    // there is a message.
+    for (final message in ['', 'checking']) {
+      await pumpRow(tester, message: message);
+
+      final tile = tester.getRect(find.byType(MemberListTile));
+      final avatar = tester.getRect(find.byType(CircleAvatar).first);
+      final line = tester.getRect(separator());
+
+      expect(line.top, greaterThan(avatar.bottom),
+          reason: 'it must never cross the picture');
+      expect(line.top - avatar.bottom, closeTo(3, 0.5));
+      // The row keeps the height it had before any of this.
+      expect(tile.height, closeTo(77.5, 0.5));
+    }
+  });
 }
