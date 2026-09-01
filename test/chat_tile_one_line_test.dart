@@ -90,8 +90,10 @@ void main() {
       (tester) async {
     // The tile's overall height is set by the avatar, so measure the text
     // column itself — that is where the stray blank line would show up.
+    // The text column beside the avatar, not the tile's outer one -- the
+    // outer Column also holds the separator, whose height never varies.
     final column = find.descendant(
-      of: find.byType(MemberListTile),
+      of: find.byType(Expanded),
       matching: find.byType(Column),
     );
 

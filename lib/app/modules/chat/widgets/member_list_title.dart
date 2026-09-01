@@ -41,194 +41,218 @@ class MemberListTile extends StatelessWidget {
     final int unreadCount = int.tryParse(unreadMessageCount) ?? 0;
 
     return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 4),
+      // Nothing below the separator: it is the last thing this tile draws, so
+      // the swipe buttons revealed behind the row end level with it rather
+      // than running on past into the gap under it.
+      padding: const EdgeInsets.only(top: 4),
       child: InkWell(
         onTap: onTap,
-        child: Padding(
-          padding: const EdgeInsets.all(8.0),
-          child: Row(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              // Profile Image
-              Stack(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Padding(
+              padding: const EdgeInsets.fromLTRB(8, 8, 8, 0),
+              child: Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  // মেইন প্রোফাইল পিকচার / আইকন
-                  CircleAvatar(
-                    radius: 25.r,
-                    backgroundColor: isGroup
-                        ? const Color(0xff051B33)
-                        : isClass
-                        ? const Color(0xff102B19)
-                        : Colors.grey.shade800,
-                    child: isGroup
-                        ? InitialsAvatar(
-                            name: name,
-                            imageUrl: imagePath.startsWith('http')
-                                ? imagePath
-                                : null,
-                            radius: 25.r,
-                            fontSize: 16,
-                          )
-                        : isClass
-                        ? InitialsAvatar(
-                            name: name,
-                            imageUrl: imagePath.startsWith('http')
-                                ? imagePath
-                                : null,
-                            radius: 25.r,
-                            fontSize: 16,
-                          )
-                        : InitialsAvatar(
-                            name: name,
-                            imageUrl: imagePath.startsWith('http')
-                                ? imagePath
-                                : null,
-                            radius: 25.r,
-                            fontSize: 16,
-                          ),
-                  ),
-
-                  // শুধু Individual চ্যাটে এবং online থাকলে online dot দেখাবে
-                  if (!isGroup && !isClass && isOnline)
-                    Positioned(
-                      bottom: 0,
-                      right: 0,
-                      child: Container(
-                        width: 14.w,
-                        height: 14.h,
-                        decoration: BoxDecoration(
-                          color: Colors.green,
-                          shape: BoxShape.circle,
-                          border: Border.all(color: Colors.white, width: 2.5),
-                        ),
-                      ),
-                    ),
-                ],
-              ),
-
-              const SizedBox(width: 12),
-
-              // Chat Info
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        Expanded(
-                          child: Row(
-                            children: [
-                              Flexible(
-                                child: Text(
-                                  name,
-                                  style: TextStyle(
-                                    fontSize: 14.sp,
-                                    fontWeight: FontWeight.w600,
-                                    color: Colors.white,
-                                  ),
-                                  overflow: TextOverflow.ellipsis,
-                                  maxLines: 1,
-                                ),
+                  // Profile Image
+                  Stack(
+                    children: [
+                      // মেইন প্রোফাইল পিকচার / আইকন
+                      CircleAvatar(
+                        radius: 25.r,
+                        backgroundColor: isGroup
+                            ? const Color(0xff051B33)
+                            : isClass
+                            ? const Color(0xff102B19)
+                            : Colors.grey.shade800,
+                        child: isGroup
+                            ? InitialsAvatar(
+                                name: name,
+                                imageUrl: imagePath.startsWith('http')
+                                    ? imagePath
+                                    : null,
+                                radius: 25.r,
+                                fontSize: 16,
+                              )
+                            : isClass
+                            ? InitialsAvatar(
+                                name: name,
+                                imageUrl: imagePath.startsWith('http')
+                                    ? imagePath
+                                    : null,
+                                radius: 25.r,
+                                fontSize: 16,
+                              )
+                            : InitialsAvatar(
+                                name: name,
+                                imageUrl: imagePath.startsWith('http')
+                                    ? imagePath
+                                    : null,
+                                radius: 25.r,
+                                fontSize: 16,
                               ),
-                              widthBox5,
-                              isGroup
-                                  ? Tag(
-                                      text: 'Community',
-                                      color: Color(0xff051B33),
-                                      textColor: Color(0xff1F7DE9),
-                                    )
-                                  : isClass
-                                  ? Tag(
-                                      text: 'Class',
-                                      color: Color(0xff102B19),
-                                      textColor: Color(0xff11AE46),
-                                    )
-                                  : Container(),
-                            ],
-                          ),
-                        ),
-                        // The time belongs beside the name, not alone on a
-                        // line of its own -- a community with no messages yet
-                        // has nothing else to put on the second row.
-                        if (time.isNotEmpty) ...[
-                          SizedBox(width: 8.w),
-                          Text(
-                            time,
-                            style: TextStyle(
-                              fontSize: 10.sp,
-                              color: const Color.fromARGB(255, 207, 208, 209),
+                      ),
+
+                      // শুধু Individual চ্যাটে এবং online থাকলে online dot দেখাবে
+                      if (!isGroup && !isClass && isOnline)
+                        Positioned(
+                          bottom: 0,
+                          right: 0,
+                          child: Container(
+                            width: 14.w,
+                            height: 14.h,
+                            decoration: BoxDecoration(
+                              color: Colors.green,
+                              shape: BoxShape.circle,
+                              border: Border.all(
+                                color: Colors.white,
+                                width: 2.5,
+                              ),
                             ),
                           ),
-                        ],
-                      ],
-                    ),
-                    // Nothing to say and nothing unread: no empty second line.
-                    if (message.isNotEmpty || unreadCount > 0) ...[
-                      const SizedBox(height: 4),
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                        children: [
-                          Expanded(
-                            child: Row(
-                              children: [
-                                if (messageIcon != null) ...[
-                                  Icon(
-                                    messageIcon,
-                                    size: 14.sp,
-                                    color: const Color(0xff98A2B3),
-                                  ),
-                                  SizedBox(width: 5.w),
-                                ],
-                                Flexible(
-                                  child: Text(
-                                    message,
-                                    style: TextStyle(
-                                      fontSize: 12.sp,
-                                      fontWeight: FontWeight.w400,
-                                      color: message.contains('🧾')
-                                          ? const Color(0xff2799EA)
-                                          : const Color(0xff98A2B3),
+                        ),
+                    ],
+                  ),
+
+                  const SizedBox(width: 12),
+
+                  // Chat Info
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            Expanded(
+                              child: Row(
+                                children: [
+                                  Flexible(
+                                    child: Text(
+                                      name,
+                                      style: TextStyle(
+                                        fontSize: 14.sp,
+                                        fontWeight: FontWeight.w600,
+                                        color: Colors.white,
+                                      ),
+                                      overflow: TextOverflow.ellipsis,
+                                      maxLines: 1,
                                     ),
-                                    overflow: TextOverflow.ellipsis,
-                                    maxLines: 1,
+                                  ),
+                                  widthBox5,
+                                  isGroup
+                                      ? Tag(
+                                          text: 'Community',
+                                          color: Color(0xff051B33),
+                                          textColor: Color(0xff1F7DE9),
+                                        )
+                                      : isClass
+                                      ? Tag(
+                                          text: 'Class',
+                                          color: Color(0xff102B19),
+                                          textColor: Color(0xff11AE46),
+                                        )
+                                      : Container(),
+                                ],
+                              ),
+                            ),
+                            // The time belongs beside the name, not alone on a
+                            // line of its own -- a community with no messages yet
+                            // has nothing else to put on the second row.
+                            if (time.isNotEmpty) ...[
+                              SizedBox(width: 8.w),
+                              Text(
+                                time,
+                                style: TextStyle(
+                                  fontSize: 10.sp,
+                                  color: const Color.fromARGB(
+                                    255,
+                                    207,
+                                    208,
+                                    209,
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ],
+                        ),
+                        // Nothing to say and nothing unread: no empty second line.
+                        if (message.isNotEmpty || unreadCount > 0) ...[
+                          const SizedBox(height: 4),
+                          Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                            children: [
+                              Expanded(
+                                child: Row(
+                                  children: [
+                                    if (messageIcon != null) ...[
+                                      Icon(
+                                        messageIcon,
+                                        size: 14.sp,
+                                        color: const Color(0xff98A2B3),
+                                      ),
+                                      SizedBox(width: 5.w),
+                                    ],
+                                    Flexible(
+                                      child: Text(
+                                        message,
+                                        style: TextStyle(
+                                          fontSize: 12.sp,
+                                          fontWeight: FontWeight.w400,
+                                          color: message.contains('🧾')
+                                              ? const Color(0xff2799EA)
+                                              : const Color(0xff98A2B3),
+                                        ),
+                                        overflow: TextOverflow.ellipsis,
+                                        maxLines: 1,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                              if (unreadCount > 0) ...[
+                                SizedBox(width: 8.w),
+                                CircleAvatar(
+                                  radius: 10.r,
+                                  backgroundColor: Colors.blue,
+                                  child: Text(
+                                    unreadCount > 99
+                                        ? '99+'
+                                        : unreadCount.toString(),
+                                    style: GoogleFonts.poppins(
+                                      fontSize: 10.sp,
+                                      color: Colors.white,
+                                      fontWeight: FontWeight.w500,
+                                    ),
                                   ),
                                 ),
                               ],
-                            ),
+                            ],
                           ),
-                          if (unreadCount > 0) ...[
-                            SizedBox(width: 8.w),
-                            CircleAvatar(
-                              radius: 10.r,
-                              backgroundColor: Colors.blue,
-                              child: Text(
-                                unreadCount > 99
-                                    ? '99+'
-                                    : unreadCount.toString(),
-                                style: GoogleFonts.poppins(
-                                  fontSize: 10.sp,
-                                  color: Colors.white,
-                                  fontWeight: FontWeight.w500,
-                                ),
-                              ),
-                            ),
-                          ],
                         ],
-                      ),
-                    ],
-                    // Members row for groups/classes
-                    if ((isGroup || isClass) && memberCount != null) ...[
-                      const SizedBox(height: 6),
-                      _buildMembersRow(),
-                    ],
-                    const SizedBox(height: 12),
-                    Container(height: 0.5, color: Colors.grey.withOpacity(0.5)),
-                  ],
-                ),
+                        // Members row for groups/classes
+                        if ((isGroup || isClass) && memberCount != null) ...[
+                          const SizedBox(height: 6),
+                          _buildMembersRow(),
+                        ],
+                      ],
+                    ),
+                  ),
+                ],
               ),
-            ],
-          ),
+            ),
+            const SizedBox(height: 12),
+            // Indented to line up with the text, not the picture: avatar (50) plus
+            // the 12 beside it plus the row's own 8 of padding.
+            Padding(
+              padding: const EdgeInsets.only(left: 70, right: 8),
+              child: Container(
+                height: 0.5,
+                color: Colors.grey.withOpacity(0.5),
+              ),
+            ),
+          ],
         ),
       ),
     );
