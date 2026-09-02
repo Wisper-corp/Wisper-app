@@ -1,6 +1,8 @@
 import 'package:dio/dio.dart';
 import 'package:wisper/app/core/widgets/common/video_poster.dart';
 import 'package:flutter/material.dart';
+import 'package:wisper/app/modules/chat/widgets/quoted_message_bar.dart';
+import 'package:wisper/app/modules/chat/model/quoted_message.dart';
 import 'package:wisper/app/modules/chat/model/forum_post_ref.dart';
 import 'package:wisper/app/modules/chat/utils/open_forum_post.dart';
 import 'package:wisper/app/modules/chat/widgets/forum_post_ref_card.dart';
@@ -97,6 +99,9 @@ class MessageBubble extends StatelessWidget {
   ///
   /// A document is not media here: it is drawn as a bordered row that reads as
   /// part of the bubble, so it keeps the padding text has.
+  /// The message this one quotes, if any.
+  QuotedMessage? get _quoted => QuotedMessage.fromJson(message['replyTo']);
+
   /// The forum post this message was a private reply to, if any.
   ForumPostRef? get _forumPost => ForumPostRef.fromJson(message['forumPost']);
 
@@ -338,6 +343,17 @@ class MessageBubble extends StatelessWidget {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
+                      // The message this one is a reply to, above the words.
+                      if (_quoted != null)
+                        Padding(
+                          padding: _isMedia
+                              ? EdgeInsets.fromLTRB(0, 0, 0, 6.h)
+                              : EdgeInsets.only(bottom: 6.h),
+                          child: QuotedMessageBar(
+                            quoted: _quoted!,
+                            onLight: isMe,
+                          ),
+                        ),
                       // The forum post this was a private reply to, above the
                       // words, so the reason for the message arrives before
                       // the message. Tapping it opens the post.

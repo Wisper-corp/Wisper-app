@@ -1,4 +1,5 @@
 import 'package:wisper/app/modules/chat/model/forum_post_ref.dart';
+import 'package:wisper/app/modules/chat/model/quoted_message.dart';
 
 
 class MessageModel {
@@ -52,6 +53,7 @@ class Message {
     required this.isRead,
     this.offerData,
     this.forumPost,
+    this.replyTo,
   });
 
   final String? id;
@@ -68,6 +70,9 @@ class Message {
   /// Set when this message is a private reply to a forum post.
   final ForumPostRef? forumPost;
 
+  /// The message this one quotes.
+  final QuotedMessage? replyTo;
+
   factory Message.fromJson(Map<String, dynamic> json) {
     return Message(
       id: json["id"],
@@ -83,6 +88,7 @@ class Message {
           ? Map<String, dynamic>.from(json["offerData"])
           : null,
       forumPost: ForumPostRef.fromJson(json["forumPost"]),
+      replyTo: QuotedMessage.fromJson(json["replyTo"]),
     );
   }
 }

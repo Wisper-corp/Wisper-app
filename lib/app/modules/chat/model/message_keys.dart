@@ -16,6 +16,9 @@ class SocketMessageKeys {
   /// The forum post a private reply is about, as a plain map.
   static const String forumPost = "forumPost";
 
+  /// The message this one quotes, as a plain map.
+  static const String replyTo = "replyTo";
+
   // Offer message type
   static const String offerFileType = "OFFER";
   static const String offerData = "offerData";

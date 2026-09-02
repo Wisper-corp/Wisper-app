@@ -4,6 +4,7 @@ import 'dart:async';
 
 import 'package:wisper/app/core/utils/chat_presence.dart';
 import 'package:wisper/app/modules/chat/model/forum_post_ref.dart';
+import 'package:wisper/app/modules/chat/model/quoted_message.dart';
 import 'package:wisper/app/core/utils/chat_scroll.dart';
 import 'package:get/get.dart';
 import 'package:wisper/app/modules/chat/model/offer_model.dart';
@@ -33,6 +34,9 @@ class MessageController extends GetxController {
   /// replying privately to one. Cleared once it has been sent, so only the
   /// first message quotes the post.
   final Rxn<ForumPostRef> pendingForumPost = Rxn<ForumPostRef>();
+
+  /// The message the next one will quote, set by Reply in the long-press menu.
+  final Rxn<QuotedMessage> pendingReplyTo = Rxn<QuotedMessage>();
 
   final RxBool peerOnline = false.obs;
   final RxBool peerTyping = false.obs;
@@ -81,6 +85,8 @@ class MessageController extends GetxController {
       socketService.socket.on('chatList', _handleIncomingChat);
       socketService.socket.on('newMessage', _handleIncomingMessage);
       socketService.socket.on('typingStatus', _handleTypingStatus);
+      socketService.socket.off('messageDeleted');
+      socketService.socket.on('messageDeleted', _handleMessageDeleted);
 
       // The chat list is pushed again whenever anyone connects or disconnects,
       // carrying isOnline for every participant. That is the presence feed.
@@ -120,6 +126,50 @@ class MessageController extends GetxController {
     );
     // Null is "this update says nothing about them", not "offline".
     if (online != null) peerOnline.value = online;
+  }
+
+  /// Someone removed a message -- ours or theirs. The server names it rather
+  /// than resending the conversation.
+  void _handleMessageDeleted(dynamic data) {
+    if (data is! Map) return;
+    final id = data['messageId']?.toString();
+    if (id == null || id.isEmpty) return;
+    messages.removeWhere((m) => m[SocketMessageKeys.id] == id);
+  }
+
+  /// Sends the same words or file into another conversation.
+  ///
+  /// The socket carries it, like any other message, so the recipient gets it
+  /// live and the chat list reorders itself. Returns false when there is
+  /// nothing to forward or no connection to forward it on.
+  bool forwardMessage({
+    required String toChatId,
+    String text = '',
+    String file = '',
+    String fileType = '',
+  }) {
+    if (toChatId.isEmpty) return false;
+    if (text.trim().isEmpty && file.isEmpty) return false;
+    if (!socketService.isInitialized || !socketService.socket.connected) {
+      return false;
+    }
+
+    socketService.socket.emit('sendMessage', {
+      'chatId': toChatId,
+      if (text.trim().isNotEmpty) 'text': text,
+      if (file.isNotEmpty) 'file': file,
+      if (file.isNotEmpty && fileType.isNotEmpty) 'fileType': fileType,
+    });
+    return true;
+  }
+
+  /// Deletes one of your own messages. The socket is the only path that
+  /// works: there is no REST route for this.
+  void deleteMessageById(String messageId) {
+    if (messageId.isEmpty || !socketService.isInitialized) return;
+    socketService.socket.emit('deleteMessage', {'messageId': messageId});
+    // Taken out here too, so it goes even if the echo is missed.
+    messages.removeWhere((m) => m[SocketMessageKeys.id] == messageId);
   }
 
   void _handleTypingStatus(dynamic data) {
@@ -209,6 +259,8 @@ class MessageController extends GetxController {
         SocketMessageKeys.fileType: data['fileType'] ?? '',
         if (data['forumPost'] != null)
           SocketMessageKeys.forumPost: data['forumPost'],
+        if (data['replyTo'] != null)
+          SocketMessageKeys.replyTo: data['replyTo'],
       };
 
       messages.insert(0, msg);
@@ -273,6 +325,7 @@ class MessageController extends GetxController {
     }
 
     final attached = pendingForumPost.value;
+    final quoting = pendingReplyTo.value;
 
     final messageData = {
       "chatId": chatId,
@@ -280,6 +333,7 @@ class MessageController extends GetxController {
       if (fileUrl.isNotEmpty) "file": fileUrl,
       if (fileUrl.isNotEmpty) "fileType": fileType,
       if (attached != null) "forumPostId": attached.id,
+      if (quoting != null) "replyToId": quoting.id,
     };
 
     socketService.socket.emit('sendMessage', messageData);
@@ -289,6 +343,7 @@ class MessageController extends GetxController {
     stopTypingNow();
     // One message quotes the post, not every message afterwards.
     pendingForumPost.value = null;
+    pendingReplyTo.value = null;
 
     // Clear everything
     textController.clear();
@@ -348,6 +403,8 @@ class MessageController extends GetxController {
               // The forum post this was a private reply to, if any.
               if (msg.forumPost != null)
                 SocketMessageKeys.forumPost: msg.forumPost!.toJson(),
+              if (msg.replyTo != null)
+                SocketMessageKeys.replyTo: msg.replyTo!.toJson(),
             };
 
             if (!messages.any(

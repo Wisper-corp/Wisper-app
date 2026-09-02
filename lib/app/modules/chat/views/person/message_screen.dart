@@ -1,5 +1,10 @@
 // ChatScreen with WhatsApp-like message animation
 import 'package:flutter/material.dart';
+import 'package:wisper/app/modules/chat/widgets/quoted_message_bar.dart';
+import 'package:flutter/services.dart';
+import 'package:wisper/app/modules/chat/views/forward_message_sheet.dart';
+import 'package:wisper/app/modules/chat/model/quoted_message.dart';
+import 'package:wisper/app/modules/chat/widgets/message_action_menu.dart';
 import 'package:wisper/app/modules/chat/model/forum_post_ref.dart';
 import 'package:wisper/app/modules/chat/widgets/forum_post_ref_card.dart';
 import 'package:wisper/app/core/utils/chat_scroll.dart';
@@ -109,6 +114,117 @@ class _ChatScreenState extends State<ChatScreen> {
   Future<void> _loadOffers() async {
     // No-op: offers are now returned as part of getMessages with offerData embedded
     // Calling getOffersByChatId separately caused race conditions and duplicates
+  }
+
+  /// Long-pressing a message opens the actions for it, at the finger.
+  Widget _longPressable(Map<String, dynamic> msg, bool isMe, Widget child) {
+    Offset at = Offset.zero;
+    return GestureDetector(
+      behavior: HitTestBehavior.deferToChild,
+      onLongPressStart: (details) => at = details.globalPosition,
+      onLongPress: () => _openMessageMenu(msg, isMe, at),
+      child: child,
+    );
+  }
+
+  Future<void> _openMessageMenu(
+    Map<String, dynamic> msg, bool isMe, Offset at) async {
+    final text = (msg[SocketMessageKeys.text] ?? '').toString();
+
+    final action = await showMessageActionMenu(
+      context,
+      at: at,
+      // The server only lets you delete your own, so offering it on someone
+      // else's would be a row that always fails.
+      canDelete: isMe,
+      canCopy: text.trim().isNotEmpty,
+    );
+    if (action == null || !mounted) return;
+
+    switch (action) {
+      case MessageAction.reply:
+        ctrl.pendingReplyTo.value = QuotedMessage(
+          id: (msg[SocketMessageKeys.id] ?? '').toString(),
+          senderName: (msg[SocketMessageKeys.senderName] ?? 'Someone').toString(),
+          senderId: (msg[SocketMessageKeys.senderId] ?? '').toString(),
+          text: text,
+          fileType: (msg[SocketMessageKeys.fileType] ?? '').toString(),
+          file: (msg[SocketMessageKeys.imageUrl] ?? '').toString(),
+        );
+        break;
+
+      case MessageAction.forward:
+        await _forward(msg);
+        break;
+
+      case MessageAction.copy:
+        await Clipboard.setData(ClipboardData(text: text));
+        if (!mounted) return;
+        Get.snackbar('Copied', 'Message copied to clipboard',
+            snackPosition: SnackPosition.BOTTOM,
+            backgroundColor: const Color(0xff17191C),
+            colorText: Colors.white,
+            duration: const Duration(seconds: 2));
+        break;
+
+      case MessageAction.delete:
+        _confirmDeleteMessage(msg);
+        break;
+    }
+  }
+
+  /// Sends the same words or file into another conversation.
+  Future<void> _forward(Map<String, dynamic> msg) async {
+    final targetChatId = await showForwardSheet(
+      context,
+      fromChatId: widget.chatId ?? '',
+    );
+    if (targetChatId == null || !mounted) return;
+
+    final text = (msg[SocketMessageKeys.text] ?? '').toString();
+    final file = (msg[SocketMessageKeys.imageUrl] ?? '').toString();
+    final fileType = (msg[SocketMessageKeys.fileType] ?? '').toString();
+    final sent = ctrl.forwardMessage(
+      toChatId: targetChatId,
+      text: text,
+      file: file,
+      fileType: fileType,
+    );
+    if (!mounted) return;
+    Get.snackbar(
+      sent ? 'Forwarded' : 'Could not forward',
+      sent ? 'Sent to the conversation you picked.' : 'Please try again.',
+      snackPosition: SnackPosition.BOTTOM,
+      backgroundColor: const Color(0xff17191C),
+      colorText: Colors.white,
+      duration: const Duration(seconds: 2),
+    );
+  }
+
+  void _confirmDeleteMessage(Map<String, dynamic> msg) {
+    Get.dialog(
+      AlertDialog(
+        backgroundColor: const Color(0xff17191C),
+        title: const Text('Delete message?',
+            style: TextStyle(color: Colors.white)),
+        content: const Text('It will be removed for everyone.',
+            style: TextStyle(color: Color(0xff9FA3AA))),
+        actions: [
+          TextButton(
+            onPressed: () => Get.back(),
+            child: const Text('Cancel', style: TextStyle(color: Colors.white)),
+          ),
+          TextButton(
+            onPressed: () {
+              Get.back();
+              ctrl.deleteMessageById((msg[SocketMessageKeys.id] ?? '').toString());
+            },
+            child: const Text('Delete',
+                style: TextStyle(color: Color(0xffE5484D))),
+          ),
+        ],
+      ),
+    );
   }
 
   void _onComposerChanged() {
@@ -583,7 +699,7 @@ class _ChatScreenState extends State<ChatScreen> {
                           // ── REGULAR MESSAGE ────────────────────────────
                           else if (messageIndex <
                               (ctrl.messages.length - _previousMessageCount))
-                            AnimatedMessageBubble(
+                            _longPressable(msg, isMe, AnimatedMessageBubble(
                               message: msg,
                               isMe: isMe,
                               fileUrl: imageUrl,
@@ -594,9 +710,9 @@ class _ChatScreenState extends State<ChatScreen> {
                                 msg[SocketMessageKeys.createdAt],
                               ).getRelativeTimeFormat(),
                               isGroupChat: false,
-                            )
+                            ))
                           else
-                            MessageBubble(
+                            _longPressable(msg, isMe, MessageBubble(
                               message: msg,
                               isMe: isMe,
                               fileUrl: imageUrl,
@@ -607,7 +723,7 @@ class _ChatScreenState extends State<ChatScreen> {
                                 msg[SocketMessageKeys.createdAt],
                               ).getRelativeTimeFormat(),
                               isGroupChat: false,
-                            ),
+                            )),
                         ],
                       );
                     },
@@ -677,6 +793,18 @@ class _ChatScreenState extends State<ChatScreen> {
             ),
           ),
 
+          // The message being replied to, on top of the message box.
+          Obx(() {
+            final quoted = ctrl.pendingReplyTo.value;
+            if (quoted == null) return const SizedBox.shrink();
+            return Padding(
+              padding: EdgeInsets.fromLTRB(16.w, 0, 16.w, 6.h),
+              child: QuotedMessageBar(
+                quoted: quoted,
+                onDismiss: () => ctrl.pendingReplyTo.value = null,
+              ),
+            );
+          }),
           // The post being replied to, sitting on top of the message box so it
           // is plain that it travels with what is typed underneath.
           Obx(() {
