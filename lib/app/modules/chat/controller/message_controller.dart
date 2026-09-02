@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'dart:async';
 
 import 'package:wisper/app/core/utils/chat_presence.dart';
+import 'package:wisper/app/modules/chat/model/forum_post_ref.dart';
 import 'package:wisper/app/core/utils/chat_scroll.dart';
 import 'package:get/get.dart';
 import 'package:wisper/app/modules/chat/model/offer_model.dart';
@@ -28,6 +29,11 @@ class MessageController extends GetxController {
   /// Both come from events the socket was already delivering. The header used
   /// to take a bool passed in when the screen opened, so it never changed; the
   /// typing event was received and only printed.
+  /// The forum post the next message will carry, if this chat was opened by
+  /// replying privately to one. Cleared once it has been sent, so only the
+  /// first message quotes the post.
+  final Rxn<ForumPostRef> pendingForumPost = Rxn<ForumPostRef>();
+
   final RxBool peerOnline = false.obs;
   final RxBool peerTyping = false.obs;
 
@@ -201,6 +207,8 @@ class MessageController extends GetxController {
             .toString(),
         SocketMessageKeys.seen: data['isRead'] ?? false,
         SocketMessageKeys.fileType: data['fileType'] ?? '',
+        if (data['forumPost'] != null)
+          SocketMessageKeys.forumPost: data['forumPost'],
       };
 
       messages.insert(0, msg);
@@ -264,11 +272,14 @@ class MessageController extends GetxController {
       return;
     }
 
+    final attached = pendingForumPost.value;
+
     final messageData = {
       "chatId": chatId,
       if (text.isNotEmpty) "text": text,
       if (fileUrl.isNotEmpty) "file": fileUrl,
       if (fileUrl.isNotEmpty) "fileType": fileType,
+      if (attached != null) "forumPostId": attached.id,
     };
 
     socketService.socket.emit('sendMessage', messageData);
@@ -276,6 +287,8 @@ class MessageController extends GetxController {
     print('User Id : $userId');
 
     stopTypingNow();
+    // One message quotes the post, not every message afterwards.
+    pendingForumPost.value = null;
 
     // Clear everything
     textController.clear();
@@ -332,6 +345,9 @@ class MessageController extends GetxController {
               // Embed offer data if present (backend now returns this)
               if (msg.offerData != null)
                 SocketMessageKeys.offerData: msg.offerData,
+              // The forum post this was a private reply to, if any.
+              if (msg.forumPost != null)
+                SocketMessageKeys.forumPost: msg.forumPost!.toJson(),
             };
 
             if (!messages.any(

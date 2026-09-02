@@ -13,6 +13,9 @@ class SocketMessageKeys {
   static const String createdAt = "createdAt";
   static const String fileType = "fileType";
 
+  /// The forum post a private reply is about, as a plain map.
+  static const String forumPost = "forumPost";
+
   // Offer message type
   static const String offerFileType = "OFFER";
   static const String offerData = "offerData";

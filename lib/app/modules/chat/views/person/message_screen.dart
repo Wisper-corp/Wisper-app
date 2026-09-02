@@ -1,5 +1,7 @@
 // ChatScreen with WhatsApp-like message animation
 import 'package:flutter/material.dart';
+import 'package:wisper/app/modules/chat/model/forum_post_ref.dart';
+import 'package:wisper/app/modules/chat/widgets/forum_post_ref_card.dart';
 import 'package:wisper/app/core/utils/chat_scroll.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:get/get.dart';
@@ -25,6 +27,11 @@ class ChatScreen extends StatefulWidget {
   final bool? isPerson;
   final bool? isOnline; 
 
+  /// Set when the chat was opened by replying privately to a forum post: the
+  /// post rides along and is attached to whatever is typed first.
+  final ForumPostRef? replyingToPost;
+
+
   const ChatScreen({
     super.key,
     this.receiverId,
@@ -33,6 +40,7 @@ class ChatScreen extends StatefulWidget {
     this.chatId,
     this.isPerson,
     this.isOnline,
+    this.replyingToPost,
   });
 
   @override
@@ -69,6 +77,12 @@ class _ChatScreenState extends State<ChatScreen> {
       _offerService = Get.find<OfferService>();
     } catch (_) {
       _offerService = Get.put(OfferService());
+    }
+
+    // Arrived here from "Reply privately": the post rides along and is shown
+    // above the composer until the first message carries it.
+    if (widget.replyingToPost != null) {
+      ctrl.pendingForumPost.value = widget.replyingToPost;
     }
 
     // What the caller knew, until the socket says otherwise. Most callers know
@@ -663,6 +677,19 @@ class _ChatScreenState extends State<ChatScreen> {
             ),
           ),
 
+          // The post being replied to, sitting on top of the message box so it
+          // is plain that it travels with what is typed underneath.
+          Obx(() {
+            final post = ctrl.pendingForumPost.value;
+            if (post == null) return const SizedBox.shrink();
+            return Padding(
+              padding: EdgeInsets.fromLTRB(16.w, 0, 16.w, 6.h),
+              child: ForumPostRefCard(
+                post: post,
+                onDismiss: () => ctrl.pendingForumPost.value = null,
+              ),
+            );
+          }),
           MessageInputBar(
             controller: ctrl.textController,
             chatId: widget.chatId ?? '',

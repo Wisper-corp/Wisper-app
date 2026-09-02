@@ -13,6 +13,7 @@ import 'package:wisper/app/modules/forum/widget/forum_post_menu.dart';
 import 'package:wisper/app/core/services/network_caller/network_caller.dart';
 import 'package:wisper/app/core/services/network_caller/network_response.dart';
 import 'package:wisper/app/core/others/get_storage.dart';
+import 'package:wisper/app/modules/chat/model/forum_post_ref.dart';
 import 'package:wisper/app/modules/chat/views/person/message_screen.dart';
 import 'package:wisper/app/urls.dart';
 
@@ -132,6 +133,16 @@ class _ForumSectionState extends State<ForumSection> {
               receiverImage: post.author.image,
               chatId: res.responseData!['data']?['id'],
               isPerson: true,
+              // The post travels with the reply, so the recipient sees what
+              // it is about rather than a message with no subject.
+              replyingToPost: ForumPostRef(
+                id: post.id,
+                groupId: widget.groupId,
+                text: post.text,
+                authorName: post.author.name ?? 'Someone',
+                authorImage: post.author.image,
+                attachment: post.images.isNotEmpty ? post.images.first : null,
+              ),
             ));
       } else {
         Get.snackbar('Could not open the chat', res.errorMessage,

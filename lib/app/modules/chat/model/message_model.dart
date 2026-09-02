@@ -1,3 +1,5 @@
+import 'package:wisper/app/modules/chat/model/forum_post_ref.dart';
+
 
 class MessageModel {
   MessageModel({
@@ -49,6 +51,7 @@ class Message {
     required this.createdAt,
     required this.isRead,
     this.offerData,
+    this.forumPost,
   });
 
   final String? id;
@@ -61,6 +64,9 @@ class Message {
   final DateTime? createdAt;
   final bool? isRead;
   final Map<String, dynamic>? offerData;
+
+  /// Set when this message is a private reply to a forum post.
+  final ForumPostRef? forumPost;
 
   factory Message.fromJson(Map<String, dynamic> json) {
     return Message(
@@ -76,6 +82,7 @@ class Message {
       offerData: json["offerData"] != null
           ? Map<String, dynamic>.from(json["offerData"])
           : null,
+      forumPost: ForumPostRef.fromJson(json["forumPost"]),
     );
   }
 }

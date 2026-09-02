@@ -1,6 +1,9 @@
 import 'package:dio/dio.dart';
 import 'package:wisper/app/core/widgets/common/video_poster.dart';
 import 'package:flutter/material.dart';
+import 'package:wisper/app/modules/chat/model/forum_post_ref.dart';
+import 'package:wisper/app/modules/chat/utils/open_forum_post.dart';
+import 'package:wisper/app/modules/chat/widgets/forum_post_ref_card.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:get/get.dart';
 import 'package:open_filex/open_filex.dart';
@@ -94,6 +97,13 @@ class MessageBubble extends StatelessWidget {
   ///
   /// A document is not media here: it is drawn as a bordered row that reads as
   /// part of the bubble, so it keeps the padding text has.
+  /// The forum post this message was a private reply to, if any.
+  ForumPostRef? get _forumPost => ForumPostRef.fromJson(message['forumPost']);
+
+  /// Opens the post itself. The card only holds a preview, so the real post
+  /// is fetched on the way.
+  void _openForumPost(ForumPostRef post) => openForumPostById(post.id);
+
   bool get _isMedia =>
       fileUrl.isNotEmpty && (fileType == 'IMAGE' || fileType == 'VIDEO');
 
@@ -328,6 +338,21 @@ class MessageBubble extends StatelessWidget {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
+                      // The forum post this was a private reply to, above the
+                      // words, so the reason for the message arrives before
+                      // the message. Tapping it opens the post.
+                      if (_forumPost != null) ...[
+                        Padding(
+                          padding: _isMedia
+                              ? EdgeInsets.fromLTRB(0, 0, 0, 6.h)
+                              : EdgeInsets.only(bottom: 8.h),
+                          child: ForumPostRefCard(
+                            post: _forumPost!,
+                            onLight: isMe,
+                            onTap: () => _openForumPost(_forumPost!),
+                          ),
+                        ),
+                      ],
                       // File Attachment Handling
                       if (fileUrl.isNotEmpty) ...[
                         if (fileType == 'IMAGE')
