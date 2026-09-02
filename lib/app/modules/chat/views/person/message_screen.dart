@@ -1,5 +1,6 @@
 // ChatScreen with WhatsApp-like message animation
 import 'package:flutter/material.dart';
+import 'package:wisper/app/modules/chat/widgets/swipe_to_reply.dart';
 import 'package:wisper/app/modules/chat/widgets/quoted_message_bar.dart';
 import 'package:flutter/services.dart';
 import 'package:wisper/app/modules/chat/views/forward_message_sheet.dart';
@@ -116,14 +117,34 @@ class _ChatScreenState extends State<ChatScreen> {
     // Calling getOffersByChatId separately caused race conditions and duplicates
   }
 
-  /// Long-pressing a message opens the actions for it, at the finger.
+  /// Long-press for the actions, swipe sideways for the quickest of them.
   Widget _longPressable(Map<String, dynamic> msg, bool isMe, Widget child) {
     Offset at = Offset.zero;
-    return GestureDetector(
-      behavior: HitTestBehavior.deferToChild,
-      onLongPressStart: (details) => at = details.globalPosition,
-      onLongPress: () => _openMessageMenu(msg, isMe, at),
-      child: child,
+    final id = (msg[SocketMessageKeys.id] ?? '').toString();
+    return SwipeToReply(
+      // A message still on its way has no id yet, so there is nothing to
+      // quote.
+      enabled: id.isNotEmpty,
+      onReply: () => _replyTo(msg),
+      child: GestureDetector(
+        behavior: HitTestBehavior.deferToChild,
+        onLongPressStart: (details) => at = details.globalPosition,
+        onLongPress: () => _openMessageMenu(msg, isMe, at),
+        child: child,
+      ),
+    );
+  }
+
+  /// Puts the message in the composer's reply bar. Shared by the swipe and
+  /// the menu, so the two cannot drift apart.
+  void _replyTo(Map<String, dynamic> msg) {
+    ctrl.pendingReplyTo.value = QuotedMessage(
+      id: (msg[SocketMessageKeys.id] ?? '').toString(),
+      senderName: (msg[SocketMessageKeys.senderName] ?? 'Someone').toString(),
+      senderId: (msg[SocketMessageKeys.senderId] ?? '').toString(),
+      text: (msg[SocketMessageKeys.text] ?? '').toString(),
+      fileType: (msg[SocketMessageKeys.fileType] ?? '').toString(),
+      file: (msg[SocketMessageKeys.imageUrl] ?? '').toString(),
     );
   }
 
@@ -143,14 +164,7 @@ class _ChatScreenState extends State<ChatScreen> {
 
     switch (action) {
       case MessageAction.reply:
-        ctrl.pendingReplyTo.value = QuotedMessage(
-          id: (msg[SocketMessageKeys.id] ?? '').toString(),
-          senderName: (msg[SocketMessageKeys.senderName] ?? 'Someone').toString(),
-          senderId: (msg[SocketMessageKeys.senderId] ?? '').toString(),
-          text: text,
-          fileType: (msg[SocketMessageKeys.fileType] ?? '').toString(),
-          file: (msg[SocketMessageKeys.imageUrl] ?? '').toString(),
-        );
+        _replyTo(msg);
         break;
 
       case MessageAction.forward:

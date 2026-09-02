@@ -24,17 +24,17 @@ Future<MessageAction?> showMessageActionMenu(
 
   // Rows are only added when they apply, so the card's height follows.
   final rows = <_Row>[
-    const _Row(MessageAction.reply, Icons.reply_rounded, 'Reply'),
-    const _Row(MessageAction.forward, Icons.shortcut_rounded, 'Forward'),
-    if (canCopy) const _Row(MessageAction.copy, Icons.copy_rounded, 'Copy'),
+    // Outlined throughout, as in the reference.
+    const _Row(MessageAction.reply, Icons.reply, 'Reply'),
+    const _Row(MessageAction.forward, Icons.shortcut, 'Forward'),
+    if (canCopy) const _Row(MessageAction.copy, Icons.file_copy_outlined, 'Copy'),
     if (canDelete)
-      const _Row(MessageAction.delete, Icons.delete_outline_rounded, 'Delete',
+      const _Row(MessageAction.delete, Icons.delete_outline, 'Delete',
           destructive: true),
   ];
 
   final rowHeight = 48.h;
-  // The divider above Delete, when there is one.
-  final height = rows.length * rowHeight + (canDelete ? 9.h : 0) + 12.h;
+  final height = rows.length * rowHeight + 12.h;
 
   // Kept on screen: pushed left if it would run off the right edge, and up if
   // it would run off the bottom.
@@ -74,24 +74,16 @@ Future<MessageAction?> showMessageActionMenu(
               child: Column(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  for (final row in rows) ...[
-                    // Destructive last, and set apart, so it is not the one
-                    // hit by accident.
-                    if (row.destructive)
-                      Divider(
-                        height: 9.h,
-                        thickness: 0.5,
-                        color: const Color(0xff3A3D43),
-                        indent: 16.w,
-                        endIndent: 16.w,
-                      ),
+                  // No divider: the reference's separated the Report row
+                  // below Delete, and that row is not built. Delete is set
+                  // apart by being last and by being the only red one.
+                  for (final row in rows)
                     _MenuRow(
                       row: row,
                       height: rowHeight,
                       onTap: () =>
                           Navigator.of(dialogContext).pop(row.action),
                     ),
-                  ],
                 ],
               ),
             ),

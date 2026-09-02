@@ -62,11 +62,14 @@ void main() {
       }
     });
 
-    testWidgets('Delete is set apart, below a divider', (tester) async {
+    testWidgets('Delete comes last, with no divider above it', (tester) async {
+      // The reference's divider separated a Report row that is not built, so
+      // a divider here would be a line with nothing under it.
       await openMenu(tester);
-      final divider = tester.getRect(find.byType(Divider));
+      expect(find.byType(Divider), findsNothing);
+      final copy = tester.getRect(find.text('Copy'));
       final delete = tester.getRect(find.text('Delete'));
-      expect(delete.top, greaterThan(divider.top));
+      expect(delete.top, greaterThan(copy.top));
     });
 
     testWidgets('Delete is red, the rest are not', (tester) async {
@@ -81,10 +84,10 @@ void main() {
     testWidgets('every row carries an icon', (tester) async {
       await openMenu(tester);
       for (final icon in [
-        Icons.reply_rounded,
-        Icons.shortcut_rounded,
-        Icons.copy_rounded,
-        Icons.delete_outline_rounded,
+        Icons.reply,
+        Icons.shortcut,
+        Icons.file_copy_outlined,
+        Icons.delete_outline,
       ]) {
         expect(find.byIcon(icon), findsOneWidget);
       }
@@ -96,7 +99,6 @@ void main() {
       await openMenu(tester, canDelete: false);
       expect(find.text('Delete'), findsNothing);
       expect(find.text('Reply'), findsOneWidget);
-      expect(find.byType(Divider), findsNothing);
     });
 
     testWidgets('no Copy when there are no words', (tester) async {
