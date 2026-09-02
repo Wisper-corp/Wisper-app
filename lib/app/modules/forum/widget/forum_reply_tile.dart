@@ -4,7 +4,6 @@ import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:wisper/app/core/widgets/common/expandable_text.dart';
 import 'package:wisper/app/core/widgets/common/initials_avatar.dart';
 import 'package:wisper/app/modules/forum/widget/author_tap.dart';
-import 'package:wisper/app/modules/saved/widget/save_button.dart';
 import 'package:wisper/app/modules/forum/model/forum_post_model.dart';
 import 'package:wisper/app/modules/forum/widget/forum_post_card.dart';
 
@@ -126,31 +125,31 @@ class ForumReplyTile extends StatelessWidget {
             onTap: () => openForumAuthor(author),
             behavior: HitTestBehavior.opaque,
             child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                author.name ?? 'User',
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
-                style: TextStyle(
-                  fontFamily: 'Segoe UI',
-                  fontSize: 14.5.sp,
-                  fontWeight: FontWeight.w700,
-                  color: forumNameColor(author.id),
-                ),
-              ),
-              if ((author.title ?? '').isNotEmpty)
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
                 Text(
-                  author.title!,
+                  author.name ?? 'User',
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                   style: TextStyle(
-                    fontSize: 12.5.sp,
-                    color: const Color(0xff98A2B3),
+                    fontFamily: 'Segoe UI',
+                    fontSize: 14.5.sp,
+                    fontWeight: FontWeight.w700,
+                    color: forumNameColor(author.id),
                   ),
                 ),
-            ],
-          ),
+                if ((author.title ?? '').isNotEmpty)
+                  Text(
+                    author.title!,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: TextStyle(
+                      fontSize: 12.5.sp,
+                      color: const Color(0xff98A2B3),
+                    ),
+                  ),
+              ],
+            ),
           ),
         ),
         SizedBox(width: 8.w),
@@ -164,8 +163,11 @@ class ForumReplyTile extends StatelessWidget {
             behavior: HitTestBehavior.opaque,
             child: Padding(
               padding: EdgeInsets.only(left: 8.w),
-              child: Icon(Icons.more_horiz,
-                  size: 17.sp, color: const Color(0xff8B949E)),
+              child: Icon(
+                Icons.more_horiz,
+                size: 17.sp,
+                color: const Color(0xff8B949E),
+              ),
             ),
           ),
       ],
@@ -178,9 +180,11 @@ class ForumReplyTile extends StatelessWidget {
         _chip(
           onTap: () => onReply(reply),
           child: reply.replyCount > 0
-              ? Text('${reply.replyCount} '
+              ? Text(
+                  '${reply.replyCount} '
                   '${reply.replyCount == 1 ? 'Reply' : 'Replies'}',
-                  style: _chipText())
+                  style: _chipText(),
+                )
               : Text('Reply', style: _chipText()),
         ),
         SizedBox(width: 10.w),
@@ -201,19 +205,17 @@ class ForumReplyTile extends StatelessWidget {
             ],
           ),
         ),
-        const Spacer(),
-        // Keeping a reply, the same gesture as on a post.
-        SaveButton(kind: 'reply', itemId: reply.id, size: 17.sp),
+        // Saving moved into the overflow menu, as it did on a post.
       ],
     );
   }
 
   TextStyle _chipText() => TextStyle(
-        fontFamily: 'Segoe UI',
-        fontSize: 12.5.sp,
-        fontWeight: FontWeight.w600,
-        color: const Color(0xffC9D1D9),
-      );
+    fontFamily: 'Segoe UI',
+    fontSize: 12.5.sp,
+    fontWeight: FontWeight.w600,
+    color: const Color(0xffC9D1D9),
+  );
 
   Widget _chip({required Widget child, required VoidCallback onTap}) {
     return GestureDetector(

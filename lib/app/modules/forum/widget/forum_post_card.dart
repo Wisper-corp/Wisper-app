@@ -3,7 +3,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:wisper/app/modules/forum/widget/author_tap.dart';
 import 'package:wisper/app/modules/forum/widget/forum_attachments_view.dart';
-import 'package:wisper/app/modules/saved/widget/save_button.dart';
 import 'package:wisper/app/core/widgets/common/expandable_text.dart';
 import 'package:wisper/app/core/widgets/common/initials_avatar.dart';
 import 'package:wisper/app/modules/forum/model/forum_post_model.dart';
@@ -107,72 +106,80 @@ class ForumPostCard extends StatelessWidget {
             onTap: showActions ? onOpenReplies : null,
             behavior: HitTestBehavior.opaque,
             child: Row(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              // The face and the name go to the person; the rest of the row
-              // still opens the thread. Nested inside that gesture on purpose
-              // — the innermost detector wins the arena.
-              Expanded(
-                child: GestureDetector(
-                  onTap: () => openForumAuthor(author),
-                  behavior: HitTestBehavior.opaque,
-                  child: Row(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      _avatar(author),
-                      SizedBox(width: 10.w),
-                      Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              author.name ?? 'User',
-                              maxLines: 1,
-                              overflow: TextOverflow.ellipsis,
-                              style: TextStyle(
-                                fontFamily: 'Segoe UI',
-                                fontSize: 15.sp,
-                                fontWeight: FontWeight.w700,
-                                color: post.isMine
-                                    ? Colors.white
-                                    : forumNameColor(author.id,
-                                        avoid: avoidNameColor),
-                              ),
-                            ),
-                            if ((author.title ?? '').isNotEmpty)
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                // The face and the name go to the person; the rest of the row
+                // still opens the thread. Nested inside that gesture on purpose
+                // — the innermost detector wins the arena.
+                Expanded(
+                  child: GestureDetector(
+                    onTap: () => openForumAuthor(author),
+                    behavior: HitTestBehavior.opaque,
+                    child: Row(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        _avatar(author),
+                        SizedBox(width: 10.w),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
                               Text(
-                                author.title!,
+                                author.name ?? 'User',
                                 maxLines: 1,
                                 overflow: TextOverflow.ellipsis,
                                 style: TextStyle(
-                                  fontSize: 13.sp,
-                                  color: const Color(0xff98A2B3),
+                                  fontFamily: 'Segoe UI',
+                                  fontSize: 15.sp,
+                                  fontWeight: FontWeight.w700,
+                                  color: post.isMine
+                                      ? Colors.white
+                                      : forumNameColor(
+                                          author.id,
+                                          avoid: avoidNameColor,
+                                        ),
                                 ),
                               ),
-                          ],
+                              if ((author.title ?? '').isNotEmpty)
+                                Text(
+                                  author.title!,
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
+                                  style: TextStyle(
+                                    fontSize: 13.sp,
+                                    color: const Color(0xff98A2B3),
+                                  ),
+                                ),
+                            ],
+                          ),
                         ),
+                      ],
+                    ),
+                  ),
+                ),
+                SizedBox(width: 8.w),
+                Text(
+                  forumShortAge(post.createdAt),
+                  style: TextStyle(
+                    fontSize: 12.sp,
+                    color: const Color(0xff8B949E),
+                  ),
+                ),
+                if (onMore != null)
+                  GestureDetector(
+                    onTap: onMore,
+                    behavior: HitTestBehavior.opaque,
+                    child: Padding(
+                      padding: EdgeInsets.only(left: 8.w),
+                      child: Icon(
+                        Icons.more_horiz,
+                        size: 18.sp,
+                        color: const Color(0xff8B949E),
                       ),
-                    ],
+                    ),
                   ),
-                ),
-              ),
-              SizedBox(width: 8.w),
-              Text(
-                forumShortAge(post.createdAt),
-                style: TextStyle(fontSize: 12.sp, color: const Color(0xff8B949E)),
-              ),
-              if (onMore != null)
-                GestureDetector(
-                  onTap: onMore,
-                  behavior: HitTestBehavior.opaque,
-                  child: Padding(
-                    padding: EdgeInsets.only(left: 8.w),
-                    child: Icon(Icons.more_horiz,
-                        size: 18.sp, color: const Color(0xff8B949E)),
-                  ),
-                ),
-            ],
-          ),
+              ],
+            ),
           ),
           SizedBox(height: 8.h),
           // Tapping the body opens the replies, the way a timeline post does.
@@ -222,9 +229,10 @@ class ForumPostCard extends StatelessWidget {
                             _avatarStack(post.replyAvatars),
                             SizedBox(width: 8.w),
                             Text(
-                                '${post.replyCount} '
-                                '${post.replyCount == 1 ? 'reply' : 'replies'}',
-                                style: _pillText()),
+                              '${post.replyCount} '
+                              '${post.replyCount == 1 ? 'reply' : 'replies'}',
+                              style: _pillText(),
+                            ),
                           ],
                         )
                       : Text('Reply', style: _pillText()),
@@ -251,9 +259,8 @@ class ForumPostCard extends StatelessWidget {
                     ],
                   ),
                 ),
-                const Spacer(),
-                // Keeping a post for later, same gesture as on a service card.
-                SaveButton(kind: 'forum', itemId: post.id, size: 18.sp),
+                // Saving moved into the overflow menu, so the row carries
+                // only the two things you do to a post itself.
               ],
             ),
           ],
@@ -263,11 +270,11 @@ class ForumPostCard extends StatelessWidget {
   }
 
   TextStyle _pillText() => TextStyle(
-        fontFamily: 'Segoe UI',
-        fontSize: 13.sp,
-        fontWeight: FontWeight.w600,
-        color: const Color(0xffC9D1D9),
-      );
+    fontFamily: 'Segoe UI',
+    fontSize: 13.sp,
+    fontWeight: FontWeight.w600,
+    color: const Color(0xffC9D1D9),
+  );
 
   Widget _pill({required Widget child, required VoidCallback onTap}) {
     return GestureDetector(
@@ -327,8 +334,11 @@ class ForumPostCard extends StatelessWidget {
                       child: CachedNetworkImage(
                         imageUrl: image,
                         fit: BoxFit.cover,
-                        errorWidget: (_, __, ___) =>
-                            Icon(Icons.person, size: 12.sp, color: Colors.white54),
+                        errorWidget: (_, __, ___) => Icon(
+                          Icons.person,
+                          size: 12.sp,
+                          color: Colors.white54,
+                        ),
                       ),
                     ),
             ),

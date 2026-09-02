@@ -79,11 +79,17 @@ class _ForumSectionState extends State<ForumSection> {
       isFollowing: post.isFollowing,
       canDelete: post.canDelete,
       isMine: post.isMine,
+      // Read at the moment the sheet opens, so the label matches what the
+      // bookmark used to show.
+      isSaved: _savedController.isSaved('forum', post.id),
       authorName: post.author.name ?? 'the author',
     );
     if (action == null || !mounted) return;
 
     switch (action) {
+      case ForumPostAction.toggleSave:
+        _savedController.toggle('forum', post.id);
+        break;
       case ForumPostAction.replyPrivately:
         await _replyPrivately(post);
         break;

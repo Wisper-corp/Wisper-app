@@ -1,11 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 
-enum ForumPostAction { replyPrivately, toggleFollow, delete }
+enum ForumPostAction { toggleSave, replyPrivately, toggleFollow, delete }
 
 /// A reply's overflow menu. Following belongs to the post, not to one comment
 /// inside it, so it is not offered here.
-enum ForumReplyAction { replyPrivately, delete }
+enum ForumReplyAction { toggleSave, replyPrivately, delete }
 
 /// The post's overflow menu. Actions are ordered by how often they are wanted
 /// and how hard they are to undo, so the destructive one sits last and apart.
@@ -14,6 +14,7 @@ Future<ForumPostAction?> showForumPostMenu(
   required bool isFollowing,
   required bool canDelete,
   required bool isMine,
+  required bool isSaved,
   required String authorName,
 }) {
   return showModalBottomSheet<ForumPostAction>(
@@ -39,6 +40,19 @@ Future<ForumPostAction?> showForumPostMenu(
               ),
             ),
             SizedBox(height: 14.h),
+            // Saving lives here rather than as a bookmark on the row: one
+            // menu holds everything you can do to a post.
+            _Item(
+              icon: isSaved
+                  ? Icons.bookmark_rounded
+                  : Icons.bookmark_border_rounded,
+              label: isSaved ? 'Remove from saved' : 'Save post',
+              detail: isSaved
+                  ? 'Takes it out of your saved list'
+                  : 'Keep it in your saved list to read later',
+              onTap: () =>
+                  Navigator.of(sheetContext).pop(ForumPostAction.toggleSave),
+            ),
             // Replying privately to yourself is meaningless, so it is only
             // offered on someone else's post.
             if (!isMine)
@@ -46,8 +60,9 @@ Future<ForumPostAction?> showForumPostMenu(
                 icon: Icons.mail_outline_rounded,
                 label: 'Reply privately',
                 detail: 'Message $authorName instead of the whole community',
-                onTap: () => Navigator.of(sheetContext)
-                    .pop(ForumPostAction.replyPrivately),
+                onTap: () => Navigator.of(
+                  sheetContext,
+                ).pop(ForumPostAction.replyPrivately),
               ),
             _Item(
               icon: isFollowing
@@ -93,6 +108,7 @@ Future<ForumReplyAction?> showForumReplyMenu(
   BuildContext context, {
   required bool canDelete,
   required bool isMine,
+  required bool isSaved,
   required String authorName,
 }) {
   return showModalBottomSheet<ForumReplyAction>(
@@ -118,23 +134,34 @@ Future<ForumReplyAction?> showForumReplyMenu(
               ),
             ),
             SizedBox(height: 14.h),
+            _Item(
+              icon: isSaved
+                  ? Icons.bookmark_rounded
+                  : Icons.bookmark_border_rounded,
+              label: isSaved ? 'Remove from saved' : 'Save reply',
+              detail: isSaved
+                  ? 'Takes it out of your saved list'
+                  : 'Keep it in your saved list to read later',
+              onTap: () =>
+                  Navigator.of(sheetContext).pop(ForumReplyAction.toggleSave),
+            ),
             if (!isMine)
               _Item(
                 icon: Icons.mail_outline_rounded,
                 label: 'Reply privately',
                 detail: 'Message $authorName instead of the whole community',
-                onTap: () => Navigator.of(sheetContext)
-                    .pop(ForumReplyAction.replyPrivately),
+                onTap: () => Navigator.of(
+                  sheetContext,
+                ).pop(ForumReplyAction.replyPrivately),
               ),
             if (canDelete) ...[
-              if (!isMine)
-                Divider(
-                  height: 20.h,
-                  thickness: 0.5,
-                  color: const Color(0xff2A2F35),
-                  indent: 20.w,
-                  endIndent: 20.w,
-                ),
+              Divider(
+                height: 20.h,
+                thickness: 0.5,
+                color: const Color(0xff2A2F35),
+                indent: 20.w,
+                endIndent: 20.w,
+              ),
               _Item(
                 icon: Icons.delete_outline_rounded,
                 label: 'Delete reply',

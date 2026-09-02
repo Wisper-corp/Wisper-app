@@ -109,10 +109,25 @@ void main() {
     });
   });
 
-  test('the tile shows a save button', () {
+  test('saving is in the menu, not a bookmark on the row', () {
+    // It moved: the row keeps only Reply and the heart, and everything else
+    // you can do to a reply lives behind the same overflow button.
     final tile = File(
       'lib/app/modules/forum/widget/forum_reply_tile.dart',
     ).readAsStringSync();
-    expect(tile, contains("SaveButton(kind: 'reply'"));
+    expect(tile.contains('SaveButton'), isFalse);
+
+    final menu = File(
+      'lib/app/modules/forum/widget/forum_post_menu.dart',
+    ).readAsStringSync();
+    expect(menu, contains('ForumReplyAction.toggleSave'));
+    expect(menu, contains("'Save reply'"));
+    expect(menu, contains("'Remove from saved'"));
+
+    final repliesScreen = File(
+      'lib/app/modules/forum/views/forum_replies_screen.dart',
+    ).readAsStringSync();
+    expect(repliesScreen, contains("_savedController.toggle('reply', reply.id)"));
+    expect(repliesScreen, contains("isSaved: _savedController.isSaved('reply'"));
   });
 }

@@ -103,11 +103,14 @@ class _ForumRepliesScreenState extends State<ForumRepliesScreen> {
       context,
       canDelete: reply.canDelete,
       isMine: reply.isMine,
+      isSaved: _savedController.isSaved('reply', reply.id),
       authorName: reply.author.name ?? 'the author',
     );
     if (action == null || !mounted) return;
 
     switch (action) {
+      case ForumReplyAction.toggleSave:
+        _savedController.toggle('reply', reply.id);
       case ForumReplyAction.replyPrivately:
         await openDirectChat(
           userId: reply.author.id,
