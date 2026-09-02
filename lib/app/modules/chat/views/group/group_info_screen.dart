@@ -137,11 +137,76 @@ class _GroupInfoScreenState extends State<GroupInfoScreen> {
     }
   }
 
-  bool get _isCurrentUserAdmin {
+  bool get _isCurrentUserAdmin => _me?.role == 'ADMIN';
+
+  /// Your own membership row, or null if you are only visiting.
+  dynamic get _me {
     final myId = StorageUtil.getData(StorageUtil.userId) ?? '';
     final members = groupMembersController.groupMemnersData ?? [];
-    final me = members.firstWhereOrNull((m) => m.auth?.id == myId);
-    return me?.role == 'ADMIN';
+    return members.firstWhereOrNull((m) => m.auth?.id == myId);
+  }
+
+  /// Leaving is offered to someone who actually joined and does not run the
+  /// place -- the same rule the standalone button used before it moved here.
+  bool get _canLeave => _me != null && !_isCurrentUserAdmin;
+
+  /// The menu appears whenever it would have something in it. It used to be
+  /// admin-only, so moving Leave into it without this would have taken the way
+  /// out away from exactly the people who use it.
+  bool get _hasMenu => _isCurrentUserAdmin || _canLeave;
+
+  /// Leaves the community, after asking.
+  void _confirmLeave() {
+    final name = groupInfoController.groupInfoData?.name ?? 'this community';
+    Get.dialog(
+      AlertDialog(
+        backgroundColor: const Color(0xff17191C),
+        title: const Text('Leave Community?',
+            style: TextStyle(color: Colors.white)),
+        content: Text(
+          'You will leave "$name" and lose access to its content.',
+          style: const TextStyle(color: Color(0xff9FA3AA)),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Get.back(),
+            child: const Text('Cancel', style: TextStyle(color: Colors.white)),
+          ),
+          TextButton(
+            onPressed: () async {
+              Get.back();
+              // The membership row's own id, not the user id: that is what the
+              // remove endpoint takes.
+              final myParticipantId = _me?.id ?? '';
+              if (myParticipantId.isEmpty) {
+                Get.snackbar('Error', 'Could not find your membership',
+                    backgroundColor: Colors.red, colorText: Colors.white,
+                    snackPosition: SnackPosition.BOTTOM);
+                return;
+              }
+              final ctrl = GroupMemberController();
+              final ok = await ctrl.removeRequest(
+                  memberId: myParticipantId, chatId: widget.chatId);
+              if (ok) {
+                if (Get.isRegistered<AllChatsController>()) {
+                  Get.find<AllChatsController>().getAllChats();
+                }
+                Get.back();
+                Get.snackbar('Left', 'You have left the community',
+                    backgroundColor: Colors.orange, colorText: Colors.white,
+                    snackPosition: SnackPosition.BOTTOM);
+              } else {
+                Get.snackbar('Error', ctrl.errorMessage,
+                    backgroundColor: Colors.red, colorText: Colors.white,
+                    snackPosition: SnackPosition.BOTTOM);
+              }
+            },
+            child: const Text('Leave',
+                style: TextStyle(color: Color(0xff1F7DE9))),
+          ),
+        ],
+      ),
+    );
   }
 
   @override
@@ -184,15 +249,28 @@ class _GroupInfoScreenState extends State<GroupInfoScreen> {
                 heightBox10,
                 InfoCard(
                   trailingKey: suffixButtonKey,
-                  trailingOnTap: _isCurrentUserAdmin ? () => CustomPopupMenu(
+                  trailingOnTap: _hasMenu ? () => CustomPopupMenu(
                     targetKey: suffixButtonKey,
                     options: [
-                      Text(
-                        'Edit Group',
-                        style: TextStyle(fontSize: 12.sp, color: Colors.white),
-                      ),
+                      if (_isCurrentUserAdmin)
+                        Text(
+                          'Edit Group',
+                          style:
+                              TextStyle(fontSize: 12.sp, color: Colors.white),
+                        ),
+                      // Blue, the same as the button this replaces: leaving is
+                      // reversible and asks first, so it is not a red action.
+                      if (_canLeave)
+                        Text(
+                          'Leave Community',
+                          style: TextStyle(
+                              fontSize: 12.sp, color: const Color(0xff1F7DE9)),
+                        ),
                     ],
                     optionActions: {
+                      // Keys are positions in the list above, so they are built
+                      // the same way round.
+                      if (_isCurrentUserAdmin)
                       '0': () => Get.to(
                         () => EditGroupScreen(
                           groupId: groupInfoController.groupInfoData!.id ?? '',
@@ -212,6 +290,8 @@ class _GroupInfoScreenState extends State<GroupInfoScreen> {
                               false,
                         ),
                       ),
+                      if (_canLeave)
+                        (_isCurrentUserAdmin ? '1' : '0'): _confirmLeave,
                     },
                     menuWidth: 200,
                     menuHeight: 40,
@@ -226,7 +306,7 @@ class _GroupInfoScreenState extends State<GroupInfoScreen> {
                   isEditImage: _isCurrentUserAdmin,
                   title: groupInfoController.groupInfoData?.name ?? '',
                   memberInfo: 'Community • ${groupMembersController.groupMemnersData?.length ?? groupInfoController.groupInfoData?.chat?.count?.participants ?? 0} members',
-                  isTrailing: _isCurrentUserAdmin,
+                  isTrailing: _hasMenu,
 
                   child: Row(
                     mainAxisAlignment: MainAxisAlignment.center,

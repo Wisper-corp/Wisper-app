@@ -415,78 +415,6 @@ class _GroupChatScreenState extends State<GroupChatScreen> {
     );
   }
 
-  // ── User: leave community ──────────────────────────────────────────────
-  void _confirmLeaveGroup() {
-    showModalBottomSheet(
-      context: context,
-      backgroundColor: Colors.black,
-      builder: (_) => Container(
-        padding: const EdgeInsets.all(20),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            const Text('Leave Community?',
-                style: TextStyle(fontSize: 18, fontWeight: FontWeight.w600, color: Colors.white)),
-            const SizedBox(height: 8),
-            Text('You will leave "${widget.groupName ?? 'this community'}" and lose access to its content.',
-                style: const TextStyle(color: Color(0xff9FA3AA))),
-            const SizedBox(height: 24),
-            Row(children: [
-              Expanded(
-                child: OutlinedButton(
-                  onPressed: () => Navigator.pop(context),
-                  style: OutlinedButton.styleFrom(foregroundColor: Colors.white,
-                      side: const BorderSide(color: Color(0xff262629))),
-                  child: const Text('Cancel'),
-                ),
-              ),
-              const SizedBox(width: 12),
-              Expanded(
-                child: ElevatedButton(
-                  onPressed: () async {
-                    Navigator.pop(context);
-                    final chatId = _effectiveChatId.value.isNotEmpty
-                        ? _effectiveChatId.value
-                        : widget.chatId ?? '';
-                    // Find own ChatParticipant ID from members list
-                    final myMember = _membersCtrl.groupMemnersData?.firstWhereOrNull(
-                        (m) => m.auth?.id == _myUserId);
-                    final myParticipantId = myMember?.id ?? '';
-                    if (myParticipantId.isEmpty) {
-                      Get.snackbar('Error', 'Could not find your membership',
-                          backgroundColor: Colors.red, colorText: Colors.white,
-                          snackPosition: SnackPosition.BOTTOM);
-                      return;
-                    }
-                    final ctrl = GroupMemberController();
-                    final ok = await ctrl.removeRequest(
-                        memberId: myParticipantId, chatId: chatId);
-                    if (ok) {
-                      if (Get.isRegistered<AllChatsController>()) {
-                        Get.find<AllChatsController>().getAllChats();
-                      }
-                      Get.back();
-                      Get.snackbar('Left', 'You have left the community',
-                          backgroundColor: Colors.orange, colorText: Colors.white,
-                          snackPosition: SnackPosition.BOTTOM);
-                    } else {
-                      Get.snackbar('Error', ctrl.errorMessage,
-                          backgroundColor: Colors.red, colorText: Colors.white,
-                          snackPosition: SnackPosition.BOTTOM);
-                    }
-                  },
-                  style: ElevatedButton.styleFrom(backgroundColor: Colors.orange),
-                  child: const Text('Leave', style: TextStyle(color: Colors.white)),
-                ),
-              ),
-            ]),
-          ],
-        ),
-      ),
-    );
-  }
-
   // ── Admin/owner: delete a message ──────────────────────────────────────
   void _confirmDeleteMessage(String messageId) {
     showModalBottomSheet(
@@ -956,33 +884,8 @@ class _GroupChatScreenState extends State<GroupChatScreen> {
                 },
               ),
             ),
-            // Leave Community — only for someone who is actually in the
-            // community. Testing !isAdmin alone offered it to visitors, who
-            // were being shown the way out of somewhere they had not entered.
-            if (_hasJoined && !isAdmin)
-              Padding(
-                padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 12.h),
-                child: SizedBox(
-                  width: double.infinity,
-                  // The same blue as Join, which this is the counterpart of.
-                  // Orange read as a warning for something that is reversible
-                  // and asks for confirmation anyway.
-                  child: OutlinedButton.icon(
-                    onPressed: _confirmLeaveGroup,
-                    icon: const Icon(Icons.exit_to_app, color: Color(0xff1F7DE9)),
-                    label: const Text('Leave Community',
-                        style: TextStyle(
-                          color: Color(0xff1F7DE9),
-                          fontWeight: FontWeight.w600,
-                        )),
-                    style: OutlinedButton.styleFrom(
-                      side: const BorderSide(color: Color(0xff1F7DE9)),
-                      padding: EdgeInsets.symmetric(vertical: 12.h),
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12.r)),
-                    ),
-                  ),
-                ),
-              ),
+            // Leaving lives in the Group Info overflow menu now, beside Edit
+            // Group, rather than as a button under the member list.
           ],
         );
       }),
