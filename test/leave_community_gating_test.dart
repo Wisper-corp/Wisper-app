@@ -26,6 +26,23 @@ void main() {
     expect(info, contains('if (_canLeave)'));
   });
 
+  test('two membership rows for one person still read as admin', () {
+    // Creating a community adds the owner as ADMIN, and again for anyone
+    // named in the member list. Taking whichever came first showed the owner
+    // Leave instead of Edit. Seen on a real community during testing.
+    expect(info, contains("_myRows.any((m) => m.role == 'ADMIN')"));
+    expect(
+      info.contains("_me?.role == 'ADMIN'"),
+      isFalse,
+      reason: 'that reads one row and can pick the wrong one',
+    );
+  });
+
+  test('leaving without a chat id says so rather than failing quietly', () {
+    expect(info, contains('widget.chatId.isEmpty'));
+    expect(info, contains('Could not leave'));
+  });
+
   test('the menu opens for a plain member, not only for an admin', () {
     // The menu used to be admin-only. Moving Leave into it without widening
     // that would have taken the way out from exactly the people who use it.

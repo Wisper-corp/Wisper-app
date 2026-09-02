@@ -137,14 +137,23 @@ class _GroupInfoScreenState extends State<GroupInfoScreen> {
     }
   }
 
-  bool get _isCurrentUserAdmin => _me?.role == 'ADMIN';
-
-  /// Your own membership row, or null if you are only visiting.
-  dynamic get _me {
+  /// Every membership row that is yours.
+  ///
+  /// Usually one. A community can end up holding two for the same person --
+  /// creating one adds the owner as ADMIN and again for anyone named in the
+  /// member list -- and taking whichever came first would have shown the owner
+  /// Leave instead of Edit.
+  List<dynamic> get _myRows {
     final myId = StorageUtil.getData(StorageUtil.userId) ?? '';
     final members = groupMembersController.groupMemnersData ?? [];
-    return members.firstWhereOrNull((m) => m.auth?.id == myId);
+    return members.where((m) => m.auth?.id == myId).toList();
   }
+
+  bool get _isCurrentUserAdmin =>
+      _myRows.any((m) => m.role == 'ADMIN');
+
+  /// Your own membership row, or null if you are only visiting.
+  dynamic get _me => _myRows.isEmpty ? null : _myRows.first;
 
   /// Leaving is offered to someone who actually joined and does not run the
   /// place -- the same rule the standalone button used before it moved here.
@@ -178,8 +187,10 @@ class _GroupInfoScreenState extends State<GroupInfoScreen> {
               // The membership row's own id, not the user id: that is what the
               // remove endpoint takes.
               final myParticipantId = _me?.id ?? '';
-              if (myParticipantId.isEmpty) {
-                Get.snackbar('Error', 'Could not find your membership',
+              if (myParticipantId.isEmpty || widget.chatId.isEmpty) {
+                // Without both, the request cannot be made -- say so rather
+                // than appear to work and change nothing.
+                Get.snackbar('Could not leave', 'Please reopen the community and try again.',
                     backgroundColor: Colors.red, colorText: Colors.white,
                     snackPosition: SnackPosition.BOTTOM);
                 return;
