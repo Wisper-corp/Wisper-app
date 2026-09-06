@@ -92,10 +92,12 @@ void main() {
     // column itself — that is where the stray blank line would show up.
     // The text column beside the avatar, not the tile's outer one -- the
     // outer Column also holds the separator, whose height never varies.
+    // .first, because a newer Flutter can put extra Expanded/Column pairs in
+    // the tree: the text column is the first and is the one being measured.
     final column = find.descendant(
       of: find.byType(Expanded),
       matching: find.byType(Column),
-    );
+    ).first;
 
     await pumpTile(tester, tile());
     final bare = tester.getSize(column).height;

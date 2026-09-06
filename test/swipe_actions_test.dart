@@ -123,12 +123,17 @@ void main() {
 
     expect(find.bySemanticsLabel('Delete'), findsOneWidget);
 
-    // The cover is the one wrapping the row itself. Found by what it wraps,
-    // not by order: an action button is a coloured box too.
+    // The cover is the one wrapping the row itself. Found by what it wraps and
+    // by being opaque: an action button is a coloured box too, and newer
+    // Flutter versions put a fully transparent one in the tree as well, which
+    // made matching on type alone ambiguous.
     final cover = tester.getRect(
       find.ancestor(
         of: find.text('Eze Miracle'),
-        matching: find.byType(ColoredBox),
+        matching: find.byWidgetPredicate(
+          (w) => w is ColoredBox && w.color.a > 0,
+          description: 'an opaque ColoredBox',
+        ),
       ),
     );
     expect(
