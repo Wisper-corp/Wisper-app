@@ -34,6 +34,14 @@ workflows:
         BUNDLE_ID: com.wispermedia.app
 
     scripts:
+      - name: Use CocoaPods, not Swift Package Manager
+        # Recent Flutter turns SPM on by default, and this project predates
+        # that. Half its plugins have no SPM support, so dependencies arrive
+        # by both routes at once and Lottie -- pulled in by smile_id -- gets
+        # embedded twice: "Multiple commands produce Lottie.framework".
+        # One route only, and the conflict goes away.
+        script: flutter config --no-enable-swift-package-manager
+
       - name: Fetch packages
         script: flutter pub get
 
