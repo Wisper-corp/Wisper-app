@@ -46,6 +46,12 @@ workflows:
         script: |
           find . -name "Podfile" -execdir pod install \;
 
+      - name: Apply the signing profile to the Xcode project
+        # This is what writes /Users/builder/export_options.plist, which the
+        # build below exports with. Without it the profile is uploaded but
+        # never applied, and the export step has no options file to read.
+        script: xcode-project use-profiles
+
       - name: Work out the build number
         # TestFlight refuses a build number it has seen before, and the last
         # iOS build predates this pipeline, so the number is taken from what
