@@ -1,0 +1,95 @@
+# Builds the iOS app and sends it to TestFlight.
+#
+# There is no Mac here: the machine this repo is developed on has no Xcode and
+# not enough disk to install it, so the iOS build runs on Codemagic's macOS
+# instances instead. The output is an ordinary signed .ipa -- same toolchain,
+# same signing, same App Store Connect -- so testers see no difference.
+#
+# Signing uses an App Store Connect API key held in Codemagic under the
+# integration named below. The key never appears in this file or in the repo.
+
+workflows:
+  ios-testflight:
+    name: iOS · TestFlight
+    instance_type: mac_mini_m2
+    # The first build compiles every pod from source -- Agora, SmileID,
+    # Monnify and Firebase are all heavy -- so it needs more than the default.
+    max_build_duration: 120
+
+    integrations:
+      # Must match the name given to the Apple Developer Portal integration in
+      # Codemagic (Teams -> Integrations -> Apple Developer Portal).
+      app_store_connect: Wisper App Store Connect
+
+    environment:
+      flutter: stable
+      xcode: latest
+      cocoapods: default
+      ios_signing:
+        distribution_type: app_store
+        bundle_identifier: com.wispermedia.app
+      vars:
+        BUNDLE_ID: com.wispermedia.app
+
+    scripts:
+      - name: Fetch packages
+        script: flutter pub get
+
+      - name: Run the test suite
+        # A broken commit should never reach a tester. These are the same tests
+        # that run before every Android release.
+        script: flutter test
+
+      - name: Install pods
+        script: |
+          find . -name "Podfile" -execdir pod install \;
+
+      - name: Work out the build number
+        # TestFlight refuses a build number it has seen before, and the last
+        # iOS build predates this pipeline, so the number is taken from what
+        # App Store Connect already holds rather than from pubspec.yaml. If the
+        # lookup fails -- no builds yet, or a first run -- it falls back to
+        # Codemagic's own counter, which only ever goes up.
+        script: |
+          set -e
+          LATEST=$(app-store-connect get-latest-testflight-build-number \
+            --bundle-id "$BUNDLE_ID" 2>/dev/null || echo "")
+          if [ -z "$LATEST" ]; then
+            echo "No TestFlight build found; using Codemagic's counter."
+            NEXT="$PROJECT_BUILD_NUMBER"
+          else
+            echo "Latest build on TestFlight: $LATEST"
+            NEXT=$((LATEST + 1))
+          fi
+          echo "Building as build number $NEXT"
+          echo "BUILD_NUMBER=$NEXT" >> "$CM_ENV"
+
+      - name: Build the ipa
+        script: |
+          flutter build ipa --release \
+            --build-number="$BUILD_NUMBER" \
+            --export-options-plist=/Users/builder/export_options.plist
+
+    artifacts:
+      - build/ios/ipa/*.ipa
+      # Kept because the first build after a long gap usually fails in the
+      # native step, and the Xcode log is the only place that says why.
+      - /tmp/xcodebuild_logs/*.log
+      - flutter_drive.log
+
+    publishing:
+      app_store_connect:
+        auth: integration
+        submit_to_testflight: true
+        beta_groups:
+          - Tester extra
+        # Not submitted for App Store review from here -- this pipeline is for
+        # testers. A release build is promoted from App Store Connect.
+        submit_to_app_store: false
+
+      email:
+        recipients:
+          - farazali7530@gmail.com
+        notify:
+          success: true
+          failure: true
