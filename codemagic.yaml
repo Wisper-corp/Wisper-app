@@ -16,12 +16,14 @@ workflows:
     # Monnify and Firebase are all heavy -- so it needs more than the default.
     max_build_duration: 120
 
-    integrations:
-      # Must match the name given to the Apple Developer Portal integration in
-      # Codemagic (Teams -> Integrations -> Apple Developer Portal).
-      app_store_connect: Wisper App Store Connect
-
     environment:
+      # No `integrations:` block. Looking the key up by name failed repeatedly:
+      # the integration exists and is connected, but the build could not
+      # resolve it, and a name that has to match a string typed into a web form
+      # is a poor thing to depend on. The credentials come from a variable
+      # group instead, which the App Store Connect CLI reads by name.
+      groups:
+        - appstore_credentials
       flutter: stable
       xcode: latest
       cocoapods: default
@@ -79,7 +81,10 @@ workflows:
 
     publishing:
       app_store_connect:
-        auth: integration
+        # Read from the appstore_credentials group above.
+        api_key: $APP_STORE_CONNECT_PRIVATE_KEY
+        key_id: $APP_STORE_CONNECT_KEY_IDENTIFIER
+        issuer_id: $APP_STORE_CONNECT_ISSUER_ID
         submit_to_testflight: true
         beta_groups:
           - Tester extra
