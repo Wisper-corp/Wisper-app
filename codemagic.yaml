@@ -35,11 +35,12 @@ workflows:
 
     scripts:
       - name: Use CocoaPods, not Swift Package Manager
-        # Recent Flutter turns SPM on by default, and this project predates
-        # that. Half its plugins have no SPM support, so dependencies arrive
-        # by both routes at once and Lottie -- pulled in by smile_id -- gets
-        # embedded twice: "Multiple commands produce Lottie.framework".
-        # One route only, and the conflict goes away.
+        # Recent Flutter turns SPM on by default and will migrate the Xcode
+        # project to it on first build. This project has always been assembled
+        # by CocoaPods and most of its plugins have no SPM support anyway, so
+        # the migration buys nothing and changes the one part of the build
+        # that cannot be tested from here. (It is not what caused the
+        # duplicate Lottie.framework -- see ios/Podfile for that.)
         script: flutter config --no-enable-swift-package-manager
 
       - name: Fetch packages

@@ -27,8 +27,47 @@ require File.expand_path(File.join('packages', 'flutter_tools', 'bin', 'podhelpe
 
 flutter_ios_podfile_setup
 
+# Lottie arrives twice.
+#
+# SmileIDSDK ships a prebuilt Lottie.xcframework inside its own zip, and
+# MonnifyiOSSDK depends on the ordinary `lottie-ios` pod. Both end up copied to
+# Runner.app/Frameworks/Lottie.framework, and Xcode stops with "Multiple
+# commands produce '.../Lottie.framework'" before it can archive.
+#
+# One copy is kept -- the pod -- and it is pinned to 4.5.2, which is the exact
+# version SmileID builds against (see the `lottie-spm` pin in SmileID's
+# Package.swift for v11.1.11). SmileIDSDK is a binary framework that links
+# @rpath/Lottie.framework/Lottie, and that is what the pod produces, so it
+# resolves against the same one Monnify compiles against.
+#
+# If smile_id is upgraded, check which Lottie it pins and move this with it.
+LOTTIE_VERSION = '4.5.2'
+
+# Drops the vendored copy so only the pod remains. This runs before the Pods
+# project is generated, which is when vendored_frameworks is read.
+pre_install do |installer|
+  installer.analysis_result.specifications.each do |spec|
+    next unless spec.name == 'SmileIDSDK'
+
+    vendored = Array(spec.attributes_hash['vendored_frameworks'])
+    kept = vendored.reject { |f| File.basename(f) == 'Lottie.xcframework' }
+
+    if kept.length == vendored.length
+      Pod::UI.warn 'SmileIDSDK no longer vendors Lottie.xcframework -- the ' \
+                   'de-duplication in ios/Podfile can probably go.'
+    else
+      spec.attributes_hash['vendored_frameworks'] = kept
+    end
+  end
+end
+
 target 'Runner' do
   use_frameworks!
+
+  # Monnify asks for lottie-ios with no version at all; named here so the
+  # version is the one SmileID was built against rather than whatever is
+  # newest on the day the build runs.
+  pod 'lottie-ios', LOTTIE_VERSION
 
   flutter_install_all_ios_pods File.dirname(File.realpath(__FILE__))
   target 'RunnerTests' do
