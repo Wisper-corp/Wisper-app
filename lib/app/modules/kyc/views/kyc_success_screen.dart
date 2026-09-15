@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:wisper/app/core/utils/platform_features.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:get/get.dart';
 import 'package:wisper/app/core/others/custom_size.dart';
@@ -57,12 +58,16 @@ class KycSuccessScreen extends StatelessWidget {
 
             heightBox50,
 
-            CustomElevatedButton(
-              title: 'Go to Wallet',
-              onPress: () => Get.offAll(() => const WalletScreen()),
-            ),
-
-            heightBox16,
+            // Sending someone to a screen that is not reachable on this
+            // platform would be a dead end, so on iOS the way home is the
+            // only way out of here.
+            if (walletEnabled) ...[
+              CustomElevatedButton(
+                title: 'Go to Wallet',
+                onPress: () => Get.offAll(() => const WalletScreen()),
+              ),
+              heightBox16,
+            ],
 
             TextButton(
               onPressed: () => Get.back(),

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:wisper/app/core/utils/platform_features.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:get/get.dart';
 import 'package:wisper/app/core/config/theme/light_theme_colors.dart';
@@ -187,8 +188,11 @@ class _SettingsScreenState extends State<SettingsScreen> {
                   ],
                 ),
               ),
-              heightBox16,
-              // ========= NEW: Separate Wallet Section =========
+              // The whole card, not just the row inside it: Wallet is its
+              // only entry, so hiding the row alone would leave a heading
+              // introducing nothing.
+              if (walletEnabled) heightBox16,
+              if (walletEnabled)
               SeetingsFeatureCard(
                 iconPath: Assets.images.adds.keyName,
                 title: 'Wallet & Payments',
