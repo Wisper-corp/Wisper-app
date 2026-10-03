@@ -87,6 +87,45 @@ workflows:
             --build-number="$BUILD_NUMBER" \
             --export-options-plist=/Users/builder/export_options.plist
 
+      - name: Check Lottie exports the symbols SmileIDSDK links against
+        # Build 15 was rejected under 2.1(a): dyld killed it at launch with
+        # "Symbol not found: enum case for
+        # Lottie.LottiePlaybackMode.PlaybackMode.fromProgress", referenced by
+        # SmileIDSDK and expected in Lottie. SmileIDSDK is a binary framework
+        # built against a Lottie with library evolution; the lottie-ios pod is
+        # built from source and omits those resilient symbols unless
+        # BUILD_LIBRARY_FOR_DISTRIBUTION is on (set in ios/Podfile).
+        #
+        # Nothing about that failure is visible until the app is launched on a
+        # device, so it is checked here instead of discovered by App Review.
+        script: |
+          set -e
+          APP=$(find "$CM_BUILD_DIR/build/ios" -name "Runner.app" -path "*Applications*" | head -1)
+          [ -n "$APP" ] || APP=$(find "$CM_BUILD_DIR/build/ios" -maxdepth 3 -name "Runner.app" | head -1)
+          echo "Checking $APP"
+
+          LOTTIE="$APP/Frameworks/Lottie.framework/Lottie"
+          SMILE="$APP/Frameworks/SmileIDSDK.framework/SmileIDSDK"
+          [ -f "$LOTTIE" ] || { echo "No Lottie.framework in the app bundle."; exit 1; }
+
+          # Every Lottie symbol SmileIDSDK leaves undefined must be exported by
+          # Lottie. Comparing the whole set beats grepping for the one symbol
+          # that happened to break last time.
+          if [ -f "$SMILE" ]; then
+            nm -u "$SMILE" 2>/dev/null | grep '6Lottie' | sed 's/^ *//' | sort -u > /tmp/needed.txt
+            nm -gU "$LOTTIE" 2>/dev/null | awk '{print $NF}' | sort -u > /tmp/exported.txt
+            MISSING=$(comm -23 /tmp/needed.txt /tmp/exported.txt || true)
+            if [ -n "$MISSING" ]; then
+              echo "Lottie is missing symbols SmileIDSDK links against:"
+              echo "$MISSING" | head -20
+              echo "This is the dyld crash that got build 15 rejected. Not shipping it."
+              exit 1
+            fi
+            echo "All $(wc -l < /tmp/needed.txt) Lottie symbols SmileIDSDK needs are exported."
+          else
+            echo "SmileIDSDK.framework not found; skipping the cross-check."
+          fi
+
     artifacts:
       - build/ios/ipa/*.ipa
       # Kept because the first build after a long gap usually fails in the

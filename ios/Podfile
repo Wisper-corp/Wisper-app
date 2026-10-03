@@ -40,6 +40,16 @@ flutter_ios_podfile_setup
 # @rpath/Lottie.framework/Lottie, and that is what the pod produces, so it
 # resolves against the same one Monnify compiles against.
 #
+# Matching the version is necessary but not sufficient. SmileIDSDK is a binary
+# framework built against a Lottie compiled with library evolution, so it
+# references resilient symbols -- "enum case for
+# Lottie.LottiePlaybackMode.PlaybackMode.fromProgress" among them. CocoaPods
+# builds lottie-ios from source with BUILD_LIBRARY_FOR_DISTRIBUTION off, which
+# never emits those, and dyld kills the app at launch with "Symbol not found"
+# before any of our code runs. Build 15 was rejected for exactly this. The
+# setting is forced back on in post_install below, and verified after the
+# archive in codemagic.yaml.
+#
 # If smile_id is upgraded, check which Lottie it pins and move this with it.
 LOTTIE_VERSION = '4.5.2'
 
@@ -78,6 +88,16 @@ end
 post_install do |installer|
   installer.pods_project.targets.each do |target|
     flutter_additional_ios_build_settings(target)
+
+    # See the Lottie note at the top of this file: without library evolution
+    # the resilient symbols SmileIDSDK links against are never emitted, and
+    # the app dies in dyld at launch.
+    if target.name == 'lottie-ios'
+      target.build_configurations.each do |config|
+        config.build_settings['BUILD_LIBRARY_FOR_DISTRIBUTION'] = 'YES'
+      end
+    end
+
     target.build_configurations.each do |config|
       config.build_settings['GCC_PREPROCESSOR_DEFINITIONS'] ||= ['$(inherited)']
       config.build_settings['GCC_PREPROCESSOR_DEFINITIONS'] << 'PERMISSION_CAMERA=1'
