@@ -95,21 +95,6 @@ post_install do |installer|
     if target.name == 'lottie-ios'
       target.build_configurations.each do |config|
         config.build_settings['BUILD_LIBRARY_FOR_DISTRIBUTION'] = 'YES'
-        # SmileIDSDK also expects two Swift runtime back-compatibility hooks
-        # from Lottie -- swiftoverride_class_getSuperclass (5.0) and
-        # swift51override_conformsToSwiftProtocol (5.1). Build 17's symbol
-        # check reported exactly those two and nothing else.
-        #
-        # Xcode links those shims on its own only below iOS 12.2 and 13.0
-        # respectively, so no deployment target yields both -- and anything
-        # under 13 fails to compile Lottie's SwiftUI code, which is how build
-        # 18 died. Link the archives directly instead, and force_load them:
-        # nothing in Lottie references these symbols, so the linker would
-        # otherwise drop the objects that define them.
-        compat = %w[libswiftCompatibility50.a libswiftCompatibility51.a]
-          .map { |a| "-force_load $(TOOLCHAIN_DIR)/usr/lib/swift/iphoneos/#{a}" }
-          .join(' ')
-        config.build_settings['OTHER_LDFLAGS'] = "$(inherited) #{compat}"
       end
     end
 

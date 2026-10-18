@@ -1750,10 +1750,10 @@ packages:
     dependency: "direct main"
     description:
       name: smile_id
-      sha256: "5e530e4358753fedd98e09980645731b156727126a61697a001ddf56da72268b"
+      sha256: dfb7fc29fdeca0d5b3943906f45ae203b07d01cc101ef5a9626d83fd09305cc4
       url: "https://pub.dev"
     source: hosted
-    version: "11.2.10"
+    version: "11.2.14"
   smooth_page_indicator:
     dependency: "direct main"
     description:
