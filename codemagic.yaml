@@ -108,20 +108,33 @@ workflows:
           SMILE="$APP/Frameworks/SmileIDSDK.framework/SmileIDSDK"
           [ -f "$LOTTIE" ] || { echo "No Lottie.framework in the app bundle."; exit 1; }
 
-          # Every Lottie symbol SmileIDSDK leaves undefined must be exported by
-          # Lottie. Comparing the whole set beats grepping for the one symbol
-          # that happened to break last time.
+          # Ask the linker which symbols it expects from Lottie rather than
+          # guessing by name. `nm -m` tags every undefined symbol with the
+          # library dyld will look in, so this is the same question dyld asks
+          # at launch.
+          #
+          # The earlier version of this check grepped for '6Lottie', the Swift
+          # mangling of the module name. That matched Lottie's own API and
+          # nothing else, so it passed build 16 — which then died on
+          # swift51override_conformsToSwiftProtocol, a Swift runtime
+          # compatibility symbol with no '6Lottie' in it. Selecting by the
+          # expected library instead of by spelling cannot miss that way.
           if [ -f "$SMILE" ]; then
-            nm -u "$SMILE" 2>/dev/null | grep '6Lottie' | sed 's/^ *//' | sort -u > /tmp/needed.txt
+            nm -m "$SMILE" 2>/dev/null \
+              | grep 'undefined' | grep '(from Lottie)' \
+              | sed -E 's/.* (_[^ ]+) \(from Lottie\)/\1/' \
+              | sort -u > /tmp/needed.txt
             nm -gU "$LOTTIE" 2>/dev/null | awk '{print $NF}' | sort -u > /tmp/exported.txt
             MISSING=$(comm -23 /tmp/needed.txt /tmp/exported.txt || true)
             if [ -n "$MISSING" ]; then
-              echo "Lottie is missing symbols SmileIDSDK links against:"
+              echo "Lottie does not export symbols SmileIDSDK expects from it:"
               echo "$MISSING" | head -20
-              echo "This is the dyld crash that got build 15 rejected. Not shipping it."
+              echo
+              echo "dyld will kill the app at launch. This is what got builds 15"
+              echo "and 16 rejected under 2.1(a). Not shipping it."
               exit 1
             fi
-            echo "All $(wc -l < /tmp/needed.txt) Lottie symbols SmileIDSDK needs are exported."
+            echo "All $(wc -l < /tmp/needed.txt) symbols SmileIDSDK expects from Lottie are exported."
           else
             echo "SmileIDSDK.framework not found; skipping the cross-check."
           fi
