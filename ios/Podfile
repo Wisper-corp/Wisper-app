@@ -55,26 +55,31 @@ flutter_ios_podfile_setup
 
 # Drops the vendored copy so only the pod remains. This runs before the Pods
 # project is generated, which is when vendored_frameworks is read.
+# Pinned to what SmileID builds against, so Monnify compiles against the same
+# Lottie the vendored framework provides. Left unpinned it drifted to 4.6.1.
+LOTTIE_VERSION = '4.5.2'
+
 pre_install do |installer|
-  installer.analysis_result.specifications.each do |spec|
-    # Keep SmileIDSDK's own Lottie and take lottie-ios out of Monnify instead.
-    #
-    # It was the other way round until now: the vendored copy was dropped and
-    # everything pointed at the pod. That cannot work. SmileIDSDK is a binary
-    # framework whose Lottie exports two Swift runtime back-compatibility
-    # hooks -- swiftoverride_class_getSuperclass and
-    # swift51override_conformsToSwiftProtocol -- and a Lottie built from
-    # source never exports them: they are private inside the compatibility
-    # archives. Builds 18 and 19 tried a lower deployment target and
-    # -force_load and failed identically, and upgrading SmileID to 11.2.3 in
-    # build 20 did not drop the requirement either.
-    #
-    # Only one Lottie may reach Runner.app/Frameworks or Xcode stops with
-    # "Multiple commands produce Lottie.framework", so Monnify loses its
-    # dependency and links the vendored one. Both want 4.5.2, which is what
-    # SmileID pins, so Monnify compiles against the version it expects.
-    if spec.name == 'MonnifyiOSSDK'
-      spec.attributes_hash['dependencies']&.delete('lottie-ios')
+  # Build lottie-ios statically so it never becomes a second
+  # Lottie.framework.
+  #
+  # SmileIDSDK's vendored Lottie has to be the one in the bundle -- see the
+  # note above -- but Monnify depends on the lottie-ios pod and that
+  # dependency cannot simply be removed: pre_install runs after CocoaPods has
+  # already resolved the graph, so deleting it from the spec changes nothing.
+  # Build 21 proved that, and also drifted the version once the explicit pin
+  # went away.
+  #
+  # Static linkage keeps the pod and removes the collision. Monnify gets
+  # Lottie's code compiled into it, nothing is copied to
+  # Runner.app/Frameworks/Lottie.framework from the pod, and SmileIDSDK
+  # resolves @rpath/Lottie.framework/Lottie against the vendored copy that
+  # exports the Swift runtime hooks it needs.
+  installer.pod_targets.each do |pod|
+    next unless pod.name == 'lottie-ios'
+
+    def pod.build_type
+      Pod::BuildType.static_library
     end
   end
 end
@@ -82,8 +87,9 @@ end
 target 'Runner' do
   use_frameworks!
 
-  # No lottie-ios pod: SmileIDSDK vendors the Lottie everything links
-  # against. See the pre_install note above.
+  # Monnify asks for lottie-ios with no version; pinned so it matches the
+  # vendored Lottie. Built statically in pre_install so it does not collide.
+  pod 'lottie-ios', LOTTIE_VERSION
 
   flutter_install_all_ios_pods File.dirname(File.realpath(__FILE__))
   target 'RunnerTests' do
