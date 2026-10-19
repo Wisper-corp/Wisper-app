@@ -95,6 +95,21 @@ post_install do |installer|
     if target.name == 'lottie-ios'
       target.build_configurations.each do |config|
         config.build_settings['BUILD_LIBRARY_FOR_DISTRIBUTION'] = 'YES'
+
+        # SmileIDSDK also expects two Swift runtime back-compatibility hooks
+        # from Lottie: _swiftoverride_class_getSuperclass (5.0) and
+        # swift51override_conformsToSwiftProtocol (5.1). Its own Lottie has
+        # them because it was built when the deployment target was low enough
+        # for the driver to link the compatibility libraries; at iOS 15 it
+        # never does.
+        #
+        # This is the flag that decides it. Telling the driver to assume a 5.0
+        # runtime makes it link libswiftCompatibility50 and 51 the way Xcode
+        # normally would. Build 19 tried reaching the same archives with
+        # -force_load through the linker, which pulled them in but left the
+        # symbols unexported.
+        config.build_settings['OTHER_SWIFT_FLAGS'] =
+          '$(inherited) -runtime-compatibility-version 5.0'
       end
     end
 
