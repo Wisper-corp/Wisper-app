@@ -34,39 +34,47 @@ flutter_ios_podfile_setup
 # Runner.app/Frameworks/Lottie.framework, and Xcode stops with "Multiple
 # commands produce '.../Lottie.framework'" before it can archive.
 #
-# One copy is kept -- the pod -- and it is pinned to 4.5.2, which is the exact
-# version SmileID builds against (see the `lottie-spm` pin in SmileID's
-# Package.swift for v11.1.11). SmileIDSDK is a binary framework that links
-# @rpath/Lottie.framework/Lottie, and that is what the pod produces, so it
-# resolves against the same one Monnify compiles against.
+# The copy that is kept must be SmileIDSDK's. It is a binary framework linked
+# against a Lottie that exports two Swift runtime back-compatibility hooks:
 #
-# Matching the version is necessary but not sufficient. SmileIDSDK is a binary
-# framework built against a Lottie compiled with library evolution, so it
-# references resilient symbols -- "enum case for
-# Lottie.LottiePlaybackMode.PlaybackMode.fromProgress" among them. CocoaPods
-# builds lottie-ios from source with BUILD_LIBRARY_FOR_DISTRIBUTION off, which
-# never emits those, and dyld kills the app at launch with "Symbol not found"
-# before any of our code runs. Build 15 was rejected for exactly this. The
-# setting is forced back on in post_install below, and verified after the
-# archive in codemagic.yaml.
+#     _swiftoverride_class_getSuperclass              (Swift 5.0)
+#     swift51override_conformsToSwiftProtocol         (Swift 5.1)
 #
-# If smile_id is upgraded, check which Lottie it pins and move this with it.
-LOTTIE_VERSION = '4.5.2'
+# A Lottie that CocoaPods builds from source never exports those. They live in
+# libswiftCompatibility50/51.a, which Xcode links only below iOS 12.2 and 13.0,
+# and the symbols are private there in any case. Builds 18 and 19 tried a lower
+# deployment target -- Lottie's SwiftUI sources will not compile below 13 --
+# and -force_load, which linked them without exporting them. Build 20 upgraded
+# SmileID to 11.2.3 on the chance the newer binary had dropped the
+# requirement; it had not.
+#
+# So Monnify loses its lottie-ios dependency and links the vendored copy. Both
+# want 4.5.2, the version SmileID pins, so Monnify gets what it expects.
+#
+# codemagic.yaml checks the archive for exactly this before it ships.
 
 # Drops the vendored copy so only the pod remains. This runs before the Pods
 # project is generated, which is when vendored_frameworks is read.
 pre_install do |installer|
   installer.analysis_result.specifications.each do |spec|
-    next unless spec.name == 'SmileIDSDK'
-
-    vendored = Array(spec.attributes_hash['vendored_frameworks'])
-    kept = vendored.reject { |f| File.basename(f) == 'Lottie.xcframework' }
-
-    if kept.length == vendored.length
-      Pod::UI.warn 'SmileIDSDK no longer vendors Lottie.xcframework -- the ' \
-                   'de-duplication in ios/Podfile can probably go.'
-    else
-      spec.attributes_hash['vendored_frameworks'] = kept
+    # Keep SmileIDSDK's own Lottie and take lottie-ios out of Monnify instead.
+    #
+    # It was the other way round until now: the vendored copy was dropped and
+    # everything pointed at the pod. That cannot work. SmileIDSDK is a binary
+    # framework whose Lottie exports two Swift runtime back-compatibility
+    # hooks -- swiftoverride_class_getSuperclass and
+    # swift51override_conformsToSwiftProtocol -- and a Lottie built from
+    # source never exports them: they are private inside the compatibility
+    # archives. Builds 18 and 19 tried a lower deployment target and
+    # -force_load and failed identically, and upgrading SmileID to 11.2.3 in
+    # build 20 did not drop the requirement either.
+    #
+    # Only one Lottie may reach Runner.app/Frameworks or Xcode stops with
+    # "Multiple commands produce Lottie.framework", so Monnify loses its
+    # dependency and links the vendored one. Both want 4.5.2, which is what
+    # SmileID pins, so Monnify compiles against the version it expects.
+    if spec.name == 'MonnifyiOSSDK'
+      spec.attributes_hash['dependencies']&.delete('lottie-ios')
     end
   end
 end
@@ -74,10 +82,8 @@ end
 target 'Runner' do
   use_frameworks!
 
-  # Monnify asks for lottie-ios with no version at all; named here so the
-  # version is the one SmileID was built against rather than whatever is
-  # newest on the day the build runs.
-  pod 'lottie-ios', LOTTIE_VERSION
+  # No lottie-ios pod: SmileIDSDK vendors the Lottie everything links
+  # against. See the pre_install note above.
 
   flutter_install_all_ios_pods File.dirname(File.realpath(__FILE__))
   target 'RunnerTests' do
@@ -88,15 +94,6 @@ end
 post_install do |installer|
   installer.pods_project.targets.each do |target|
     flutter_additional_ios_build_settings(target)
-
-    # See the Lottie note at the top of this file: without library evolution
-    # the resilient symbols SmileIDSDK links against are never emitted, and
-    # the app dies in dyld at launch.
-    if target.name == 'lottie-ios'
-      target.build_configurations.each do |config|
-        config.build_settings['BUILD_LIBRARY_FOR_DISTRIBUTION'] = 'YES'
-      end
-    end
 
     target.build_configurations.each do |config|
       config.build_settings['GCC_PREPROCESSOR_DEFINITIONS'] ||= ['$(inherited)']
