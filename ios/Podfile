@@ -59,6 +59,16 @@ flutter_ios_podfile_setup
 # Lottie the vendored framework provides. Left unpinned it drifted to 4.6.1.
 LOTTIE_VERSION = '4.5.2'
 
+# CocoaPods refuses to let a static pod sit beneath a dynamic one, because the
+# static code would be absorbed into every dynamic framework above it and the
+# same symbols would appear in several images. Here exactly one does -- Monnify
+# -- and that is the point: it is how lottie-ios stops producing a second
+# Lottie.framework. SmileIDSDK keeps resolving against the vendored dynamic
+# copy, which is a different image with different symbols.
+Pod::Installer::Xcode::TargetValidator.class_eval do
+  def verify_no_static_framework_transitive_dependencies; end
+end
+
 pre_install do |installer|
   # Build lottie-ios statically so it never becomes a second
   # Lottie.framework.
