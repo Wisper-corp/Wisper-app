@@ -34,14 +34,15 @@ workflows:
         BUNDLE_ID: com.wispermedia.app
 
     scripts:
-      - name: Use CocoaPods, not Swift Package Manager
-        # Recent Flutter turns SPM on by default and will migrate the Xcode
-        # project to it on first build. This project has always been assembled
-        # by CocoaPods and most of its plugins have no SPM support anyway, so
-        # the migration buys nothing and changes the one part of the build
-        # that cannot be tested from here. (It is not what caused the
-        # duplicate Lottie.framework -- see ios/Podfile for that.)
-        script: flutter config --no-enable-swift-package-manager
+      - name: Let Flutter use Swift Package Manager
+        # Smile ID integrates by SPM on Flutter 3.44+, and the image is on
+        # 3.47. That takes SmileIDSDK out of CocoaPods, so its Lottie arrives
+        # through SPM and the lottie-ios pod is only Monnify's problem.
+        #
+        # SPM does not replace CocoaPods. The plugins that have no SPM support
+        # -- monnify_payment_sdk among them -- keep using the Podfile, which
+        # is still generated and installed.
+        script: flutter config --enable-swift-package-manager
 
       - name: Fetch packages
         script: flutter pub get

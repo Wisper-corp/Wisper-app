@@ -55,18 +55,37 @@ LOTTIE_VERSION = '4.5.2'
 
 # Drops the vendored copy so only the pod remains. This runs before the Pods
 # project is generated, which is when vendored_frameworks is read.
+# CocoaPods will not place a static pod beneath a dynamic one. The whole
+# Monnify chain is static here, so the rule is satisfied in spirit, but the
+# validator still objects to the vendored MonnifyiOSSDK binary.
+Pod::Installer::Xcode::TargetValidator.class_eval do
+  def verify_no_static_framework_transitive_dependencies; end
+end
+
 pre_install do |installer|
-  installer.analysis_result.specifications.each do |spec|
-    next unless spec.name == 'SmileIDSDK'
+  # Build Monnify and its Lottie statically.
+  #
+  # Smile ID now comes through SPM and brings its own Lottie, so SPM's copy is
+  # the Lottie.framework in the bundle. Monnify still needs lottie-ios from
+  # CocoaPods, and two package managers each producing Lottie.framework is
+  # what stopped build 25 with "Multiple commands produce".
+  #
+  # Build 26 made only lottie-ios static. That cleared the collision -- the
+  # archive ran six and a half minutes, further than any attempt -- and then
+  # failed in Pods.xcodeproj on "Undefined symbol: nominal type descriptor
+  # for Lottie.LottieAnimationView", because a static archive is not linked
+  # into a dynamic framework above it. Monnify was still dynamic.
+  #
+  # So the chain goes static together: the plugin, the SDK it wraps, and
+  # Lottie. Static code links into whatever uses it, and none of the three
+  # emits a framework to collide with SPM's Lottie.
+  static = %w[lottie-ios MonnifyiOSSDK monnify_payment_sdk]
 
-    vendored = Array(spec.attributes_hash['vendored_frameworks'])
-    kept = vendored.reject { |f| File.basename(f) == 'Lottie.xcframework' }
+  installer.pod_targets.each do |pod|
+    next unless static.include?(pod.name)
 
-    if kept.length == vendored.length
-      Pod::UI.warn 'SmileIDSDK no longer vendors Lottie.xcframework -- the ' \
-                   'de-duplication in ios/Podfile can probably go.'
-    else
-      spec.attributes_hash['vendored_frameworks'] = kept
+    def pod.build_type
+      Pod::BuildType.static_library
     end
   end
 end
