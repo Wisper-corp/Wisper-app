@@ -88,6 +88,24 @@ pre_install do |installer|
       Pod::BuildType.static_library
     end
   end
+
+  # A static pod has no framework of its own to keep resources in, so Xcode
+  # copies them into the app and compiles any asset catalog it finds into
+  # Runner.app/Assets.car -- which the app already produces. Build 27 got
+  # past every Lottie problem and stopped there instead.
+  #
+  # Putting them in a resource bundle gives them somewhere to live that is
+  # not the app's own asset catalog.
+  installer.analysis_result.specifications.each do |spec|
+    next unless static.include?(spec.name)
+
+    resources = Array(spec.attributes_hash['resources'])
+    next if resources.empty?
+
+    spec.attributes_hash['resource_bundles'] =
+      (spec.attributes_hash['resource_bundles'] || {}).merge(spec.name => resources)
+    spec.attributes_hash.delete('resources')
+  end
 end
 
 target 'Runner' do
