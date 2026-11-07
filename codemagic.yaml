@@ -57,10 +57,10 @@ workflows:
             echo "SMILE_CONFIG is not set -- the build would crash on launch."
             exit 1
           fi
-          printf '%s' "$SMILE_CONFIG" > ios/Runner/smile_config.json
-          python3 -c "import json;json.load(open('ios/Runner/smile_config.json'))" \
+          printf '%s' "$SMILE_CONFIG" > ios/smile_config.json
+          python3 -c "import json;json.load(open('ios/smile_config.json'))" \
             || { echo "SMILE_CONFIG is not valid JSON"; exit 1; }
-          echo "wrote ios/Runner/smile_config.json ($(wc -c < ios/Runner/smile_config.json) bytes)"
+          echo "wrote ios/smile_config.json ($(wc -c < ios/smile_config.json) bytes)"
 
       - name: Fetch packages
         script: flutter pub get
