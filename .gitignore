@@ -47,3 +47,7 @@ output/
 
 # JVM heap dumps from Gradle OOM
 *.hprof
+
+# Smile ID credentials. The iOS copy is written at build time from the
+# SMILE_CONFIG variable; the token must not live in the repository.
+ios/Runner/smile_config.json

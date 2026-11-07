@@ -66,8 +66,19 @@ void main() async {
     );
   };
 
-  // Initialize SmileID SDK
-  SmileID.initialize(useSandbox: false, enableCrashReporting: false);
+  // Initialize SmileID SDK.
+  //
+  // Guarded, because this is what App Review kept crashing on: the iOS SDK
+  // reads smile_config.json from the app bundle and traps if it is missing,
+  // killing the app on launch before a single frame is drawn. Identity
+  // verification is one feature; it must never take the whole app down, and
+  // a reviewer who cannot open the app rejects the build.
+  try {
+    SmileID.initialize(useSandbox: false, enableCrashReporting: false);
+  } catch (e, stack) {
+    debugPrint('SmileID could not start, continuing without it: $e');
+    debugPrintStack(stackTrace: stack);
+  }
 
   // Local set-up only. Nothing above runApp may touch the network: the first
   // frame cannot be drawn until main() reaches runApp, so anything that waits

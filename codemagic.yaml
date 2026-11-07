@@ -44,6 +44,24 @@ workflows:
         # is still generated and installed.
         script: flutter config --enable-swift-package-manager
 
+      - name: Write the Smile ID config into the iOS bundle
+        # The iOS SDK reads smile_config.json from the app bundle and traps
+        # when it is absent -- which is what crashed build 28 on launch for
+        # App Review, since the file only ever existed under android/.
+        #
+        # It holds a partner auth token, so it is written here from the
+        # SMILE_CONFIG variable rather than committed. The Xcode project
+        # already references the path; this puts the file at it.
+        script: |
+          if [ -z "$SMILE_CONFIG" ]; then
+            echo "SMILE_CONFIG is not set -- the build would crash on launch."
+            exit 1
+          fi
+          printf '%s' "$SMILE_CONFIG" > ios/Runner/smile_config.json
+          python3 -c "import json;json.load(open('ios/Runner/smile_config.json'))" \
+            || { echo "SMILE_CONFIG is not valid JSON"; exit 1; }
+          echo "wrote ios/Runner/smile_config.json ($(wc -c < ios/Runner/smile_config.json) bytes)"
+
       - name: Fetch packages
         script: flutter pub get
 
