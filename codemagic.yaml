@@ -100,11 +100,52 @@ workflows:
           echo "Building as build number $NEXT"
           echo "BUILD_NUMBER=$NEXT" >> "$CM_ENV"
 
-      - name: Build the ipa
+      - name: Warm the Swift Package binaries
+        # SmileIDSDK and Lottie ship as binary targets fetched from GitHub
+        # releases, and GitHub's asset CDN has been answering 504 for these
+        # two zips across separate builds. Swift Package Manager tries each
+        # download exactly once and fails the whole archive on a single bad
+        # response, so the fetch is done here first, with retries, where a
+        # gateway timeout costs a retry instead of the build.
+        #
+        # Failing to warm them is not fatal: SPM will still try on its own,
+        # and this step must not become a new reason the build cannot run.
         script: |
-          flutter build ipa --release \
-            --build-number="$BUILD_NUMBER" \
-            --export-options-plist=/Users/builder/export_options.plist
+          warm() {
+            url="$1"
+            for attempt in 1 2 3 4 5; do
+              code=$(curl -sL --retry 3 --retry-all-errors --retry-delay 5 \
+                       --connect-timeout 20 --max-time 300 \
+                       -o /dev/null -w '%{http_code}' "$url" || echo 000)
+              if [ "$code" = "200" ]; then
+                echo "ok   $url"
+                return 0
+              fi
+              echo "attempt $attempt got HTTP $code for $url"
+              sleep 15
+            done
+            echo "warning: could not pre-fetch $url -- letting SPM try"
+            return 0
+          }
+          warm https://github.com/smileidentity/ios/releases/download/v11.2.3/SmileIDSDK.xcframework.zip
+          warm https://github.com/airbnb/lottie-ios/releases/download/4.5.2/Lottie.xcframework.zip
+
+      - name: Build the ipa
+        # Retried, for the same reason: one 504 while resolving packages used
+        # to throw away a four-minute build.
+        script: |
+          for attempt in 1 2 3; do
+            echo "=== archive attempt $attempt ==="
+            if flutter build ipa --release \
+                 --build-number="$BUILD_NUMBER" \
+                 --export-options-plist=/Users/builder/export_options.plist; then
+              exit 0
+            fi
+            echo "archive attempt $attempt failed"
+            sleep 30
+          done
+          echo "the archive failed three times"
+          exit 1
 
       - name: Check Lottie exports the symbols SmileIDSDK links against
         # Build 15 was rejected under 2.1(a): dyld killed it at launch with
